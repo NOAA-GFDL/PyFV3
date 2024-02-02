@@ -12,11 +12,15 @@ with open("README.md", encoding="utf-8") as readme_file:
 requirements = [
     "f90nml>=1.1.0",
     "numpy",
-    "ndsl",
+    "ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@main",
     "xarray",
 ]
 
 test_requirements = ["pytest==5.2.2", "pytest-subtests>=0.3.0", "serialbox"]
+develop_requirements = test_requirements + ["pre-commit"]
+
+extras_requires = {"test": test_requirements, "develop": develop_requirements}
+
 
 setup(
     author="The Allen Institute for Artificial Intelligence",
@@ -33,7 +37,7 @@ setup(
     ],
     description="pyFV3 is a NDSL-based FV3 dynamical core for atmospheric models",
     install_requires=requirements,
-    extras_require={},
+    extras_require=extras_requires,
     license="BSD license",
     long_description=readme,
     include_package_data=True,
@@ -41,7 +45,6 @@ setup(
     packages=find_namespace_packages(include=["pyFV3.*"]),
     setup_requires=[],
     test_suite="tests",
-    tests_require=test_requirements,
     url="https://github.com/NOAA-GFDL/pyFV3",
     version="0.2.0",
     zip_safe=False,
