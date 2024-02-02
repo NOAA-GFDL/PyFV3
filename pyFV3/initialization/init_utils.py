@@ -7,6 +7,7 @@ import numpy as np
 import ndsl.constants as constants
 from ndsl.dsl.typing import Float
 from ndsl.grid import lon_lat_midpoint
+from ndsl.grid.eta import SURFACE_PRESSURE, compute_eta, vertical_coordinate
 from ndsl.grid.gnomonic import get_lonlat_vect, get_unit_vector_direction
 from pyFV3.dycore_state import DycoreState
 
@@ -25,7 +26,6 @@ ETA_TROPOPAUSE = 0.2
 T_0 = 288.0
 DELTA_T = 480000.0
 LAPSE_RATE = 0.005  # From Table VI of DCMIP2016
-SURFACE_PRESSURE = 1.0e5  # units of (Pa), from Table VI of DCMIP2016
 # NOTE RADIUS = 6.3712e6 in FV3 vs Jabowski paper 6.371229e6
 R = constants.RADIUS / 10.0  # Perturbation radiusfor test case 13
 NHALO = constants.N_HALO_DEFAULT
@@ -77,17 +77,6 @@ def cell_average_nine_point(pt1, pt2, pt3, pt4, pt5, pt6, pt7, pt8, pt9):
     return (
         0.25 * pt1 + 0.125 * (pt2 + pt3 + pt4 + pt5) + 0.0625 * (pt6 + pt7 + pt8 + pt9)
     )
-
-
-# TODO: Many duplicate functions do this exact calculation, we should consolidate them
-def compute_eta(ak, bk):
-    """
-    Equation (1) JRMS2006
-    eta is the vertical coordinate and eta_v is an auxiliary vertical coordinate
-    """
-    eta = 0.5 * ((ak[:-1] + ak[1:]) / SURFACE_PRESSURE + bk[:-1] + bk[1:])
-    eta_v = vertical_coordinate(eta)
-    return eta, eta_v
 
 
 def compute_grid_edge_midpoint_latitude_components(lon, lat):
@@ -383,11 +372,3 @@ def temperature(eta, eta_v, t_mean, lat):
         * constants.RADIUS
         * constants.OMEGA
     )
-
-
-def vertical_coordinate(eta_value):
-    """
-    Equation (1) JRMS2006
-    computes eta_v, the auxiliary variable vertical coordinate
-    """
-    return (eta_value - ETA_0) * math.pi * 0.5
