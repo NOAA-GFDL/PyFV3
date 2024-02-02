@@ -3,6 +3,7 @@ from typing import Dict
 
 import gt4py.cartesian.gtscript as gtscript
 from gt4py.cartesian.gtscript import PARALLEL, computation, horizontal, interval, region
+
 from ndsl.comm.communicator import Communicator
 from ndsl.constants import (
     N_HALO_DEFAULT,
@@ -18,7 +19,6 @@ from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-
 from pyFV3.stencils.fvtp2d import FiniteVolumeTransport
 
 

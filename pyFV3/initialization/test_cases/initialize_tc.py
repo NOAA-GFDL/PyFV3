@@ -1,10 +1,10 @@
-import ndsl.constants as constants
 import numpy as np
+
+import ndsl.constants as constants
+import pyFV3.initialization.init_utils as init_utils
 from ndsl.comm.communicator import CubedSphereCommunicator
 from ndsl.grid import GridData, great_circle_distance_lon_lat
 from ndsl.initialization.allocator import QuantityFactory
-
-import pyFV3.initialization.init_utils as init_utils
 from pyFV3.dycore_state import DycoreState
 
 

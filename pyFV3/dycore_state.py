@@ -1,8 +1,9 @@
 from dataclasses import asdict, dataclass, field, fields
 from typing import Any, Dict, Mapping, Union
 
-import ndsl.dsl.gt4py_utils as gt_utils
 import xarray as xr
+
+import ndsl.dsl.gt4py_utils as gt_utils
 from ndsl.comm.communicator import Communicator
 from ndsl.constants import (
     X_DIM,

@@ -7,9 +7,9 @@ from argparse import ArgumentParser, Namespace
 
 import f90nml
 import gt4py.cartesian.config
+
 import ndsl.dsl.stencil  # noqa: F401
 from ndsl.comm.null_comm import NullComm
-
 from pyFV3._config import DynamicalCoreConfig
 
 

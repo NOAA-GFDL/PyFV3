@@ -3,7 +3,6 @@ from typing import Optional
 from ndsl.constants import Z_DIM
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
-
 from pyFV3.stencils.divergence_damping import DivergenceDamping
 from pyFV3.testing import TranslateDycoreFortranData2Py
 

@@ -1,9 +1,9 @@
 import numpy as np
+
+import pyFV3.stencils.updatedzc as updatedzc
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
-
-import pyFV3.stencils.updatedzc as updatedzc
 from pyFV3.testing import TranslateDycoreFortranData2Py
 from pyFV3.utils.functional_validation import get_subset_func
 

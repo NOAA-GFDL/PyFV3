@@ -1,7 +1,6 @@
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.namelist import Namelist
-
 from pyFV3.stencils.c_sw import CGridShallowWaterDynamics
 from pyFV3.testing import TranslateDycoreFortranData2Py
 

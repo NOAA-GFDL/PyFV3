@@ -3,7 +3,6 @@ from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import Float
 from ndsl.namelist import Namelist
 from ndsl.stencils.testing import TranslateGrid
-
 from pyFV3.stencils import yppm
 from pyFV3.testing import TranslateDycoreFortranData2Py
 

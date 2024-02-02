@@ -1,6 +1,7 @@
 import gt4py.cartesian.gtscript as gtscript
-import ndsl.constants as constants
 from gt4py.cartesian.gtscript import BACKWARD, FORWARD, PARALLEL, computation, interval
+
+import ndsl.constants as constants
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK

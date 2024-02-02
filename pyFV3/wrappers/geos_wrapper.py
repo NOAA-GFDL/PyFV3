@@ -8,6 +8,8 @@ import f90nml
 import numpy as np
 from gt4py.cartesian.config import build_settings as gt_build_settings
 from mpi4py import MPI
+
+import pyFV3
 from ndsl.comm.comm_abc import Comm
 from ndsl.comm.communicator import CubedSphereCommunicator
 from ndsl.comm.null_comm import NullComm
@@ -28,8 +30,6 @@ from ndsl.logging import ndsl_log
 from ndsl.optional_imports import cupy as cp
 from ndsl.performance.collector import PerformanceCollector
 from ndsl.utils import safe_assign_array
-
-import pyFV3
 
 
 class StencilBackendCompilerOverride:

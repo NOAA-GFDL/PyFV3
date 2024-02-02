@@ -12,6 +12,8 @@ from gt4py.cartesian.gtscript import (
     log,
     region,
 )
+
+import pyFV3.stencils.moist_cv as moist_cv
 from ndsl.checkpointer import Checkpointer
 from ndsl.constants import (
     X_DIM,
@@ -26,8 +28,6 @@ from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-
-import pyFV3.stencils.moist_cv as moist_cv
 from pyFV3._config import RemappingConfig
 from pyFV3.stencils.basic_operations import adjust_divide_stencil
 from pyFV3.stencils.map_single import MapSingle

@@ -2,8 +2,10 @@ from dataclasses import fields
 from datetime import timedelta
 from typing import Any, Dict, Optional, Tuple
 
-import ndsl.dsl.gt4py_utils as utils
 import pytest
+
+import ndsl.dsl.gt4py_utils as utils
+import pyFV3.stencils.fv_dynamics as fv_dynamics
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,
@@ -19,8 +21,6 @@ from ndsl.performance.timer import NullTimer
 from ndsl.quantity import Quantity
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
 from ndsl.stencils.testing.translate import TranslateFortranData2Py
-
-import pyFV3.stencils.fv_dynamics as fv_dynamics
 from pyFV3._config import DynamicalCoreConfig
 from pyFV3.dycore_state import DycoreState
 

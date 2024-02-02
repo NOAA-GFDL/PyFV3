@@ -7,7 +7,6 @@ from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-
 from pyFV3.stencils.fillz import FillNegativeTracerValues
 from pyFV3.stencils.map_single import MapSingle
 

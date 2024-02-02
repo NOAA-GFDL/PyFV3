@@ -3,6 +3,9 @@ from typing import Any, List, Tuple, cast
 
 import ndsl.dsl.stencil
 import ndsl.stencils.testing
+import pyFV3
+import pyFV3._config
+import pyFV3.initialization.baroclinic as baroclinic_init
 from ndsl.comm.communicator import CubedSphereCommunicator, TileCommunicator
 from ndsl.comm.mpi import MPIComm
 from ndsl.comm.partitioner import TilePartitioner
@@ -10,10 +13,6 @@ from ndsl.dsl.stencil import GridIndexing
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.initialization.sizer import SubtileGridSizer
-
-import pyFV3
-import pyFV3._config
-import pyFV3.initialization.baroclinic as baroclinic_init
 
 
 def setup_dycore() -> Tuple[pyFV3.DynamicalCore, List[Any]]:
