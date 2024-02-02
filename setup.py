@@ -12,15 +12,18 @@ with open("README.md", encoding="utf-8") as readme_file:
 requirements = [
     "f90nml>=1.1.0",
     "numpy",
-    "ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@main",
     "xarray",
 ]
 
 test_requirements = ["pytest==5.2.2", "pytest-subtests>=0.3.0", "serialbox"]
-develop_requirements = test_requirements + ["pre-commit"]
+ndsl_requirements = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@main"]
+develop_requirements = test_requirements + ndsl_requirements + ["pre-commit"]
 
-extras_requires = {"test": test_requirements, "develop": develop_requirements}
-
+extras_requires = {
+    "test": test_requirements,
+    "ndsl": ndsl_requirements,
+    "develop": develop_requirements,
+}
 
 setup(
     author="The Allen Institute for Artificial Intelligence",
