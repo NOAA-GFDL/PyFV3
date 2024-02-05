@@ -1,4 +1,4 @@
-name: "Unit tests"
+name: "Translate test (subset)"
 on:
   pull_request:
       types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
