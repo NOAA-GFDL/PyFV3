@@ -5,7 +5,7 @@ import ndsl.dsl.stencil
 import ndsl.stencils.testing
 import pyFV3
 import pyFV3._config
-import pyFV3.initialization.baroclinic as baroclinic_init
+import pyFV3.initialization.test_cases.initialize_baroclinic as baroclinic_init
 from ndsl.comm.communicator import CubedSphereCommunicator, TileCommunicator
 from ndsl.comm.mpi import MPIComm
 from ndsl.comm.partitioner import TilePartitioner
