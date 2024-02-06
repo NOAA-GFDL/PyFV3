@@ -20,11 +20,11 @@ repos:
     - id: mypy
       name: mypy-fv3core
       args: [--config-file, setup.cfg]
-      files: fv3core
+      files: pyFV3
       exclude: |
         (?x)^(
-        fv3core/pace/fv3core/stencils/fv_subgridz.py |
-        fv3core/tests/conftest.py
+        pyFV3/stencils/fv_subgridz.py |
+        pyFV3/tests/conftest.py
         )$
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.3.0

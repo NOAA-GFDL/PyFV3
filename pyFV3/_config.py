@@ -287,9 +287,9 @@ class DynamicalCoreConfig:
             self.nf_omega = 0
 
     @classmethod
-    def from_f90nml(self, f90_namelist: f90nml.Namelist) -> "DynamicalCoreConfig":
+    def from_f90nml(cls, f90_namelist: f90nml.Namelist) -> "DynamicalCoreConfig":
         namelist = Namelist.from_f90nml(f90_namelist)
-        return self.from_namelist(namelist)
+        return cls.from_namelist(namelist)
 
     @classmethod
     def from_namelist(cls, namelist: Namelist) -> "DynamicalCoreConfig":
