@@ -8,6 +8,8 @@ from gt4py.cartesian.gtscript import (
     horizontal,
     interval,
     region,
+    CONST_VERSION,
+    ConstantVersions,
 )
 
 import pyFV3.stencils.delnflux as delnflux
@@ -698,6 +700,33 @@ def get_column_namelist(
         if config.d2_bg_k2 > 0.05:
             col["d2_divg"].view[2] = max(config.d2_bg, 0.2 * config.d2_bg_k2)
             set_low_kvals(col, 2)
+            if CONST_VERSION == ConstantVersions.GEOS:
+                # In GEOS the column values are set after K==3 up until the sponge
+                # layer top, defined in config
+                for n in range(3, config.n_sponge):
+                    col["d2_divg"].view[n] = max(config.d2_bg, 0.2 * config.d2_bg_k2)
+                    set_low_kvals(col, n)
+
+    # Checks for the column calculations
+    # Those checks are expected in the rest of the code. DO NOT REMOVE even if the
+    # above algorithm makes it clear they are enforced. This is an added safety.
+
+    # Check that the format of nord_col is N 0's then non-zero values
+    # all the way to the top.
+    # Check upper values are all the same.
+    non_zero_k = -1
+    non_zero_v = -1
+    for k, v in enumerate(col["nord_v"].view[:]):
+        if v != 0:
+            non_zero_k = k
+            non_zero_v = v
+            break
+    for v in range(non_zero_k, col["nord_v"].view.extent[0]):
+        if col["nord_v"].view[v] != non_zero_v:
+            raise RuntimeError(
+                f"D_SW.column is not homogeneous in values: {col['nord_v'].view[:]}"
+            )
+
     return col
 
 
