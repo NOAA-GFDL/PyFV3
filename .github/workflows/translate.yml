@@ -64,11 +64,11 @@ jobs:
               --which_modules=Remapping \
               --threshold_overrides_file=./tests/savepoint/translate/overrides/standard.yaml \
               ./tests/savepoint
-        - name: Orchestrated dace:cpu FVDynamics
+        - name: Orchestrated dace:cpu Acoustics
           run: |
             cd test_data
-            wget https://portal.nccs.nasa.gov/datashare/astg/smt/pace-regression-data/8.1.3_c12_6_ranks_standard.FVDynamics.tar.gz
-            tar -xzvf 8.1.3_c12_6_ranks_standard.FVDynamics.tar.gz
+            wget https://portal.nccs.nasa.gov/datashare/astg/smt/pace-regression-data/8.1.3_c12_6_ranks_standard.DynCore.tar.gz
+            tar -xzvf 8.1.3_c12_6_ranks_standard.DynCore.tar.gz
             cd -
             export FV3_DACEMODE=BuildAndRun
             export PACE_FLOAT_PRECISION=64
@@ -80,6 +80,6 @@ jobs:
               --backend=dace:cpu \
               -m parallel \
               --which_rank=0 \
-              --which_modules=FVDynamics \
+              --which_modules=DynCore \
               --threshold_overrides_file=./tests/savepoint/translate/overrides/standard.yaml \
               ./tests/savepoint
