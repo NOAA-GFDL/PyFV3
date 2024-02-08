@@ -3,9 +3,7 @@ from typing import Dict, Mapping
 import gt4py.cartesian.gtscript as gtscript
 from gt4py.cartesian.gtscript import (
     __INLINED,
-    CONST_VERSION,
     PARALLEL,
-    ConstantVersions,
     computation,
     horizontal,
     interval,
@@ -13,7 +11,15 @@ from gt4py.cartesian.gtscript import (
 )
 
 import pyFV3.stencils.delnflux as delnflux
-from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import (
+    X_DIM,
+    X_INTERFACE_DIM,
+    Y_DIM,
+    Y_INTERFACE_DIM,
+    Z_DIM,
+    CONST_VERSION,
+    ConstantVersions,
+)
 from ndsl.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
