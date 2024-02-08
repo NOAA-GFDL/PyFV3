@@ -3,13 +3,13 @@ from typing import Dict, Mapping
 import gt4py.cartesian.gtscript as gtscript
 from gt4py.cartesian.gtscript import (
     __INLINED,
+    CONST_VERSION,
     PARALLEL,
+    ConstantVersions,
     computation,
     horizontal,
     interval,
     region,
-    CONST_VERSION,
-    ConstantVersions,
 )
 
 import pyFV3.stencils.delnflux as delnflux
