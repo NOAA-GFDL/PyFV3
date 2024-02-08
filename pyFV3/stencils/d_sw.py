@@ -12,12 +12,12 @@ from gt4py.cartesian.gtscript import (
 
 import pyFV3.stencils.delnflux as delnflux
 from ndsl.constants import (
+    CONST_VERSION,
     X_DIM,
     X_INTERFACE_DIM,
     Y_DIM,
     Y_INTERFACE_DIM,
     Z_DIM,
-    CONST_VERSION,
     ConstantVersions,
 )
 from ndsl.dsl.dace.orchestration import orchestrate
