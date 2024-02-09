@@ -634,15 +634,24 @@ def set_low_kvals(col: Mapping[str, Quantity], k):
 
 # For the column namelist at a specific k-level
 # set the vorticity parameters if do_vort_damp is true
-def vorticity_damping_option(column, k, do_vort_damp):
+def vorticity_damping_option_FV3GFS(column, k, do_vort_damp):
     if do_vort_damp:
         column["nord_v"].view[k] = 0
         column["damp_vt"].view[k] = 0.5 * column["d2_divg"].view[k]
 
 
+def vorticity_damping_option_GEOS(column, k, do_vort_damp):
+    # GEOS does not set damp_vt
+    if do_vort_damp:
+        column["nord_v"].view[k] = 0
+
+
 def lowest_kvals(column, k, do_vort_damp):
     set_low_kvals(column, k)
-    vorticity_damping_option(column, k, do_vort_damp)
+    if IS_GEOS:
+        vorticity_damping_option_GEOS(column, k, do_vort_damp)
+    else:
+        vorticity_damping_option_FV3GFS(column, k, do_vort_damp)
 
 
 def get_column_namelist(
@@ -664,6 +673,9 @@ def get_column_namelist(
         "damp_t",
         "d2_divg",
     ]
+    if config.d2_bg_k2 < 0:
+        raise NotImplementedError("D_SW.column with d2_bg_k2 < 0 is not implemented")
+
     col: Dict[str, Quantity] = {}
     for name in all_names:
         # TODO: fill units information
@@ -676,7 +688,7 @@ def get_column_namelist(
         col[name].view[:] = getattr(config, name)
 
     col["d2_divg"].view[:] = min(0.2, config.d2_bg)
-    col["nord_v"].view[:] = min(2, col["nord"].view[0])
+    col["nord_v"].view[:] = min(2, config.nord)
     col["nord_w"].view[:] = col["nord_v"].view[0]
     col["nord_t"].view[:] = col["nord_v"].view[0]
     if config.do_vort_damp:
