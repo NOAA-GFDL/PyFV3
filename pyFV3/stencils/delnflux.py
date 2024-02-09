@@ -593,7 +593,7 @@ class DelnFluxNoSG:
         )
 
         self._d2_stencil = get_stencils_with_varied_bounds(
-            _get_highorder_stencil,
+            _get_highorder_stencil(),
             origins_d2,
             domains_d2,
             stencil_factory=stencil_factory,
