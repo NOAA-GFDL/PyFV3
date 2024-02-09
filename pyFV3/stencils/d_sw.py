@@ -12,13 +12,11 @@ from gt4py.cartesian.gtscript import (
 
 import pyFV3.stencils.delnflux as delnflux
 from ndsl.constants import (
-    CONST_VERSION,
     X_DIM,
     X_INTERFACE_DIM,
     Y_DIM,
     Y_INTERFACE_DIM,
     Z_DIM,
-    ConstantVersions,
 )
 from ndsl.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -34,6 +32,7 @@ from pyFV3.stencils.fvtp2d import FiniteVolumeTransport
 from pyFV3.stencils.fxadv import FiniteVolumeFluxPrep
 from pyFV3.stencils.xtp_u import advect_u_along_x
 from pyFV3.stencils.ytp_v import advect_v_along_y
+from pyFV3.version import IS_GEOS
 
 
 dcon_threshold = 1e-5
@@ -706,7 +705,7 @@ def get_column_namelist(
         if config.d2_bg_k2 > 0.05:
             col["d2_divg"].view[2] = max(config.d2_bg, 0.2 * config.d2_bg_k2)
             set_low_kvals(col, 2)
-            if CONST_VERSION == ConstantVersions.GEOS:
+            if IS_GEOS:
                 # In GEOS the column values are set after K==3 up until the sponge
                 # layer top, defined in config
                 for n in range(3, config.n_sponge):

@@ -4,13 +4,11 @@ import gt4py.cartesian.gtscript as gtscript
 from gt4py.cartesian.gtscript import PARALLEL, computation, horizontal, interval, region
 
 from ndsl.constants import (
-    CONST_VERSION,
     X_DIM,
     X_INTERFACE_DIM,
     Y_DIM,
     Y_INTERFACE_DIM,
     Z_DIM,
-    ConstantVersions,
 )
 from ndsl.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory, get_stencils_with_varied_bounds
@@ -18,6 +16,7 @@ from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
+from pyFV3.version import IS_GEOS
 
 
 def calc_damp(damp_c: Quantity, da_min: Float, nord: Quantity) -> Quantity:
@@ -146,13 +145,11 @@ def d2_highorder_stencil_GEOS(
             d2 = ((fx - fx[1, 0, 0]) + (fy - fy[0, 1, 0])) * rarea
 
 
-def _get_highorder_stencil(key: ConstantVersions):
-    if key == ConstantVersions.GFS or key == ConstantVersions.GFDL:
-        return d2_highorder_stencil_FV3GFS
-    elif key == ConstantVersions.GEOS:
+def _get_highorder_stencil():
+    if IS_GEOS:
         return d2_highorder_stencil_GEOS
     else:
-        raise NotImplementedError(f"Ambiguous code for DelnFlux with constant {key}")
+        return d2_highorder_stencil_FV3GFS
 
 
 def d2_damp_interval(
@@ -602,7 +599,7 @@ class DelnFluxNoSG:
         )
 
         self._d2_stencil = get_stencils_with_varied_bounds(
-            _get_highorder_stencil(CONST_VERSION),
+            _get_highorder_stencil,
             origins_d2,
             domains_d2,
             stencil_factory=stencil_factory,
