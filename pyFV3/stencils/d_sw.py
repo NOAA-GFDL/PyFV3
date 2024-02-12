@@ -688,7 +688,10 @@ def get_column_namelist(
         col[name].view[:] = getattr(config, name)
 
     col["d2_divg"].view[:] = min(0.2, config.d2_bg)
-    col["nord_v"].view[:] = min(2, config.nord)
+    nord = min(2, config.nord)
+    col["nord_v"].view[:] = nord
+    col["nord_w"].view[:] = nord
+    col["nord_t"].view[:] = nord
     if config.do_vort_damp:
         col["damp_vt"].view[:] = config.vtdm4
     else:
@@ -715,8 +718,6 @@ def get_column_namelist(
                 for n in range(3, config.n_sponge):
                     col["d2_divg"].view[n] = max(config.d2_bg, 0.2 * config.d2_bg_k2)
                     set_low_kvals(col, n)
-    col["nord_w"].view[:] = col["nord_v"].view[:]
-    col["nord_t"].view[:] = col["nord_v"].view[:]
 
     # Checks for the column calculations
     # Those checks are expected in the rest of the code. DO NOT REMOVE even if the
