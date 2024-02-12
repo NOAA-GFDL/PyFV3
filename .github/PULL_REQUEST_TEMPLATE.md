@@ -19,3 +19,4 @@ enough information so someone can reproduce your tests.
 - [ ] My changes generate no new warnings
 - [ ] Any dependent changes have been merged and published in downstream modules
 - [ ] New check tests, if applicable, are included
+- [ ] Targeted model if this changed was triggered by a model need/shortcoming
