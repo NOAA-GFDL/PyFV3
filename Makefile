@@ -21,7 +21,9 @@ CONTAINER_CMD?=docker run $(RUN_FLAGS) $(VOLUMES) $(IMAGE_NAME)
 .PHONY: build enter dev
 
 build:
-	DOCKER_BUILDKIT=1 docker build \
+	PROGRESS_NO_TRUNC=1 docker build \
+		--progress plain \
+		--no-cache \
 		$(BUILD_FLAGS) \
 		-f $(CWD)/Dockerfile \
 		-t $(IMAGE_NAME) \
