@@ -57,7 +57,10 @@ build_explicit:
 		.
 
 clean:
-	docker image rm $(IMAGE_NAME)
+	if [ -n "$(docker images -q $(IMAGE_NAME))" ]; then \
+		docker image rm $(IMAGE_NAME); \
+	fi
+	rm -r .gt_cache*
 
 enter:
 	docker run --rm -it \
@@ -88,14 +91,14 @@ get_test_data:
 
 savepoint_tests:
 	$(MAKE) get_test_data
-	docker run $(RUN_FLAGS) $(VOLUMES) $(IMAGE_NAME) bash -c "$(SAVEPOINT_SETUP) && cd $(ROOT_DIR) && pytest --data_path=$(TEST_DATA_LOC)$(TEST_DATA_VERSION)/$(TEST_CASE)/dycore $(TEST_ARGS) $(THRESH_ARGS) $(ROOT_DIR)/tests/savepoint"
+	$(CONTAINER_CMD) bash -c "$(SAVEPOINT_SETUP) && cd $(ROOT_DIR) && pytest --data_path=$(TEST_DATA_LOC)$(TEST_DATA_VERSION)/$(TEST_CASE)/dycore $(TEST_ARGS) $(THRESH_ARGS) $(ROOT_DIR)/tests/savepoint"
 
 savepoint_tests_mpi:
 	$(MAKE) get_test_data
-	docker run $(RUN_FLAGS) $(VOLUMES) $(IMAGE_NAME) bash -c "$(SAVEPOINT_SETUP) && cd $(ROOT_DIR) && $(MPIRUN_CALL) python3 -m mpi4py -m pytest --maxfail=1 --data_path=$(TEST_DATA_LOC)$(TEST_DATA_VERSION)/$(TEST_CASE)/dycore $(TEST_ARGS) $(THRESH_ARGS) -m parallel $(ROOT_DIR)/tests/savepoint"
+	$(CONTAINER_CMD) bash -c "$(SAVEPOINT_SETUP) && cd $(ROOT_DIR) && $(MPIRUN_CALL) python3 -m mpi4py -m pytest --maxfail=1 --data_path=$(TEST_DATA_LOC)$(TEST_DATA_VERSION)/$(TEST_CASE)/dycore $(TEST_ARGS) $(THRESH_ARGS) -m parallel $(ROOT_DIR)/tests/savepoint"
 
 test_dperiodic:
-	docker run $(RUN_FLAGS) $(VOLUMES) $(IMAGE_NAME) bash -c "cd $(ROOT_DIR) && mpirun -np 9 $(MPIRUN_ARGS) python3 -m mpi4py -m pytest --maxfail=1 $(TEST_ARGS) $(ROOT_DIR)/tests/mpi/test_doubly_periodic.py"
+	$(CONTAINER_CMD) bash -c "cd $(ROOT_DIR) && mpirun -np 9 $(MPIRUN_ARGS) python3 -m mpi4py -m pytest --maxfail=1 $(TEST_ARGS) $(ROOT_DIR)/tests/mpi/test_doubly_periodic.py"
 
 test_all:
 	$(MAKE) savepoint_tests
