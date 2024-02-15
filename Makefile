@@ -18,9 +18,16 @@ endif
 
 CONTAINER_CMD?=docker run $(RUN_FLAGS) $(VOLUMES) $(IMAGE_NAME)
 
-.PHONY: build enter dev
+.PHONY: build build_explicit enter dev notebook
 
 build:
+	DOCKER_BUILDKIT=1 docker build \
+		$(BUILD_FLAGS) \
+		-f $(CWD)/Dockerfile \
+		-t $(IMAGE_NAME) \
+		.
+
+build_explicit:
 	PROGRESS_NO_TRUNC=1 docker build \
 		--progress plain \
 		--no-cache \
@@ -39,7 +46,7 @@ enter:
 dev:
 	DEV=y $(MAKE) enter
 
-run:
+notebook:
 	CMD="jupyter notebook --ip 0.0.0.0 --no-browser --allow-root --notebook-dir=pyFV3/examples/notebook" \
 	DEV=y \
 	$(MAKE) enter
