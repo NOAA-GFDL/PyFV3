@@ -2,8 +2,7 @@ import ndsl.dsl.gt4py_utils as utils
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
 from ndsl.stencils.testing import TranslateGrid
-from pyFV3.stencils import xppm
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyFV3 import TranslateDycoreFortranData2Py, XPiecewiseParabolic
 
 
 class TranslateXPPM(TranslateDycoreFortranData2Py):
@@ -46,7 +45,7 @@ class TranslateXPPM(TranslateDycoreFortranData2Py):
         )
         origin = self.grid.grid_indexing.origin_compute()
         domain = self.grid.grid_indexing.domain_compute(add=(1, 1, 0))
-        self.compute_func = xppm.XPiecewiseParabolic(
+        self.compute_func = XPiecewiseParabolic(
             stencil_factory=self.stencil_factory,
             dxa=self.grid.dxa,
             grid_type=self.grid.grid_type,

@@ -5,8 +5,7 @@ from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from ndsl.namelist import Namelist
-
-from .translate_ytp_v import TranslateYTP_V
+from tests.savepoint.translate.translate_ytp_v import TranslateYTP_V
 
 
 def xtp_u_stencil_defn(

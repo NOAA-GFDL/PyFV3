@@ -3,8 +3,7 @@ from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import Float
 from ndsl.namelist import Namelist
 from ndsl.stencils.testing import TranslateGrid
-from pyFV3.stencils import yppm
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyFV3 import TranslateDycoreFortranData2Py, YPiecewiseParabolic
 
 
 class TranslateYPPM(TranslateDycoreFortranData2Py):
@@ -50,7 +49,7 @@ class TranslateYPPM(TranslateDycoreFortranData2Py):
         self.process_inputs(inputs)
         origin = self.grid.grid_indexing.origin_compute()
         domain = self.grid.grid_indexing.domain_compute(add=(1, 1, 0))
-        self.compute_func = yppm.YPiecewiseParabolic(
+        self.compute_func = YPiecewiseParabolic(
             stencil_factory=self.stencil_factory,
             dya=self.grid.dya,
             grid_type=self.grid.grid_type,

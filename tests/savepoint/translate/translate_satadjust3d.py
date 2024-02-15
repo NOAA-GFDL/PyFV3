@@ -1,9 +1,7 @@
-import pyFV3
+# import pyFV3
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
-from pyFV3 import DynamicalCoreConfig
-from pyFV3.stencils.saturation_adjustment import SatAdjust3d
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyFV3 import DynamicalCoreConfig, SatAdjust3d, TranslateDycoreFortranData2Py
 
 
 class TranslateSatAdjust3d(TranslateDycoreFortranData2Py):
@@ -61,7 +59,7 @@ class TranslateSatAdjust3d(TranslateDycoreFortranData2Py):
             },
             "cappa": {},
         }
-        self.namelist = pyFV3.DynamicalCoreConfig.from_namelist(namelist)
+        self.namelist = DynamicalCoreConfig.from_namelist(namelist)
         self.stencil_factory = stencil_factory
 
     def compute_from_storage(self, inputs):

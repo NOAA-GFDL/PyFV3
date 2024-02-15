@@ -1,7 +1,7 @@
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
+from pyFV3 import TranslateDycoreFortranData2Py
 from pyFV3.stencils import pe_halo
-from pyFV3.testing import TranslateDycoreFortranData2Py
 
 
 class PE_Halo_Wrapper:

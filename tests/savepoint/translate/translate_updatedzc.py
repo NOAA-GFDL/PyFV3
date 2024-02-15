@@ -1,10 +1,9 @@
 import numpy as np
 
-import pyFV3.stencils.updatedzc as updatedzc
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyFV3 import TranslateDycoreFortranData2Py, UpdateGeopotentialHeightOnCGrid
 from pyFV3.utils.functional_validation import get_subset_func
 
 
@@ -17,7 +16,7 @@ class TranslateUpdateDzC(TranslateDycoreFortranData2Py):
     ):
         super().__init__(grid, namelist, stencil_factory)
         self.stencil_factory = stencil_factory
-        update_gz_on_c_grid = updatedzc.UpdateGeopotentialHeightOnCGrid(
+        update_gz_on_c_grid = UpdateGeopotentialHeightOnCGrid(
             self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             area=grid.grid_data.area,

@@ -5,7 +5,7 @@ import pyFV3.stencils.d_sw as d_sw
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.namelist import Namelist
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyFV3 import TranslateDycoreFortranData2Py
 
 
 class TranslateD_SW(TranslateDycoreFortranData2Py):

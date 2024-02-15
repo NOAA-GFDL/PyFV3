@@ -3,9 +3,9 @@ from typing import Any, Dict
 import pyFV3
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
+from pyFV3 import TranslateDycoreFortranData2Py
 from pyFV3.stencils import temperature_adjust
 from pyFV3.stencils.dyn_core import get_nk_heat_dissipation
-from pyFV3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslatePressureAdjustedTemperature_NonHydrostatic(

@@ -1,12 +1,11 @@
 import pytest
 
 import ndsl.dsl.gt4py_utils as utils
-import pyFV3.stencils.fvtp2d
-import pyFV3.stencils.tracer_2d_1l
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
 from ndsl.stencils.testing import ParallelTranslate
+from pyFV3 import FiniteVolumeTransport, TracerAdvection
 from pyFV3.utils.functional_validation import get_subset_func
 
 
@@ -53,7 +52,7 @@ class TranslateTracer2D1L(ParallelTranslate):
         inputs["tracers"] = self.get_advected_tracer_dict(
             inputs["tracers"], int(inputs.pop("nq"))
         )
-        transport = pyFV3.stencils.fvtp2d.FiniteVolumeTransport(
+        transport = FiniteVolumeTransport(
             stencil_factory=self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             grid_data=self.grid.grid_data,
@@ -62,7 +61,7 @@ class TranslateTracer2D1L(ParallelTranslate):
             hord=self.namelist.hord_tr,
         )
 
-        self.tracer_advection = pyFV3.stencils.tracer_2d_1l.TracerAdvection(
+        self.tracer_advection = TracerAdvection(
             self.stencil_factory,
             self.grid.quantity_factory,
             transport,

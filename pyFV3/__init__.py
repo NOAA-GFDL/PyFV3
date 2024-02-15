@@ -1,7 +1,33 @@
 from ._config import DynamicalCoreConfig
 from .dycore_state import DycoreState
-from .stencils import AcousticDynamics, DryConvectiveAdjustment, DynamicalCore
-from .testing import TranslateDynCore, TranslateFVDynamics
+from .stencils import (
+    AcousticDynamics,
+    AdjustNegativeTracerMixingRatio,
+    CGridShallowWaterDynamics,
+    DGrid2AGrid2CGridVectors,
+    DivergenceDamping,
+    DryConvectiveAdjustment,
+    DynamicalCore,
+    FiniteVolumeFluxPrep,
+    FiniteVolumeTransport,
+    HyperdiffusionDamping,
+    LagrangianToEulerian,
+    NonhydrostaticVerticalSolver,
+    NonhydrostaticVerticalSolverCGrid,
+    PK3Halo,
+    RayleighDamping,
+    SatAdjust3d,
+    TracerAdvection,
+    UpdateGeopotentialHeightOnCGrid,
+    UpdateHeightOnDGrid,
+    XPiecewiseParabolic,
+    YPiecewiseParabolic,
+)
+from .testing import (
+    TranslateDycoreFortranData2Py,
+    TranslateDynCore,
+    TranslateFVDynamics,
+)
 from .wrappers import GeosDycoreWrapper
 
 

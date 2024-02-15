@@ -2,7 +2,7 @@ import pyFV3.stencils.delnflux as delnflux
 from ndsl.constants import Z_DIM
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyFV3 import TranslateDycoreFortranData2Py
 
 
 class TranslateDelnFlux(TranslateDycoreFortranData2Py):
