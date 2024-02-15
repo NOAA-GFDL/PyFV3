@@ -98,6 +98,7 @@ def setup_dycore() -> Tuple[pyFV3.DynamicalCore, List[Any]]:
     metric_terms = MetricTerms(
         quantity_factory=quantity_factory,
         communicator=communicator,
+        eta_file="/pyFV3/test_data/eta79.nc",
     )
     grid_data = GridData.new_from_metric_terms(metric_terms)
 
