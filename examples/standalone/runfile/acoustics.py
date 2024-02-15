@@ -15,9 +15,7 @@ from ndsl.comm.null_comm import NullComm
 from ndsl.dsl.dace.orchestration import DaceConfig
 from ndsl.dsl.stencil import CompilationConfig
 from ndsl.stencils.testing.grid import Grid
-from pyFV3._config import DynamicalCoreConfig
-from pyFV3.stencils.dyn_core import AcousticDynamics
-from pyFV3.testing import TranslateDynCore
+from pyFV3 import AcousticDynamics, DynamicalCoreConfig, TranslateDynCore
 
 
 try:

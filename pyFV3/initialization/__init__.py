@@ -1,3 +1,9 @@
+"""Creates dycore state object out of analytic initial conditions"""
 from .analytic_init import init_analytic_state
-from .test_cases.initialize_baroclinic import init_baroclinic_state
-from .test_cases.initialize_tc import init_tc_state
+from .test_cases import init_baroclinic_state
+
+
+"""
+init_analytic_state: Method to initialize analytic test cases
+init_baroclinic_state: Method to initialize analytic baroclinic wave case
+"""
