@@ -62,7 +62,7 @@ clean:
 		docker image rm $(IMAGE_NAME); \
 	fi
 
-	if [ ! -d .gt_cache* ]; then \
+	if [ -d .gt_cache* ]; then \
 		rm -r .gt_cache*; \
 	fi
 
