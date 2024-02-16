@@ -1,7 +1,7 @@
+import pyFV3.stencils.nh_p_grad as NH_P_Grad
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
 from pyFV3 import TranslateDycoreFortranData2Py
-import pyFV3.stencils.nh_p_grad as NH_P_Grad
 
 
 class TranslateNH_P_Grad(TranslateDycoreFortranData2Py):

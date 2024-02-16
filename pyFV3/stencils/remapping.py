@@ -13,6 +13,7 @@ from gt4py.cartesian.gtscript import (
     region,
 )
 
+import pyFV3.stencils.moist_cv as moist_cv
 from ndsl.checkpointer import Checkpointer
 from ndsl.constants import (
     X_DIM,
@@ -33,7 +34,6 @@ from pyFV3.stencils.map_single import MapSingle
 from pyFV3.stencils.mapn_tracer import MapNTracer
 from pyFV3.stencils.moist_cv import moist_pt_func, moist_pt_last_step
 from pyFV3.stencils.saturation_adjustment import SatAdjust3d
-import pyFV3.stencils.moist_cv as moist_cv
 
 
 # TODO: Should this be set here or in global_constants?

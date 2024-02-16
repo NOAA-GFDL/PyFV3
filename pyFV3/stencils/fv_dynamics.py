@@ -5,6 +5,7 @@ from dace.frontend.python.interface import nounroll as dace_no_unroll
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 import ndsl.dsl.gt4py_utils as utils
+import pyFV3.stencils.moist_cv as moist_cv
 from ndsl.checkpointer import Checkpointer, NullCheckpointer
 from ndsl.comm.communicator import Communicator
 from ndsl.comm.mpi import MPI
@@ -25,7 +26,6 @@ from pyFV3.stencils import fvtp2d, tracer_2d_1l
 from pyFV3.stencils.basic_operations import copy_defn
 from pyFV3.stencils.del2cubed import HyperdiffusionDamping
 from pyFV3.stencils.dyn_core import AcousticDynamics
-import pyFV3.stencils.moist_cv as moist_cv
 from pyFV3.stencils.neg_adj3 import AdjustNegativeTracerMixingRatio
 from pyFV3.stencils.remapping import LagrangianToEulerian
 

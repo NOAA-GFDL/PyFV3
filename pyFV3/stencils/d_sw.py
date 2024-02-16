@@ -10,6 +10,7 @@ from gt4py.cartesian.gtscript import (
     region,
 )
 
+import pyFV3.stencils.delnflux as delnflux
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.stencil import StencilFactory
@@ -18,7 +19,6 @@ from ndsl.grid import DampingCoefficients, GridData
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
 from pyFV3._config import DGridShallowWaterLagrangianDynamicsConfig
-import pyFV3.stencils.delnflux as delnflux
 from pyFV3.stencils.d2a2c_vect import contravariant
 from pyFV3.stencils.delnflux import DelnFluxNoSG
 from pyFV3.stencils.divergence_damping import DivergenceDamping

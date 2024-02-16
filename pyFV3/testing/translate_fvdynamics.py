@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Tuple
 import pytest
 
 import ndsl.dsl.gt4py_utils as utils
+import pyFV3.stencils.fv_dynamics as fv_dynamics
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,
@@ -22,7 +23,6 @@ from ndsl.stencils.testing import ParallelTranslateBaseSlicing
 from ndsl.stencils.testing.translate import TranslateFortranData2Py
 from pyFV3._config import DynamicalCoreConfig
 from pyFV3.dycore_state import DycoreState
-import pyFV3.stencils.fv_dynamics as fv_dynamics
 
 
 class TranslateDycoreFortranData2Py(TranslateFortranData2Py):
