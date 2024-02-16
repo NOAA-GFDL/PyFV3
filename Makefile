@@ -65,7 +65,7 @@ clean:
 	if [ ! -d .gt_cache* ]; then \
 		rm -r .gt_cache*; \
 	fi
-	
+
 
 enter:
 	docker run --rm -it \
