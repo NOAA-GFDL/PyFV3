@@ -1,12 +1,11 @@
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
-# import pyFV3
-import pyFV3.stencils.ytp_v as ytp_v
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from ndsl.namelist import Namelist
 from pyFV3 import DynamicalCoreConfig, TranslateDycoreFortranData2Py
+import pyFV3.stencils.ytp_v as ytp_v
 
 
 def ytp_v_stencil_defn(

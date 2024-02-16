@@ -4,7 +4,6 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
 
-# import pyFV3
 from pyFV3 import (
     DynamicalCoreConfig,
     TranslateDycoreFortranData2Py,

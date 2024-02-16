@@ -1,4 +1,3 @@
-# import pyFV3
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
 from pyFV3 import DynamicalCoreConfig, SatAdjust3d, TranslateDycoreFortranData2Py
