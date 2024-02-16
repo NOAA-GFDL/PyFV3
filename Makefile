@@ -3,6 +3,7 @@ CWD=$(shell pwd)
 CMD ?= bash
 DEV ?=y
 ROOT_DIR ?= /pyFV3
+IMAGE_NAME ?= noaa-gfdl/pyfv3
 
 NUM_RANKS ?=6
 MPIRUN_ARGS ?=--oversubscribe --mca btl_vader_single_copy_mechanism none
@@ -16,10 +17,10 @@ TEST_RESOLUTION ?= c12
 TEST_CONFIG ?= $(TEST_RESOLUTION)_$(NUM_RANKS)ranks
 TEST_CASE ?=$(TEST_CONFIG)_$(TEST_TYPE)
 TEST_ARGS ?=-vs
+
 PORT ?=8888
 RUN_FLAGS ?=--rm
 RUN_FLAGS += -e FV3_DACEMODE=$(FV3_DACEMODE)
-IMAGE_NAME ?= noaa-gfdl/pyfv3
 APP_NAME ?=pyFV3_dev
 SAVEPOINT_SETUP=pip list
 THRESH_ARGS=--threshold_overrides_file=$(ROOT_DIR)/tests/savepoint/translate/overrides/$(TEST_TYPE).yaml
@@ -31,7 +32,7 @@ ifeq ($(DEV), y)
 	VOLUMES += -v $(CWD):/pyFV3
 endif
 
-TEST_DATA_TARFILE = $(TEST_DATA_VERSION)_$(TEST_RESOLUTION)_$(NUM_RANKS)_ranks_$(TEST_TYPE).tar.gz
+TEST_DATA_TARFILE = $(TEST_DATA_VERSION)_$(TEST_CONFIG)_$(TEST_TYPE).tar.gz
 
 CONTAINER_CMD?=docker run $(RUN_FLAGS) $(VOLUMES) $(IMAGE_NAME)
 
@@ -60,7 +61,11 @@ clean:
 	if [ -n "$(docker images -q $(IMAGE_NAME))" ]; then \
 		docker image rm $(IMAGE_NAME); \
 	fi
-	rm -r .gt_cache*
+
+	if [ ! -d .gt_cache* ]; then \
+		rm -r .gt_cache*; \
+	fi
+	
 
 enter:
 	docker run --rm -it \

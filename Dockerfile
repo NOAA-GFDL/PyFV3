@@ -1,7 +1,5 @@
 FROM python:3.8
 
-ENV DEBIAN_FRONTEND=noninteractive
-
 RUN apt-get update &&\
     apt install -y --no-install-recommends \
     software-properties-common
@@ -35,7 +33,7 @@ RUN which pip
 COPY ./ /pyFV3/
 
 # Install pyFV3 and the full dependencies
-RUN pip install -e pyFV3[ndsl]
+RUN pip install -e pyFV3[develop]
 
 RUN pip install \
     matplotlib \
