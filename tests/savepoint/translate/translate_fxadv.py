@@ -3,7 +3,8 @@ import numpy as np
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
-from pyFV3 import FiniteVolumeFluxPrep, TranslateDycoreFortranData2Py
+from pyFV3.stencils import FiniteVolumeFluxPrep
+from pyFV3.testing import TranslateDycoreFortranData2Py
 from pyFV3.utils.functional_validation import get_subset_func
 
 

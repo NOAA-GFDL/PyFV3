@@ -5,7 +5,8 @@ from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from ndsl.namelist import Namelist
-from pyFV3 import DynamicalCoreConfig, TranslateDycoreFortranData2Py
+from pyFV3 import DynamicalCoreConfig
+from pyFV3.testing import TranslateDycoreFortranData2Py
 
 
 def ytp_v_stencil_defn(
