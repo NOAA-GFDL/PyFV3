@@ -6,9 +6,9 @@ from .validation import enable_selective_validation
 
 
 """
-MapSingleFactory: Pool of objects to have one vertical layer remapped
+MapSingleFactory: Pool of objects to apply vertical remapping to multiple fields
 TranslateDynCore: Translate test for dynamical core
-TranslateDycoreFortranData2Py: Translate test for Fortran data into Python data
+TranslateDycoreFortranData2Py: Infrastructure to format serialized fortran data for translate tests
 TranslateFVDynamics: Translate test of acoustic dynamics
 enable_selective_validation: Allows for selection of data for translate tests
 """
