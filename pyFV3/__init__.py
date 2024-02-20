@@ -1,7 +1,6 @@
 from ._config import DynamicalCoreConfig
 from .dycore_state import DycoreState
 from .stencils import DryConvectiveAdjustment, DynamicalCore
-from .wrappers import GeosDycoreWrapper
 
 
 """
