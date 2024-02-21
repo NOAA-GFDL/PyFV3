@@ -3,7 +3,7 @@ from typing import Any, Dict
 import ndsl.dsl.gt4py_utils as utils
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
-from pyFV3.stencils.neg_adj3 import AdjustNegativeTracerMixingRatio
+from pyFV3.stencils import AdjustNegativeTracerMixingRatio
 from pyFV3.testing import TranslateDycoreFortranData2Py
 
 

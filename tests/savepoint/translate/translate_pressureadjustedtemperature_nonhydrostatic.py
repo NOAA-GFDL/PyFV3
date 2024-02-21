@@ -1,8 +1,8 @@
 from typing import Any, Dict
 
-import pyFV3
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
+from pyFV3 import DynamicalCoreConfig
 from pyFV3.stencils import temperature_adjust
 from pyFV3.stencils.dyn_core import get_nk_heat_dissipation
 from pyFV3.testing import TranslateDycoreFortranData2Py
@@ -18,7 +18,7 @@ class TranslatePressureAdjustedTemperature_NonHydrostatic(
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
-        dycore_config = pyFV3.DynamicalCoreConfig.from_namelist(namelist)
+        dycore_config = DynamicalCoreConfig.from_namelist(namelist)
         self.namelist = dycore_config
         n_adj = get_nk_heat_dissipation(
             config=dycore_config.d_grid_shallow_water,

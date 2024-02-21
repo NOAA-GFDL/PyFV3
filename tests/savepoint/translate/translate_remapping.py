@@ -3,7 +3,7 @@ from ndsl.constants import Z_DIM
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
 from pyFV3 import DynamicalCoreConfig
-from pyFV3.stencils.remapping import LagrangianToEulerian
+from pyFV3.stencils import LagrangianToEulerian
 from pyFV3.testing import TranslateDycoreFortranData2Py
 
 

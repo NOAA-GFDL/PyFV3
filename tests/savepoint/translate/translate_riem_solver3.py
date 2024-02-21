@@ -1,7 +1,7 @@
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
 from pyFV3 import _config as spec
-from pyFV3.stencils.riem_solver3 import NonhydrostaticVerticalSolver
+from pyFV3.stencils import NonhydrostaticVerticalSolver
 from pyFV3.testing import TranslateDycoreFortranData2Py
 
 
