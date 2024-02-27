@@ -10,7 +10,6 @@ from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients
 from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
-from pyFV3.version import IS_GEOS
 
 
 def calc_damp(damp_c: Quantity, da_min: Float, nord: Quantity) -> Quantity:
