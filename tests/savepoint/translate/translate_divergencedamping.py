@@ -34,6 +34,13 @@ class TranslateDivergenceDamping(TranslateDycoreFortranData2Py):
         self.out_vars = {
             "ke": {"iend": grid.ied + 1, "jend": grid.jed + 1},
             "delpc": {},
+            "damped_rel_vort_bgrid": {
+                "serialname": "vort",
+                "istart": grid.is_,
+                "jstart": grid.js,
+                "iend": grid.ie + 1,
+                "jend": grid.je + 1,
+            },
         }
         self.max_error = 1.4e-10
         self.divdamp: Optional[DivergenceDamping] = None
