@@ -17,7 +17,6 @@ from ndsl.initialization.allocator import QuantityFactory
 from ndsl.quantity import Quantity
 from ndsl.stencils import corners
 from pyFV3.stencils.d2a2c_vect import DGrid2AGrid2CGridVectors
-from pyFV3.version import IS_GEOS
 
 
 def zero_delpc_ptc(delpc: FloatField, ptc: FloatField):
@@ -283,12 +282,7 @@ def compute_nonhydrostatic_fluxes_x(
 
 
 @gtscript.function
-def _flux_difference_FV3GFS(fx, fy):
-    return fx - fx[1, 0, 0] + fy - fy[0, 1, 0]
-
-
-@gtscript.function
-def _flux_difference_GEOS(fx, fy):
+def _flux_difference(fx, fy):
     return (fx - fx[1, 0, 0]) + (fy - fy[0, 1, 0])
 
 
@@ -360,7 +354,7 @@ def transportdelp_update_vorticity_and_kineticenergy(
         dt2 (in): length of half a timestep
     """
 
-    from __externals__ import GEOS, grid_type, i_end, i_start, j_end, j_start
+    from __externals__ import grid_type, i_end, i_start, j_end, j_start
 
     with computation(PARALLEL), interval(...):
         # assume (not grid.nested)
@@ -372,14 +366,9 @@ def transportdelp_update_vorticity_and_kineticenergy(
         fy = fy1 * fy
         fy2 = fy1 * fy2
 
-        if __INLINED(GEOS):
-            delpc = delp + _flux_difference_GEOS(fx1, fy1) * rarea
-            ptc = (pt * delp + _flux_difference_GEOS(fx, fy) * rarea) / delpc
-            wc = (w * delp + _flux_difference_GEOS(fx2, fy2) * rarea) / delpc
-        else:
-            delpc = delp + _flux_difference_FV3GFS(fx1, fy1) * rarea
-            ptc = (pt * delp + _flux_difference_FV3GFS(fx, fy) * rarea) / delpc
-            wc = (w * delp + _flux_difference_FV3GFS(fx2, fy2) * rarea) / delpc
+        delpc = delp + _flux_difference(fx1, fy1) * rarea
+        ptc = (pt * delp + _flux_difference(fx, fy) * rarea) / delpc
+        wc = (w * delp + _flux_difference(fx2, fy2) * rarea) / delpc
 
     with computation(PARALLEL), interval(...):
         # update vorticity and kinetic energy
@@ -402,12 +391,7 @@ def transportdelp_update_vorticity_and_kineticenergy(
 
 
 @gtscript.function
-def _flux_difference_4_terms_FV3GFS(fx, fx1, fy, fy1):
-    return fx1 - fx - fy1 + fy
-
-
-@gtscript.function
-def _flux_difference_4_terms_GEOS(fx, fx1, fy, fy1):
+def _flux_difference_4_terms(fx, fx1, fy, fy1):
     return (fx1 - fx) + (fy - fy1)
 
 
@@ -427,8 +411,6 @@ def circulation_cgrid(
         dyc (in): grid spacing in y-dir
         vort_c (out): C-grid relative vorticity
     """
-    from __externals__ import GEOS
-
     with computation(PARALLEL), interval(...):
         fx = dxc * uc
         fy = dyc * vc
@@ -437,11 +419,7 @@ def circulation_cgrid(
         fx1 = dxc[0, -1] * uc[0, -1, 0]
         fy1 = dyc[-1, 0] * vc[-1, 0, 0]
 
-        vort_c = fx1 - fx - fy1 + fy
-        if __INLINED(GEOS):
-            vort_c = _flux_difference_4_terms_GEOS(fx, fx1, fy, fy1)
-        else:
-            vort_c = _flux_difference_4_terms_FV3GFS(fx, fx1, fy, fy1)
+        vort_c = _flux_difference_4_terms(fx, fx1, fy, fy1)
 
 
 def absolute_vorticity(vort: FloatField, fC: FloatFieldIJ, rarea_c: FloatFieldIJ):
@@ -642,13 +620,12 @@ class CGridShallowWaterDynamics:
             func=transportdelp_update_vorticity_and_kineticenergy,
             compute_dims=[X_DIM, Y_DIM, Z_DIM],
             compute_halos=(1, 1),
-            externals={"grid_type": grid_type, "GEOS": IS_GEOS},
+            externals={"grid_type": grid_type},
         )
 
         self._circulation_cgrid = stencil_factory.from_dims_halo(
             func=circulation_cgrid,
             compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
-            externals={"GEOS": IS_GEOS},
         )
         self._absolute_vorticity = stencil_factory.from_dims_halo(
             func=absolute_vorticity,
