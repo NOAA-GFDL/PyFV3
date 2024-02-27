@@ -213,11 +213,11 @@ class GeosDycoreWrapper:
             f"             dt : {self.dycore_state.bdt}\n"
             f"         bridge : {self._fortran_mem_space} > {self._pace_mem_space}\n"
             f"        backend : {backend}\n"
-            f"          float : {floating_point_precision()}bit"
+            f"          float : {floating_point_precision()}bit\n"
             f"  orchestration : {self._is_orchestrated}\n"
             f"          sizer : {sizer.nx}x{sizer.ny}x{sizer.nz}"
             f"(halo: {sizer.n_halo})\n"
-            f"     Device ord : {device_ordinal_info}\n"
+            f"     Device ord : {device_ordinal_info}"  # \n in the device_ordinal_info
             f"     Nvidia MPS : {MPS_is_on}"
         )
 
