@@ -200,18 +200,14 @@ DivergenceDamping:
     max_error: 1e-9
 
 DelnFlux:
-  - backend: dace:cpu
-    max_error: 2e-13
-  - backend: dace:gpu
-    max_error: 7e-13
+  - max_error: 2e-13 # changes in code for mass conservation at single precision, which is not included in original translate tests.
 
 Del2Cubed:
   - backend: dace:cpu
     max_error: 8e-12
 
 FvTp2d:
-  - backend: dace:cpu
-    max_error: 2e-13
+  - max_error: 2e-13 # changes in code for mass conservation at single precision, which is not included in original translate tests.
 
 FxAdv:
   - backend: dace:cpu

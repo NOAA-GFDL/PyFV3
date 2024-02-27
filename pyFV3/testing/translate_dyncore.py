@@ -5,7 +5,8 @@ from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
 from ndsl.quantity import Quantity
 from ndsl.stencils.testing import ParallelTranslate2PyState
-from pyFV3 import DycoreState, DynamicalCoreConfig
+from pyFV3._config import DynamicalCoreConfig
+from pyFV3.dycore_state import DycoreState
 
 
 class TranslateDynCore(ParallelTranslate2PyState):

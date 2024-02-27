@@ -1,11 +1,10 @@
 import numpy as np
 
-import pyFV3
-import pyFV3.stencils.updatedzd
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
-from pyFV3.stencils import d_sw
+from pyFV3 import DynamicalCoreConfig
+from pyFV3.stencils import UpdateHeightOnDGrid, d_sw
 from pyFV3.testing import TranslateDycoreFortranData2Py
 from pyFV3.utils.functional_validation import get_subset_func
 
@@ -50,7 +49,7 @@ class TranslateUpdateDzD(TranslateDycoreFortranData2Py):
         self.out_vars["ws"]["kstart"] = grid.npz
         self.out_vars["ws"]["kend"] = None
         self.stencil_factory = stencil_factory
-        self.namelist = pyFV3.DynamicalCoreConfig.from_namelist(namelist)
+        self.namelist = DynamicalCoreConfig.from_namelist(namelist)
         self._subset = get_subset_func(
             self.grid.grid_indexing,
             dims=[X_DIM, Y_DIM, Z_DIM],
@@ -61,7 +60,7 @@ class TranslateUpdateDzD(TranslateDycoreFortranData2Py):
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
-        self.updatedzd = pyFV3.stencils.updatedzd.UpdateHeightOnDGrid(
+        self.updatedzd = UpdateHeightOnDGrid(
             self.stencil_factory,
             self.grid.quantity_factory,
             self.grid.damping_coefficients,

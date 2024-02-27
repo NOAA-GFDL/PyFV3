@@ -1,11 +1,11 @@
 from types import SimpleNamespace
 
 import ndsl.dsl.gt4py_utils as utils
-import pyFV3.stencils.fv_subgridz as fv_subgridz
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.dsl.stencil import StencilFactory
 from ndsl.namelist import Namelist
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
+from pyFV3 import DryConvectiveAdjustment
 
 
 # NOTE, does no halo updates, does not need to be a Parallel test,
@@ -181,7 +181,7 @@ class TranslateFVSubgridZ(ParallelTranslateBaseSlicing):
 
     def compute_parallel(self, inputs, communicator):
         state = self.state_from_inputs(inputs)
-        fvsubgridz = fv_subgridz.DryConvectiveAdjustment(
+        fvsubgridz = DryConvectiveAdjustment(
             self.stencil_factory,
             self.grid.quantity_factory,
             self.namelist.nwat,
@@ -201,7 +201,7 @@ class TranslateFVSubgridZ(ParallelTranslateBaseSlicing):
     def compute_sequential(self, inputs_list, communicator_list):
         state_list = self.state_list_from_inputs_list(inputs_list)
         for state in state_list:
-            fvsubgridz = fv_subgridz.DryConvectiveAdjustment(
+            fvsubgridz = DryConvectiveAdjustment(
                 self.stencil_factory,
                 self.grid.quantity_factory,
                 self.namelist.nwat,
