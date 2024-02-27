@@ -113,20 +113,7 @@ def fy_calculation_neg(q: FloatField, del6_u: FloatField):
     return -del6_u * (q[0, -1, 0] - q)
 
 
-def d2_highorder_stencil_FV3GFS(
-    fx: FloatField,
-    fy: FloatField,
-    rarea: FloatFieldIJ,
-    nord: FloatFieldK,
-    d2: FloatField,
-    current_nord: int,
-):
-    with computation(PARALLEL), interval(...):
-        if nord > current_nord:
-            d2 = (fx - fx[1, 0, 0] + fy - fy[0, 1, 0]) * rarea
-
-
-def d2_highorder_stencil_GEOS(
+def d2_highorder_stencil(
     fx: FloatField,
     fy: FloatField,
     rarea: FloatFieldIJ,
@@ -137,13 +124,6 @@ def d2_highorder_stencil_GEOS(
     with computation(PARALLEL), interval(...):
         if nord > current_nord:
             d2 = ((fx - fx[1, 0, 0]) + (fy - fy[0, 1, 0])) * rarea
-
-
-def _get_highorder_stencil():
-    if IS_GEOS:
-        return d2_highorder_stencil_GEOS
-    else:
-        return d2_highorder_stencil_FV3GFS
 
 
 def d2_damp_interval(
@@ -593,7 +573,7 @@ class DelnFluxNoSG:
         )
 
         self._d2_stencil = get_stencils_with_varied_bounds(
-            _get_highorder_stencil(),
+            d2_highorder_stencil,
             origins_d2,
             domains_d2,
             stencil_factory=stencil_factory,
