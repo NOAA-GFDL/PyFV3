@@ -144,7 +144,7 @@ def apply_fluxes(
     # to the original units.
     with computation(PARALLEL), interval(...):
         # in the original Fortran, this uses `w` instead of `q`
-        q = q * delp + ((gx - gx[1, 0, 0]) + (gy - gy[0, 1, 0])) * rarea
+        q = q * delp + flux_increment(gx, gy, rarea)
 
 
 @gtscript.function
@@ -440,7 +440,7 @@ def u_from_ke(ke, u, dx, fy):
 
 @gtscript.function
 def v_from_ke(ke, v, dy, fx):
-    # see docstring for u_from_ke_FV3GFS
+    # see docstring for u_from_ke
     return v * dy + (ke - ke[0, 1, 0]) - fx
 
 

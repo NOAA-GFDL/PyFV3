@@ -390,11 +390,6 @@ def transportdelp_update_vorticity_and_kineticenergy(
         ke = 0.5 * dt2 * (ua * ke + va * vort)
 
 
-@gtscript.function
-def _flux_difference_4_terms(fx, fx1, fy, fy1):
-    return (fx1 - fx) + (fy - fy1)
-
-
 def circulation_cgrid(
     uc: FloatField,
     vc: FloatField,
@@ -411,6 +406,8 @@ def circulation_cgrid(
         dyc (in): grid spacing in y-dir
         vort_c (out): C-grid relative vorticity
     """
+    from __externals__ import i_end, i_start, j_end, j_start
+
     with computation(PARALLEL), interval(...):
         fx = dxc * uc
         fy = dyc * vc
@@ -419,7 +416,11 @@ def circulation_cgrid(
         fx1 = dxc[0, -1] * uc[0, -1, 0]
         fy1 = dyc[-1, 0] * vc[-1, 0, 0]
 
-        vort_c = _flux_difference_4_terms(fx, fx1, fy, fy1)
+        vort_c = (fx1 - fx) + (fy - fy1)
+        with horizontal(region[i_start, j_start], region[i_start, j_end + 1]):
+            vort_c = fx1 - fx + fy
+        with horizontal(region[i_end + 1, j_start], region[i_end + 1, j_end + 1]):
+            vort_c = fx1 - fx - fy1
 
 
 def absolute_vorticity(vort: FloatField, fC: FloatFieldIJ, rarea_c: FloatFieldIJ):
