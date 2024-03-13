@@ -1,11 +1,10 @@
 import numpy as np
 
 import ndsl.constants as constants
-import pyFV3.initialization.init_utils as init_utils
-from ndsl.comm.communicator import CubedSphereCommunicator
+from ndsl import CubedSphereCommunicator, QuantityFactory
 from ndsl.grid import GridData, great_circle_distance_lon_lat
-from ndsl.initialization.allocator import QuantityFactory
 from pyFV3.dycore_state import DycoreState
+from pyFV3.initialization import init_utils
 
 
 def _calculate_distance_from_tc_center(pe_v, ps_v, muv, calc, tc_properties):

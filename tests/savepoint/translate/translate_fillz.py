@@ -1,11 +1,10 @@
 import numpy as np
 
 import ndsl.dsl.gt4py_utils as utils
-import pyFV3.stencils.fillz as fillz
-from ndsl.dsl.stencil import StencilFactory
-from ndsl.namelist import Namelist
+from ndsl import Namelist, StencilFactory
 from ndsl.stencils.testing import pad_field_in_j
 from ndsl.utils import safe_assign_array
+from pyFV3.stencils import fillz
 from pyFV3.testing import TranslateDycoreFortranData2Py
 
 

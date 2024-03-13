@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 import ndsl.dsl.gt4py_utils as utils
+from ndsl import Namelist, StencilFactory
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,
@@ -11,11 +12,10 @@ from ndsl.constants import (
     Y_INTERFACE_DIM,
     Z_INTERFACE_DIM,
 )
-from ndsl.dsl.stencil import StencilFactory
-from ndsl.grid import MetricTerms, set_hybrid_pressure_coefficients
+from ndsl.grid import MetricTerms
+from ndsl.grid.eta import set_hybrid_pressure_coefficients
 from ndsl.grid.global_setup import global_mirror_grid, gnomonic_grid
-from ndsl.namelist import Namelist
-from ndsl.stencils.testing.parallel_translate import ParallelTranslateGrid
+from ndsl.stencils.testing import ParallelTranslateGrid
 
 
 class TranslateGnomonicGrids(ParallelTranslateGrid):

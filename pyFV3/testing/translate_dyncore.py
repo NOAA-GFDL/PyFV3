@@ -1,12 +1,10 @@
 import ndsl.dsl.gt4py_utils as utils
-import pyFV3.stencils.dyn_core as dyn_core
+from ndsl import Namelist, Quantity, StencilFactory
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
-from ndsl.dsl.stencil import StencilFactory
-from ndsl.namelist import Namelist
-from ndsl.quantity import Quantity
 from ndsl.stencils.testing import ParallelTranslate2PyState
 from pyFV3._config import DynamicalCoreConfig
 from pyFV3.dycore_state import DycoreState
+from pyFV3.stencils import dyn_core
 
 
 class TranslateDynCore(ParallelTranslate2PyState):

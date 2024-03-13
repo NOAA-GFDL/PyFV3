@@ -1,9 +1,8 @@
 from types import SimpleNamespace
 
 import ndsl.dsl.gt4py_utils as utils
+from ndsl import Namelist, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
-from ndsl.dsl.stencil import StencilFactory
-from ndsl.namelist import Namelist
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
 from pyFV3 import DryConvectiveAdjustment
 

@@ -10,13 +10,11 @@ from gt4py.cartesian.gtscript import (
     region,
 )
 
+from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
-from ndsl.dsl.dace.orchestration import orchestrate
-from ndsl.dsl.stencil import StencilFactory, get_stencils_with_varied_bounds
+from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients
-from ndsl.initialization.allocator import QuantityFactory
-from ndsl.quantity import Quantity
 
 
 def calc_damp(damp_c: Quantity, da_min: Float, nord: Quantity) -> Quantity:

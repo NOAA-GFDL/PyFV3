@@ -9,7 +9,7 @@ from gt4py.cartesian.gtscript import (
     region,
 )
 
-from ndsl.dsl.stencil import StencilFactory
+from ndsl import StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ, Index3D
 from pyFV3.stencils import ppm
 from pyFV3.stencils.basic_operations import sign

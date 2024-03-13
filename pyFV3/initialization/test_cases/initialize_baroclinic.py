@@ -4,11 +4,11 @@ import numpy as np
 
 import ndsl.constants as constants
 import ndsl.dsl.gt4py_utils as utils
-import pyFV3.initialization.init_utils as init_utils
-from ndsl.comm.communicator import CubedSphereCommunicator
-from ndsl.grid import GridData, great_circle_distance_lon_lat, lon_lat_midpoint
-from ndsl.initialization.allocator import QuantityFactory
+from ndsl import CubedSphereCommunicator, QuantityFactory
+from ndsl.grid import GridData
+from ndsl.grid.gnomonic import great_circle_distance_lon_lat, lon_lat_midpoint
 from pyFV3.dycore_state import DycoreState
+from pyFV3.initialization import init_utils
 
 
 # maximum windspeed amplitude - close to windspeed of zonal-mean time-mean

@@ -1,3 +1,4 @@
+from ndsl import Namelist, StencilFactory
 from ndsl.constants import (
     N_HALO_DEFAULT,
     X_DIM,
@@ -7,9 +8,7 @@ from ndsl.constants import (
     Z_DIM,
     Z_INTERFACE_DIM,
 )
-from ndsl.dsl.stencil import StencilFactory
 from ndsl.logging import ndsl_log
-from ndsl.namelist import Namelist
 from ndsl.stencils.testing import ParallelTranslate
 
 

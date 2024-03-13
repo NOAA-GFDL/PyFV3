@@ -1,9 +1,8 @@
 import pytest
 
 import ndsl.dsl.gt4py_utils as utils
+from ndsl import Namelist, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from ndsl.dsl.stencil import StencilFactory
-from ndsl.namelist import Namelist
 from ndsl.stencils.testing import ParallelTranslate
 from pyFV3.stencils import FiniteVolumeTransport, TracerAdvection
 from pyFV3.utils.functional_validation import get_subset_func

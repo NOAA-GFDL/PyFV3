@@ -1,7 +1,6 @@
 import ndsl.dsl.gt4py_utils as utils
+from ndsl import Namelist, StencilFactory
 from ndsl.constants import Z_DIM
-from ndsl.dsl.stencil import StencilFactory
-from ndsl.namelist import Namelist
 from pyFV3 import DynamicalCoreConfig
 from pyFV3.stencils import LagrangianToEulerian
 from pyFV3.testing import TranslateDycoreFortranData2Py

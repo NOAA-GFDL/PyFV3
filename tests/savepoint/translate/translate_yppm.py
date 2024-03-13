@@ -1,7 +1,6 @@
 import ndsl.dsl.gt4py_utils as utils
-from ndsl.dsl.stencil import StencilFactory
+from ndsl import Namelist, StencilFactory
 from ndsl.dsl.typing import Float
-from ndsl.namelist import Namelist
 from ndsl.stencils.testing import TranslateGrid
 from pyFV3.stencils import YPiecewiseParabolic
 from pyFV3.testing import TranslateDycoreFortranData2Py

@@ -1,7 +1,6 @@
 from typing import Any, Dict
 
-from ndsl.dsl.stencil import StencilFactory
-from ndsl.namelist import Namelist
+from ndsl import Namelist, StencilFactory
 from pyFV3.stencils import HyperdiffusionDamping
 from pyFV3.testing import TranslateDycoreFortranData2Py
 

@@ -1,12 +1,11 @@
 from gt4py.cartesian.gtscript import PARALLEL, computation, horizontal, interval, region
 
 import ndsl.stencils.corners as corners
+from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
-from ndsl.dsl.dace.orchestration import orchestrate
-from ndsl.dsl.stencil import StencilFactory, get_stencils_with_varied_bounds
+from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, cast_to_index3d
 from ndsl.grid import DampingCoefficients
-from ndsl.initialization.allocator import QuantityFactory
 from pyFV3.stencils.basic_operations import copy_defn
 
 

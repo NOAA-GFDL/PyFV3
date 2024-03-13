@@ -17,16 +17,22 @@ from mpi4py import MPI
 # NOTE: we need to import dsl.stencil prior to
 # ndsl.util, otherwise xarray precedes gt4py, causing
 # very strange errors on some systems (e.g. daint)
-import ndsl.dsl.stencil
-import ndsl.util as util
-from ndsl.comm.null_comm import NullComm
-from ndsl.dsl import StencilFactory
-from ndsl.dsl.dace.orchestration import DaceConfig
+from ndsl import (
+    CompilationConfig,
+    CubedSphereCommunicator,
+    CubedSpherePartitioner,
+    DaceConfig,
+    NullComm,
+    StencilConfig,
+    StencilFactory,
+    TilePartitioner,
+)
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
-from ndsl.stencils.testing import dataset_to_dict
-from ndsl.stencils.testing.grid import Grid
-from pyFV3 import DycoreState, DynamicalCore, DynamicalCoreConfig, TranslateFVDynamics
+from ndsl.performance import Timer
+from ndsl.stencils.testing import Grid, dataset_to_dict
+from pyFV3 import DycoreState, DynamicalCore, DynamicalCoreConfig
 from pyFV3.initialization.test_cases import init_baroclinic_state
+from pyFV3.testing import TranslateFVDynamics
 
 
 def parse_args() -> Namespace:
@@ -208,10 +214,8 @@ def setup_dycore(
     dycore_config, mpi_comm, backend, is_baroclinic_test_case, data_dir
 ) -> Tuple[DynamicalCore, DycoreState, StencilFactory]:
     # set up grid-dependent helper structures
-    partitioner = util.CubedSpherePartitioner(
-        util.TilePartitioner(dycore_config.layout)
-    )
-    communicator = util.CubedSphereCommunicator(mpi_comm, partitioner)
+    partitioner = CubedSpherePartitioner(TilePartitioner(dycore_config.layout))
+    communicator = CubedSphereCommunicator(mpi_comm, partitioner)
     grid = Grid.from_namelist(dycore_config, mpi_comm.rank, backend)
 
     dace_config = DaceConfig(
@@ -220,8 +224,8 @@ def setup_dycore(
         tile_nx=dycore_config.npx,
         tile_nz=dycore_config.npz,
     )
-    stencil_config = ndsl.dsl.stencil.StencilConfig(
-        compilation_config=ndsl.dsl.stencil.CompilationConfig(
+    stencil_config = StencilConfig(
+        compilation_config=CompilationConfig(
             backend=backend, rebuild=False, validate_args=False
         ),
         dace_config=dace_config,
@@ -265,7 +269,7 @@ def setup_dycore(
 
 
 if __name__ == "__main__":
-    timer = util.Timer()
+    timer = Timer()
     timer.start("total")
     with timer.clock("initialization"):
         args = parse_args()
@@ -308,7 +312,7 @@ if __name__ == "__main__":
     hits_per_step = []
     # we set up a specific timer for each timestep
     # that is cleared after so we get individual statistics
-    timestep_timer = util.Timer()
+    timestep_timer = Timer()
     for i in range(args.time_step - 1):
         with timestep_timer.clock("mainloop"):
             if rank == 0:

@@ -4,13 +4,16 @@ from typing import Any, List, Tuple, cast
 import ndsl.dsl.stencil
 import ndsl.stencils.testing
 import pyFV3.initialization.test_cases.initialize_baroclinic as baroclinic_init
-from ndsl.comm.communicator import CubedSphereCommunicator, TileCommunicator
-from ndsl.comm.mpi import MPIComm
-from ndsl.comm.partitioner import TilePartitioner
-from ndsl.dsl.stencil import GridIndexing
+from ndsl import (
+    CubedSphereCommunicator,
+    GridIndexing,
+    MPIComm,
+    QuantityFactory,
+    SubtileGridSizer,
+    TileCommunicator,
+    TilePartitioner,
+)
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
-from ndsl.initialization.allocator import QuantityFactory
-from ndsl.initialization.sizer import SubtileGridSizer
 from pyFV3 import DynamicalCore, DynamicalCoreConfig
 
 
