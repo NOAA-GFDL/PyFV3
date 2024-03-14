@@ -1,7 +1,7 @@
-import pyFV3.stencils.moist_cv as moist_cv
 from ndsl import Namelist, StencilFactory
 from ndsl.dsl.typing import FloatField
 from ndsl.stencils.testing import pad_field_in_j
+from pyFV3.stencils import moist_cv
 from pyFV3.testing import TranslateDycoreFortranData2Py
 
 

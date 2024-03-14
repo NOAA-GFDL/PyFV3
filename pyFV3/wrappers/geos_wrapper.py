@@ -17,6 +17,7 @@ from ndsl import (
     DaceConfig,
     DaCeOrchestration,
     GridIndexing,
+    NullComm,
     PerformanceCollector,
     QuantityFactory,
     StencilConfig,
@@ -26,7 +27,6 @@ from ndsl import (
     orchestrate,
 )
 from ndsl.comm.comm_abc import Comm
-from ndsl.comm.null_comm import NullComm
 from ndsl.dsl.dace.build import set_distributed_caches
 from ndsl.dsl.gt4py_utils import is_gpu_backend
 from ndsl.dsl.typing import floating_point_precision

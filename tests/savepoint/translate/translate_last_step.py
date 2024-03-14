@@ -1,5 +1,5 @@
-import pyFV3.stencils.moist_cv as moist_cv
 from ndsl import Namelist, StencilFactory
+from pyFV3.stencils import moist_cv
 from pyFV3.testing import TranslateDycoreFortranData2Py
 
 
