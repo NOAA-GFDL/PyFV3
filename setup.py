@@ -16,7 +16,7 @@ requirements = [
 ]
 
 test_requirements = ["pytest", "pytest-subtests", "serialbox"]
-ndsl_requirements = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@main"]
+ndsl_requirements = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@develop"]
 develop_requirements = test_requirements + ndsl_requirements + ["pre-commit"]
 
 extras_requires = {
