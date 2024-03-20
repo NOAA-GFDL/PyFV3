@@ -11,6 +11,7 @@ from gt4py.cartesian.gtscript import (
 )
 
 import ndsl.dsl.gt4py_utils as utils
+from ndsl import Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import (
     C_ICE,
     C_LIQ,
@@ -25,10 +26,7 @@ from ndsl.constants import (
     Z_DIM,
     ZVIR,
 )
-from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import Float, FloatField
-from ndsl.initialization.allocator import QuantityFactory
-from ndsl.quantity import Quantity
 from pyFV3.dycore_state import DycoreState
 from pyFV3.stencils.basic_operations import dim
 

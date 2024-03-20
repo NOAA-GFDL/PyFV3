@@ -4,7 +4,13 @@ from typing import Dict
 import gt4py.cartesian.gtscript as gtscript
 from gt4py.cartesian.gtscript import PARALLEL, computation, horizontal, interval, region
 
-from ndsl.comm.communicator import Communicator
+from ndsl import (
+    Quantity,
+    QuantityFactory,
+    StencilFactory,
+    WrappedHaloUpdater,
+    orchestrate,
+)
 from ndsl.constants import (
     N_HALO_DEFAULT,
     X_DIM,
@@ -13,12 +19,8 @@ from ndsl.constants import (
     Y_INTERFACE_DIM,
     Z_DIM,
 )
-from ndsl.dsl.dace.orchestration import orchestrate
-from ndsl.dsl.dace.wrapped_halo_exchange import WrappedHaloUpdater
-from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
-from ndsl.initialization.allocator import QuantityFactory
-from ndsl.quantity import Quantity
+from ndsl.typing import Communicator
 from pyFV3.stencils.fvtp2d import FiniteVolumeTransport
 
 

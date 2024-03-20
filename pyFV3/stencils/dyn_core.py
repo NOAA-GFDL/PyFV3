@@ -21,8 +21,15 @@ import pyFV3.stencils.ray_fast as ray_fast
 import pyFV3.stencils.temperature_adjust as temperature_adjust
 import pyFV3.stencils.updatedzc as updatedzc
 import pyFV3.stencils.updatedzd as updatedzd
-from ndsl.checkpointer import Checkpointer, NullCheckpointer
-from ndsl.comm.communicator import Communicator
+from ndsl import (
+    GridIndexing,
+    Quantity,
+    QuantityFactory,
+    StencilFactory,
+    WrappedHaloUpdater,
+    orchestrate,
+)
+from ndsl.checkpointer import NullCheckpointer
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,
@@ -31,13 +38,10 @@ from ndsl.constants import (
     Z_DIM,
     Z_INTERFACE_DIM,
 )
-from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
-from ndsl.dsl.dace.wrapped_halo_exchange import WrappedHaloUpdater
-from ndsl.dsl.stencil import GridIndexing, StencilFactory
+from ndsl.dsl.dace.orchestration import dace_inhibitor
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import DampingCoefficients, GridData
-from ndsl.initialization.allocator import QuantityFactory
-from ndsl.quantity import Quantity
+from ndsl.typing import Checkpointer, Communicator
 from pyFV3._config import AcousticDynamicsConfig
 from pyFV3.dycore_state import DycoreState
 from pyFV3.stencils.c_sw import CGridShallowWaterDynamics

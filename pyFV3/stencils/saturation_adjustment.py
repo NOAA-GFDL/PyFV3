@@ -12,7 +12,7 @@ from gt4py.cartesian.gtscript import (
 )
 
 import ndsl.constants as constants
-from ndsl.dsl.stencil import StencilFactory
+from ndsl import StencilFactory
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from pyFV3._config import SatAdjustConfig
 from pyFV3.stencils.basic_operations import dim

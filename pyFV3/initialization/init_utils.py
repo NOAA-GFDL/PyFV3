@@ -6,9 +6,12 @@ import numpy as np
 
 import ndsl.constants as constants
 from ndsl.dsl.typing import Float
-from ndsl.grid import lon_lat_midpoint
 from ndsl.grid.eta import SURFACE_PRESSURE, compute_eta, vertical_coordinate
-from ndsl.grid.gnomonic import get_lonlat_vect, get_unit_vector_direction
+from ndsl.grid.gnomonic import (
+    get_lonlat_vect,
+    get_unit_vector_direction,
+    lon_lat_midpoint,
+)
 from pyFV3.dycore_state import DycoreState
 
 

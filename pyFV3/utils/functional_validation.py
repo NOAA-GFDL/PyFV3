@@ -3,7 +3,7 @@ from typing import Callable, Sequence, Tuple
 
 import numpy as np
 
-from ndsl.dsl.stencil import GridIndexing
+from ndsl import GridIndexing
 
 
 def get_subset_func(

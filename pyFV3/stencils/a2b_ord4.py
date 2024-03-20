@@ -11,12 +11,10 @@ from gt4py.cartesian.gtscript import (
     sqrt,
 )
 
+from ndsl import GridIndexing, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
-from ndsl.dsl.dace.orchestration import orchestrate
-from ndsl.dsl.stencil import GridIndexing, StencilFactory
 from ndsl.dsl.typing import Float, FloatField, FloatFieldI, FloatFieldIJ
 from ndsl.grid import GridData
-from ndsl.initialization.allocator import QuantityFactory
 from pyFV3.stencils.basic_operations import copy_defn
 
 

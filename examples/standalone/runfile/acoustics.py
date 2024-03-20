@@ -9,13 +9,21 @@ import serialbox
 import yaml
 from timing import collect_data_and_write_to_file
 
-import ndsl.dsl
-import ndsl.util as util
-from ndsl.comm.null_comm import NullComm
-from ndsl.dsl.dace.orchestration import DaceConfig
-from ndsl.dsl.stencil import CompilationConfig
-from ndsl.stencils.testing.grid import Grid
-from pyFV3 import AcousticDynamics, DynamicalCoreConfig, TranslateDynCore
+from ndsl import (
+    CompilationConfig,
+    CubedSphereCommunicator,
+    CubedSpherePartitioner,
+    DaceConfig,
+    NullComm,
+    StencilConfig,
+    StencilFactory,
+    TilePartitioner,
+)
+from ndsl.performance import Timer
+from ndsl.stencils.testing import Grid
+from pyFV3 import DynamicalCoreConfig
+from pyFV3.stencils import AcousticDynamics
+from pyFV3.testing import TranslateDynCore
 
 
 try:
@@ -46,7 +54,7 @@ def initialize_serializer(data_directory: str, rank: int = 0) -> serialbox.Seria
 def read_input_data(
     grid: Grid,
     namelist: DynamicalCoreConfig,
-    stencil_factory: ndsl.dsl.stencil.StencilFactory,
+    stencil_factory: StencilFactory,
     serializer: serialbox.Serializer,
 ) -> Dict[str, Any]:
     """Uses the serializer to read the input data from disk"""
@@ -81,17 +89,17 @@ def get_state_from_input(
 def set_up_communicator(
     disable_halo_exchange: bool,
     layout: Tuple[int, int],
-) -> Tuple[Optional[MPI.Comm], Optional[util.CubedSphereCommunicator]]:
-    partitioner = util.CubedSpherePartitioner(util.TilePartitioner(layout))
+) -> Tuple[Optional[MPI.Comm], Optional[CubedSphereCommunicator]]:
+    partitioner = CubedSpherePartitioner(TilePartitioner(layout))
     if MPI is not None:
         comm = MPI.COMM_WORLD
     else:
         comm = None
     if not disable_halo_exchange:
         assert comm is not None
-        cube_comm = util.CubedSphereCommunicator(comm, partitioner)
+        cube_comm = CubedSphereCommunicator(comm, partitioner)
     else:
-        cube_comm = util.CubedSphereCommunicator(NullComm(0, 0), partitioner)
+        cube_comm = CubedSphereCommunicator(NullComm(0, 0), partitioner)
     return comm, cube_comm
 
 
@@ -106,10 +114,10 @@ def get_experiment_name(
     )["experiment_name"]
 
 
-def initialize_timers() -> Tuple[util.Timer, util.Timer, List, List]:
-    total_timer = util.Timer()
+def initialize_timers() -> Tuple[Timer, Timer, List, List]:
+    total_timer = Timer()
     total_timer.start("total")
-    timestep_timer = util.Timer()
+    timestep_timer = Timer()
     return total_timer, timestep_timer, [], []
 
 
@@ -148,13 +156,13 @@ def driver(
             tile_nx=dycore_config.npx,
             tile_nz=dycore_config.npz,
         )
-        stencil_config = ndsl.dsl.stencil.StencilConfig(
+        stencil_config = StencilConfig(
             compilation_config=CompilationConfig(
                 backend=backend, rebuild=False, validate_args=True
             ),
             dace_config=dace_config,
         )
-        stencil_factory = ndsl.dsl.stencil.StencilFactory(
+        stencil_factory = StencilFactory(
             config=stencil_config,
             grid_indexing=grid.grid_indexing,
         )

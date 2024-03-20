@@ -6,20 +6,17 @@ from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 import ndsl.dsl.gt4py_utils as utils
 import pyFV3.stencils.moist_cv as moist_cv
-from ndsl.checkpointer import Checkpointer, NullCheckpointer
-from ndsl.comm.communicator import Communicator
+from ndsl import Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater
+from ndsl.checkpointer import NullCheckpointer
 from ndsl.comm.mpi import MPI
 from ndsl.constants import KAPPA, NQ, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM, ZVIR
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
-from ndsl.dsl.dace.wrapped_halo_exchange import WrappedHaloUpdater
-from ndsl.dsl.stencil import StencilFactory
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.grid import DampingCoefficients, GridData
-from ndsl.initialization.allocator import QuantityFactory
 from ndsl.logging import ndsl_log
-from ndsl.performance.timer import NullTimer, Timer
-from ndsl.quantity import Quantity
+from ndsl.performance import NullTimer, Timer
 from ndsl.stencils.c2l_ord import CubedToLatLon
+from ndsl.typing import Checkpointer, Communicator
 from pyFV3._config import DynamicalCoreConfig
 from pyFV3.dycore_state import DycoreState
 from pyFV3.stencils import fvtp2d, tracer_2d_1l

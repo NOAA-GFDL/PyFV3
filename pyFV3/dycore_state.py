@@ -4,7 +4,7 @@ from typing import Any, Dict, Mapping, Union
 import xarray as xr
 
 import ndsl.dsl.gt4py_utils as gt_utils
-from ndsl.comm.communicator import Communicator
+from ndsl import GridSizer, Quantity, QuantityFactory
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,
@@ -14,10 +14,8 @@ from ndsl.constants import (
     Z_INTERFACE_DIM,
 )
 from ndsl.dsl.typing import Float
-from ndsl.initialization.allocator import QuantityFactory
-from ndsl.initialization.sizer import GridSizer
-from ndsl.quantity import Quantity
 from ndsl.restart._legacy_restart import open_restart
+from ndsl.typing import Communicator
 
 
 @dataclass()

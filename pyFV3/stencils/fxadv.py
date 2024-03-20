@@ -7,8 +7,7 @@ from gt4py.cartesian.gtscript import (
     region,
 )
 
-from ndsl.dsl.dace import orchestrate
-from ndsl.dsl.stencil import StencilFactory
+from ndsl import StencilFactory, orchestrate
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from pyFV3.stencils.d2a2c_vect import contravariant

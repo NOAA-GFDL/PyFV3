@@ -2,9 +2,8 @@ from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 import pyFV3
 import pyFV3.stencils.d_sw as d_sw
-from ndsl.dsl.stencil import StencilFactory
+from ndsl import Namelist, StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
-from ndsl.namelist import Namelist
 from pyFV3.testing import TranslateDycoreFortranData2Py
 
 
