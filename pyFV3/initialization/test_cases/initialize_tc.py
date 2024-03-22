@@ -2,7 +2,8 @@ import numpy as np
 
 import ndsl.constants as constants
 from ndsl import CubedSphereCommunicator, QuantityFactory
-from ndsl.grid import GridData, great_circle_distance_lon_lat
+from ndsl.grid import GridData
+from ndsl.grid.gnomonic import great_circle_distance_lon_lat
 from pyFV3.dycore_state import DycoreState
 from pyFV3.initialization import init_utils
 
