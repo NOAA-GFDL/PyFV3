@@ -2,7 +2,7 @@ from gt4py.cartesian.gtscript import PARALLEL, computation, exp, interval, log
 
 import ndsl.constants as constants
 from ndsl.dsl.typing import Float, FloatField
-from pyFV3.stencils.basic_operations import sign
+from ndsl.stencils.basic_operations import sign
 
 
 def apply_diffusive_heating(

@@ -27,8 +27,8 @@ from ndsl.constants import (
     ZVIR,
 )
 from ndsl.dsl.typing import Float, FloatField
+from ndsl.stencils.basic_operations import dim
 from pyFV3.dycore_state import DycoreState
-from pyFV3.stencils.basic_operations import dim
 
 
 RK = CP_AIR / RDGAS + 1.0

@@ -13,7 +13,7 @@ from gt4py.cartesian.gtscript import (
 )
 
 import ndsl.constants as constants
-import pyFV3.stencils.basic_operations as basic
+import ndsl.stencils.basic_operations as basic
 import pyFV3.stencils.d_sw as d_sw
 import pyFV3.stencils.nh_p_grad as nh_p_grad
 import pyFV3.stencils.pe_halo as pe_halo

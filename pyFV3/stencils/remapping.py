@@ -23,10 +23,10 @@ from ndsl.constants import (
     Z_INTERFACE_DIM,
 )
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
+from ndsl.stencils.basic_operations import adjust_divide_stencil
 from ndsl.typing import Checkpointer
 from pyFV3._config import RemappingConfig
 from pyFV3.stencils import moist_cv
-from pyFV3.stencils.basic_operations import adjust_divide_stencil
 from pyFV3.stencils.map_single import MapSingle
 from pyFV3.stencils.mapn_tracer import MapNTracer
 from pyFV3.stencils.moist_cv import moist_pt_func, moist_pt_last_step

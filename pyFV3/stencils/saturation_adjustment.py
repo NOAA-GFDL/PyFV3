@@ -14,8 +14,8 @@ from gt4py.cartesian.gtscript import (
 import ndsl.constants as constants
 from ndsl import StencilFactory
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from ndsl.stencils.basic_operations import dim
 from pyFV3._config import SatAdjustConfig
-from pyFV3.stencils.basic_operations import dim
 from pyFV3.stencils.moist_cv import compute_pkz_func
 
 

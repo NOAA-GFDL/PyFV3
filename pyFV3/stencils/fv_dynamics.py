@@ -15,12 +15,12 @@ from ndsl.dsl.typing import Float, FloatField
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log
 from ndsl.performance import NullTimer, Timer
+from ndsl.stencils.basic_operations import copy_defn
 from ndsl.stencils.c2l_ord import CubedToLatLon
 from ndsl.typing import Checkpointer, Communicator
 from pyFV3._config import DynamicalCoreConfig
 from pyFV3.dycore_state import DycoreState
 from pyFV3.stencils import fvtp2d, tracer_2d_1l
-from pyFV3.stencils.basic_operations import copy_defn
 from pyFV3.stencils.del2cubed import HyperdiffusionDamping
 from pyFV3.stencils.dyn_core import AcousticDynamics
 from pyFV3.stencils.neg_adj3 import AdjustNegativeTracerMixingRatio

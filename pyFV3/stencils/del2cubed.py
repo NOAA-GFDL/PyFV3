@@ -6,7 +6,7 @@ from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, cast_to_index3d
 from ndsl.grid import DampingCoefficients
-from pyFV3.stencils.basic_operations import copy_defn
+from ndsl.stencils.basic_operations import copy_defn
 
 
 #

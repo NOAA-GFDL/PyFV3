@@ -9,8 +9,8 @@ from gt4py.cartesian.gtscript import (
     sqrt,
 )
 
+import ndsl.stencils.basic_operations as basic
 import ndsl.stencils.corners as corners
-import pyFV3.stencils.basic_operations as basic
 from ndsl import Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
