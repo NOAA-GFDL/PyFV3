@@ -87,6 +87,6 @@ from .translate_yppm import TranslateYPPM, TranslateYPPM_2
 from .translate_ytp_v import TranslateYTP_V
 
 from .translate_w_fix_consrv_moment import TranslateW_fix_consrv_moment
-from .translate_lagrangian_contribution import TranslateLagrangian_Contribution
+from .translate_lagrangian_contribution_interp import TranslateLagrangian_Contribution_Interp
 from .translate_remapping_GEOS import TranslateRemapping_GEOS
 from .translate_scalar_profile import TranslateScalar_Profile

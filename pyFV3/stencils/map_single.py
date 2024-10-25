@@ -15,8 +15,69 @@ def set_dp(dp1: FloatField, pe1: FloatField, lev: IntFieldIJ):
     with computation(FORWARD), interval(0, 1):
         lev = 0
 
-
 def lagrangian_contributions(
+    q: FloatField,
+    pe1: FloatField,
+    pe2: FloatField,
+    q4_1: FloatField,
+    q4_2: FloatField,
+    q4_3: FloatField,
+    q4_4: FloatField,
+    dp1: FloatField,
+    lev: IntFieldIJ,
+):
+    """
+    Args:
+        q (out):
+        pe1 (in):
+        pe2 (in):
+        q4_1 (in):
+        q4_2 (in):
+        q4_3 (in):
+        q4_4 (in):
+        dp1 (in):
+        lev (inout):
+    """
+    # TODO: Can we make lev a 2D temporary?
+    with computation(FORWARD), interval(...):
+        pl = (pe2 - pe1[0, 0, lev]) / dp1[0, 0, lev]
+        if pe2[0, 0, 1] <= pe1[0, 0, lev + 1]:
+            pr = (pe2[0, 0, 1] - pe1[0, 0, lev]) / dp1[0, 0, lev]
+            q = (
+                q4_2[0, 0, lev]
+                + 0.5
+                * (q4_4[0, 0, lev] + q4_3[0, 0, lev] - q4_2[0, 0, lev])
+                * (pr + pl)
+                - q4_4[0, 0, lev] * 1.0 / 3.0 * (pr * (pr + pl) + pl * pl)
+            )
+        else:
+            qsum = (pe1[0, 0, lev + 1] - pe2) * (
+                q4_2[0, 0, lev]
+                + 0.5
+                * (q4_4[0, 0, lev] + q4_3[0, 0, lev] - q4_2[0, 0, lev])
+                * (1.0 + pl)
+                - q4_4[0, 0, lev] * 1.0 / 3.0 * (1.0 + pl * (1.0 + pl))
+            )
+            lev = lev + 1
+            while pe1[0, 0, lev + 1] < pe2[0, 0, 1]:
+                qsum += dp1[0, 0, lev] * q4_1[0, 0, lev]
+                lev = lev + 1
+            dp = pe2[0, 0, 1] - pe1[0, 0, lev]
+            esl = dp / dp1[0, 0, lev]
+            qsum += dp * (
+                q4_2[0, 0, lev]
+                + 0.5
+                * esl
+                * (
+                    q4_3[0, 0, lev]
+                    - q4_2[0, 0, lev]
+                    + q4_4[0, 0, lev] * (1.0 - (2.0 / 3.0) * esl)
+                )
+            )
+            q = qsum / (pe2[0, 0, 1] - pe2)
+        lev = lev - 1
+
+def lagrangian_contributions_interp(
     km: int,
     not_exit_loop: BoolFieldIJ,
     INDEX_LM1: IntField,

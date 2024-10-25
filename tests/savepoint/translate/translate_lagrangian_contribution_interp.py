@@ -1,23 +1,27 @@
 from ndsl import StencilFactory, QuantityFactory
-from ndsl.dsl.typing import FloatField, FloatFieldIJ, Float, BoolFieldIJ, IntField, IntFieldIJ, Float
+from ndsl.dsl.typing import FloatField, FloatFieldIJ, BoolFieldIJ, IntField, IntFieldIJ, Float, Int, Bool
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
 from gt4py.cartesian.gtscript import PARALLEL, FORWARD, BACKWARD, computation, interval
-from pyFV3.stencils.map_single import lagrangian_contributions
+from pyFV3.stencils.map_single import lagrangian_contributions_interp
 
-class test_Lagragian_Contribution:
+class test_Lagragian_Contribution_Interp:
     def __init__(
         self,
         stencil_factory: StencilFactory,
         grid: Grid,
     ):
-        print("In test_Lagragian_Contribution")
+        print("In test_Lagragian_Contribution_interp")
 
-        self._lagrangian_contributions = stencil_factory.from_origin_domain(
-            func=lagrangian_contributions,
-            origin=(3,3,0),
-            domain=(24,1,72),
+        grid_indexing = stencil_factory.grid_indexing
+
+        self._lagrangian_contributions_interp = stencil_factory.from_origin_domain(
+            func=lagrangian_contributions_interp,
+            # origin=(3,3,0),
+            origin=grid_indexing.origin_compute(),
+            # domain=(24,1,72),
+            domain=(grid.nic, 1, grid.npz)
         )
 
     def __call__(
@@ -36,7 +40,7 @@ class test_Lagragian_Contribution:
         dp1: FloatField,
         lev: IntFieldIJ,
     ):
-        self._lagrangian_contributions(
+        self._lagrangian_contributions_interp(
             km,
             not_exit_loop,
             INDEX_LM1,
@@ -52,12 +56,12 @@ class test_Lagragian_Contribution:
             lev,
         )
 
-class TranslateLagrangian_Contribution(TranslateFortranData2Py):
+class TranslateLagrangian_Contribution_Interp(TranslateFortranData2Py):
     def __init__(self, grid: Grid, namelist, stencil_factory):
         super().__init__(grid, stencil_factory)
         self.stencil_factory = stencil_factory
         self.grid = grid
-        self.compute_func = test_Lagragian_Contribution(self.stencil_factory, self.grid)  # type: ignore
+        self.compute_func = test_Lagragian_Contribution_Interp(self.stencil_factory, self.grid)  # type: ignore
         self.quantity_factory = grid.quantity_factory
 
         self.in_vars["data_vars"] = {
@@ -127,25 +131,25 @@ class TranslateLagrangian_Contribution(TranslateFortranData2Py):
         self._not_exit_loop = self.quantity_factory.zeros(
             [X_DIM, Y_DIM],
             units="",
-            dtype=bool,
+            dtype=Bool,
         )
 
         self._INDEX_LM1 = self.quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="",
-            dtype=int,
+            dtype=Int,
         )
 
         self._INDEX_LP0 = self.quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="",
-            dtype=int,
+            dtype=Int,
         )
 
         self._lev = self.quantity_factory.zeros(
             [X_DIM, Y_DIM],
             units="",
-            dtype=int,
+            dtype=Int,
         )
 
         self.compute_func(
