@@ -265,11 +265,24 @@ class MapSingle:
             compute_dims=dims,
         )
 
-        self._INDEX_LM1 = quantity_factory.zeros([X_DIM, Y_DIM], units="", dtype=int)
-        self._INDEX_LP0 = quantity_factory.zeros([X_DIM, Y_DIM], units="", dtype=int)
+        self._lagrangian_contributions_interp = stencil_factory.from_dims_halo(
+            lagrangian_contributions_interp,
+            compute_dims=dims,
+        )
+
+        self._INDEX_LM1 = quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_DIM],
+            units="",
+            dtype=int,
+        )
+
+        self._INDEX_LP0 = quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_DIM],
+            units="",
+            dtype=int,
+        )
         self._km = grid_indexing.domain[2]
         self._not_exit_loop = quantity_factory.zeros([X_DIM, Y_DIM], units="", dtype=bool)
-        # self._q_temp = make_quantity()
 
     @property
     def i_extent(self):
@@ -286,6 +299,7 @@ class MapSingle:
         pe2: FloatField,
         qs: Optional["FloatFieldIJ"] = None,
         qmin: Float = 0.0,
+        interp: bool = False,
     ):
         """
         Compute x-flux using the PPM method.
@@ -321,20 +335,32 @@ class MapSingle:
                 self._dp1,
                 qmin,
             )
-        self._lagrangian_contributions(
-            self._km,
-            self._not_exit_loop,
-            self._INDEX_LM1,
-            self._INDEX_LP0,
-            # self._q_temp,
-            q1,
-            pe1,
-            pe2,
-            self._q4_1,
-            self._q4_2,
-            self._q4_3,
-            self._q4_4,
-            self._dp1,
-            self._lev,
-        )
-        return q1
+
+        if(interp == False):
+            self._lagrangian_contributions(
+                q1,
+                pe1,
+                pe2,
+                self._q4_1,
+                self._q4_2,
+                self._q4_3,
+                self._q4_4,
+                self._dp1,
+                self._lev,
+            )
+        else:
+            self._lagrangian_contributions_interp(
+                self._km,
+                self._not_exit_loop,
+                self._INDEX_LM1,
+                self._INDEX_LP0,
+                q1,
+                pe1,
+                pe2,
+                self._q4_1,
+                self._q4_2,
+                self._q4_3,
+                self._q4_4,
+                self._dp1,
+                self._lev,
+            )

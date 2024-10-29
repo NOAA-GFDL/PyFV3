@@ -90,3 +90,5 @@ from .translate_w_fix_consrv_moment import TranslateW_fix_consrv_moment
 from .translate_lagrangian_contribution_interp import TranslateLagrangian_Contribution_Interp
 from .translate_remapping_GEOS import TranslateRemapping_GEOS
 from .translate_scalar_profile import TranslateScalar_Profile
+from .translate_MapN_Tracer_2d import TranslateMapN_Tracer_2d
+from .translate_map_scalar import TranslateMap_Scalar
