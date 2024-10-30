@@ -323,7 +323,7 @@ class MapSingle:
                 self._q4_3,
                 self._q4_4,
                 self._dp1,
-                qmin,
+                Float(qmin),
             )
         else:
             self._remap_profile(
@@ -333,7 +333,7 @@ class MapSingle:
                 self._q4_3,
                 self._q4_4,
                 self._dp1,
-                qmin,
+                Float(qmin),
             )
 
         if(interp == False):
