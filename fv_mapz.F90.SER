@@ -222,7 +222,7 @@ contains
    integer:: nt, liq_wat, ice_wat, rainwat, snowwat, cld_amt, graupel, iq, n, kmp, kp, k_next
    logical:: remap_t, remap_pt, remap_te
 
-   real, dimension(is:ie, js:je, km+1) :: pe_3d, pe1_3d, pe2_3d, pn2_3d, pk2_3d, peln_3d
+   real, dimension(is:ie, js:je, km+1) :: pe_3d, pe1_3d, pe2_3d, pn1_3d, pn2_3d, pk2_3d, peln_3d
 
    real, dimension(is:ie, js:je, km) :: w2_3d, dp2_3d
 
@@ -240,6 +240,7 @@ contains
    !$ser verbatim pe2_3d = 0.0
    !$ser verbatim peln_3d = 0.0
    !$ser verbatim dp2_3d = 0.0
+   !$ser verbatim pn1_3d = 0.0
    !$ser verbatim pn2_3d = 0.0
    !$ser verbatim pk2_3d = pk
 
@@ -361,7 +362,7 @@ contains
 !$OMP                                  graupel,q_con, sphum,cappa,r_vir,rcp,cp,k1k,delp, &
 !$OMP                                  delz,akap,pkz,te,u,v,ps, gridstruct, &
 !$OMP                                  ak,bk,nq,isd,ied,jsd,jed,kord_tr,fill, adiabatic, &
-!$OMP                                  hs,w,ws,kord_wz,rrg,kord_mt,consv,remap_option,gmao_remap,pe_3d, pe1_3d, pe2_3d, pn2_3d, pk2_3d, w2_3d, dp2_3d, peln_3d)    &
+!$OMP                                  hs,w,ws,kord_wz,rrg,kord_mt,consv,remap_option,gmao_remap,pe_3d, pe1_3d, pe2_3d, pn1_3d, pn2_3d, pk2_3d, w2_3d, dp2_3d, peln_3d)    &
 !$OMP                          private(gz,cvm,bkh,dp2,   &
 !$OMP                                  pe0,pe1,pe2,pe3,pk1,pk2,pn1,pn2,phis,q2,w2,dpln,dlnp, w_max_, w_min_)
    do 1000 j=js,je+1
@@ -612,16 +613,22 @@ contains
                               is, ie, j, isd, ied, jsd, jed, akap, gmao_remap, P_MAP=1, conserv=.true.)
             else
                !$ser verbatim if(j == js2d) then 
+               !$ser verbatim    do k = 1, km+1
+               !$ser verbatim      do i = is, ie
+               !$ser verbatim           pn1_3d(i,j,k) = pn1(i,k)
+               !$ser verbatim           pn2_3d(i,j,k) = pn2(i,k)
+               !$ser verbatim      enddo
+               !$ser verbatim     enddo
                !$ser savepoint MapScalar_2d-In
                !$ser verbatim mode=1
-               !$ser data  peln=peln pt=pt gz1d=gz pn2=pn2  mode=mode j_2d=js2d
+               !$ser data  pe1_=pn1_3d pt=pt q1=te mode=mode j_2d=js2d q_min=-1.e25
                !$ser verbatim endif
                call map_scalar(km,  pn1,  te, gz,   &
                               km,  pn2,  te,       &
                               is, ie, j, isd, ied, jsd, jed, 1, abs(kord_tm), te_min)
                !$ser verbatim if(j == js2d) then 
                !$ser savepoint MapScalar_2d-Out
-               !$ser data pt=pt
+               !$ser data q1=te
                !$ser verbatim endif
             endif
          else
@@ -635,16 +642,23 @@ contains
                               is, ie, j, isd, ied, jsd, jed, akap, gmao_remap, P_MAP=1, conserv=.false.)
             else
                !$ser verbatim if(j == js2d) then 
-               !$ser savepoint MapScalar_2d-In
+               !$ser verbatim    do k = 1, km+1
+               !$ser verbatim      do i = is, ie
+               !$ser verbatim           pn1_3d(i,j,k) = pn1(i,k)
+               !$ser verbatim           pn2_3d(i,j,k) = pn2(i,k)
+               !$ser verbatim      enddo
+               !$ser verbatim     enddo
+               !$ser savepoint Map_Scalar-In
                !$ser verbatim mode=1
-               !$ser data  peln=peln pt=pt gz1d=gz pn2=pn2  mode=mode j_2d=js2d kord_tm=kord_tm
+               !$ser verbatim qmin=184.0
+               !$ser data  pe1_=pn1_3d pe2_=pn2_3d q1=pt mode=mode j_2d=js2d q_min=qmin
                !$ser verbatim endif
                call map_scalar(km,  pn1,  pt, gz,   &
                               km,  pn2,  pt,       &
                               is, ie, j, isd, ied, jsd, jed, 1, abs(kord_tm), t_min)
                !$ser verbatim if(j == js2d) then 
-               !$ser savepoint MapScalar_2d-Out
-               !$ser data pt=pt
+               !$ser savepoint Map_Scalar-Out
+               !$ser data q1=pt
                !$ser verbatim endif
             endif
          endif
@@ -1682,8 +1696,6 @@ contains
       enddo
    enddo
 
-! Compute vertical subgrid distribution
-   if ( kord >  7 ) then
 !$ser verbatim if (j == 1) then
 !$ser verbatim do k = 1,kn
 !$ser verbatim    do i = i1,i2
@@ -1706,7 +1718,14 @@ contains
 !$ser data dp1_=dp1_temp
 !$ser data q_min=q_min
 !$ser verbatim endif
+
+! Compute vertical subgrid distribution
+   if ( kord >  7 ) then
         call scalar_profile( qs, q4, dp1, km, i1, i2, iv, kord, q_min )
+   else
+        call ppm_profile( q4, dp1, km, i1, i2, iv, kord )
+   endif
+
 !$ser verbatim if (j == 1) then
 !$ser verbatim do k = 1,kn
 !$ser verbatim    do i = i1,i2
@@ -1724,9 +1743,6 @@ contains
 !$ser data q4_4=q4_4_temp
 !$ser data dp1_=dp1_temp
 !$ser verbatim endif
-   else
-        call ppm_profile( q4, dp1, km, i1, i2, iv, kord )
-   endif
 
 ! NOTE : q1 and q2 fields being passed into map_scalar are identical variables
 !        even though q1 is declared at INTENT(IN) and q2 is declared as INTENT(IN/OUT).
@@ -1750,7 +1766,7 @@ contains
 !$ser verbatim       pe2_temp(i,jj,km+1) = pe2(i,km+1)
 !$ser verbatim    enddo
 !$ser verbatim enddo
-!$ser savepoint Lagrangian_Contribution-In 
+!$ser savepoint Lagrangian_Contribution_Interp-In 
 !$ser data q1=q1 pe1_=pe1_temp pe2_=pe2_temp q4_1=q4_1_temp q4_2=q4_2_temp
 !$ser data q4_3=q4_3_temp q4_4=q4_4_temp dp1_=dp1_temp
 !$ser verbatim endif
@@ -1828,7 +1844,7 @@ contains
   enddo
 
 !$ser verbatim if(j == 1) then 
-!$ser savepoint Lagrangian_Contribution-Out
+!$ser savepoint Lagrangian_Contribution_Interp-Out
 !$ser data q1=q2 
 !$ser verbatim endif
 
