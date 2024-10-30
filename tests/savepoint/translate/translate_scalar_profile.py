@@ -1,14 +1,11 @@
-from gt4py.cartesian.gtscript import PARALLEL, computation, interval
-
-from ndsl import StencilFactory
-from ndsl.dsl.typing import FloatField, Float
+from ndsl import StencilFactory, Namelist
+from ndsl.stencils.testing.grid import Grid
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.stencils.testing import TranslateFortranData2Py
 from pyFV3.stencils.remap_profile import RemapProfile
 
-
 class TranslateScalar_Profile(TranslateFortranData2Py):
-    def __init__(self, grid, namelist, stencil_factory):
+    def __init__(self, grid: Grid, namelist: Namelist, stencil_factory: StencilFactory):
         super().__init__(grid, stencil_factory)
         self.stencil_factory = stencil_factory
         self.grid = grid
@@ -56,8 +53,6 @@ class TranslateScalar_Profile(TranslateFortranData2Py):
                 "jend": grid.je,
                 "kend": grid.npz-1,
             },
-            
-
         }
         self.in_vars["parameters"] = [
             "q_min",
@@ -112,6 +107,6 @@ class TranslateScalar_Profile(TranslateFortranData2Py):
                 inputs["q4_3"],
                 inputs["q4_4"],
                 inputs["dp1_"],
-                Float(inputs["q_min"]),
+                inputs["q_min"],
             )
         return inputs

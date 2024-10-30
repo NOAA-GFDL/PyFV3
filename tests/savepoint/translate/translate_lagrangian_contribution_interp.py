@@ -1,9 +1,8 @@
-from ndsl import StencilFactory, QuantityFactory
-from ndsl.dsl.typing import FloatField, FloatFieldIJ, BoolFieldIJ, IntField, IntFieldIJ, Float, Int, Bool
+from ndsl import StencilFactory, Namelist
+from ndsl.dsl.typing import FloatField, BoolFieldIJ, IntField, IntFieldIJ, Int, Bool
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
-from gt4py.cartesian.gtscript import PARALLEL, FORWARD, BACKWARD, computation, interval
 from pyFV3.stencils.map_single import lagrangian_contributions_interp
 
 class test_Lagragian_Contribution_Interp:
@@ -18,9 +17,7 @@ class test_Lagragian_Contribution_Interp:
 
         self._lagrangian_contributions_interp = stencil_factory.from_origin_domain(
             func=lagrangian_contributions_interp,
-            # origin=(3,3,0),
             origin=grid_indexing.origin_compute(),
-            # domain=(24,1,72),
             domain=(grid.nic, 1, grid.npz)
         )
 
@@ -57,7 +54,7 @@ class test_Lagragian_Contribution_Interp:
         )
 
 class TranslateLagrangian_Contribution_Interp(TranslateFortranData2Py):
-    def __init__(self, grid: Grid, namelist, stencil_factory):
+    def __init__(self, grid: Grid, namelist: Namelist, stencil_factory: StencilFactory):
         super().__init__(grid, stencil_factory)
         self.stencil_factory = stencil_factory
         self.grid = grid
