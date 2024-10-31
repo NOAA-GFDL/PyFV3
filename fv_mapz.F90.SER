@@ -667,15 +667,40 @@ contains
          ! Map constituents
          !----------------
          if( nq > 5 ) then
-            !$ser verbatim if(j == js2d) then 
+            !$ser verbatim if(j == js2d) then
+            !$ser verbatim    do k = 1, km+1
+            !$ser verbatim      do i = is, ie
+            !$ser verbatim           pn1_3d(i,j,k) = pn1(i,k)
+            !$ser verbatim           pn2_3d(i,j,k) = pn2(i,k)
+            !$ser verbatim           
+            !$ser verbatim           if (k < km+1) dp2_3d(i,j,k) = dp2(i,k)
+            !$ser verbatim      enddo
+            !$ser verbatim     enddo
             !$ser savepoint MapN_Tracer_2d-In
-            !$ser data j_2d=js2d nq=nq  qtracers=q(:,:,:,1:nq) pe1=pe1 pe2=pe2 dp2=dp2 q_min=qmin
+            !$ser data j_2d=js2d nq=nq pe1_=pe1_3d pe2_=pe2_3d dp2_=dp2_3d
+            !$ser data qvapor=q(:,:,:,1)
+            !$ser data qliquid=q(:,:,:,2)
+            !$ser data qice=q(:,:,:,3)
+            !$ser data qrain=q(:,:,:,4)
+            !$ser data qsnow=q(:,:,:,5)
+            !$ser data qgraupel=q(:,:,:,6)
+            !$ser data qcld=q(:,:,:,7)
+            !$ser data qo3mr=q(:,:,:,8)
+            !$ser data qsgs_tke=q(:,:,:,9)
             !$ser verbatim endif
             call mapn_tracer(nq, km, pe1, pe2, q, dp2, kord_tr, j,     &
                               is, ie, isd, ied, jsd, jed, 0., fill)
             !$ser verbatim if(j == js2d) then 
             !$ser savepoint MapN_Tracer_2d-Out
-            !$ser data qtracers=q(:,:,:,1:nq)
+            !$ser data qvapor=q(:,:,:,1)
+            !$ser data qliquid=q(:,:,:,2)
+            !$ser data qice=q(:,:,:,3)
+            !$ser data qrain=q(:,:,:,4)
+            !$ser data qsnow=q(:,:,:,5)
+            !$ser data qgraupel=q(:,:,:,6)
+            !$ser data qcld=q(:,:,:,7)
+            !$ser data qo3mr=q(:,:,:,8)
+            !$ser data qsgs_tke=q(:,:,:,9)
             !$ser verbatim endif
          elseif ( nq > 0 ) then
             print*,'CODE NOT TESTED HERE 7'
@@ -716,6 +741,7 @@ contains
             !Fix excessive w - momentum conserving --- sjl
             ! gz(:) used here as a temporary array
             if ( w_limiter ) then
+               print*,"w_limiter part"
 !$ser verbatim if(j == js2d) then 
 !$ser verbatim do k = 1, km
 !$ser verbatim            do i = is, ie
@@ -1882,6 +1908,19 @@ contains
    real    pl, pr, qsum, dp, esl
    integer i, k, l, m, k0
 
+!$ser verbatim real q4_1_temp(i1:i2, i1:i2,km)
+!$ser verbatim real q4_2_temp(i1:i2, i1:i2,km)
+!$ser verbatim real q4_3_temp(i1:i2, i1:i2,km)
+!$ser verbatim real q4_4_temp(i1:i2, i1:i2,km)
+!$ser verbatim real dp1_temp(i1:i2, i1:i2,km)
+!$ser verbatim real :: qs_2d(i1:i2, i1:i2)
+
+!$ser verbatim q4_1_temp = 0.0
+!$ser verbatim q4_2_temp = 0.0
+!$ser verbatim q4_3_temp = 0.0
+!$ser verbatim q4_4_temp = 0.0
+!$ser verbatim qs_2d = 0.0
+
    do k=1,km
       do i=i1,i2
          dp1(i,k) = pe1(i,k+1) - pe1(i,k)
@@ -1891,7 +1930,45 @@ contains
 
 ! Compute vertical subgrid distribution
    if ( kord >7 ) then
+!$ser verbatim if (j == 1 .and. i2 == 24) then
+!$ser verbatim do k = 1,kn
+!$ser verbatim    do i = i1,i2
+!$ser verbatim      q4_1_temp(i,j,k) = q4(1,i,k)
+!$ser verbatim      q4_2_temp(i,j,k) = q4(2,i,k)
+!$ser verbatim      q4_3_temp(i,j,k) = q4(3,i,k)
+!$ser verbatim      q4_4_temp(i,j,k) = q4(4,i,k)
+!$ser verbatim      dp1_temp(i,j,k) = dp1(i,k)
+!$ser verbatim      enddo
+!$ser verbatim    enddo
+!$ser verbatim do i = i1,i2
+!$ser verbatim    qs_2d(i,j) = qs(i)
+!$ser verbatim enddo
+!$ser savepoint CS_Profile-In
+!$ser data qs_=qs_2d
+!$ser data q4_1=q4_1_temp
+!$ser data q4_2=q4_2_temp
+!$ser data q4_3=q4_3_temp
+!$ser data q4_4=q4_4_temp
+!$ser data dp1_=dp1_temp
+!$ser data kord_=kord
+!$ser data iv_=iv
+!$ser verbatim endif
         call  cs_profile( qs, q4, dp1, km, i1, i2, iv, kord )
+!$ser verbatim if (j == 1 .and. i2 == 24) then
+!$ser verbatim do k = 1,kn
+!$ser verbatim    do i = i1,i2
+!$ser verbatim      q4_1_temp(i,j,k) = q4(1,i,k)
+!$ser verbatim      q4_2_temp(i,j,k) = q4(2,i,k)
+!$ser verbatim      q4_3_temp(i,j,k) = q4(3,i,k)
+!$ser verbatim      q4_4_temp(i,j,k) = q4(4,i,k)
+!$ser verbatim      enddo
+!$ser verbatim    enddo
+!$ser savepoint CS_Profile-Out
+!$ser data q4_1=q4_1_temp
+!$ser data q4_2=q4_2_temp
+!$ser data q4_3=q4_3_temp
+!$ser data q4_4=q4_4_temp
+!$ser verbatim endif
    else
         call ppm_profile( q4, dp1, km, i1, i2, iv, kord )
    endif

@@ -92,3 +92,4 @@ from .translate_remapping_GEOS import TranslateRemapping_GEOS
 from .translate_scalar_profile import TranslateScalar_Profile
 from .translate_MapN_Tracer_2d import TranslateMapN_Tracer_2d
 from .translate_map_scalar import TranslateMap_Scalar
+from .translate_cs_profile import TranslateCS_Profile

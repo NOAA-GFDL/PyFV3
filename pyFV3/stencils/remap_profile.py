@@ -691,5 +691,5 @@ class RemapProfile:
                 self._ext5,
                 self._ext6,
                 self._extm,
-                qmin,
+                Float(qmin),
             )
