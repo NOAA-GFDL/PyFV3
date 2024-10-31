@@ -226,6 +226,8 @@ contains
 
    real, dimension(is:ie, js:je, km) :: w2_3d, dp2_3d
 
+   real, dimension(is:ie, js:je) :: ws_2d
+
 !$ser verbatim real :: w_max_, w_min_
 
    !$ser verbatim integer:: mode, abskord, iep1, iedp1, jedp1, js2d, o3mr, sgs_tke
@@ -243,6 +245,7 @@ contains
    !$ser verbatim pn1_3d = 0.0
    !$ser verbatim pn2_3d = 0.0
    !$ser verbatim pk2_3d = pk
+   !$ser verbatim ws_2d = 0.0
 
    remap_t  = .false.
    remap_pt = .false.
@@ -362,7 +365,8 @@ contains
 !$OMP                                  graupel,q_con, sphum,cappa,r_vir,rcp,cp,k1k,delp, &
 !$OMP                                  delz,akap,pkz,te,u,v,ps, gridstruct, &
 !$OMP                                  ak,bk,nq,isd,ied,jsd,jed,kord_tr,fill, adiabatic, &
-!$OMP                                  hs,w,ws,kord_wz,rrg,kord_mt,consv,remap_option,gmao_remap,pe_3d, pe1_3d, pe2_3d, pn1_3d, pn2_3d, pk2_3d, w2_3d, dp2_3d, peln_3d)    &
+!$OMP                                  hs,w,ws,kord_wz,rrg,kord_mt,consv,remap_option,gmao_remap,&
+!$OMP                                  pe_3d, pe1_3d, pe2_3d, pn1_3d, pn2_3d, pk2_3d, w2_3d, dp2_3d, peln_3d, ws_2d)    &
 !$OMP                          private(gz,cvm,bkh,dp2,   &
 !$OMP                                  pe0,pe1,pe2,pe3,pk1,pk2,pn1,pn2,phis,q2,w2,dpln,dlnp, w_max_, w_min_)
    do 1000 j=js,je+1
@@ -720,9 +724,30 @@ contains
 
          if ( .not. hydrostatic ) then
             ! Remap vertical wind:
+               !$ser verbatim if(j == js2d) then 
+               !$ser verbatim    do k = 1, km+1
+               !$ser verbatim      do i = is, ie
+               !$ser verbatim           pn1_3d(i,j,k) = pn1(i,k)
+               !$ser verbatim           pn2_3d(i,j,k) = pn2(i,k)
+               !$ser verbatim      enddo
+               !$ser verbatim     enddo
+               !$ser verbatim    do i = is, ie
+               !$ser verbatim       ws_2d(i,j) = ws(i,j)
+               !$ser verbatim    enddo
+               !$ser savepoint Map1_PPM-In
+               !$ser data pe1_=pe1_3d
+               !$ser data pe2_=pe2_3d
+               !$ser data ws_=ws_2d
+               !$ser data w_=w
+               !$ser data kord_wz=kord_wz
+               !$ser verbatim endif
             call map1_ppm (km,   pe1,  w,  ws(is,j),   &
                            km,   pe2,  w,              &
                            is, ie, j, isd, ied, jsd, jed, -2, kord_wz)
+               !$ser verbatim if(j == js2d) then 
+               !$ser savepoint Map1_PPM-Out
+               !$ser data w_=w
+               !$ser verbatim endif
             ! Remap delz for hybrid sigma-p coordinate
             do k=1,km
                do i=is,ie

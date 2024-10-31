@@ -86,12 +86,6 @@ class TranslateCS_Profile(TranslateFortranData2Py):
             },
         }
 
-        # # Value from GEOS
-        # self.kord = 9
-
-        # # mode / iv set to -2 from GEOS
-        # self.mode = -2 
-
     def compute_from_storage(self, inputs):
         self._compute_func = RemapProfile(
             self.stencil_factory,
