@@ -4,7 +4,7 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.stencils.testing import TranslateFortranData2Py
 from pyFV3.stencils.map_single import MapSingle
 
-class TranslateMap1_PPM(TranslateFortranData2Py):
+class TranslateMap1_PPM_W(TranslateFortranData2Py):
     def __init__(self, grid: Grid, namelist: Namelist, stencil_factory: StencilFactory):
         super().__init__(grid, stencil_factory)
         self.stencil_factory = stencil_factory
