@@ -14,6 +14,7 @@ from ndsl.constants import (
     Z_INTERFACE_DIM,
 )
 from ndsl.dsl.typing import Float
+from pyFV3.stencils.mapn_tracer import MapNTracer
 
 class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
     def __init__(
@@ -203,6 +204,15 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             domain=(grid.nic, 1, grid.npz+1),
         )
 
+        self._compute_func = MapNTracer(
+            self.stencil_factory,
+            self.quantity_factory,
+            abs(self.kord),
+            self.nq,
+            fill=self.fill,
+            tracers=tracers,
+        )
+
     def compute_from_storage(self, inputs):
 
         # Replicates tracer values in I along the J direction
@@ -251,4 +261,13 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             inputs["pk"],
             Float(inputs["akap"]),
         )
+
+        # now that we have the pressure profiles, we can start remapping
+        self._map_single_pt(pt, peln, self._pn2, qmin=self._t_min)
+
+        self._mapn_tracer(self._pe1, self._pe2, self._dp2, tracers)
+
+        self._map_single_w(w, self._pe1, self._pe2, qs=wsd)
+        self._map_single_delz(delz, self._pe1, self._pe2)
+
         return inputs

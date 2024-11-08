@@ -95,3 +95,4 @@ from .translate_map_scalar import TranslateMap_Scalar
 from .translate_cs_profile import TranslateCS_Profile
 from .translate_map1_ppm_W import TranslateMap1_PPM_W
 from .translate_map1_ppm_delz import TranslateMap1_PPM_delz
+from .translate_Pressures_mapU import TranslatePressures_mapU

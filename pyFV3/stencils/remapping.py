@@ -149,8 +149,8 @@ def moist_cv_pt_pressure(
             )
         # NOTE : GEOS does not perform the delz computation at this location
         # # delz_adjust
-        # if __INLINED(not hydrostatic):
-        #     delz = -delz / delp
+        if __INLINED(not hydrostatic):
+            delz = -delz / delp
    
     # pressure_updates
     with computation(FORWARD):
@@ -201,11 +201,12 @@ def pn2_pk_delp(
 
 def pressures_mapu(
     pe: FloatField,
-    pe1: FloatField,
+    # pe1: FloatField,
     ak: FloatFieldK,
     bk: FloatFieldK,
     pe0: FloatField,
     pe3: FloatField,
+    ptop: Float,
 ):
     """
     Args:
@@ -219,18 +220,20 @@ def pressures_mapu(
     with computation(BACKWARD):
         with interval(-1, None):
             pe_bottom = pe
-            pe1_bottom = pe
+            # pe1_bottom = pe
         with interval(0, -1):
             pe_bottom = pe_bottom[0, 0, 1]
-            pe1_bottom = pe1_bottom[0, 0, 1]
+            # pe1_bottom = pe1_bottom[0, 0, 1]
     with computation(FORWARD):
         with interval(0, 1):
-            pe0 = pe
+            # pe0 = pe
+            pe0 = ptop
         with interval(1, None):
-            pe0 = 0.5 * (pe[0, -1, 0] + pe1)
+            # pe0 = 0.5 * (pe[0, -1, 0] + pe1)
+            pe0 = 0.5 * (pe[0, -1, 0] + pe)
     with computation(FORWARD), interval(...):
         bkh = 0.5 * bk
-        pe3 = ak + bkh * (pe_bottom[0, -1, 0] + pe1_bottom)
+        pe3 = ak + bkh * (pe_bottom[0, -1, 0] + pe_bottom)
 
 
 def pressures_mapv(
