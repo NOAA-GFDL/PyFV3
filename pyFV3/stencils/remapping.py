@@ -255,8 +255,9 @@ def pressures_mapv(
             pe_bottom = pe_bottom[0, 0, 1]
     with computation(FORWARD):
         with interval(0, 1):
-            pe3 = ak
-            pe0 = pe
+            bkh = 0.5 * bk
+            pe3 = ak + bkh * (pe_bottom[-1, 0, 0] + pe_bottom)
+            # pe0 = pe
         with interval(1, None):
             bkh = 0.5 * bk
             pe0 = 0.5 * (pe[-1, 0, 0] + pe)

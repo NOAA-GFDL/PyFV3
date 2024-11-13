@@ -996,6 +996,8 @@ contains
 !$ser verbatim endif
 !$ser verbatim endif
 
+! Note : This serialization portion will test the update of pe0
+!         and pe3
 !$ser verbatim if(j == js2d) then
 !$ser verbatim pe_3d = 0
 !$ser verbatim pe0_3d = 0
@@ -1012,24 +1014,12 @@ contains
 !$ser verbatim        pe3_3d(i,j,k) = pe3(i,k)
 !$ser verbatim     enddo
 !$ser verbatim enddo
-!$ser verbatim    do i = is, ie
-!$ser verbatim       gz_2d(i,j) = gz(i)
-!$ser verbatim    enddo
 !$ser savepoint Pressures_mapV-In
 !$ser data pe_=pe_3d
-!$ser data pe0_=pe0_3d(is:ie,js:je,:)
-!$ser data pe3_=pe3_3d(is:ie,js:je,:)
+!$ser data pe0_v=pe0_3d(:,js:je,:)
+!$ser data pe3_v=pe3_3d(:,js:je,:)
 !$ser data ak=ak 
 !$ser data bk=bk 
-!$ser data ptop=ptop
-!$ser data u_=u
-!$ser data kord_mt=kord_mt
-!$ser verbatim if (present(mfy)) then
-!$ser data mfy_=mfy
-!$ser verbatim endif
-!$ser verbatim if (present(cy)) then
-!$ser data cy_=cy
-!$ser verbatim endif
 !$ser verbatim endif
       !------
       ! map v
@@ -1048,6 +1038,29 @@ contains
             enddo
          enddo
 
+! Note : This serialization portion will test the update of v,
+!        mfx, and cx
+!!$ser verbatim if(j == js2d) then
+!!$ser verbatim pe0_3d = 0.0
+!!$ser verbatim pe3_3d = 0.0
+!!$ser verbatim do k = 1, km+1
+!!$ser verbatim     do i = is, ie+1
+!!$ser verbatim        pe0_3d(i,j,k) = pe0(i,k)
+!!$ser verbatim        pe3_3d(i,j,k) = pe3(i,k)
+!!$ser verbatim     enddo
+!!$ser verbatim enddo
+!!$ser savepoint Pressures_mapV-In
+!!$ser data pe0_v=pe0_3d(:,js:je,:)
+!!$ser data pe3_v=pe3_3d(:,js:je,:)
+!!$ser data v_=v
+!!$ser data kord_mt=kord_mt
+!!$ser verbatim if (present(mfx)) then
+!!$ser data mfx_=mfx
+!!$ser verbatim endif
+!!$ser verbatim if (present(cx)) then
+!!$ser data cx_=cx
+!!$ser verbatim endif
+!!$ser verbatim endif
          call map1_ppm (km, pe0,  v, gz,    &
                         km, pe3,  v, is, ie+1,    &
                         j, isd, ied+1, jsd, jed, -1, kord_mt)
@@ -1064,6 +1077,25 @@ contains
                            j, is, ie+1, jsd, jed, -1, kord_mt)
          endif
       endif ! (j < je+1)
+
+!$ser verbatim if(j == js2d) then
+!$ser verbatim do k = 1, km+1
+!$ser verbatim     do i = is, ie+1
+!$ser verbatim        pe0_3d(i,j,k) = pe0(i,k)
+!$ser verbatim        pe3_3d(i,j,k) = pe3(i,k)
+!$ser verbatim     enddo
+!$ser verbatim enddo
+!$ser savepoint Pressures_mapV-Out
+!$ser data pe0_v=pe0_3d(:,js:je,:)
+!$ser data pe3_v=pe3_3d(:,js:je,:)
+!$ser data v_=v
+!$ser verbatim if (present(mfx)) then
+!$ser data mfx_=mfx
+!$ser verbatim endif
+!$ser verbatim if (present(cx)) then
+!$ser data cx_=cx
+!$ser verbatim endif
+!$ser verbatim endif
 
 1000  continue
 
