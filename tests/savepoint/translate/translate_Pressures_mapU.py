@@ -1,8 +1,9 @@
 from ndsl import StencilFactory, Namelist
 from ndsl.stencils.testing.grid import Grid
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Y_INTERFACE_DIM
 from ndsl.stencils.testing import TranslateFortranData2Py
 from pyFV3.stencils.remapping import pressures_mapu
+from pyFV3.stencils.map_single import MapSingle
 
 class TranslatePressures_mapU(TranslateFortranData2Py):
     def __init__(self, grid: Grid, namelist: Namelist, stencil_factory: StencilFactory):
@@ -38,10 +39,35 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
             },
             "bk":{
 
-            }
+            },
+            "u_": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.jsd,
+                "jend": grid.jed+1,
+                "kend": grid.npz-1,
+            },
+
+            "mfy_": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je+1,
+                "kend": grid.npz-1,
+            },
+
+            "cy_": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.js,
+                "jend": grid.je+1,
+                "kend": grid.npz-1,
+            },
+
 
         }
         self.in_vars["parameters"] = [
+            "kord_mt",
             "ptop",
         ]
 
@@ -60,7 +86,29 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
                 "jend": grid.je,
                 "kend": grid.npz
             },
-            
+            "u_": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.jsd,
+                "jend": grid.jed+1,
+                "kend": grid.npz-1,
+            },
+
+            "mfy_": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je+1,
+                "kend": grid.npz-1,
+            },
+
+            "cy_": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.js,
+                "jend": grid.je+1,
+                "kend": grid.npz-1,
+            },
         }
 
         grid_indexing = stencil_factory.grid_indexing
@@ -73,19 +121,48 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
             grid_indexing.domain[2] + 1,
         )
 
-        self._compute_func = stencil_factory.from_origin_domain(
+        self._pressures_mapu = stencil_factory.from_origin_domain(
             pressures_mapu,
             origin=grid_indexing.origin_compute(),
             domain=self._domain_jextra,
         )
 
     def compute_from_storage(self, inputs):
-        self._compute_func(
+        self._map1_ppm_u = MapSingle(
+            self.stencil_factory,
+            self.quantity_factory,
+            inputs["kord_mt"],
+            -1,
+            dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+        )
+
+        self._pressures_mapu(
                 inputs["pe_"],
                 inputs["ak"],
                 inputs["bk"],
                 inputs["pe0_"],
                 inputs["pe3_"],
                 inputs["ptop"],
+            )
+
+        self._map1_ppm_u(
+                inputs["u_"],
+                inputs["pe0_"],
+                inputs["pe3_"],
+                interp=False,
+            )
+        
+        self._map1_ppm_u(
+                inputs["mfy_"],
+                inputs["pe0_"],
+                inputs["pe3_"],
+                interp=False,
+            )
+        
+        self._map1_ppm_u(
+                inputs["cy_"],
+                inputs["pe0_"],
+                inputs["pe3_"],
+                interp=False,
             )
         return inputs

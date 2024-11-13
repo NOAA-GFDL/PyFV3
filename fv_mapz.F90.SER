@@ -222,11 +222,13 @@ contains
    integer:: nt, liq_wat, ice_wat, rainwat, snowwat, cld_amt, graupel, iq, n, kmp, kp, k_next
    logical:: remap_t, remap_pt, remap_te
 
-   real, dimension(is:ie, js:je, km+1) :: pe_3d, pe1_3d, pe2_3d, pn1_3d, pn2_3d, pk2_3d, peln_3d
+   real, dimension(is:ie, js:je, km+1) :: pe1_3d, pe2_3d, pn1_3d, pn2_3d, pk2_3d, peln_3d
+   real, dimension(is-1:ie+1,js-1:je+1,km+1) :: pe_3d
+   real, dimension(is:ie+1, js:je+1, km+1) :: pe0_3d, pe3_3d
 
    real, dimension(is:ie, js:je, km) :: w2_3d, dp2_3d
 
-   real, dimension(is:ie, js:je) :: ws_2d
+   real, dimension(is:ie, js:je) :: ws_2d, gz_2d
 
 !$ser verbatim real :: w_max_, w_min_
 
@@ -246,6 +248,7 @@ contains
    !$ser verbatim pn2_3d = 0.0
    !$ser verbatim pk2_3d = pk
    !$ser verbatim ws_2d = 0.0
+   !$ser verbatim gz_2d = 0.0
 
    remap_t  = .false.
    remap_pt = .false.
@@ -366,7 +369,8 @@ contains
 !$OMP                                  delz,akap,pkz,te,u,v,ps, gridstruct, &
 !$OMP                                  ak,bk,nq,isd,ied,jsd,jed,kord_tr,fill, adiabatic, &
 !$OMP                                  hs,w,ws,kord_wz,rrg,kord_mt,consv,remap_option,gmao_remap,&
-!$OMP                                  pe_3d, pe1_3d, pe2_3d, pn1_3d, pn2_3d, pk2_3d, w2_3d, dp2_3d, peln_3d, ws_2d)    &
+!$OMP                                  pe_3d, pe1_3d, pe2_3d, pn1_3d, pn2_3d, pk2_3d, w2_3d, dp2_3d, &
+!$OMP                                  peln_3d, ws_2d, gz_2d, pe0_3d, pe3_3d)    &
 !$OMP                          private(gz,cvm,bkh,dp2,   &
 !$OMP                                  pe0,pe1,pe2,pe3,pk1,pk2,pn1,pn2,phis,q2,w2,dpln,dlnp, w_max_, w_min_)
    do 1000 j=js,je+1
@@ -734,7 +738,7 @@ contains
                !$ser verbatim    do i = is, ie
                !$ser verbatim       ws_2d(i,j) = ws(i,j)
                !$ser verbatim    enddo
-               !$ser savepoint Map1_PPM-In
+               !$ser savepoint Map1_PPM_W-In
                !$ser data pe1_=pe1_3d
                !$ser data pe2_=pe2_3d
                !$ser data ws_=ws_2d
@@ -745,7 +749,7 @@ contains
                            km,   pe2,  w,              &
                            is, ie, j, isd, ied, jsd, jed, -2, kord_wz)
                !$ser verbatim if(j == js2d) then 
-               !$ser savepoint Map1_PPM-Out
+               !$ser savepoint Map1_PPM_W-Out
                !$ser data w_=w
                !$ser verbatim endif
             ! Remap delz for hybrid sigma-p coordinate
@@ -754,9 +758,30 @@ contains
                   delz(i,j,k) = -delz(i,j,k) / delp(i,j,k) ! ="specific volume"/grav
                enddo
             enddo
+            !$ser verbatim if(j == js2d) then 
+               !$ser verbatim    do k = 1, km+1
+               !$ser verbatim      do i = is, ie
+               !$ser verbatim           pn1_3d(i,j,k) = pn1(i,k)
+               !$ser verbatim           pn2_3d(i,j,k) = pn2(i,k)
+               !$ser verbatim      enddo
+               !$ser verbatim     enddo
+               !$ser verbatim    do i = is, ie
+               !$ser verbatim       gz_2d(i,j) = gz(i)
+               !$ser verbatim    enddo
+               !$ser savepoint Map1_PPM_delz-In
+               !$ser data pe1_=pe1_3d
+               !$ser data pe2_=pe2_3d
+               !$ser data gz_=gz_2d
+               !$ser data delz_=delz
+               !$ser data kord_wz=kord_wz
+               !$ser verbatim endif
             call map1_ppm (km,   pe1, delz,  gz,   &
                            km,   pe2, delz,              &
                            is, ie, j, isd,  ied,  jsd,  jed,  1, abs(kord_wz))
+               !$ser verbatim if(j == js2d) then 
+               !$ser savepoint Map1_PPM_delz-Out
+               !$ser data delz_=delz
+               !$ser verbatim endif
             do k=1,km
                do i=is,ie
                   delz(i,j,k) = -delz(i,j,k)*dp2(i,k)
@@ -766,7 +791,6 @@ contains
             !Fix excessive w - momentum conserving --- sjl
             ! gz(:) used here as a temporary array
             if ( w_limiter ) then
-               print*,"w_limiter part"
 !$ser verbatim if(j == js2d) then 
 !$ser verbatim do k = 1, km
 !$ser verbatim            do i = is, ie
@@ -860,6 +884,41 @@ contains
 
       endif !(j < je+1)
 
+!$ser verbatim if(j == js2d) then
+!$ser verbatim pe_3d = 0
+!$ser verbatim pe0_3d = 0
+!$ser verbatim pe3_3d = 0
+!$ser verbatim do k = 1, km+1
+!$ser verbatim     do i = is-1, ie+1
+!$ser verbatim        pe_3d(i,j,k) = pe(i,k,j)
+!$ser verbatim        pe_3d(i,j-1,k) = pe(i,k,j-1)
+!$ser verbatim     enddo
+!$ser verbatim enddo
+!$ser verbatim do k = 1, km+1
+!$ser verbatim     do i = is, ie+1
+!$ser verbatim        pe0_3d(i,j,k) = pe0(i,k)
+!$ser verbatim        pe3_3d(i,j,k) = pe3(i,k)
+!$ser verbatim     enddo
+!$ser verbatim enddo
+!$ser verbatim    do i = is, ie
+!$ser verbatim       gz_2d(i,j) = gz(i)
+!$ser verbatim    enddo
+!$ser savepoint Pressures_mapU-In
+!$ser data pe_=pe_3d
+!$ser data pe0_=pe0_3d(is:ie,js:je,:)
+!$ser data pe3_=pe3_3d(is:ie,js:je,:)
+!$ser data ak=ak 
+!$ser data bk=bk 
+!$ser data ptop=ptop
+!$ser data u_=u
+!$ser data kord_mt=kord_mt
+!$ser verbatim if (present(mfy)) then
+!$ser data mfy_=mfy
+!$ser verbatim endif
+!$ser verbatim if (present(cy)) then
+!$ser data cy_=cy
+!$ser verbatim endif
+!$ser verbatim endif
       !------
       ! map u
       !------
@@ -880,6 +939,28 @@ contains
          enddo
       enddo
 
+!!$ser verbatim if(j == js2d) then
+!!$ser verbatim pe0_3d = 0.0
+!!$ser verbatim pe3_3d = 0.0
+!!$ser verbatim do k = 1, km+1
+!!$ser verbatim     do i = is, ie+1
+!!$ser verbatim        pe0_3d(i,j,k) = pe0(i,k)
+!!$ser verbatim        pe3_3d(i,j,k) = pe3(i,k)
+!!$ser verbatim     enddo
+!!$ser verbatim enddo
+!!$ser savepoint Pressures_mapU-In
+!!$ser data pe0_=pe0_3d(is:ie,:,:)
+!!$ser data pe3_=pe3_3d(is:ie,:,:)
+!!$ser data u_=u
+!!$ser data kord_mt=kord_mt
+!!$ser verbatim if (present(mfy)) then
+!!$ser data mfy_=mfy
+!!$ser verbatim endif
+!!$ser verbatim if (present(cy)) then
+!!$ser data cy_=cy
+!!$ser verbatim endif
+!!$ser verbatim endif
+
       call map1_ppm( km, pe0(is:ie,:),   u,   gz,   &
                      km, pe3(is:ie,:),   u,               &
                      is, ie, j, isd, ied, jsd, jed+1, -1, kord_mt)
@@ -896,6 +977,60 @@ contains
                         is, ie, j, isd, ied, js, je+1, -1, kord_mt)
       endif
 
+!$ser verbatim if(j == js2d) then
+!$ser verbatim do k = 1, km+1
+!$ser verbatim     do i = is, ie+1
+!$ser verbatim        pe0_3d(i,j,k) = pe0(i,k)
+!$ser verbatim        pe3_3d(i,j,k) = pe3(i,k)
+!$ser verbatim     enddo
+!$ser verbatim enddo
+!$ser savepoint Pressures_mapU-Out
+!$ser data pe0_=pe0_3d(is:ie,js:je,:)
+!$ser data pe3_=pe3_3d(is:ie,js:je,:)
+!$ser data u_=u
+!$ser verbatim if (present(mfy)) then
+!$ser data mfy_=mfy
+!$ser verbatim endif
+!$ser verbatim if (present(cy)) then
+!$ser data cy_=cy
+!$ser verbatim endif
+!$ser verbatim endif
+
+!$ser verbatim if(j == js2d) then
+!$ser verbatim pe_3d = 0
+!$ser verbatim pe0_3d = 0
+!$ser verbatim pe3_3d = 0
+!$ser verbatim do k = 1, km+1
+!$ser verbatim     do i = is, ie+1
+!$ser verbatim        pe_3d(i,j,k) = pe(i,k,j)
+!$ser verbatim        pe_3d(i-1,j,k) = pe(i-1,k,j)
+!$ser verbatim     enddo
+!$ser verbatim enddo
+!$ser verbatim do k = 1, km+1
+!$ser verbatim     do i = is, ie+1
+!$ser verbatim        pe0_3d(i,j,k) = pe0(i,k)
+!$ser verbatim        pe3_3d(i,j,k) = pe3(i,k)
+!$ser verbatim     enddo
+!$ser verbatim enddo
+!$ser verbatim    do i = is, ie
+!$ser verbatim       gz_2d(i,j) = gz(i)
+!$ser verbatim    enddo
+!$ser savepoint Pressures_mapV-In
+!$ser data pe_=pe_3d
+!$ser data pe0_=pe0_3d(is:ie,js:je,:)
+!$ser data pe3_=pe3_3d(is:ie,js:je,:)
+!$ser data ak=ak 
+!$ser data bk=bk 
+!$ser data ptop=ptop
+!$ser data u_=u
+!$ser data kord_mt=kord_mt
+!$ser verbatim if (present(mfy)) then
+!$ser data mfy_=mfy
+!$ser verbatim endif
+!$ser verbatim if (present(cy)) then
+!$ser data cy_=cy
+!$ser verbatim endif
+!$ser verbatim endif
       !------
       ! map v
       !------
@@ -1165,7 +1300,7 @@ contains
    if( last_step .and. (.not.do_adiabatic_init)  ) then
       ! NOTE : Code can enter here since do_adiabatic_init can be False
       if ( consv > consv_min ) then
-        ! print*, "consv > consv_min = entered"
+         ! print*, "consv > consv_min = entered", consv, consv_min
 !$OMP do
          do j=js,je
             if ( hydrostatic ) then
@@ -1189,6 +1324,7 @@ contains
                enddo
             else
 ! TE using 3D winds (pt is virtual temperature):
+               ! if(j==js) print*,"CODE EXECUTED 1"
                do i=is,ie
                   te_2d(i,j) = 0.
                   phis(i,km+1) = hs(i,j)
@@ -1200,6 +1336,7 @@ contains
                enddo
                do k=1,km
 #ifdef MOIST_CAPPA
+                  ! if(j==js) print*,"MOIST_CAPPA EXECUTED"
                   call moist_cv(is,ie,isd,ied,jsd,jed, km, j, k, nwat, sphum, liq_wat, rainwat,    &
                                  ice_wat, snowwat, graupel, q, gz, cvm)
                   do i=is,ie
@@ -1237,6 +1374,7 @@ contains
          enddo   ! j-loop
 
 !$OMP single
+         ! if(j==js) print*,"MPP GLOBAL SUM CODE EXECUTED 1"
          tesum = mpp_global_sum(domain, te_2d*gridstruct%area_64(is:ie,js:je), &
                               flags=BITWISE_EFP_SUM)
          E_Flux = DBLE(consv)*tesum / DBLE(grav*pdt*4.*pi*radius**2)    ! unit: W/m**2
@@ -1352,6 +1490,7 @@ contains
             enddo   ! j-loop
          enddo  ! k-loop
 #ifdef USE_COND
+   ! print*, "USE_COND active"
 ! Fill condensate output
 !$OMP do
         do k=1,km
