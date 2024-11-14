@@ -51,7 +51,6 @@ setup(
     extras_require=extras_requires,
     license="GPLv3 license",
     long_description=readme,
-    include_package_data=True,
     name="pyFV3",
     packages=find_namespace_packages(include=["pyFV3", "pyFV3.*"]),
     setup_requires=[],
