@@ -41,7 +41,7 @@ setup(
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: GPLv3 License",
+        "License :: OSI Approved :: Apache License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.11",
@@ -49,7 +49,7 @@ setup(
     description="PyFV3 is a NDSL-based FV3 dynamical core for atmospheric models.",
     install_requires=requirements,
     extras_require=extras_requires,
-    license="GPLv3 license",
+    license="Apache 2.0 license",
     long_description=readme,
     name="pyFV3",
     packages=find_namespace_packages(include=["pyFV3", "pyFV3.*"]),
