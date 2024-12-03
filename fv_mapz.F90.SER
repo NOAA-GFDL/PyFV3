@@ -1107,11 +1107,38 @@ contains
 !$OMP                                  graupel,sphum,cappa,r_vir,rcp,cp,k1k,delp, &
 !$OMP                                  delz,akap,pkz,te,u,v,ps, gridstruct, &
 !$OMP                                  ak,bk,nq,isd,ied,jsd,jed,kord_tr,fill, &
-!$OMP                                  hs,w,ws,kord_wz,do_omega,omga,rrg,kord_mt)    &
+!$OMP                                  hs,w,ws,kord_wz,do_omega,omga,rrg,kord_mt,    &
+#ifdef SERIALIZE
+!$OMP  ppser_savepoint, ppser_serializer, ppser_serializer_ref, ppser_zrperturb, js2d, &
+#endif
+!$OMP                                  pe2_3d, pe_3d, peln_3d, pn2_3d, pk2_3d) &
 !$OMP                          private(gz,cvm,kp,k_next,bkh,dp2,   &
 !$OMP                                  pe2,pe3,pk2,pn2,phis,tpe,dlnp,tmp)
    do 2000 j=js,je
 
+!$ser verbatim if(j == js2d) then
+!$ser verbatim do k = 1, km+1
+!$ser verbatim     do i = is, ie
+!$ser verbatim        pe2_3d(i,j,k) = pe2(i,k)
+!$ser verbatim        pe_3d(i,j,k)  = pe(i,k,j)
+!$ser verbatim        peln_3d(i,j,k) = peln(i,k,j)
+!$ser verbatim        pn2_3d(i,j,k) = pn2(i,k)
+!$ser verbatim        pk2_3d(i,j,k) = pk2(i,k)
+!$ser verbatim     enddo
+!$ser verbatim enddo
+!$ser savepoint PE_pk_delp_peln-In
+!$ser data pe2_=pe2_3d
+!$ser data pe_=pe_3d
+!$ser data peln_=peln_3d
+!$ser data pn2_=pn2_3d
+!$ser data pk2_=pk2_3d
+!$ser data delp=delp
+!$ser data pk=pk
+!$ser data ak=ak
+!$ser data bk=bk
+!$ser data akap=akap
+!$ser data ptop=ptop
+!$ser verbatim endif
       !----------
       ! Update pe
       !----------
@@ -1168,6 +1195,26 @@ contains
             peln(i,k,j) =  pn2(i,k)
          enddo
       enddo
+
+!$ser verbatim if(j == js2d) then
+!$ser verbatim do k = 1, km+1
+!$ser verbatim     do i = is, ie
+!$ser verbatim        pe2_3d(i,j,k) = pe2(i,k)
+!$ser verbatim        pe_3d(i,j,k)  = pe(i,k,j)
+!$ser verbatim        peln_3d(i,j,k) = peln(i,k,j)
+!$ser verbatim        pn2_3d(i,j,k) = pn2(i,k)
+!$ser verbatim        pk2_3d(i,j,k) = pk2(i,k)
+!$ser verbatim     enddo
+!$ser verbatim enddo
+!$ser savepoint PE_pk_delp_peln-Out
+!$ser data pe2_=pe2_3d
+!$ser data pe_=pe_3d
+!$ser data peln_=peln_3d
+!$ser data pn2_=pn2_3d
+!$ser data pk2_=pk2_3d
+!$ser data delp=delp
+!$ser data pk=pk
+!$ser verbatim endif
 
       !---------------------
       ! Compute pkz and T_v
