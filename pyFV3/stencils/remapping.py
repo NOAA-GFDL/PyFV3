@@ -292,6 +292,50 @@ def copy_from_below(a: FloatField, b: FloatField):
     with computation(PARALLEL), interval(1, None):
         b = a[0, 0, -1]
 
+def pe_pk_delp_peln(
+    pe: FloatField,
+    pk: FloatField,
+    delp: FloatField,
+    peln: FloatField,
+    pe2: FloatField,
+    pk2: FloatField,
+    pn2: FloatField,
+    ak: FloatFieldK,
+    bk: FloatFieldK,
+    akap: Float,
+    ptop: Float,
+):
+
+    with computation(BACKWARD):
+        with interval(-1, None):
+            pe_bottom = pe
+        with interval(0, -1):
+            pe_bottom = pe_bottom[0, 0, 1]
+
+    with computation(PARALLEL):
+        with interval(0, 1):
+            pe2 = ptop
+            pn2 = peln
+            pk2 = pk
+        with interval(1,-1):
+            pe2 = ak + bk * pe_bottom
+            pn2 = log(pe2)
+            pk2 = exp(akap*pn2)
+        with interval(-1, None):
+            pe2 = pe
+            pn2 = peln
+            pk2 = pk
+
+    with computation(PARALLEL):
+        with interval(0,-1):
+            pe = pe2
+            pk = pk2
+            delp = pe2[0,0,1] - pe2[0,0,0]
+            peln = pn2
+        with interval(-1,None):
+            pe = pe2
+            pk = pk2
+            peln = pn2
 
 class LagrangianToEulerian:
     """

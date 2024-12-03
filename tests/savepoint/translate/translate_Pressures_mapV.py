@@ -18,21 +18,21 @@ class TranslatePressures_mapV(TranslateFortranData2Py):
                 "iend": grid.ie+1,
                 "jstart": grid.js-1,
                 "jend": grid.je+1,
-                "kend": grid.npz
+                "kend": grid.npz+1
                 },
             "pe0_v": {
                 "istart": grid.is_,
                 "iend": grid.ie+1,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz
+                "kend": grid.npz+1
             },
             "pe3_v": {
                 "istart": grid.is_,
                 "iend": grid.ie+1,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz
+                "kend": grid.npz+1
             },
             "ak":{
 
@@ -76,14 +76,14 @@ class TranslatePressures_mapV(TranslateFortranData2Py):
                 "iend": grid.ie+1,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz
+                "kend": grid.npz+1,
             },
             "pe3_v": {
                 "istart": grid.is_,
                 "iend": grid.ie+1,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz
+                "kend": grid.npz+1,
             },
             # "v_": {
             #     "istart": grid.isd,
