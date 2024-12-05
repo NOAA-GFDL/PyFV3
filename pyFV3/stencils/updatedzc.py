@@ -105,8 +105,8 @@ def update_dz_c(
     # xfx/yfx are now ut/vt interpolated to layer interfaces
     with computation(PARALLEL), interval(...):
         fx, fy = xy_flux(gz_x, gz_y, xfx, yfx)
-        gz = (gz * area + fx - fx[1, 0, 0] + fy - fy[0, 1, 0]) / (
-            area + xfx - xfx[1, 0, 0] + yfx - yfx[0, 1, 0]
+        gz = (gz * area + (fx - fx[1, 0, 0]) + (fy - fy[0, 1, 0])) / (
+            area + (xfx - xfx[1, 0, 0]) + (yfx - yfx[0, 1, 0])
         )
     with computation(FORWARD), interval(-1, None):
         rdt = 1.0 / dt
