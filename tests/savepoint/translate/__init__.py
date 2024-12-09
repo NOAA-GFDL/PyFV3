@@ -98,3 +98,4 @@ from .translate_map1_ppm_delz import TranslateMap1_PPM_delz
 from .translate_Pressures_mapU import TranslatePressures_mapU
 from .translate_Pressures_mapV import TranslatePressures_mapV
 from .translate_pe_pk_delp_peln import TranslatePE_pk_delp_peln
+from .translate_getMPIprop import TranslateGetMPIProp
