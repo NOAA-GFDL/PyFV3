@@ -50,18 +50,16 @@ def _apply_height_advective_flux(
     # described in Putman and Lin 2007 equation 7
     # updated area is used because of implicit-in-time evaluation
     area_after_flux = (
-        (area + x_area_flux - x_area_flux[1, 0, 0])
-        + (area + y_area_flux - y_area_flux[0, 1, 0])
+        (area + (x_area_flux - x_area_flux[1, 0, 0]))
+        + (area + (y_area_flux - y_area_flux[0, 1, 0]))
         - area
     )
     # final height is the original volume plus the fluxed volumes,
     # divided by the final area
     return (
         height * area
-        + x_height_flux
-        - x_height_flux[1, 0, 0]
-        + y_height_flux
-        - y_height_flux[0, 1, 0]
+        + (x_height_flux - x_height_flux[1, 0, 0])
+        + (y_height_flux - y_height_flux[0, 1, 0])
     ) / area_after_flux
 
 
@@ -107,10 +105,8 @@ def apply_height_fluxes(
         height = (
             _apply_height_advective_flux(height, area, fx, fy, x_area_flux, y_area_flux)
             + (
-                gz_x_diffusive_flux
-                - gz_x_diffusive_flux[1, 0, 0]
-                + gz_y_diffusive_flux
-                - gz_y_diffusive_flux[0, 1, 0]
+                (gz_x_diffusive_flux - gz_x_diffusive_flux[1, 0, 0])
+                + (gz_y_diffusive_flux - gz_y_diffusive_flux[0, 1, 0])
             )
             / area
         )
@@ -155,11 +151,11 @@ def cubic_spline_interpolation_constants(
         dtype=Float,
     )
     gk.view[0] = dp0.view[1] / dp0.view[0]
-    beta.view[0] = gk.view[0] * (gk.view[0] + 0.5)
-    gamma.view[0] = (1.0 + gk.view[0] * (gk.view[0] + 1.5)) / beta.view[0]
+    beta.view[0] = gk.view[0] * (gk.view[0] + Float(0.5))
+    gamma.view[0] = (Float(1.0) + gk.view[0] * (gk.view[0] + Float(1.5))) / beta.view[0]
     gk.view[1:] = dp0.view[:-1] / dp0.view[1:]
     for i in range(1, beta.view[:].shape[0]):
-        beta.view[i] = 2.0 + 2.0 * gk.view[i] - gamma.view[i - 1]
+        beta.view[i] = Float(2.0) + Float(2.0) * gk.view[i] - gamma.view[i - 1]
         gamma.view[i] = gk.view[i] / beta.view[i]
     return gk, beta, gamma
 
@@ -229,8 +225,10 @@ class UpdateHeightOnDGrid:
         self.grid_indexing = grid_indexing
         self._area = grid_data.area
         self._column_namelist = column_namelist
-        if any(column_namelist["damp_vt"].view[:] <= 1e-5):
-            raise NotImplementedError("damp <= 1e-5 in column_namelist is untested")
+        if any(column_namelist["damp_vt"].view[:] <= Float(1e-5)):
+            raise NotImplementedError(
+                "damp <= 1e-5 in column_namelist is not implemented"
+            )
         self._dp_ref = grid_data.dp_ref
         self._allocate_temporary_storages(quantity_factory)
         self._gk, self._beta, self._gamma = cubic_spline_interpolation_constants(
