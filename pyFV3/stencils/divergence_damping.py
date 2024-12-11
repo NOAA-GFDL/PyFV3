@@ -1,4 +1,5 @@
 import gt4py.cartesian.gtscript as gtscript
+import numpy as np
 from gt4py.cartesian.gtscript import (
     __INLINED,
     PARALLEL,
@@ -309,7 +310,7 @@ class DivergenceDamping:
         damping_coefficients: DampingCoefficients,
         nested: bool,
         stretched_grid: bool,
-        dddmp,
+        dddmp: Float,
         d4_bg,
         nord: int,
         grid_type,
@@ -324,11 +325,11 @@ class DivergenceDamping:
         if nested:
             raise NotImplementedError("Divergence Dampoing: nested not implemented.")
         # TODO: make dddmp a compile-time external, instead of runtime scalar
-        self._dddmp = dddmp
+        self._dddmp = Float(dddmp)
         # TODO: make da_min_c a compile-time external, instead of runtime scalar
         self._damping_coefficients = damping_coefficients
         self._stretched_grid = stretched_grid
-        self._d4_bg = d4_bg
+        self._d4_bg = Float(d4_bg)
         self._grid_type = grid_type
         self._nord_column = nord_col
         self._d2_bg_column = d2_bg
@@ -539,12 +540,12 @@ class DivergenceDamping:
     # odd and adds a lot of boilerplate throughout the model code.
 
     @dace_inhibitor
-    def _get_da_min_c(self) -> float:
-        return self._damping_coefficients.da_min_c
+    def _get_da_min_c(self) -> Float:
+        return Float(self._damping_coefficients.da_min_c)
 
     @dace_inhibitor
-    def _get_da_min(self) -> float:
-        return self._damping_coefficients.da_min
+    def _get_da_min(self) -> Float:
+        return Float(self._damping_coefficients.da_min)
 
     def __call__(
         self,
@@ -697,9 +698,11 @@ class DivergenceDamping:
         da_min: Float = self._get_da_min()
         if self._stretched_grid:
             # reference https://github.com/NOAA-GFDL/GFDL_atmos_cubed_sphere/blob/main/model/sw_core.F90#L1422 # noqa: E501
-            dd8 = da_min * self._d4_bg ** (self._nonzero_nord + 1)
+            dd8 = da_min * np.power(self._d4_bg, (self._nonzero_nord + 1), dtype=Float)
         else:
-            dd8 = (da_min_c * self._d4_bg) ** (self._nonzero_nord + 1)
+            dd8 = np.power(
+                (da_min_c * self._d4_bg), (self._nonzero_nord + 1), dtype=Float
+            )
 
         self._damping_nord_highorder_stencil(
             damped_rel_vort_bgrid,

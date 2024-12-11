@@ -60,13 +60,3 @@ class TranslateDivergenceDamping(TranslateDycoreFortranData2Py):
         )
         self.divdamp(**inputs)
         return inputs
-
-    def subset_output(self, varname: str, output):
-        """
-        Given an output array, return the slice of the array which we'd
-        like to validate against reference data
-        """
-        if self.divdamp is None:
-            raise RuntimeError("must call compute_from_storage before subset_output")
-        else:
-            return self.divdamp.subset_output(varname, output)  # type: ignore
