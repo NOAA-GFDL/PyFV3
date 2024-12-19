@@ -1,3 +1,4 @@
+import numpy as np
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
@@ -127,7 +128,8 @@ class NonHydrostaticPressureGradient:
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
         grid_data: GridData,
-        grid_type,
+        grid_type: int,
+        use_logp: bool,
     ):
         orchestrate(
             obj=self,
@@ -142,6 +144,14 @@ class NonHydrostaticPressureGradient:
         self.nk = grid_indexing.domain[2]
         self._rdx = grid_data.rdx
         self._rdy = grid_data.rdy
+        self._use_logp = use_logp
+        if self._use_logp:
+            # Requires computing and carrying `peln1` see below on
+            # top_level calculation
+            raise NotImplementedError(
+                "Non Hydrostatic Pressure Gradient (nh_p_grad) with"
+                " `use_logp` is not implemented."
+            )
 
         self._tmp_wk = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_INTERFACE_DIM],
@@ -226,7 +236,7 @@ class NonHydrostaticPressureGradient:
         # Fortran names:
         # u=u v=v pp=pkc gz=gz pk3=pk3 delp=delp dt=dt
 
-        ptk = ptop ** akap
+        ptk = np.power(ptop, akap, dtype=Float)
         top_value = ptk  # = peln1 if spec.namelist.use_logp else ptk
 
         # TODO: make it clearer that each of these a2b outputs is updated

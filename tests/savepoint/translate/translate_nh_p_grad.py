@@ -39,6 +39,7 @@ class TranslateNH_P_Grad(TranslateDycoreFortranData2Py):
             self.grid.quantity_factory,
             grid_data=self.grid.grid_data,
             grid_type=self.namelist.grid_type,
+            use_logp=self.namelist.use_logp,
         )
         self.make_storage_data_input_vars(inputs)
         self.compute_func(**inputs)
