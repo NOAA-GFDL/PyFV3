@@ -4,8 +4,6 @@ from ndsl.stencils.testing import TranslateFortranData2Py, ParallelTranslate
 import numpy as np
 from ndsl.typing import Communicator
 from ndsl.quantity import Quantity
-
-# class TranslateMpp_global_sum(TranslateFortranData2Py):
 class TranslateMpp_global_sum(ParallelTranslate):
     def __init__(
         self,
@@ -13,7 +11,6 @@ class TranslateMpp_global_sum(ParallelTranslate):
         namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
-        # print("Base TranslateGetMPIProp is initialized")
         super().__init__(grid, namelist, stencil_factory)
         self.stencil_factory = stencil_factory
         self.grid = grid
@@ -42,15 +39,15 @@ class TranslateMpp_global_sum(ParallelTranslate):
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
+            },
+            "tesum":{
+
             }
         }
-        # self.in_vars["parameters"] = ["tesum"]
+
         self._base.out_vars = {
-            "inputArray" :{
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
+            "tesum":{
+
             }
         }
 
@@ -81,15 +78,27 @@ class TranslateMpp_global_sum(ParallelTranslate):
         # print("rank ", communicator.rank, ": sum(inputARray) = ", sum(sum(inputs["inputArray"])))
         # print('prec_error = ', self.prec_error)
 
-        self.array_manipulation(inputs["inputArray"], communicator, self.stencil_factory)
+        # print("tesum from translate test 1 : ", inputs["tesum"], type(inputs["tesum"]))
+
+        inputs["tesum"] = self.mpp_global_sum(inputs["inputArray"], communicator, self.stencil_factory)
+
+        # print("tesum from translate test 2 : ", inputs["tesum"])
+
         return inputs
     
-    def array_manipulation(self, inputArray, communicator=None, stencil_factory=None):
+    def mpp_global_sum(self, inputArray, communicator, stencil_factory=None):
 
-        print("rank ", communicator.rank, "sum(inputArray) = ", sum(sum(inputArray[0:24,0:24])))
+        # print("rank ", communicator.rank, "sum(inputArray) = ", sum(sum(inputArray[0:24,0:24])))
         mag_max_term = 0.0
         # ints_sum = np.zeros((self.NUMINT))
         ints_sum = Quantity(
+                            data=np.zeros((self.NUMINT),dtype=np.float64),
+                            dims=["K"],
+                            units="dunno",
+                            gt4py_backend=stencil_factory.backend,
+                        )
+        
+        ints_sum_reduce = Quantity(
                             data=np.zeros((self.NUMINT),dtype=np.float64),
                             dims=["K"],
                             units="dunno",
@@ -99,24 +108,19 @@ class TranslateMpp_global_sum(ParallelTranslate):
             for i in range(0,24):
                 self.increment_ints_faster(ints_sum.data, inputArray[i,j], mag_max_term)
 
-        print("rank ", communicator.rank, "ints_sum = ", sum(ints_sum.data), ' before carry_over')
+        # print("rank ", communicator.rank, "ints_sum = ", sum(ints_sum.data), ' before carry_over')
         self.carry_overflow(ints_sum.data, self.prec_error)
-        print("rank ", communicator.rank, "ints_sum = ", sum(ints_sum.data), ' after carry_over')
+        # print("rank ", communicator.rank, "ints_sum = ", sum(ints_sum.data), ' after carry_over')
 
+        communicator.all_reduce_sum(ints_sum, ints_sum_reduce)
 
-        if communicator == None:
-            print("No communcator passed, so global sum cannot be performed")
-            exit()
-        else:
-            ints_sum_reduce = communicator.all_reduce_sum(ints_sum)
-
-        print("rank ", communicator.rank, "sum(ints_sum_reduce) = ", sum(ints_sum_reduce.data), ' after all_reduce')
+        # print("rank ", communicator.rank, "sum(ints_sum_reduce) = ", sum(ints_sum_reduce.data), ' after all_reduce')
         self.regularize_ints(ints_sum_reduce.data)
-        print("rank ", communicator.rank,"ints_sum_reduce = ", sum(ints_sum_reduce.data), ' after regularize_ints')
+        # print("rank ", communicator.rank,"ints_sum_reduce = ", sum(ints_sum_reduce.data), ' after regularize_ints')
 
         sum_ = self.ints_to_real(ints_sum_reduce.data)
 
-        print("rank ", communicator.rank,"sum_ = ", sum_, ' after ints_to_real')
+        return sum_
 
         
     def increment_ints_faster(self, int_sum, r, max_mag_term):
