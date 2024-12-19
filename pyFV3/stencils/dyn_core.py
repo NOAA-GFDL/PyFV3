@@ -460,6 +460,7 @@ class AcousticDynamics:
                 quantity_factory=quantity_factory,
                 grid_data=grid_data,
                 grid_type=config.grid_type,
+                use_logp=config.use_logp,
             )
         )
         self._akap = Float(constants.KAPPA)
