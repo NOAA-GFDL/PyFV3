@@ -126,6 +126,8 @@ def moist_cv_pt_pressure(
         ps (out):
         pn2 (out):
         peln (in):
+        remap_t (in):
+        r_vir (in):
     """
     from __externals__ import hydrostatic#, kord_tm
 
@@ -149,8 +151,8 @@ def moist_cv_pt_pressure(
             )
         # NOTE : GEOS does not perform the delz computation at this location
         # # delz_adjust
-        if __INLINED(not hydrostatic):
-            delz = -delz / delp
+        # if __INLINED(not hydrostatic):
+        #     delz = -delz / delp
    
     # pressure_updates
     with computation(FORWARD):

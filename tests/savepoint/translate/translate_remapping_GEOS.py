@@ -2,6 +2,7 @@ import ndsl.dsl.gt4py_utils as utils
 from ndsl import Namelist, StencilFactory
 from pyFV3 import DynamicalCoreConfig
 from pyFV3.stencils.remapping import init_pe, moist_cv_pt_pressure, pn2_pk_delp
+from pyFV3.stencils.map_single import MapSingle
 from pyFV3.stencils import moist_cv
 from ndsl.stencils.testing import pad_field_in_j, Grid
 from pyFV3.testing import TranslateDycoreFortranData2Py
@@ -89,23 +90,23 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             "q_con": {},
             "pt": {},
             "cappa": {},
-            # "ps": {},
-            # "pn2_3d": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz + 1,
-            # },
-            # "peln_3d": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz + 1,
-            # },
-            # "ak": {},
-            # "bk": {},
+            "ps": {},
+            "pn2_3d": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            },
+            "peln_3d": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            },
+            "ak": {'dumbass': 3, 'axis': 2},
+            # "bk": {"kend": grid.npz + 1},
             # "dp2_3d": grid.compute_dict(),
             # "pk": {
             #     "istart": grid.is_,
@@ -148,24 +149,24 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             "pt": {},
             "cappa": {},
             "q_con": {},
-            # "delp": {},
-            # "delz": {},
-            # "ps": {},
-            # "dp2_3d": grid.compute_dict(),
-            # "pn2_3d": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz + 1,
-            # },
-            # "pk": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz + 1,
-            # }
+            "delp": {},
+            "delz": {},
+            "ps": {},
+            "dp2_3d": grid.compute_dict(),
+            "pn2_3d": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            },
+            "pk": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            }
         }
 
         self.stencil_factory = stencil_factory
@@ -210,14 +211,14 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             domain=(grid_indexing.domain[0], 1, grid_indexing.domain[2]),
         )
 
-        # self._moist_cv_pt_pressure = stencil_factory.from_origin_domain(
-        #     moist_cv_pt_pressure,
-        #     # externals={"kord_tm": config.kord_tm, "hydrostatic": hydrostatic},
-        #     externals={"hydrostatic": hydrostatic},
-        #     origin=grid_indexing.origin_compute(),
-        #     # domain=grid_indexing.domain_compute(add=(0, 0, 1)),
-        #     domain=(grid.nic, 1, grid.npz+1), # Note : Many intervals go from (0,-1) in this stencil
-        # )
+        self._moist_cv_pt_pressure = stencil_factory.from_origin_domain(
+            moist_cv_pt_pressure,
+            # externals={"kord_tm": config.kord_tm, "hydrostatic": hydrostatic},
+            externals={"hydrostatic": hydrostatic},
+            origin=grid_indexing.origin_compute(),
+            # domain=grid_indexing.domain_compute(add=(0, 0, 1)),
+            domain=(grid_indexing.domain[0], 1, grid_indexing.domain[2]+1), # Note : Many intervals go from (0,-1) in this stencil
+        )
 
         # self._pn2_pk_delp = stencil_factory.from_origin_domain(
         #     pn2_pk_delp,
@@ -225,13 +226,81 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
         #     domain=(grid.nic, 1, grid.npz+1),
         # )
 
-        # self._compute_func = MapNTracer(
+        # self._map_scalar = MapSingle(
+        #     self.stencil_factory,
+        #     self.quantity_factory,
+        #     self._kord_tm,
+        #     self.mode,
+        #     dims=[X_DIM, Y_DIM, Z_DIM],
+        # )
+
+        # self._mapn_tracer = MapNTracer(
         #     self.stencil_factory,
         #     self.quantity_factory,
         #     abs(self.kord),
         #     self.nq,
         #     fill=self.fill,
         #     tracers=tracers,
+        # )
+
+        # self._map_single_w = MapSingle(
+        #     self.stencil_factory,
+        #     self.quantity_factory,
+        #     self._kord_wz,
+        #     -2,
+        #     dims=[X_DIM, Y_DIM, Z_DIM],
+        # )
+
+        # self._map_single_delz = MapSingle(
+        #     self.stencil_factory,
+        #     quantity_factory,
+        #     self._kord_wz,
+        #     1,
+        #     dims=[X_DIM, Y_DIM, Z_DIM],
+        # )
+
+        # self._w_fix_consrv_moment = stencil_factory.from_origin_domain(
+        #     func=W_fix_consrv_moment,
+        #     origin=(3,3,0),
+        #     domain=(24,1,72),
+        # )
+
+        # self._pressures_mapu = stencil_factory.from_origin_domain(
+        #     pressures_mapu,
+        #     origin=grid_indexing.origin_compute(),
+        #     domain=self._domain_jextra,
+        # )
+
+        # self._map1_ppm_u = MapSingle(
+        #     self.stencil_factory,
+        #     self.quantity_factory,
+        #     inputs["kord_mt"],
+        #     -1,
+        #     dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+        # )
+
+        # self._pressures_mapv = stencil_factory.from_origin_domain(
+        #     pressures_mapv,
+        #     origin=grid_indexing.origin_compute(),
+        #     domain=(
+        #         grid_indexing.domain[0] + 1,
+        #         grid_indexing.domain[1],
+        #         grid_indexing.domain[2] + 1,
+        #     ),
+        # )
+
+        # self._map1_ppm_v = MapSingle(
+        #     self.stencil_factory,
+        #     self.quantity_factory,
+        #     inputs["kord_mt"],
+        #     -1,
+        #     dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+        # )
+
+        # self._pe_pk_delp_peln = stencil_factory.from_origin_domain(
+        #     pe_pk_delp_peln,
+        #     origin=grid_indexing.origin_compute(),
+        #     domain=self._domain_kextra,
         # )
 
     def compute_from_storage(self, inputs):
@@ -254,7 +323,22 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             inputs["ptop"],
         )
 
-        self._moist_cv_pt(
+        # self._moist_cv_pt(
+        #     inputs["qvapor"],
+        #     inputs["qliquid"],
+        #     inputs["qrain"],
+        #     inputs["qsnow"],
+        #     inputs["qice"],
+        #     inputs["qgraupel"],
+        #     inputs["q_con"],
+        #     inputs["pt"],
+        #     inputs["cappa"],
+        #     inputs["delp"],
+        #     inputs["delz"],
+        #     inputs["r_vir"],
+        # )
+
+        self._moist_cv_pt_pressure(
             inputs["qvapor"],
             inputs["qliquid"],
             inputs["qrain"],
@@ -266,32 +350,17 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             inputs["cappa"],
             inputs["delp"],
             inputs["delz"],
-            inputs["r_vir"],
+            inputs["pe_"],
+            inputs["pe2_"],
+            inputs["ak"],
+            inputs["bk"],
+            inputs["dp2_3d"],
+            inputs["ps"],
+            inputs["pn2_3d"],
+            inputs["peln_3d"],
+            True,
+            Float(inputs["r_vir"]),
         )
-
-        # self._moist_cv_pt_pressure(
-        #     inputs["qvapor_"],
-        #     inputs["qliquid_"],
-        #     inputs["qrain_"],
-        #     inputs["qsnow_"],
-        #     inputs["qice_"],
-        #     inputs["qgraupel_"],
-        #     inputs["q_con"],
-        #     inputs["pt"],
-        #     inputs["cappa"],
-        #     inputs["delp"],
-        #     inputs["delz"],
-        #     inputs["pe_"],
-        #     inputs["pe2_"],
-        #     inputs["ak"],
-        #     inputs["bk"],
-        #     inputs["dp2_3d"],
-        #     inputs["ps"],
-        #     inputs["pn2_3d"],
-        #     inputs["peln_3d"],
-        #     True,
-        #     Float(inputs["r_vir"]),
-        # )
 
         # self._pn2_pk_delp(
         #     inputs["pe2_"],
@@ -301,11 +370,121 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
         # )
 
         # # now that we have the pressure profiles, we can start remapping
-        # self._map_single_pt(pt, peln, self._pn2, qmin=self._t_min)
+        # self._map_scalar(pt, self._pn1, self._pn2, qmin=self._t_min, interp=True)
 
         # self._mapn_tracer(self._pe1, self._pe2, self._dp2, tracers)
 
-        # self._map_single_w(w, self._pe1, self._pe2, qs=wsd)
+        # self._map_single_w(w, self._pe1, self._pe2, qs=wsd, interp=False)
         # self._map_single_delz(delz, self._pe1, self._pe2)
+
+        # self._w_fix_consrv_moment(
+        #              inputs["w"],
+        #              inputs["w2"],
+        #              inputs["dp2_W"],
+        #              self._gz,
+        #              inputs["w_max"],
+        #              inputs["w_min"],
+        #              self._compute_performed
+        #              )
+
+        # self._pressures_mapu(
+        #         inputs["pe_"],
+        #         inputs["ak"],
+        #         inputs["bk"],
+        #         inputs["pe0_"],
+        #         inputs["pe3_"],
+        #         inputs["ptop"],
+        #     )
+
+        # self._map1_ppm_u(
+        #         inputs["u_"],
+        #         inputs["pe0_"],
+        #         inputs["pe3_"],
+        #         interp=False,
+        #     )
+        
+        # self._map1_ppm_u(
+        #         inputs["mfy_"],
+        #         inputs["pe0_"],
+        #         inputs["pe3_"],
+        #         interp=False,
+        #     )
+        
+        # self._map1_ppm_u(
+        #         inputs["cy_"],
+        #         inputs["pe0_"],
+        #         inputs["pe3_"],
+        #         interp=False,
+        #     )
+
+        # self._pressures_mapv(
+        #         inputs["pe_"],
+        #         inputs["ak"],
+        #         inputs["bk"],
+        #         inputs["pe0_v"],
+        #         inputs["pe3_v"],
+        #     )
+
+        # self._map1_ppm_v(
+        #         inputs["v_"],
+        #         inputs["pe0_v"],
+        #         inputs["pe3_v"],
+        #         interp=False,
+        #     )
+        
+        # self._map1_ppm_v(
+        #         inputs["mfx_"],
+        #         inputs["pe0_v"],
+        #         inputs["pe3_v"],
+        #         interp=False,
+        #     )
+        
+        # self._map1_ppm_v(
+        #         inputs["cx_"],
+        #         inputs["pe0_v"],
+        #         inputs["pe3_v"],
+        #         interp=False,
+        #     )
+
+        # self._pe_pk_delp_peln(inputs["pe_"],
+        #                       inputs["pk"],
+        #                       inputs["delp"],
+        #                       inputs["peln_"],
+        #                       inputs["pe2_"],
+        #                       inputs["pk2_"],
+        #                       inputs["pn2_"],
+        #                       inputs["ak"],
+        #                       inputs["bk"],
+        #                       inputs["akap"],
+        #                       inputs["ptop"],
+        # )
+
+        # NOTE : THERE WILL BE ADJUSTMENTS TO ACCOUNT FOR PKZ
+        # self._moist_cv_pt(
+        #     inputs["qvapor"],
+        #     inputs["qliquid"],
+        #     inputs["qrain"],
+        #     inputs["qsnow"],
+        #     inputs["qice"],
+        #     inputs["qgraupel"],
+        #     inputs["q_con"],
+        #     inputs["pt"],
+        #     inputs["cappa"],
+        #     inputs["delp"],
+        #     inputs["delz"],
+        #     inputs["r_vir"],
+        # )
+
+        # If loop based on if( last_step .and. (.not.do_adiabatic_init)  ) then
+            # PHIS computation
+            # Some variation of moist_cv_pt
+            # zsum1 computation
+        
+            # MPP GLOBAL SUM
+            # E_FLUX calcuation
+
+        # If loop based on if ( last_step .and. (.not. adiabatic) ) then
+            # Some variation of moist_cv_pt
+            # Condensation update
 
         return inputs
