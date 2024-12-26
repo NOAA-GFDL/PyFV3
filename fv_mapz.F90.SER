@@ -392,6 +392,7 @@ contains
 !$ser verbatim               dp2_3d(i,j,k) = dp2(i,k)
 !$ser verbatim            enddo
 !$ser verbatim         enddo
+!$ser verbatim  qmin=t_min
 !$ser savepoint Remapping_GEOS-In
 !$ser data pe_=pe_3d
 !$ser data pe1_=pe1_3d
@@ -421,6 +422,7 @@ contains
 !$ser data cvm=cvm
 !$ser data pk=pk
 !$ser data akap=akap
+!$ser data t_min=qmin
 !!$ser data gz=gz
 !!$ser data k1k=k1k
 !!$ser data remap_t=remap_t
@@ -648,34 +650,34 @@ contains
             enddo
          enddo
 
-!$ser verbatim if(j == js) then
-!$ser verbatim    do k = 1, km+1
-!$ser verbatim      do i = is, ie
-!$ser verbatim         pe1_3d(i,j,k) = pe1(i,k)
-!$ser verbatim         pe2_3d(i,j,k) = pe2(i,k)
-!$ser verbatim         pn1_3d(i,j,k) = pn1(i,k)
-!$ser verbatim           pn2_3d(i,j,k) = pn2(i,k)
-!$ser verbatim         pk2_3d(i,j,k) = pk2(i,k)
-!$ser verbatim      enddo
-!$ser verbatim     enddo
-!$ser verbatim     do k = 1, km
-!$ser verbatim        do i = is, ie
-!$ser verbatim           dp2_3d(i,j,k) = dp2(i,k)
-!$ser verbatim        enddo
-!$ser verbatim     enddo
-!$ser savepoint Remapping_GEOS-Out
-!$ser data pe1_=pe1_3d pe2_=pe2_3d
-!$ser data q_con=q_con
-!$ser data pt=pt
-!$ser data cappa=cappa
-!$ser data delp=delp
-!$ser data delz=delz
-!$ser data ps=ps
-!$ser data dp2_3d=dp2_3d
-!$ser data pn1_3d=pn1_3d
-!$ser data pn2_3d=pn2_3d
-!$ser data pk2_3d=pk2_3d
-!$ser verbatim endif
+!!$ser verbatim if(j == js) then
+!!$ser verbatim    do k = 1, km+1
+!!$ser verbatim      do i = is, ie
+!!$ser verbatim         pe1_3d(i,j,k) = pe1(i,k)
+!!$ser verbatim         pe2_3d(i,j,k) = pe2(i,k)
+!!$ser verbatim         pn1_3d(i,j,k) = pn1(i,k)
+!!$ser verbatim           pn2_3d(i,j,k) = pn2(i,k)
+!!$ser verbatim         pk2_3d(i,j,k) = pk2(i,k)
+!!$ser verbatim      enddo
+!!$ser verbatim     enddo
+!!$ser verbatim     do k = 1, km
+!!$ser verbatim        do i = is, ie
+!!$ser verbatim           dp2_3d(i,j,k) = dp2(i,k)
+!!$ser verbatim        enddo
+!!$ser verbatim     enddo
+!!$ser savepoint Remapping_GEOS-Out
+!!$ser data pe1_=pe1_3d pe2_=pe2_3d
+!!$ser data q_con=q_con
+!!$ser data pt=pt
+!!$ser data cappa=cappa
+!!$ser data delp=delp
+!!$ser data delz=delz
+!!$ser data ps=ps
+!!$ser data dp2_3d=dp2_3d
+!!$ser data pn1_3d=pn1_3d
+!!$ser data pn2_3d=pn2_3d
+!!$ser data pk2_3d=pk2_3d
+!!$ser verbatim endif
 
          if (remap_te) then
             print*,'CODE NOT TESTED HERE 5'
@@ -733,6 +735,35 @@ contains
                !$ser verbatim if(j == js2d) then 
                !$ser savepoint Map_Scalar-Out
                !$ser data q1=pt
+               !$ser verbatim endif
+
+               !$ser verbatim if(j == js) then
+               !$ser verbatim    do k = 1, km+1
+               !$ser verbatim      do i = is, ie
+               !$ser verbatim         pe1_3d(i,j,k) = pe1(i,k)
+               !$ser verbatim         pe2_3d(i,j,k) = pe2(i,k)
+               !$ser verbatim         pn1_3d(i,j,k) = pn1(i,k)
+               !$ser verbatim         pn2_3d(i,j,k) = pn2(i,k)
+               !$ser verbatim         pk2_3d(i,j,k) = pk2(i,k)
+               !$ser verbatim      enddo
+               !$ser verbatim     enddo
+               !$ser verbatim     do k = 1, km
+               !$ser verbatim        do i = is, ie
+               !$ser verbatim           dp2_3d(i,j,k) = dp2(i,k)
+               !$ser verbatim        enddo
+               !$ser verbatim     enddo
+               !$ser savepoint Remapping_GEOS-Out
+               !$ser data pe1_=pe1_3d pe2_=pe2_3d
+               !$ser data q_con=q_con
+               !$ser data pt=pt
+               !$ser data cappa=cappa
+               !$ser data delp=delp
+               !$ser data delz=delz
+               !$ser data ps=ps
+               !$ser data dp2_3d=dp2_3d
+               !$ser data pn1_3d=pn1_3d
+               !$ser data pn2_3d=pn2_3d
+               !$ser data pk2_3d=pk2_3d
                !$ser verbatim endif
             endif
          endif

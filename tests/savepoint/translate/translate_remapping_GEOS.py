@@ -147,6 +147,7 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             "r_vir",
             # "remap_t", # For some reason, translate test can't accept a logical variable
             "akap",
+            "t_min",
             # "zvir",
             # "last_step",
             # "consv_te",
@@ -222,6 +223,12 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             grid_indexing.domain[2] + 1,
         )
         
+        # Value from GEOS
+        self._kord_tm = 9 
+
+        # mode / iv set to 1 from GEOS
+        self.mode = 1 
+
         # self._pe1 = self.quantity_factory.zeros(
         #     [X_DIM, Y_DIM, Z_INTERFACE_DIM],
         #     units="Pa",
@@ -260,13 +267,13 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             domain=(grid.nic, 1, grid.npz-1),
         )
 
-        # self._map_scalar = MapSingle(
-        #     self.stencil_factory,
-        #     self.quantity_factory,
-        #     self._kord_tm,
-        #     self.mode,
-        #     dims=[X_DIM, Y_DIM, Z_DIM],
-        # )
+        self._map_scalar = MapSingle(
+            self.stencil_factory,
+            self.quantity_factory,
+            self._kord_tm,
+            self.mode,
+            dims=[X_DIM, Y_DIM, Z_DIM],
+        )
 
         # self._mapn_tracer = MapNTracer(
         #     self.stencil_factory,
@@ -407,8 +414,13 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             Float(inputs["akap"]),
         )
 
-        # # now that we have the pressure profiles, we can start remapping
-        # self._map_scalar(pt, self._pn1, self._pn2, qmin=self._t_min, interp=True)
+        self._map_scalar(
+                inputs["pt"],
+                inputs["pn1_3d"],
+                inputs["pn2_3d"],
+                qmin=inputs["t_min"],
+                interp=True,
+        )
 
         # self._mapn_tracer(self._pe1, self._pe2, self._dp2, tracers)
 
