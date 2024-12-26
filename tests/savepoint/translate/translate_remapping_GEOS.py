@@ -91,6 +91,13 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             "pt": {},
             "cappa": {},
             "ps": {},
+            "pn1_3d": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            },
             "pn2_3d": {
                 "istart": grid.is_,
                 "iend": grid.ie,
@@ -173,6 +180,13 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 "jstart": grid.js,
                 "jend": grid.je,
                 "kend": grid.npz-1,
+            },
+            "pn1_3d": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
             },
             "pn2_3d": {
                 "istart": grid.is_,
@@ -379,6 +393,7 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             inputs["bk"],
             inputs["dp2_3d"],
             inputs["ps"],
+            inputs["pn1_3d"],
             inputs["pn2_3d"],
             inputs["peln_3d"],
             True,

@@ -98,6 +98,7 @@ def moist_cv_pt_pressure(
     bk: FloatFieldK,
     dp2: FloatField,
     ps: FloatFieldIJ,
+    pn1: FloatField,
     pn2: FloatField,
     peln: FloatField,
     remap_t: bool,
@@ -161,13 +162,16 @@ def moist_cv_pt_pressure(
     with computation(PARALLEL):
         with interval(0, 1):
             pn2 = peln
+            pn1 = peln
         # TODO: refactor the pe2 = ptop assignment from
         # previous stencil into this one, and remove
         # pe2 from the other stencil
         with interval(1, -1):
             pe2 = ak + bk * ps
+            pn1 = peln
         with interval(-1, None):
             pn2 = peln
+            pn1 = peln
     with computation(BACKWARD), interval(0, -1):
         dp2 = pe2[0, 0, 1] - pe2
 
