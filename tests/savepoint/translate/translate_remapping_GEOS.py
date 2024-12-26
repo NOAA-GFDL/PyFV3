@@ -107,14 +107,27 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             },
             "ak": {},
             "bk": {},
-            "dp2_3d": grid.compute_dict(),
+            "dp2_3d": { 
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz-1,
+            },
             "pk": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
                 "kend": grid.npz + 1,
-            }
+            },
+            "pk2_3d": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            },
         }
         # self.write_vars = ["gz", "cvm"]
         self.write_vars = ["qvapor", "qliquid", "qice", "qrain", "qsnow", "qgraupel"]
@@ -126,7 +139,7 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             "ptop",
             "r_vir",
             # "remap_t", # For some reason, translate test can't accept a logical variable
-            # "akap",
+            "akap",
             # "zvir",
             # "last_step",
             # "consv_te",
@@ -151,29 +164,30 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             "pt": {},
             "cappa": {},
             "q_con": {},
-            # "delp": {},
-            # "delz": {},
-            # "ps": {
-            #      "istart": grid.isd,
-            #      "iend": grid.ied,
-            #      "jstart": grid.jsd,
-            #      "jend": grid.jed,
-            # },
-            # "dp2_3d": grid.compute_dict(),
-            # "pn2_3d": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz + 1,
-            # },
-            # "pk": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz + 1,
-            # }
+            "delp": {},
+            "delz": {},
+            "ps": {},
+            "dp2_3d": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz-1,
+            },
+            "pn2_3d": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            },
+            "pk2_3d": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            }
         }
 
         self.stencil_factory = stencil_factory
@@ -226,11 +240,11 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             domain=(grid_indexing.domain[0], 1, grid_indexing.domain[2]+1), # Note : Many intervals go from (0,-1) in this stencil
         )
 
-        # self._pn2_pk_delp = stencil_factory.from_origin_domain(
-        #     pn2_pk_delp,
-        #     origin=grid_indexing.origin_compute(),
-        #     domain=(grid.nic, 1, grid.npz+1),
-        # )
+        self._pn2_pk_delp = stencil_factory.from_origin_domain(
+            pn2_pk_delp,
+            origin=grid_indexing.origin_compute(add=(0,0,1)),
+            domain=(grid.nic, 1, grid.npz-1),
+        )
 
         # self._map_scalar = MapSingle(
         #     self.stencil_factory,
@@ -309,6 +323,11 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
         #     domain=self._domain_kextra,
         # )
 
+        print("grid.compute_dict() = ", grid.compute_dict())
+        print("istard iend jstart jend kend = ", grid.is_, grid.ie, grid.js, grid.je, grid.npz)
+        print("grid.nic, 1, grid.npz+1 : ", grid.nic, 1, grid.npz+1)
+        print("grid_indexing.origin_compute() = ", grid_indexing.origin_compute())
+
     def compute_from_storage(self, inputs):
 
         # Replicates tracer values in I along the J direction
@@ -327,22 +346,7 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             inputs["ptop"],
         )
 
-        self._moist_cv_pt(
-            inputs["qvapor"],
-            inputs["qliquid"],
-            inputs["qrain"],
-            inputs["qsnow"],
-            inputs["qice"],
-            inputs["qgraupel"],
-            inputs["q_con"],
-            inputs["pt"],
-            inputs["cappa"],
-            inputs["delp"],
-            inputs["delz"],
-            inputs["r_vir"],
-        )
-
-        # self._moist_cv_pt_pressure(
+        # self._moist_cv_pt(
         #     inputs["qvapor"],
         #     inputs["qliquid"],
         #     inputs["qrain"],
@@ -354,24 +358,39 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
         #     inputs["cappa"],
         #     inputs["delp"],
         #     inputs["delz"],
-        #     inputs["pe_"],
-        #     inputs["pe2_"],
-        #     inputs["ak_3d"],
-        #     inputs["bk_3d"],
-        #     inputs["dp2_3d"],
-        #     inputs["ps_"],
-        #     inputs["pn2_3d"],
-        #     inputs["peln_3d"],
-        #     True,
-        #     Float(inputs["r_vir"]),
+        #     inputs["r_vir"],
         # )
 
-        # self._pn2_pk_delp(
-        #     inputs["pe2_"],
-        #     inputs["pn2_3d"],
-        #     inputs["pk"],
-        #     Float(inputs["akap"]),
-        # )
+        self._moist_cv_pt_pressure(
+            inputs["qvapor"],
+            inputs["qliquid"],
+            inputs["qrain"],
+            inputs["qsnow"],
+            inputs["qice"],
+            inputs["qgraupel"],
+            inputs["q_con"],
+            inputs["pt"],
+            inputs["cappa"],
+            inputs["delp"],
+            inputs["delz"],
+            inputs["pe_"],
+            inputs["pe2_"],
+            inputs["ak"],
+            inputs["bk"],
+            inputs["dp2_3d"],
+            inputs["ps"],
+            inputs["pn2_3d"],
+            inputs["peln_3d"],
+            True,
+            Float(inputs["r_vir"]),
+        )
+
+        self._pn2_pk_delp(
+            inputs["pe2_"],
+            inputs["pn2_3d"],
+            inputs["pk2_3d"],
+            Float(inputs["akap"]),
+        )
 
         # # now that we have the pressure profiles, we can start remapping
         # self._map_scalar(pt, self._pn1, self._pn2, qmin=self._t_min, interp=True)
