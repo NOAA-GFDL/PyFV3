@@ -85,6 +85,13 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             "qrain": {"serialname": "qrain_js"},
             "qsnow": {"serialname": "qsnow_js"},
             "qgraupel": {"serialname": "qgraupel_js"},
+            "qcld": {"serialname": "qcld_js"},
+            "qo3mr": {
+                "kend": grid.npz-1,
+            },
+            "qsgs_tke": {
+                "kend": grid.npz-1,
+            },
             "delp": {},
             "delz": {},
             "q_con": {},
@@ -137,7 +144,7 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             },
         }
         # self.write_vars = ["gz", "cvm"]
-        self.write_vars = ["qvapor", "qliquid", "qice", "qrain", "qsnow", "qgraupel"]
+        self.write_vars = ["qvapor", "qliquid", "qice", "qrain", "qsnow", "qgraupel","qcld"]
         for k, v in self.in_vars["data_vars"].items():
             # if k not in self.write_vars:
             if k in self.write_vars:
@@ -202,7 +209,35 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 "jstart": grid.js,
                 "jend": grid.je,
                 "kend": grid.npz + 1,
-            }
+            },
+
+            "qvapor": {
+                "kend": grid.npz-1,
+            },
+            "qliquid": {
+                "kend": grid.npz-1,
+                },
+            "qice": {
+                "kend": grid.npz-1,
+            },
+            "qrain": {
+                "kend": grid.npz-1,
+            },
+            "qsnow": {
+                "kend": grid.npz-1,
+            },
+            "qgraupel": {
+                "kend": grid.npz-1,
+            },
+            "qcld": {
+                "kend": grid.npz-1,
+            },
+            "qo3mr": {
+                "kend": grid.npz-1,
+            },
+            "qsgs_tke": {
+                "kend": grid.npz-1,
+            },
         }
 
         self.stencil_factory = stencil_factory
@@ -224,10 +259,17 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
         )
         
         # Value from GEOS
+        self.kord = 9 
+
+        # Value from GEOS
         self._kord_tm = 9 
 
         # mode / iv set to 1 from GEOS
         self.mode = 1 
+
+        self.nq = 9
+
+        self.fill = True
 
         # self._pe1 = self.quantity_factory.zeros(
         #     [X_DIM, Y_DIM, Z_INTERFACE_DIM],
@@ -344,11 +386,6 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
         #     domain=self._domain_kextra,
         # )
 
-        print("grid.compute_dict() = ", grid.compute_dict())
-        print("istard iend jstart jend kend = ", grid.is_, grid.ie, grid.js, grid.je, grid.npz)
-        print("grid.nic, 1, grid.npz+1 : ", grid.nic, 1, grid.npz+1)
-        print("grid_indexing.origin_compute() = ", grid_indexing.origin_compute())
-
     def compute_from_storage(self, inputs):
 
         # Replicates tracer values in I along the J direction
@@ -422,7 +459,27 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 interp=True,
         )
 
-        # self._mapn_tracer(self._pe1, self._pe2, self._dp2, tracers)
+        tracers = { "qvapor": inputs["qvapor"],
+                    "qliquid": inputs["qliquid"],
+                    "qice": inputs["qice"],
+                    "qrain": inputs["qrain"],
+                    "qsnow": inputs["qsnow"],
+                    "qgraupel": inputs["qgraupel"],
+                    "qcld": inputs["qcld"],
+                    "qo3mr": inputs["qo3mr"],
+                    "qsgs_tke": inputs["qsgs_tke"],
+        }
+
+        self._mapn_tracer = MapNTracer(
+            self.stencil_factory,
+            self.quantity_factory,
+            abs(self.kord),
+            self.nq,
+            fill=self.fill,
+            tracers=tracers,
+        )
+
+        self._mapn_tracer(inputs["pe1_"], inputs["pe2_"], inputs["dp2_3d"], tracers)
 
         # self._map_single_w(w, self._pe1, self._pe2, qs=wsd, interp=False)
         # self._map_single_delz(delz, self._pe1, self._pe2)
