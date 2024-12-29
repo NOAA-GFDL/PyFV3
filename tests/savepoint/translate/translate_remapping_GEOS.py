@@ -142,6 +142,15 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 "jend": grid.je,
                 "kend": grid.npz + 1,
             },
+            "w": {
+                "kend": grid.npz-1,
+                },
+            "ws_":{
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+            },
         }
         # self.write_vars = ["gz", "cvm"]
         self.write_vars = ["qvapor", "qliquid", "qice", "qrain", "qsnow", "qgraupel","qcld"]
@@ -155,6 +164,7 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             # "remap_t", # For some reason, translate test can't accept a logical variable
             "akap",
             "t_min",
+            "kord_wz",
             # "zvir",
             # "last_step",
             # "consv_te",
@@ -238,6 +248,9 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             "qsgs_tke": {
                 "kend": grid.npz-1,
             },
+            "w": {
+                "kend": grid.npz-1,
+            },
         }
 
         self.stencil_factory = stencil_factory
@@ -316,23 +329,6 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             self.mode,
             dims=[X_DIM, Y_DIM, Z_DIM],
         )
-
-        # self._mapn_tracer = MapNTracer(
-        #     self.stencil_factory,
-        #     self.quantity_factory,
-        #     abs(self.kord),
-        #     self.nq,
-        #     fill=self.fill,
-        #     tracers=tracers,
-        # )
-
-        # self._map_single_w = MapSingle(
-        #     self.stencil_factory,
-        #     self.quantity_factory,
-        #     self._kord_wz,
-        #     -2,
-        #     dims=[X_DIM, Y_DIM, Z_DIM],
-        # )
 
         # self._map_single_delz = MapSingle(
         #     self.stencil_factory,
@@ -481,7 +477,15 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
 
         self._mapn_tracer(inputs["pe1_"], inputs["pe2_"], inputs["dp2_3d"], tracers)
 
-        # self._map_single_w(w, self._pe1, self._pe2, qs=wsd, interp=False)
+        self._map_single_w = MapSingle(
+            self.stencil_factory,
+            self.quantity_factory,
+            inputs["kord_wz"],
+            -2,
+            dims=[X_DIM, Y_DIM, Z_DIM],
+        )
+
+        self._map_single_w(inputs["w"], inputs["pe1_"], inputs["pe2_"], qs=inputs["ws_"], interp=False)
         # self._map_single_delz(delz, self._pe1, self._pe2)
 
         # self._w_fix_consrv_moment(
