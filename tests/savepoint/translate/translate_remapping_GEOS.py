@@ -4,6 +4,7 @@ from pyFV3 import DynamicalCoreConfig
 from pyFV3.stencils.remapping import init_pe, moist_cv_pt_pressure, pn2_pk_delp
 from pyFV3.stencils.map_single import MapSingle
 from pyFV3.stencils import moist_cv
+from pyFV3.stencils.scale_delz import rescale_delz_1, rescale_delz_2
 from ndsl.stencils.testing import pad_field_in_j, Grid
 from pyFV3.testing import TranslateDycoreFortranData2Py
 from ndsl.constants import (
@@ -330,13 +331,17 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             dims=[X_DIM, Y_DIM, Z_DIM],
         )
 
-        # self._map_single_delz = MapSingle(
-        #     self.stencil_factory,
-        #     quantity_factory,
-        #     self._kord_wz,
-        #     1,
-        #     dims=[X_DIM, Y_DIM, Z_DIM],
-        # )
+        self._rescale_delz_1 = stencil_factory.from_origin_domain(
+            rescale_delz_1,
+            origin=grid.compute_origin(),
+            domain=(grid.nic, 1, grid.npz),
+        )
+
+        self._rescale_delz_2 = stencil_factory.from_origin_domain(
+            rescale_delz_2,
+            origin=grid.compute_origin(),
+            domain=(grid.nic, 1, grid.npz),
+        )
 
         # self._w_fix_consrv_moment = stencil_factory.from_origin_domain(
         #     func=W_fix_consrv_moment,
@@ -399,21 +404,6 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             inputs["pe2_"],
             inputs["ptop"],
         )
-
-        # self._moist_cv_pt(
-        #     inputs["qvapor"],
-        #     inputs["qliquid"],
-        #     inputs["qrain"],
-        #     inputs["qsnow"],
-        #     inputs["qice"],
-        #     inputs["qgraupel"],
-        #     inputs["q_con"],
-        #     inputs["pt"],
-        #     inputs["cappa"],
-        #     inputs["delp"],
-        #     inputs["delz"],
-        #     inputs["r_vir"],
-        # )
 
         self._moist_cv_pt_pressure(
             inputs["qvapor"],
@@ -485,9 +475,27 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             dims=[X_DIM, Y_DIM, Z_DIM],
         )
 
+        self._map_single_delz = MapSingle(
+            self.stencil_factory,
+            self.quantity_factory,
+            inputs["kord_wz"],
+            1,
+            dims=[X_DIM, Y_DIM, Z_DIM],
+        )
         self._map_single_w(inputs["w"], inputs["pe1_"], inputs["pe2_"], qs=inputs["ws_"], interp=False)
-        # self._map_single_delz(delz, self._pe1, self._pe2)
+        
+        self._rescale_delz_1(
+            inputs["delz"],
+            inputs["delp"],
+        )
+        
+        self._map_single_delz(inputs["delz"], inputs["pe1_"], inputs["pe2_"])
 
+        self._rescale_delz_2(
+            inputs["delz"],
+            inputs["dp2_3d"],
+        )
+        
         # self._w_fix_consrv_moment(
         #              inputs["w"],
         #              inputs["w2"],

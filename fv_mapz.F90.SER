@@ -890,46 +890,46 @@ contains
                !$ser data w_=w
                !$ser verbatim endif
 
-               !$ser verbatim if(j == js) then
-               !$ser verbatim    do k = 1, km+1
-               !$ser verbatim      do i = is, ie
-               !$ser verbatim         pe1_3d(i,j,k) = pe1(i,k)
-               !$ser verbatim         pe2_3d(i,j,k) = pe2(i,k)
-               !$ser verbatim         pn1_3d(i,j,k) = pn1(i,k)
-               !$ser verbatim         pn2_3d(i,j,k) = pn2(i,k)
-               !$ser verbatim         pk2_3d(i,j,k) = pk2(i,k)
-               !$ser verbatim      enddo
-               !$ser verbatim     enddo
-               !$ser verbatim     do k = 1, km
-               !$ser verbatim        do i = is, ie
-               !$ser verbatim           dp2_3d(i,j,k) = dp2(i,k)
-               !$ser verbatim        enddo
-               !$ser verbatim     enddo
-               !$ser savepoint Remapping_GEOS-Out
-               !$ser data pe1_=pe1_3d pe2_=pe2_3d
-               !$ser data q_con=q_con
-               !$ser data pt=pt
-               !$ser data cappa=cappa
-               !$ser data delp=delp
-               !$ser data delz=delz
-               !$ser data ps=ps
-               !$ser data dp2_3d=dp2_3d
-               !$ser data pn1_3d=pn1_3d
-               !$ser data pn2_3d=pn2_3d
-               !$ser data pk2_3d=pk2_3d
+               !!$ser verbatim if(j == js) then
+               !!$ser verbatim    do k = 1, km+1
+               !!$ser verbatim      do i = is, ie
+               !!$ser verbatim         pe1_3d(i,j,k) = pe1(i,k)
+               !!$ser verbatim         pe2_3d(i,j,k) = pe2(i,k)
+               !!$ser verbatim         pn1_3d(i,j,k) = pn1(i,k)
+               !!$ser verbatim         pn2_3d(i,j,k) = pn2(i,k)
+               !!$ser verbatim         pk2_3d(i,j,k) = pk2(i,k)
+               !!$ser verbatim      enddo
+               !!$ser verbatim     enddo
+               !!$ser verbatim     do k = 1, km
+               !!$ser verbatim        do i = is, ie
+               !!$ser verbatim           dp2_3d(i,j,k) = dp2(i,k)
+               !!$ser verbatim        enddo
+               !!$ser verbatim     enddo
+               !!$ser savepoint Remapping_GEOS-Out
+               !!$ser data pe1_=pe1_3d pe2_=pe2_3d
+               !!$ser data q_con=q_con
+               !!$ser data pt=pt
+               !!$ser data cappa=cappa
+               !!$ser data delp=delp
+               !!$ser data delz=delz
+               !!$ser data ps=ps
+               !!$ser data dp2_3d=dp2_3d
+               !!$ser data pn1_3d=pn1_3d
+               !!$ser data pn2_3d=pn2_3d
+               !!$ser data pk2_3d=pk2_3d
 
-               !$ser data qvapor=q(:,:,:,1)
-               !$ser data qliquid=q(:,:,:,2)
-               !$ser data qice=q(:,:,:,3)
-               !$ser data qrain=q(:,:,:,4)
-               !$ser data qsnow=q(:,:,:,5)
-               !$ser data qgraupel=q(:,:,:,6)
-               !$ser data qcld=q(:,:,:,7)
-               !$ser data qo3mr=q(:,:,:,8)
-               !$ser data qsgs_tke=q(:,:,:,9)
+               !!$ser data qvapor=q(:,:,:,1)
+               !!$ser data qliquid=q(:,:,:,2)
+               !!$ser data qice=q(:,:,:,3)
+               !!$ser data qrain=q(:,:,:,4)
+               !!$ser data qsnow=q(:,:,:,5)
+               !!$ser data qgraupel=q(:,:,:,6)
+               !!$ser data qcld=q(:,:,:,7)
+               !!$ser data qo3mr=q(:,:,:,8)
+               !!$ser data qsgs_tke=q(:,:,:,9)
 
-               !$ser data w=w
-               !$ser verbatim endif
+               !!$ser data w=w
+               !!$ser verbatim endif
 
             !$ser verbatim if(j == js2d) then 
             !$ser verbatim    do k = 1, km+1
@@ -975,6 +975,47 @@ contains
             !$ser savepoint Map1_PPM_delz-Out
             !$ser data delz_=delz
             !$ser verbatim endif
+
+                           !$ser verbatim if(j == js) then
+               !$ser verbatim    do k = 1, km+1
+               !$ser verbatim      do i = is, ie
+               !$ser verbatim         pe1_3d(i,j,k) = pe1(i,k)
+               !$ser verbatim         pe2_3d(i,j,k) = pe2(i,k)
+               !$ser verbatim         pn1_3d(i,j,k) = pn1(i,k)
+               !$ser verbatim         pn2_3d(i,j,k) = pn2(i,k)
+               !$ser verbatim         pk2_3d(i,j,k) = pk2(i,k)
+               !$ser verbatim      enddo
+               !$ser verbatim     enddo
+               !$ser verbatim     do k = 1, km
+               !$ser verbatim        do i = is, ie
+               !$ser verbatim           dp2_3d(i,j,k) = dp2(i,k)
+               !$ser verbatim        enddo
+               !$ser verbatim     enddo
+               !$ser savepoint Remapping_GEOS-Out
+               !$ser data pe1_=pe1_3d pe2_=pe2_3d
+               !$ser data q_con=q_con
+               !$ser data pt=pt
+               !$ser data cappa=cappa
+               !$ser data delp=delp
+               !$ser data delz=delz
+               !$ser data ps=ps
+               !$ser data dp2_3d=dp2_3d
+               !$ser data pn1_3d=pn1_3d
+               !$ser data pn2_3d=pn2_3d
+               !$ser data pk2_3d=pk2_3d
+
+               !$ser data qvapor=q(:,:,:,1)
+               !$ser data qliquid=q(:,:,:,2)
+               !$ser data qice=q(:,:,:,3)
+               !$ser data qrain=q(:,:,:,4)
+               !$ser data qsnow=q(:,:,:,5)
+               !$ser data qgraupel=q(:,:,:,6)
+               !$ser data qcld=q(:,:,:,7)
+               !$ser data qo3mr=q(:,:,:,8)
+               !$ser data qsgs_tke=q(:,:,:,9)
+
+               !$ser data w=w
+               !$ser verbatim endif
 
             !Fix excessive w - momentum conserving --- sjl
             ! gz(:) used here as a temporary array
