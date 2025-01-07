@@ -930,41 +930,51 @@ contains
 
                !$ser data w=w
                !$ser verbatim endif
+
+            !$ser verbatim if(j == js2d) then 
+            !$ser verbatim    do k = 1, km+1
+            !$ser verbatim      do i = is, ie
+            !$ser verbatim           pn1_3d(i,j,k) = pn1(i,k)
+            !$ser verbatim           pn2_3d(i,j,k) = pn2(i,k)
+            !$ser verbatim      enddo
+            !$ser verbatim     enddo
+            !$ser verbatim    do i = is, ie
+            !$ser verbatim       gz_2d(i,j) = gz(i)
+            !$ser verbatim    enddo
+            !$ser verbatim do k = 1, km
+            !$ser verbatim            do i = is, ie
+            !$ser verbatim               dp2_3d(i,j,k) = dp2(i,k)
+            !$ser verbatim            enddo
+            !$ser verbatim         enddo
+            !$ser savepoint Map1_PPM_delz-In
+            !$ser data pe1_=pe1_3d
+            !$ser data pe2_=pe2_3d
+            !$ser data dp2_3d=dp2_3d
+            !$ser data gz_=gz_2d
+            !$ser data delz_=delz
+            !$ser data delp=delp
+            !$ser data kord_wz=kord_wz
+            !$ser verbatim endif
             ! Remap delz for hybrid sigma-p coordinate
             do k=1,km
                do i=is,ie
                   delz(i,j,k) = -delz(i,j,k) / delp(i,j,k) ! ="specific volume"/grav
                enddo
             enddo
-            !$ser verbatim if(j == js2d) then 
-               !$ser verbatim    do k = 1, km+1
-               !$ser verbatim      do i = is, ie
-               !$ser verbatim           pn1_3d(i,j,k) = pn1(i,k)
-               !$ser verbatim           pn2_3d(i,j,k) = pn2(i,k)
-               !$ser verbatim      enddo
-               !$ser verbatim     enddo
-               !$ser verbatim    do i = is, ie
-               !$ser verbatim       gz_2d(i,j) = gz(i)
-               !$ser verbatim    enddo
-               !$ser savepoint Map1_PPM_delz-In
-               !$ser data pe1_=pe1_3d
-               !$ser data pe2_=pe2_3d
-               !$ser data gz_=gz_2d
-               !$ser data delz_=delz
-               !$ser data kord_wz=kord_wz
-               !$ser verbatim endif
+
             call map1_ppm (km,   pe1, delz,  gz,   &
                            km,   pe2, delz,              &
                            is, ie, j, isd,  ied,  jsd,  jed,  1, abs(kord_wz))
-               !$ser verbatim if(j == js2d) then 
-               !$ser savepoint Map1_PPM_delz-Out
-               !$ser data delz_=delz
-               !$ser verbatim endif
+
             do k=1,km
                do i=is,ie
                   delz(i,j,k) = -delz(i,j,k)*dp2(i,k)
                enddo
             enddo
+            !$ser verbatim if(j == js2d) then 
+            !$ser savepoint Map1_PPM_delz-Out
+            !$ser data delz_=delz
+            !$ser verbatim endif
 
             !Fix excessive w - momentum conserving --- sjl
             ! gz(:) used here as a temporary array
