@@ -2,7 +2,7 @@ from ndsl import StencilFactory, Namelist
 from ndsl.stencils.testing.grid import Grid
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Y_INTERFACE_DIM
 from ndsl.stencils.testing import TranslateFortranData2Py
-from pyFV3.stencils.remapping import pressures_mapu
+from pyFV3.stencils.remapping import pressures_mapu, pe0_ptop_xmax
 from pyFV3.stencils.map_single import MapSingle
 
 class TranslatePressures_mapU(TranslateFortranData2Py):
@@ -20,72 +20,27 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
                 "jend": grid.je+1,
                 "kend": grid.npz
                 },
-            "pe0_": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
-                "kend": grid.npz
-            },
-            "pe3_": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
-                "kend": grid.npz
-            },
             "ak":{
 
             },
             "bk":{
 
             },
-            "u_": {
-                "istart": grid.isd,
-                "iend": grid.ied,
-                "jstart": grid.jsd,
-                "jend": grid.jed+1,
-                "kend": grid.npz-1,
-            },
-
-            "mfy_": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je+1,
-                "kend": grid.npz-1,
-            },
-
-            "cy_": {
-                "istart": grid.isd,
-                "iend": grid.ied,
-                "jstart": grid.js,
-                "jend": grid.je+1,
-                "kend": grid.npz-1,
-            },
-
-
-        }
-        self.in_vars["parameters"] = [
-            "kord_mt",
-            "ptop",
-        ]
-
-        self.out_vars = {
             "pe0_": {
                 "istart": grid.is_,
-                "iend": grid.ie,
+                "iend": grid.ie+1,
                 "jstart": grid.js,
-                "jend": grid.je,
+                "jend": grid.je+1,
                 "kend": grid.npz
             },
             "pe3_": {
                 "istart": grid.is_,
-                "iend": grid.ie,
+                "iend": grid.ie+1,
                 "jstart": grid.js,
-                "jend": grid.je,
+                "jend": grid.je+1,
                 "kend": grid.npz
             },
+
             "u_": {
                 "istart": grid.isd,
                 "iend": grid.ied,
@@ -94,21 +49,67 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
                 "kend": grid.npz-1,
             },
 
-            "mfy_": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je+1,
+            # "mfy_": {
+            #     "istart": grid.is_,
+            #     "iend": grid.ie,
+            #     "jstart": grid.js,
+            #     "jend": grid.je+1,
+            #     "kend": grid.npz-1,
+            # },
+
+            # "cy_": {
+            #     "istart": grid.isd,
+            #     "iend": grid.ied,
+            #     "jstart": grid.js,
+            #     "jend": grid.je+1,
+            #     "kend": grid.npz-1,
+            # },
+
+
+        }
+        self.in_vars["parameters"] = [
+            "ptop",
+            "kord_mt",
+        ]
+
+        self.out_vars = {
+            # "pe0_": {
+            #     "istart": grid.is_,
+            #     "iend": grid.ie+1,
+            #     "jstart": grid.js,
+            #     "jend": grid.je+1,
+            #     "kend": grid.npz
+            # },
+            # "pe3_": {
+            #     "istart": grid.is_,
+            #     "iend": grid.ie+1,
+            #     "jstart": grid.js,
+            #     "jend": grid.je+1,
+            #     "kend": grid.npz
+            # },
+            "u_": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.jsd,
+                "jend": grid.jed+1,
                 "kend": grid.npz-1,
             },
 
-            "cy_": {
-                "istart": grid.isd,
-                "iend": grid.ied,
-                "jstart": grid.js,
-                "jend": grid.je+1,
-                "kend": grid.npz-1,
-            },
+            # "mfy_": {
+            #     "istart": grid.is_,
+            #     "iend": grid.ie,
+            #     "jstart": grid.js,
+            #     "jend": grid.je+1,
+            #     "kend": grid.npz-1,
+            # },
+
+            # "cy_": {
+            #     "istart": grid.isd,
+            #     "iend": grid.ied,
+            #     "jstart": grid.js,
+            #     "jend": grid.je+1,
+            #     "kend": grid.npz-1,
+            # },
         }
 
         grid_indexing = stencil_factory.grid_indexing
@@ -117,14 +118,20 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
 
         self._domain_jextra = (
             grid_indexing.domain[0],
-            grid_indexing.domain[1] + 1,
+            1,
             grid_indexing.domain[2] + 1,
         )
 
         self._pressures_mapu = stencil_factory.from_origin_domain(
             pressures_mapu,
             origin=grid_indexing.origin_compute(),
-            domain=self._domain_jextra,
+            domain=(grid_indexing.domain[1],1,grid_indexing.domain[2] + 1)
+        )
+
+        self._pe0_ptop_xmax = stencil_factory.from_origin_domain(
+            pe0_ptop_xmax,
+            origin=(grid_indexing.domain[0]+3,3,0),
+            domain=(1,1,grid_indexing.domain[2] + 1)
         )
 
     def compute_from_storage(self, inputs):
@@ -145,24 +152,28 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
                 inputs["ptop"],
             )
 
+        self._pe0_ptop_xmax(
+                inputs["pe0_"],
+                inputs["ptop"],
+            )
+
         self._map1_ppm_u(
                 inputs["u_"],
                 inputs["pe0_"],
                 inputs["pe3_"],
                 interp=False,
             )
+        # self._map1_ppm_u(
+        #         inputs["mfy_"],
+        #         inputs["pe0_"],
+        #         inputs["pe3_"],
+        #         interp=False,
+        #     )
         
-        self._map1_ppm_u(
-                inputs["mfy_"],
-                inputs["pe0_"],
-                inputs["pe3_"],
-                interp=False,
-            )
-        
-        self._map1_ppm_u(
-                inputs["cy_"],
-                inputs["pe0_"],
-                inputs["pe3_"],
-                interp=False,
-            )
+        # self._map1_ppm_u(
+        #         inputs["cy_"],
+        #         inputs["pe0_"],
+        #         inputs["pe3_"],
+        #         interp=False,
+        #     )
         return inputs

@@ -5,6 +5,7 @@ from pyFV3.stencils.remapping import init_pe, moist_cv_pt_pressure, pn2_pk_delp
 from pyFV3.stencils.map_single import MapSingle
 from pyFV3.stencils import moist_cv
 from pyFV3.stencils.scale_delz import rescale_delz_1, rescale_delz_2
+from pyFV3.stencils.w_fix_consrv_moment import W_fix_consrv_moment
 from ndsl.stencils.testing import pad_field_in_j, Grid
 from pyFV3.testing import TranslateDycoreFortranData2Py
 from ndsl.constants import (
@@ -166,6 +167,8 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             "akap",
             "t_min",
             "kord_wz",
+            "w_max",
+            "w_min",
             # "zvir",
             # "last_step",
             # "consv_te",
@@ -285,16 +288,27 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
 
         self.fill = True
 
-        # self._pe1 = self.quantity_factory.zeros(
-        #     [X_DIM, Y_DIM, Z_INTERFACE_DIM],
-        #     units="Pa",
-        #     dtype=Float,
-        # )
-        # self._pe2 = self.quantity_factory.zeros(
-        #     [X_DIM, Y_DIM, Z_INTERFACE_DIM],
-        #     units="Pa",
-        #     dtype=Float,
-        # )
+        self._gz = self.quantity_factory._numpy.zeros(
+            (
+                grid.nid,
+                grid.njd,
+            ), dtype=Float,
+        )
+
+        self._w2 = self.quantity_factory._numpy.zeros(
+            (
+                grid.nid,
+                grid.njd,
+                grid.npz,
+            ), dtype=Float,
+        )
+
+        self._compute_performed = self.quantity_factory._numpy.zeros(
+            (
+                grid.nid,
+                grid.njd,
+            ), dtype=bool,
+        )
 
         self._init_pe = stencil_factory.from_origin_domain(
             init_pe, 
@@ -343,11 +357,11 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             domain=(grid.nic, 1, grid.npz),
         )
 
-        # self._w_fix_consrv_moment = stencil_factory.from_origin_domain(
-        #     func=W_fix_consrv_moment,
-        #     origin=(3,3,0),
-        #     domain=(24,1,72),
-        # )
+        self._w_fix_consrv_moment = stencil_factory.from_origin_domain(
+            func=W_fix_consrv_moment,
+            origin=grid.compute_origin(),
+            domain=(grid.nic, 1, grid.npz),
+        )
 
         # self._pressures_mapu = stencil_factory.from_origin_domain(
         #     pressures_mapu,
@@ -496,15 +510,15 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             inputs["dp2_3d"],
         )
         
-        # self._w_fix_consrv_moment(
-        #              inputs["w"],
-        #              inputs["w2"],
-        #              inputs["dp2_W"],
-        #              self._gz,
-        #              inputs["w_max"],
-        #              inputs["w_min"],
-        #              self._compute_performed
-        #              )
+        self._w_fix_consrv_moment(
+                     inputs["w"],
+                     self._w2,
+                     inputs["dp2_3d"],
+                     self._gz,
+                     inputs["w_max"],
+                     inputs["w_min"],
+                     self._compute_performed
+                     )
 
         # self._pressures_mapu(
         #         inputs["pe_"],

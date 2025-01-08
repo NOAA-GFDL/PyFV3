@@ -204,6 +204,10 @@ def pn2_pk_delp(
         pn2 = log(pe2)
         pk = exp(akap * pn2)
 
+def pe0_ptop_xmax(pe0: FloatField, 
+                  ptop: Float):
+    with computation(PARALLEL), interval(0,1):
+        pe0 = ptop
 
 def pressures_mapu(
     pe: FloatField,
