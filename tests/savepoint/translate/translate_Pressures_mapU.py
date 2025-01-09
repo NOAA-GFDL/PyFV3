@@ -49,21 +49,21 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
                 "kend": grid.npz-1,
             },
 
-            # "mfy_": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je+1,
-            #     "kend": grid.npz-1,
-            # },
+            "mfy_": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je+1,
+                "kend": grid.npz-1,
+            },
 
-            # "cy_": {
-            #     "istart": grid.isd,
-            #     "iend": grid.ied,
-            #     "jstart": grid.js,
-            #     "jend": grid.je+1,
-            #     "kend": grid.npz-1,
-            # },
+            "cy_": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.js,
+                "jend": grid.je+1,
+                "kend": grid.npz-1,
+            },
 
 
         }
@@ -73,20 +73,20 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
         ]
 
         self.out_vars = {
-            # "pe0_": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie+1,
-            #     "jstart": grid.js,
-            #     "jend": grid.je+1,
-            #     "kend": grid.npz
-            # },
-            # "pe3_": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie+1,
-            #     "jstart": grid.js,
-            #     "jend": grid.je+1,
-            #     "kend": grid.npz
-            # },
+            "pe0_": {
+                "istart": grid.is_,
+                "iend": grid.ie+1,
+                "jstart": grid.js,
+                "jend": grid.je+1,
+                "kend": grid.npz
+            },
+            "pe3_": {
+                "istart": grid.is_,
+                "iend": grid.ie+1,
+                "jstart": grid.js,
+                "jend": grid.je+1,
+                "kend": grid.npz
+            },
             "u_": {
                 "istart": grid.isd,
                 "iend": grid.ied,
@@ -95,21 +95,21 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
                 "kend": grid.npz-1,
             },
 
-            # "mfy_": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je+1,
-            #     "kend": grid.npz-1,
-            # },
+            "mfy_": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je+1,
+                "kend": grid.npz-1,
+            },
 
-            # "cy_": {
-            #     "istart": grid.isd,
-            #     "iend": grid.ied,
-            #     "jstart": grid.js,
-            #     "jend": grid.je+1,
-            #     "kend": grid.npz-1,
-            # },
+            "cy_": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.js,
+                "jend": grid.je+1,
+                "kend": grid.npz-1,
+            },
         }
 
         grid_indexing = stencil_factory.grid_indexing
@@ -163,17 +163,17 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
                 inputs["pe3_"],
                 interp=False,
             )
-        # self._map1_ppm_u(
-        #         inputs["mfy_"],
-        #         inputs["pe0_"],
-        #         inputs["pe3_"],
-        #         interp=False,
-        #     )
+        self._map1_ppm_u(
+                inputs["mfy_"],
+                inputs["pe0_"],
+                inputs["pe3_"],
+                interp=False,
+            )
         
-        # self._map1_ppm_u(
-        #         inputs["cy_"],
-        #         inputs["pe0_"],
-        #         inputs["pe3_"],
-        #         interp=False,
-        #     )
+        self._map1_ppm_u(
+                inputs["cy_"],
+                inputs["pe0_"],
+                inputs["pe3_"],
+                interp=False,
+            )
         return inputs
