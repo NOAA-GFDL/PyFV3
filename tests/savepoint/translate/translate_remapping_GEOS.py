@@ -307,29 +307,29 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             "w": {
                 "kend": grid.npz-1,
             },
-            # "u": {
-            #     "istart": grid.isd,
-            #     "iend": grid.ied,
-            #     "jstart": grid.jsd,
-            #     "jend": grid.jed+1,
-            #     "kend": grid.npz-1,
-            # },
+            "u": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.jsd,
+                "jend": grid.jed+1,
+                "kend": grid.npz-1,
+            },
 
-            # "mfy": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je+1,
-            #     "kend": grid.npz-1,
-            # },
+            "mfy": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je+1,
+                "kend": grid.npz-1,
+            },
 
-            # "cy": {
-            #     "istart": grid.isd,
-            #     "iend": grid.ied,
-            #     "jstart": grid.js,
-            #     "jend": grid.je+1,
-            #     "kend": grid.npz-1,
-            # },
+            "cy": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.js,
+                "jend": grid.je+1,
+                "kend": grid.npz-1,
+            },
         }
 
         self.stencil_factory = stencil_factory
@@ -615,26 +615,26 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 inputs["ptop"],
             )
 
-        # self._map1_ppm_u(
-        #         inputs["u"],
-        #         inputs["pe0_"],
-        #         inputs["pe3_"],
-        #         interp=False,
-        #     )
+        self._map1_ppm_u(
+                inputs["u"],
+                inputs["pe0_"],
+                inputs["pe3_"],
+                interp=False,
+            )
         
-        # self._map1_ppm_u(
-        #         inputs["mfy"],
-        #         inputs["pe0_"],
-        #         inputs["pe3_"],
-        #         interp=False,
-        #     )
+        self._map1_ppm_u(
+                inputs["mfy"],
+                inputs["pe0_"],
+                inputs["pe3_"],
+                interp=False,
+            )
         
-        # self._map1_ppm_u(
-        #         inputs["cy"],
-        #         inputs["pe0_"],
-        #         inputs["pe3_"],
-        #         interp=False,
-        #     )
+        self._map1_ppm_u(
+                inputs["cy"],
+                inputs["pe0_"],
+                inputs["pe3_"],
+                interp=False,
+            )
 
         # self._pressures_mapv(
         #         inputs["pe_"],
