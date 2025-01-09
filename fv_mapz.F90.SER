@@ -382,6 +382,7 @@ contains
 !$ser verbatim         pe1_3d(i,j,k) = pe1(i,k)
 !$ser verbatim         pe2_3d(i,j,k) = pe2(i,k)
 !$ser verbatim         pe_3d(i,j,k)  = pe(i,k,j)
+!$ser verbatim         pe_3d(i,j-1,k) = pe(i,k,j-1)
 !$ser verbatim         peln_3d(i,j,k) = peln(i,k,j)
 !$ser verbatim         pn2_3d(i,j,k) = pn2(i,k)
 !$ser verbatim      enddo
@@ -391,6 +392,12 @@ contains
 !$ser verbatim               dp2_3d(i,j,k) = dp2(i,k)
 !$ser verbatim            enddo
 !$ser verbatim         enddo
+!$ser verbatim do k = 1, km+1
+!$ser verbatim     do i = is, ie+1
+!$ser verbatim        pe0_3d(i,j,k) = pe0(i,k)
+!$ser verbatim        pe3_3d(i,j,k) = pe3(i,k)
+!$ser verbatim     enddo
+!$ser verbatim enddo
 !$ser verbatim  qmin=t_min
 !$ser verbatim  w_max_ = w_max
 !$ser verbatim  w_min_ = w_min
@@ -398,6 +405,8 @@ contains
 !$ser data pe_=pe_3d
 !$ser data pe1_=pe1_3d
 !$ser data pe2_=pe2_3d
+!$ser data pe0_=pe0_3d
+!$ser data pe3_=pe3_3d
 !$ser data ptop=ptop
 !$ser data qvapor_js=q(:,j,:,sphum)
 !$ser data qliquid_js=q(:,j,:,liq_wat) 
@@ -429,8 +438,16 @@ contains
 !$ser data kord_wz=kord_wz
 !$ser data ws_=ws
 !$ser data w=w
+!$ser data u=u
+!$ser verbatim if (present(mfy)) then
+!$ser data mfy=mfy
+!$ser verbatim endif
+!$ser verbatim if (present(cy)) then
+!$ser data cy=cy
+!$ser verbatim endif
 !$ser data w_max=w_max_
 !$ser data w_min=w_min_
+!$ser data kord_mt=kord_mt
 !!$ser data gz=gz
 !!$ser data k1k=k1k
 !!$ser data remap_t=remap_t
@@ -1108,46 +1125,46 @@ contains
 !$ser data w=w
 !$ser verbatim endif
 
-            !$ser verbatim if(j == js) then
-            !$ser verbatim    do k = 1, km+1
-            !$ser verbatim      do i = is, ie
-            !$ser verbatim         pe1_3d(i,j,k) = pe1(i,k)
-            !$ser verbatim         pe2_3d(i,j,k) = pe2(i,k)
-            !$ser verbatim         pn1_3d(i,j,k) = pn1(i,k)
-            !$ser verbatim         pn2_3d(i,j,k) = pn2(i,k)
-            !$ser verbatim         pk2_3d(i,j,k) = pk2(i,k)
-            !$ser verbatim      enddo
-            !$ser verbatim     enddo
-            !$ser verbatim     do k = 1, km
-            !$ser verbatim        do i = is, ie
-            !$ser verbatim           dp2_3d(i,j,k) = dp2(i,k)
-            !$ser verbatim        enddo
-            !$ser verbatim     enddo
-            !$ser savepoint Remapping_GEOS-Out
-            !$ser data pe1_=pe1_3d pe2_=pe2_3d
-            !$ser data q_con=q_con
-            !$ser data pt=pt
-            !$ser data cappa=cappa
-            !$ser data delp=delp
-            !$ser data delz=delz
-            !$ser data ps=ps
-            !$ser data dp2_3d=dp2_3d
-            !$ser data pn1_3d=pn1_3d
-            !$ser data pn2_3d=pn2_3d
-            !$ser data pk2_3d=pk2_3d
+            !!$ser verbatim if(j == js) then
+            !!$ser verbatim    do k = 1, km+1
+            !!$ser verbatim      do i = is, ie
+            !!$ser verbatim         pe1_3d(i,j,k) = pe1(i,k)
+            !!$ser verbatim         pe2_3d(i,j,k) = pe2(i,k)
+            !!$ser verbatim         pn1_3d(i,j,k) = pn1(i,k)
+            !!$ser verbatim         pn2_3d(i,j,k) = pn2(i,k)
+            !!$ser verbatim         pk2_3d(i,j,k) = pk2(i,k)
+            !!$ser verbatim      enddo
+            !!$ser verbatim     enddo
+            !!$ser verbatim     do k = 1, km
+            !!$ser verbatim        do i = is, ie
+            !!$ser verbatim           dp2_3d(i,j,k) = dp2(i,k)
+            !!$ser verbatim        enddo
+            !!$ser verbatim     enddo
+            !!$ser savepoint Remapping_GEOS-Out
+            !!$ser data pe1_=pe1_3d pe2_=pe2_3d
+            !!$ser data q_con=q_con
+            !!$ser data pt=pt
+            !!$ser data cappa=cappa
+            !!$ser data delp=delp
+            !!$ser data delz=delz
+            !!$ser data ps=ps
+            !!$ser data dp2_3d=dp2_3d
+            !!$ser data pn1_3d=pn1_3d
+            !!$ser data pn2_3d=pn2_3d
+            !!$ser data pk2_3d=pk2_3d
 
-            !$ser data qvapor=q(:,:,:,1)
-            !$ser data qliquid=q(:,:,:,2)
-            !$ser data qice=q(:,:,:,3)
-            !$ser data qrain=q(:,:,:,4)
-            !$ser data qsnow=q(:,:,:,5)
-            !$ser data qgraupel=q(:,:,:,6)
-            !$ser data qcld=q(:,:,:,7)
-            !$ser data qo3mr=q(:,:,:,8)
-            !$ser data qsgs_tke=q(:,:,:,9)
+            !!$ser data qvapor=q(:,:,:,1)
+            !!$ser data qliquid=q(:,:,:,2)
+            !!$ser data qice=q(:,:,:,3)
+            !!$ser data qrain=q(:,:,:,4)
+            !!$ser data qsnow=q(:,:,:,5)
+            !!$ser data qgraupel=q(:,:,:,6)
+            !!$ser data qcld=q(:,:,:,7)
+            !!$ser data qo3mr=q(:,:,:,8)
+            !!$ser data qsgs_tke=q(:,:,:,9)
 
-            !$ser data w=w
-            !$ser verbatim endif
+            !!$ser data w=w
+            !!$ser verbatim endif
             endif
          endif
 
@@ -1166,9 +1183,6 @@ contains
 !$ser verbatim        pe3_3d(i,j,k) = pe3(i,k)
 !$ser verbatim     enddo
 !$ser verbatim enddo
-!$ser verbatim    do i = is, ie
-!$ser verbatim       gz_2d(i,j) = gz(i)
-!$ser verbatim    enddo
 !$ser savepoint Pressures_mapU-In
 !$ser data pe_=pe_3d
 !$ser data pe0_=pe0_3d
@@ -1205,6 +1219,56 @@ contains
          enddo
       enddo
 
+!$ser verbatim if(j == js) then
+!$ser verbatim    do k = 1, km+1
+!$ser verbatim      do i = is, ie
+!$ser verbatim         pe1_3d(i,j,k) = pe1(i,k)
+!$ser verbatim         pe2_3d(i,j,k) = pe2(i,k)
+!$ser verbatim         pn1_3d(i,j,k) = pn1(i,k)
+!$ser verbatim         pn2_3d(i,j,k) = pn2(i,k)
+!$ser verbatim         pk2_3d(i,j,k) = pk2(i,k)
+!$ser verbatim      enddo
+!$ser verbatim     enddo
+!$ser verbatim     do k = 1, km
+!$ser verbatim        do i = is, ie
+!$ser verbatim           dp2_3d(i,j,k) = dp2(i,k)
+!$ser verbatim        enddo
+!$ser verbatim     enddo
+!$ser verbatim     do k = 1, km+1
+!$ser verbatim       do i = is, ie+1
+!$ser verbatim          pe0_3d(i,j,k) = pe0(i,k)
+!$ser verbatim          pe3_3d(i,j,k) = pe3(i,k)
+!$ser verbatim       enddo
+!$ser verbatim    enddo
+!$ser savepoint Remapping_GEOS-Out
+!$ser data pe1_=pe1_3d pe2_=pe2_3d
+!$ser data q_con=q_con
+!$ser data pt=pt
+!$ser data cappa=cappa
+!$ser data delp=delp
+!$ser data delz=delz
+!$ser data ps=ps
+!$ser data dp2_3d=dp2_3d
+!$ser data pn1_3d=pn1_3d
+!$ser data pn2_3d=pn2_3d
+!$ser data pk2_3d=pk2_3d
+
+!$ser data qvapor=q(:,:,:,1)
+!$ser data qliquid=q(:,:,:,2)
+!$ser data qice=q(:,:,:,3)
+!$ser data qrain=q(:,:,:,4)
+!$ser data qsnow=q(:,:,:,5)
+!$ser data qgraupel=q(:,:,:,6)
+!$ser data qcld=q(:,:,:,7)
+!$ser data qo3mr=q(:,:,:,8)
+!$ser data qsgs_tke=q(:,:,:,9)
+
+!$ser data w=w
+
+!$ser data pe0_=pe0_3d
+!$ser data pe3_=pe3_3d
+!$ser verbatim endif
+
       call map1_ppm( km, pe0(is:ie,:),   u,   gz,   &
                      km, pe3(is:ie,:),   u,               &
                      is, ie, j, isd, ied, jsd, jed+1, -1, kord_mt)
@@ -1239,6 +1303,63 @@ contains
 !$ser data cy_=cy
 !$ser verbatim endif
 !$ser verbatim endif
+
+!!$ser verbatim if(j == js) then
+!!$ser verbatim    do k = 1, km+1
+!!$ser verbatim      do i = is, ie
+!!$ser verbatim         pe1_3d(i,j,k) = pe1(i,k)
+!!$ser verbatim         pe2_3d(i,j,k) = pe2(i,k)
+!!$ser verbatim         pn1_3d(i,j,k) = pn1(i,k)
+!!$ser verbatim         pn2_3d(i,j,k) = pn2(i,k)
+!!$ser verbatim         pk2_3d(i,j,k) = pk2(i,k)
+!!$ser verbatim      enddo
+!!$ser verbatim     enddo
+!!$ser verbatim     do k = 1, km
+!!$ser verbatim        do i = is, ie
+!!$ser verbatim           dp2_3d(i,j,k) = dp2(i,k)
+!!$ser verbatim        enddo
+!!$ser verbatim     enddo
+!!$ser verbatim     do k = 1, km+1
+!!$ser verbatim       do i = is, ie+1
+!!$ser verbatim          pe0_3d(i,j,k) = pe0(i,k)
+!!$ser verbatim          pe3_3d(i,j,k) = pe3(i,k)
+!!$ser verbatim       enddo
+!!$ser verbatim    enddo
+!!$ser savepoint Remapping_GEOS-Out
+!!$ser data pe1_=pe1_3d pe2_=pe2_3d
+!!$ser data q_con=q_con
+!!$ser data pt=pt
+!!$ser data cappa=cappa
+!!$ser data delp=delp
+!!$ser data delz=delz
+!!$ser data ps=ps
+!!$ser data dp2_3d=dp2_3d
+!!$ser data pn1_3d=pn1_3d
+!!$ser data pn2_3d=pn2_3d
+!!$ser data pk2_3d=pk2_3d
+
+!!$ser data qvapor=q(:,:,:,1)
+!!$ser data qliquid=q(:,:,:,2)
+!!$ser data qice=q(:,:,:,3)
+!!$ser data qrain=q(:,:,:,4)
+!!$ser data qsnow=q(:,:,:,5)
+!!$ser data qgraupel=q(:,:,:,6)
+!!$ser data qcld=q(:,:,:,7)
+!!$ser data qo3mr=q(:,:,:,8)
+!!$ser data qsgs_tke=q(:,:,:,9)
+
+!!$ser data w=w
+
+!!$ser data pe0_=pe0_3d
+!!$ser data pe3_=pe3_3d
+!!$ser data u=u
+!!$ser verbatim if (present(mfy)) then
+!!$ser data mfy=mfy
+!!$ser verbatim endif
+!!$ser verbatim if (present(cy)) then
+!!$ser data cy=cy
+!!$ser verbatim endif
+!!$ser verbatim endif
 
 ! Note : This serialization portion will test the update of pe0
 !         and pe3
