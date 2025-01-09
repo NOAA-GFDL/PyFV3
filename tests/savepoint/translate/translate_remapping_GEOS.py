@@ -6,7 +6,7 @@ from pyFV3.stencils.map_single import MapSingle
 from pyFV3.stencils import moist_cv
 from pyFV3.stencils.scale_delz import rescale_delz_1, rescale_delz_2
 from pyFV3.stencils.w_fix_consrv_moment import W_fix_consrv_moment
-from pyFV3.stencils.remapping import pressures_mapu, pe0_ptop_xmax, pressures_mapv
+from pyFV3.stencils.remapping import pressures_mapu, pe0_ptop_xmax, pressures_mapv, pe_pk_delp_peln
 from ndsl.stencils.testing import pad_field_in_j, Grid
 from pyFV3.testing import TranslateDycoreFortranData2Py
 from ndsl.constants import (
@@ -395,6 +395,30 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 "jend": grid.jed,
                 "kend": grid.npz-1,
             },
+
+            "peln_3d": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            },
+
+            "pe_": {
+                "istart": grid.is_-1,
+                "iend": grid.ie+1,
+                "jstart": grid.js-1,
+                "jend": grid.je+1,
+                "kend": grid.npz + 1,
+            },
+
+            "pk": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz+1,
+                },
         }
 
         self.stencil_factory = stencil_factory
@@ -525,11 +549,12 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             ),
         )
 
-        # self._pe_pk_delp_peln = stencil_factory.from_origin_domain(
-        #     pe_pk_delp_peln,
-        #     origin=grid_indexing.origin_compute(),
-        #     domain=self._domain_kextra,
-        # )
+        self._pe_pk_delp_peln = stencil_factory.from_origin_domain(
+            pe_pk_delp_peln,
+            origin=grid_indexing.origin_compute(),
+            domain=(grid_indexing.domain[0], 1, grid_indexing.domain[2] + 1,
+            ),
+        )
 
     def compute_from_storage(self, inputs):
 
@@ -730,18 +755,18 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 interp=False,
             )
 
-        # self._pe_pk_delp_peln(inputs["pe_"],
-        #                       inputs["pk"],
-        #                       inputs["delp"],
-        #                       inputs["peln_"],
-        #                       inputs["pe2_"],
-        #                       inputs["pk2_"],
-        #                       inputs["pn2_"],
-        #                       inputs["ak"],
-        #                       inputs["bk"],
-        #                       inputs["akap"],
-        #                       inputs["ptop"],
-        # )
+        self._pe_pk_delp_peln(inputs["pe_"],
+                              inputs["pk"],
+                              inputs["delp"],
+                              inputs["peln_3d"],
+                              inputs["pe2_"],
+                              inputs["pk2_3d"],
+                              inputs["pn2_3d"],
+                              inputs["ak"],
+                              inputs["bk"],
+                              inputs["akap"],
+                              inputs["ptop"],
+        )
 
         # NOTE : THERE WILL BE ADJUSTMENTS TO ACCOUNT FOR PKZ
         # self._moist_cv_pt(
