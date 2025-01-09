@@ -116,16 +116,10 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
 
         self.dims=[X_DIM, Y_DIM, Z_DIM]
 
-        self._domain_jextra = (
-            grid_indexing.domain[0],
-            1,
-            grid_indexing.domain[2] + 1,
-        )
-
         self._pressures_mapu = stencil_factory.from_origin_domain(
             pressures_mapu,
             origin=grid_indexing.origin_compute(),
-            domain=(grid_indexing.domain[1],1,grid_indexing.domain[2] + 1)
+            domain=(grid_indexing.domain[0],1,grid_indexing.domain[2] + 1)
         )
 
         self._pe0_ptop_xmax = stencil_factory.from_origin_domain(
