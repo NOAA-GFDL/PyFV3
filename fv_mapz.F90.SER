@@ -1219,91 +1219,6 @@ contains
          enddo
       enddo
 
-!$ser verbatim if(j == js) then
-!$ser verbatim    do k = 1, km+1
-!$ser verbatim      do i = is, ie
-!$ser verbatim         pe1_3d(i,j,k) = pe1(i,k)
-!$ser verbatim         pe2_3d(i,j,k) = pe2(i,k)
-!$ser verbatim         pn1_3d(i,j,k) = pn1(i,k)
-!$ser verbatim         pn2_3d(i,j,k) = pn2(i,k)
-!$ser verbatim         pk2_3d(i,j,k) = pk2(i,k)
-!$ser verbatim      enddo
-!$ser verbatim     enddo
-!$ser verbatim     do k = 1, km
-!$ser verbatim        do i = is, ie
-!$ser verbatim           dp2_3d(i,j,k) = dp2(i,k)
-!$ser verbatim        enddo
-!$ser verbatim     enddo
-!$ser verbatim     do k = 1, km+1
-!$ser verbatim       do i = is, ie+1
-!$ser verbatim          pe0_3d(i,j,k) = pe0(i,k)
-!$ser verbatim          pe3_3d(i,j,k) = pe3(i,k)
-!$ser verbatim       enddo
-!$ser verbatim    enddo
-!$ser savepoint Remapping_GEOS-Out
-!$ser data pe1_=pe1_3d pe2_=pe2_3d
-!$ser data q_con=q_con
-!$ser data pt=pt
-!$ser data cappa=cappa
-!$ser data delp=delp
-!$ser data delz=delz
-!$ser data ps=ps
-!$ser data dp2_3d=dp2_3d
-!$ser data pn1_3d=pn1_3d
-!$ser data pn2_3d=pn2_3d
-!$ser data pk2_3d=pk2_3d
-
-!$ser data qvapor=q(:,:,:,1)
-!$ser data qliquid=q(:,:,:,2)
-!$ser data qice=q(:,:,:,3)
-!$ser data qrain=q(:,:,:,4)
-!$ser data qsnow=q(:,:,:,5)
-!$ser data qgraupel=q(:,:,:,6)
-!$ser data qcld=q(:,:,:,7)
-!$ser data qo3mr=q(:,:,:,8)
-!$ser data qsgs_tke=q(:,:,:,9)
-
-!$ser data w=w
-
-!$ser data pe0_=pe0_3d
-!$ser data pe3_=pe3_3d
-!$ser verbatim endif
-
-      call map1_ppm( km, pe0(is:ie,:),   u,   gz,   &
-                     km, pe3(is:ie,:),   u,               &
-                     is, ie, j, isd, ied, jsd, jed+1, -1, kord_mt)
-      if (present(mfy)) then
-         ! print*, 'mfy present'
-         call map1_ppm( km, pe0(is:ie,:), mfy,  gz,  &
-                        km, pe3(is:ie,:), mfy,       &
-                        is, ie, j, is, ie, js, je+1, -1, kord_mt)
-      endif
-      if (present(cy)) then
-         ! print*, 'cy present'
-         call map1_ppm( km, pe0(is:ie,:), cy,  gz,  &
-                        km, pe3(is:ie,:), cy,       &
-                        is, ie, j, isd, ied, js, je+1, -1, kord_mt)
-      endif
-
-!$ser verbatim if(j == js2d) then
-!$ser verbatim do k = 1, km+1
-!$ser verbatim     do i = is, ie+1
-!$ser verbatim        pe0_3d(i,j,k) = pe0(i,k)
-!$ser verbatim        pe3_3d(i,j,k) = pe3(i,k)
-!$ser verbatim     enddo
-!$ser verbatim enddo
-!$ser savepoint Pressures_mapU-Out
-!$ser data pe0_=pe0_3d
-!$ser data pe3_=pe3_3d
-!$ser data u_=u
-!$ser verbatim if (present(mfy)) then
-!$ser data mfy_=mfy
-!$ser verbatim endif
-!$ser verbatim if (present(cy)) then
-!$ser data cy_=cy
-!$ser verbatim endif
-!$ser verbatim endif
-
 !!$ser verbatim if(j == js) then
 !!$ser verbatim    do k = 1, km+1
 !!$ser verbatim      do i = is, ie
@@ -1352,21 +1267,103 @@ contains
 
 !!$ser data pe0_=pe0_3d
 !!$ser data pe3_=pe3_3d
-!!$ser data u=u
-!!$ser verbatim if (present(mfy)) then
-!!$ser data mfy=mfy
 !!$ser verbatim endif
-!!$ser verbatim if (present(cy)) then
-!!$ser data cy=cy
-!!$ser verbatim endif
-!!$ser verbatim endif
+
+      call map1_ppm( km, pe0(is:ie,:),   u,   gz,   &
+                     km, pe3(is:ie,:),   u,               &
+                     is, ie, j, isd, ied, jsd, jed+1, -1, kord_mt)
+      if (present(mfy)) then
+         ! print*, 'mfy present'
+         call map1_ppm( km, pe0(is:ie,:), mfy,  gz,  &
+                        km, pe3(is:ie,:), mfy,       &
+                        is, ie, j, is, ie, js, je+1, -1, kord_mt)
+      endif
+      if (present(cy)) then
+         ! print*, 'cy present'
+         call map1_ppm( km, pe0(is:ie,:), cy,  gz,  &
+                        km, pe3(is:ie,:), cy,       &
+                        is, ie, j, isd, ied, js, je+1, -1, kord_mt)
+      endif
+
+!$ser verbatim if(j == js2d) then
+!$ser verbatim do k = 1, km+1
+!$ser verbatim     do i = is, ie+1
+!$ser verbatim        pe0_3d(i,j,k) = pe0(i,k)
+!$ser verbatim        pe3_3d(i,j,k) = pe3(i,k)
+!$ser verbatim     enddo
+!$ser verbatim enddo
+!$ser savepoint Pressures_mapU-Out
+!$ser data pe0_=pe0_3d
+!$ser data pe3_=pe3_3d
+!$ser data u_=u
+!$ser verbatim if (present(mfy)) then
+!$ser data mfy_=mfy
+!$ser verbatim endif
+!$ser verbatim if (present(cy)) then
+!$ser data cy_=cy
+!$ser verbatim endif
+!$ser verbatim endif
+
+!$ser verbatim if(j == js) then
+!$ser verbatim    do k = 1, km+1
+!$ser verbatim      do i = is, ie
+!$ser verbatim         pe1_3d(i,j,k) = pe1(i,k)
+!$ser verbatim         pe2_3d(i,j,k) = pe2(i,k)
+!$ser verbatim         pn1_3d(i,j,k) = pn1(i,k)
+!$ser verbatim         pn2_3d(i,j,k) = pn2(i,k)
+!$ser verbatim         pk2_3d(i,j,k) = pk2(i,k)
+!$ser verbatim      enddo
+!$ser verbatim     enddo
+!$ser verbatim     do k = 1, km
+!$ser verbatim        do i = is, ie
+!$ser verbatim           dp2_3d(i,j,k) = dp2(i,k)
+!$ser verbatim        enddo
+!$ser verbatim     enddo
+!$ser verbatim     do k = 1, km+1
+!$ser verbatim       do i = is, ie+1
+!$ser verbatim          pe0_3d(i,j,k) = pe0(i,k)
+!$ser verbatim          pe3_3d(i,j,k) = pe3(i,k)
+!$ser verbatim       enddo
+!$ser verbatim    enddo
+!$ser savepoint Remapping_GEOS-Out
+!$ser data pe1_=pe1_3d pe2_=pe2_3d
+!$ser data q_con=q_con
+!$ser data pt=pt
+!$ser data cappa=cappa
+!$ser data delp=delp
+!$ser data delz=delz
+!$ser data ps=ps
+!$ser data dp2_3d=dp2_3d
+!$ser data pn1_3d=pn1_3d
+!$ser data pn2_3d=pn2_3d
+!$ser data pk2_3d=pk2_3d
+
+!$ser data qvapor=q(:,:,:,1)
+!$ser data qliquid=q(:,:,:,2)
+!$ser data qice=q(:,:,:,3)
+!$ser data qrain=q(:,:,:,4)
+!$ser data qsnow=q(:,:,:,5)
+!$ser data qgraupel=q(:,:,:,6)
+!$ser data qcld=q(:,:,:,7)
+!$ser data qo3mr=q(:,:,:,8)
+!$ser data qsgs_tke=q(:,:,:,9)
+
+!$ser data w=w
+
+!$ser data pe0_=pe0_3d
+!$ser data pe3_=pe3_3d
+!$ser data u=u
+!$ser verbatim if (present(mfy)) then
+!$ser data mfy=mfy
+!$ser verbatim endif
+!$ser verbatim if (present(cy)) then
+!$ser data cy=cy
+!$ser verbatim endif
+!$ser verbatim endif
 
 ! Note : This serialization portion will test the update of pe0
 !         and pe3
 !$ser verbatim if(j == js2d) then
-!$ser verbatim pe_3d = 0
-!$ser verbatim pe0_3d = 0
-!$ser verbatim pe3_3d = 0
 !$ser verbatim do k = 1, km+1
 !$ser verbatim     do i = is, ie+1
 !$ser verbatim        pe_3d(i,j,k) = pe(i,k,j)
@@ -1381,10 +1378,18 @@ contains
 !$ser verbatim enddo
 !$ser savepoint Pressures_mapV-In
 !$ser data pe_=pe_3d
-!$ser data pe0_v=pe0_3d(:,js:je,:)
-!$ser data pe3_v=pe3_3d(:,js:je,:)
+!$ser data pe0_=pe0_3d
+!$ser data pe3_=pe3_3d
 !$ser data ak=ak 
-!$ser data bk=bk 
+!$ser data bk=bk
+!$ser data v_=v
+!$ser data kord_mt=kord_mt
+!$ser verbatim if (present(mfx)) then
+!$ser data mfx_=mfx
+!$ser verbatim endif
+!$ser verbatim if (present(cx)) then
+!$ser data cx_=cx
+!$ser verbatim endif
 !$ser verbatim endif
       !------
       ! map v
@@ -1403,29 +1408,6 @@ contains
             enddo
          enddo
 
-! Note : This serialization portion will test the update of v,
-!        mfx, and cx
-!!$ser verbatim if(j == js2d) then
-!!$ser verbatim pe0_3d = 0.0
-!!$ser verbatim pe3_3d = 0.0
-!!$ser verbatim do k = 1, km+1
-!!$ser verbatim     do i = is, ie+1
-!!$ser verbatim        pe0_3d(i,j,k) = pe0(i,k)
-!!$ser verbatim        pe3_3d(i,j,k) = pe3(i,k)
-!!$ser verbatim     enddo
-!!$ser verbatim enddo
-!!$ser savepoint Pressures_mapV-In
-!!$ser data pe0_v=pe0_3d(:,js:je,:)
-!!$ser data pe3_v=pe3_3d(:,js:je,:)
-!!$ser data v_=v
-!!$ser data kord_mt=kord_mt
-!!$ser verbatim if (present(mfx)) then
-!!$ser data mfx_=mfx
-!!$ser verbatim endif
-!!$ser verbatim if (present(cx)) then
-!!$ser data cx_=cx
-!!$ser verbatim endif
-!!$ser verbatim endif
          call map1_ppm (km, pe0,  v, gz,    &
                         km, pe3,  v, is, ie+1,    &
                         j, isd, ied+1, jsd, jed, -1, kord_mt)
@@ -1451,8 +1433,8 @@ contains
 !$ser verbatim     enddo
 !$ser verbatim enddo
 !$ser savepoint Pressures_mapV-Out
-!$ser data pe0_v=pe0_3d(:,js:je,:)
-!$ser data pe3_v=pe3_3d(:,js:je,:)
+!$ser data pe0_=pe0_3d
+!$ser data pe3_=pe3_3d
 !$ser data v_=v
 !$ser verbatim if (present(mfx)) then
 !$ser data mfx_=mfx
