@@ -136,8 +136,6 @@ def moist_pkz(
     qsnow: FloatField,
     qice: FloatField,
     qgraupel: FloatField,
-    gz: FloatField,
-    cvm: FloatField,
     pkz: FloatField,
     pt: FloatField,
     cappa: FloatField,
@@ -153,9 +151,6 @@ def moist_pkz(
         qsnow (in):
         qice (in):
         qgraupel (in):
-        q_con (out):
-        gz (out):
-        cvm (out):
         pkz (out):
         pt (in):
         cappa (out):

@@ -29,8 +29,6 @@ class MoistPKZ:
         qsnow: FloatField,
         qice: FloatField,
         qgraupel: FloatField,
-        gz: FloatField,
-        cvm: FloatField,
         pkz: FloatField,
         pt: FloatField,
         cappa: FloatField,
@@ -45,8 +43,6 @@ class MoistPKZ:
             qsnow,
             qice,
             qgraupel,
-            gz,
-            cvm,
             pkz,
             pt,
             cappa,
@@ -74,38 +70,18 @@ class TranslateMoistCVPlusPkz_2d(TranslateDycoreFortranData2Py):
             "qrain": {"serialname": "qrain_js"},
             "qsnow": {"serialname": "qsnow_js"},
             "qgraupel": {"serialname": "qgraupel_js"},
-            "gz": {"serialname": "gz1d", "kstart": grid.is_, "axis": 0},
-            "cvm": {"kstart": grid.is_, "axis": 0},
             "delp": {},
             "delz": {},
             "pkz": {"istart": grid.is_, "jstart": grid.js},
             "pt": {},
             "cappa": {},
         }
-        self.write_vars = ["gz", "cvm"]
         for k, v in self.in_vars["data_vars"].items():
             if k not in self.write_vars:
                 v["axis"] = 1
 
         self.in_vars["parameters"] = ["r_vir"]
         self.out_vars = {
-            "gz": {
-                "serialname": "gz1d",
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.js,
-                "kstart": grid.npz - 1,
-                "kend": grid.npz - 1,
-            },
-            "cvm": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.js,
-                "kstart": grid.npz - 1,
-                "kend": grid.npz - 1,
-            },
             "pkz": {
                 "istart": grid.is_,
                 "iend": grid.ie,
