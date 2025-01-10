@@ -173,6 +173,12 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 "jend": grid.je,
                 "kend": grid.npz + 1,
             },
+            "pkz": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+            },
             "pk2_3d": {
                 "istart": grid.is_,
                 "iend": grid.ie,
@@ -419,6 +425,12 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 "jend": grid.je,
                 "kend": grid.npz+1,
                 },
+            "pkz": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+            },
         }
 
         self.stencil_factory = stencil_factory
@@ -478,12 +490,6 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             init_pe, 
             origin=grid_indexing.origin_compute(),
             domain=(grid_indexing.domain[0],1,grid_indexing.domain[2] + 1),
-        )
-
-        self._moist_cv_pt = stencil_factory.from_origin_domain(
-            moist_pt,
-            origin=grid.compute_origin(),
-            domain=(grid_indexing.domain[0], 1, grid_indexing.domain[2]),
         )
 
         self._moist_cv_pt_pressure = stencil_factory.from_origin_domain(
@@ -554,6 +560,12 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             origin=grid_indexing.origin_compute(),
             domain=(grid_indexing.domain[0], 1, grid_indexing.domain[2] + 1,
             ),
+        )
+
+        self._moist_cv_pkz = stencil_factory.from_origin_domain(
+            moist_cv.moist_pkz,
+            origin=grid.compute_origin(),
+            domain=(grid.nic, 1, grid.npz),
         )
 
     def compute_from_storage(self, inputs):
@@ -768,21 +780,20 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                               inputs["ptop"],
         )
 
-        # NOTE :USE THE STENCIL moist_pkz to do the moist_cv and pkz calculation
-        # self._moist_cv_pt(
-        #     inputs["qvapor"],
-        #     inputs["qliquid"],
-        #     inputs["qrain"],
-        #     inputs["qsnow"],
-        #     inputs["qice"],
-        #     inputs["qgraupel"],
-        #     inputs["q_con"],
-        #     inputs["pkz"],
-        #     inputs["cappa"],
-        #     inputs["delp"],
-        #     inputs["delz"],
-        #     inputs["r_vir"],
-        # )
+        self._moist_cv_pkz(
+            inputs["qvapor"],
+            inputs["qliquid"],
+            inputs["qrain"],
+            inputs["qsnow"],
+            inputs["qice"],
+            inputs["qgraupel"],
+            inputs["pkz"],
+            inputs["pt"],
+            inputs["cappa"],
+            inputs["delp"],
+            inputs["delz"],
+            Float(inputs["r_vir"]),
+        )
 
         # If loop based on if( last_step .and. (.not.do_adiabatic_init)  ) then
             # PHIS computation
