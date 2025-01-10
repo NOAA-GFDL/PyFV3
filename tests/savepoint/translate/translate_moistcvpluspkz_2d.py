@@ -29,7 +29,6 @@ class MoistPKZ:
         qsnow: FloatField,
         qice: FloatField,
         qgraupel: FloatField,
-        q_con: FloatField,
         gz: FloatField,
         cvm: FloatField,
         pkz: FloatField,
@@ -46,7 +45,6 @@ class MoistPKZ:
             qsnow,
             qice,
             qgraupel,
-            q_con,
             gz,
             cvm,
             pkz,
@@ -80,7 +78,6 @@ class TranslateMoistCVPlusPkz_2d(TranslateDycoreFortranData2Py):
             "cvm": {"kstart": grid.is_, "axis": 0},
             "delp": {},
             "delz": {},
-            "q_con": {},
             "pkz": {"istart": grid.is_, "jstart": grid.js},
             "pt": {},
             "cappa": {},
@@ -116,7 +113,6 @@ class TranslateMoistCVPlusPkz_2d(TranslateDycoreFortranData2Py):
                 "jend": grid.je,
             },
             "cappa": {},
-            "q_con": {},
         }
 
     def compute_from_storage(self, inputs):

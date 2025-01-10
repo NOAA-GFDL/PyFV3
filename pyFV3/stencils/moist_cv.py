@@ -136,7 +136,6 @@ def moist_pkz(
     qsnow: FloatField,
     qice: FloatField,
     qgraupel: FloatField,
-    q_con: FloatField,
     gz: FloatField,
     cvm: FloatField,
     pkz: FloatField,
@@ -169,7 +168,7 @@ def moist_pkz(
         cvm, gz = moist_cv_nwat6_fn(
             qvapor, qliquid, qrain, qsnow, qice, qgraupel
         )  # if (nwat == 6) else moist_cv_default_fn(constants.CV_AIR)
-        q_con[0, 0, 0] = gz
+        # q_con[0, 0, 0] = gz
         cappa = set_cappa(qvapor, cvm, r_vir)
         pkz = compute_pkz_func(delp, delz, pt, cappa)
 

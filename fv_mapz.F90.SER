@@ -1525,7 +1525,7 @@ contains
 !$OMP parallel do default(none) shared(is,ie,js,je,km,pe,ptop,kord_tm,remap_t, &
 !$OMP                                  remap_pt,remap_te,mfy,mfx,cx,cy,hydrostatic, &
 !$OMP                                  pt,pk,rg,peln,q,nwat,liq_wat,rainwat,ice_wat,snowwat,    &
-!$OMP                                  graupel,sphum,cappa,r_vir,rcp,cp,k1k,delp, &
+!$OMP                                  graupel,sphum,cappa,r_vir,rcp,cp,k1k,delp, cld_amt, &
 !$OMP                                  delz,akap,pkz,te,u,v,ps, gridstruct, &
 !$OMP                                  ak,bk,nq,isd,ied,jsd,jed,kord_tr,fill, &
 !$OMP                                  hs,w,ws,kord_wz,do_omega,omga,rrg,kord_mt,    &
@@ -1789,6 +1789,27 @@ contains
          if (remap_t) then
             ! print*,'CODE EXECUTED'
 ! Note: pt at this stage is T_v or T_m
+            !$ser verbatim if(j == js2d) then 
+            !!$ser verbatim print*,'MoistCVPlusPt_2D serialization'
+            !$ser savepoint MoistCVPlusPkz_2d-In
+            !$ser data qvapor_js=q(:,j,:,sphum) 
+            !$ser data qliquid_js=q(:,j,:,liq_wat) 
+            !$ser data qice_js=q(:,j,:,ice_wat) 
+            !$ser data qrain_js=q(:,j,:,rainwat) 
+            !$ser data qsnow_js=q(:,j,:,snowwat) 
+            !$ser data qgraupel_js=q(:,j,:,graupel) 
+            !$ser data qcld_js=q(:,j,:,cld_amt) 
+            !$ser data gz1d=gz 
+            !$ser data cvm=cvm 
+            !$ser data r_vir=r_vir 
+            !$ser data cappa=cappa 
+            !$ser data rrg=rrg 
+            !$ser data delp=delp 
+            !$ser data delz=delz 
+            !$ser data pkz=pkz 
+            !$ser data pt=pt
+            !$ser data k1k=k1k
+            !$ser verbatim endif
             do k=1,km
 #ifdef MOIST_CAPPA
                call moist_cv(is,ie,isd,ied,jsd,jed, km, j, k, nwat, sphum, liq_wat, rainwat,    &
@@ -1803,6 +1824,10 @@ contains
                enddo
 #endif
             enddo
+            !$ser verbatim if(j == js2d) then 
+               !$ser savepoint MoistCVPlusPkz_2d-Out
+               !$ser data  gz1d=gz cvm=cvm pkz=pkz cappa=cappa
+               !$ser verbatim endif
          endif
          if (remap_pt) then
             print*,'CODE NOT TESTED HERE 10'

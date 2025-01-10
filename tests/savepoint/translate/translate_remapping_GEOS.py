@@ -768,7 +768,7 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                               inputs["ptop"],
         )
 
-        # NOTE : THERE WILL BE ADJUSTMENTS TO ACCOUNT FOR PKZ
+        # NOTE :USE THE STENCIL moist_pkz to do the moist_cv and pkz calculation
         # self._moist_cv_pt(
         #     inputs["qvapor"],
         #     inputs["qliquid"],
@@ -777,7 +777,7 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
         #     inputs["qice"],
         #     inputs["qgraupel"],
         #     inputs["q_con"],
-        #     inputs["pt"],
+        #     inputs["pkz"],
         #     inputs["cappa"],
         #     inputs["delp"],
         #     inputs["delz"],
