@@ -3,6 +3,7 @@ from gt4py.cartesian.gtscript import (
     __INLINED,
     PARALLEL,
     FORWARD,
+    BACKWARD,
     computation,
     exp,
     interval,
@@ -184,6 +185,9 @@ def moist_te(
     delp: FloatField,
     rsin2: FloatFieldIJ,
     cosa_s: FloatFieldIJ,
+    hs: FloatFieldIJ,
+    delz: FloatField,
+    grav: Float
 ):
     """
     Args:
@@ -202,8 +206,14 @@ def moist_te(
         delp (in):
         rsin2 (in):
         cosa_s (in):
+        hs (in):
     """
-    with computation(FORWARD), interval(...):
+    with computation(FORWARD), interval(-1,None):
+        te = 0.0
+        phis = hs
+    with computation(BACKWARD), interval(0,-1):
+        phis = phis[0,0,1] - grav*delz
+    with computation(FORWARD), interval(0,-1):
         cvm, gz = moist_cv_nwat6_fn(
             qvapor, qliquid, qrain, qsnow, qice, qgraupel
         )

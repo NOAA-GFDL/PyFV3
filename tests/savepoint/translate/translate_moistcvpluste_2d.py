@@ -56,13 +56,20 @@ class TranslateMoistCVPlusTe_2d(TranslateFortranData2Py):
                 "jstart": grid.jsd,
                 "jend": grid.jed,
             },
+            "hs": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.jsd,
+                "jend": grid.jed,
+            },
+            "delz": {}
         }
         self.write_vars = ["qvapor", "qliquid", "qice", "qrain", "qsnow", "qgraupel"]
         for k, v in self.in_vars["data_vars"].items():
             # if k not in self.write_vars:
             if k in self.write_vars:
                 v["axis"] = 1
-
+        self.in_vars["parameters"] = ["grav"]
         self.out_vars = {
             "te_2d_": {
                 "istart": grid.is_,
@@ -75,7 +82,7 @@ class TranslateMoistCVPlusTe_2d(TranslateFortranData2Py):
         self.compute_func = stencil_factory.from_origin_domain(
             moist_cv.moist_te,
             origin=grid.compute_origin(),
-            domain=(grid.nic, 1, grid.npz),
+            domain=(grid.nic, 1, grid.npz+1),
         )
 
     def compute_from_storage(self, inputs):
@@ -102,6 +109,9 @@ class TranslateMoistCVPlusTe_2d(TranslateFortranData2Py):
                           inputs["delp"],
                           inputs["rsin2"],
                           inputs["cosa_s"],
+                          inputs["hs"],
+                          inputs["delz"],
+                          inputs["grav"],
                         )
 
         return inputs
