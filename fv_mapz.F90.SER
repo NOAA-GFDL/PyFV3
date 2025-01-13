@@ -234,6 +234,8 @@ contains
 
    logical :: serial_flag
 
+   real :: grav_
+
 !$ser verbatim real :: w_max_, w_min_
 
    !$ser verbatim integer:: mode, abskord, iep1, iedp1, jedp1, js2d, o3mr, sgs_tke
@@ -1456,7 +1458,7 @@ contains
 !$OMP                               ppser_savepoint, ppser_serializer, ppser_serializer_ref, ppser_zrperturb, serial_flag &
 #endif
 !$OMP                               )       &
-!$OMP                       private(pe0,pe1,pe2,pe3,cvm,gz,phis,tesum,zsum,dpln,dlnp,tmp, rsin2, cosa_s)
+!$OMP                       private(pe0,pe1,pe2,pe3,cvm,gz,phis,tesum,zsum,dpln,dlnp,tmp, rsin2, cosa_s, grav_)
 
    dtmp = 0.
    if( last_step .and. (.not.do_adiabatic_init)  ) then
@@ -1487,15 +1489,6 @@ contains
             else
 ! TE using 3D winds (pt is virtual temperature):
                ! if(j==js) print*,"CODE EXECUTED 1"
-               do i=is,ie
-                  te_2d(i,j) = 0.
-                  phis(i,km+1) = hs(i,j)
-               enddo
-               do k=km,1,-1
-                  do i=is,ie
-                     phis(i,k) = phis(i,k+1) - grav*delz(i,j,k)
-                  enddo
-               enddo
                !$ser verbatim if(j == js) then
                !$ser verbatim    do k = 1, km+1
                !$ser verbatim      do i = is, ie
@@ -1507,6 +1500,7 @@ contains
                !$ser verbatim   do i = is, ie
                !$ser verbatim      te_2d_f32(i,:) = te_2d(i,:)
                !$ser verbatim   enddo
+               !$ser verbatim   grav_=grav
                !!$ser verbatim print*,'MoistCVPlusTe_2D serialization'
                !$ser savepoint MoistCVPlusTe_2d-In
                !$ser data qvapor_js=q(:,j,:,sphum) 
@@ -1524,7 +1518,19 @@ contains
                !$ser data w=w
                !$ser data cosa_s=cosa_s
                !$ser data rsin2=rsin2
+               !$ser data hs=hs
+               !$ser data grav=grav_
+               !$ser data delz=delz
                !$ser verbatim endif
+               do i=is,ie
+                  te_2d(i,j) = 0.
+                  phis(i,km+1) = hs(i,j)
+               enddo
+               do k=km,1,-1
+                  do i=is,ie
+                     phis(i,k) = phis(i,k+1) - grav*delz(i,j,k)
+                  enddo
+               enddo
                do k=1,km
 #ifdef MOIST_CAPPA
                   ! if(j==js) print*,"MOIST_CAPPA EXECUTED"
