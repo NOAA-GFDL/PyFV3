@@ -2,6 +2,7 @@ import gt4py.cartesian.gtscript as gtscript
 from gt4py.cartesian.gtscript import (
     __INLINED,
     PARALLEL,
+    FORWARD,
     computation,
     exp,
     interval,
@@ -9,7 +10,7 @@ from gt4py.cartesian.gtscript import (
 )
 
 import ndsl.constants as constants
-from ndsl.dsl.typing import Float, FloatField
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 
 
 @gtscript.function
@@ -166,6 +167,51 @@ def moist_pkz(
         # q_con[0, 0, 0] = gz
         cappa = set_cappa(qvapor, cvm, r_vir)
         pkz = compute_pkz_func(delp, delz, pt, cappa)
+
+def moist_te(
+    qvapor: FloatField,
+    qliquid: FloatField,
+    qrain: FloatField,
+    qsnow: FloatField,
+    qice: FloatField,
+    qgraupel: FloatField,
+    u: FloatField,
+    v: FloatField,
+    w: FloatField,
+    te: FloatFieldIJ,
+    pt: FloatField,
+    phis: FloatField,
+    delp: FloatField,
+    rsin2: FloatFieldIJ,
+    cosa_s: FloatFieldIJ,
+):
+    """
+    Args:
+        qvapor (in):
+        qliquid (in):
+        qrain (in):
+        qsnow (in):
+        qice (in):
+        qgraupel (in):
+        u (in):
+        v (in):
+        w (in):
+        te (out):
+        pt (in):
+        phis (in):
+        delp (in):
+        rsin2 (in):
+        cosa_s (in):
+    """
+    with computation(FORWARD), interval(...):
+        cvm, gz = moist_cv_nwat6_fn(
+            qvapor, qliquid, qrain, qsnow, qice, qgraupel
+        )
+        
+        te = te + delp * (cvm * pt + 0.5 * (phis + phis[0,0,1] + \
+                          w**2.0 + 0.5*rsin2 * (u**2.0 + u[0,1,0]**2.0 \
+                                 + v**2.0 + v[1,0,0]**2.0 
+                                - (u + u[0,1,0]) * (v + v[1,0,0]) * cosa_s)))
 
 
 def fv_setup(
