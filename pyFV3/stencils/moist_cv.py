@@ -223,6 +223,19 @@ def moist_te(
                                  + v**2.0 + v[1,0,0]**2.0 
                                 - (u + u[0,1,0]) * (v + v[1,0,0]) * cosa_s)))
 
+def te_zsum(te_2d: FloatFieldIJ,
+           te0_2d: FloatFieldIJ,
+           delp: FloatField,
+           pkz: FloatField,
+           zsum1: FloatFieldIJ,
+        ):
+    with computation(FORWARD):
+        with interval(0,1):
+            te_2d = te0_2d - te_2d
+            zsum1 = pkz * delp
+
+        with interval(1,None):
+            zsum1 = zsum1 + pkz * delp
 
 def fv_setup(
     qvapor: FloatField,
