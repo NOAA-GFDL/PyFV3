@@ -237,6 +237,17 @@ def te_zsum(te_2d: FloatFieldIJ,
         with interval(1,None):
             zsum1 = zsum1 + pkz * delp
 
+def cond_output(q_con: FloatField,
+                qliquid: FloatField,
+                qrain: FloatField,
+                qsnow: FloatField,
+                qice: FloatField,
+                qgraupel: FloatField,
+            ):
+    with computation(PARALLEL), interval(...):
+        q_con = 0.0
+        q_con = qliquid + qice + qrain + qsnow + qgraupel
+
 def fv_setup(
     qvapor: FloatField,
     qliquid: FloatField,
