@@ -29,9 +29,9 @@ class TranslateMoistCVPlusTe_2d(TranslateFortranData2Py):
             },
             "u": {
                 "istart": grid.isd,
-                "iend": grid.ied + 1,
+                "iend": grid.ied ,
                 "jstart": grid.jsd,
-                "jend": grid.jed,
+                "jend": grid.jed+1,
                 "kend": grid.npz,
             },
             "v": {
