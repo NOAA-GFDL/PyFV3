@@ -1,4 +1,5 @@
 from ndsl.quantity import Quantity
+from ndsl.comm.comm_abc import ReductionOperator
 import numpy as np
 
 def mpp_global_sum(inputArray, communicator, stencil_factory=None):
@@ -36,7 +37,7 @@ def mpp_global_sum(inputArray, communicator, stencil_factory=None):
     carry_overflow(ints_sum.data, prec, I_prec, prec_error)
     # print("rank ", communicator.rank, "ints_sum = ", sum(ints_sum.data), ' after carry_over')
 
-    communicator.all_reduce_sum(ints_sum, ints_sum_reduce)
+    communicator.all_reduce(ints_sum, ReductionOperator.SUM, ints_sum_reduce)
 
     # print("rank ", communicator.rank, "sum(ints_sum_reduce) = ", sum(ints_sum_reduce.data), ' after all_reduce')
     regularize_ints(ints_sum_reduce.data, prec, I_prec)
