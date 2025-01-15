@@ -7,6 +7,7 @@ from pyFV3.stencils import moist_cv
 from pyFV3.stencils.scale_delz import rescale_delz_1, rescale_delz_2
 from pyFV3.stencils.w_fix_consrv_moment import W_fix_consrv_moment
 from pyFV3.stencils.remapping import pressures_mapu, pe0_ptop_xmax, pressures_mapv, pe_pk_delp_peln
+from pyFV3.stencils.mpp_global_sum import mpp_global_sum
 from ndsl.stencils.testing import pad_field_in_j, Grid
 from pyFV3.testing import TranslateDycoreFortranData2Py
 from ndsl.constants import (
@@ -200,14 +201,14 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 "iend": grid.ied,
                 "jstart": grid.jsd,
                 "jend": grid.jed+1,
-                "kend": grid.npz-1,
+                "kend": grid.npz,
             },
             "v": {
                 "istart": grid.isd,
                 "iend": grid.ied+1,
                 "jstart": grid.jsd,
                 "jend": grid.jed,
-                "kend": grid.npz-1,
+                "kend": grid.npz,
             },
             "mfy": {
                 "istart": grid.is_,
@@ -239,6 +240,49 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 "jend": grid.jed,
                 "kend": grid.npz-1,
             },
+            "phis_": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz+1,
+            },
+            "cosa_s": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.jsd,
+                "jend": grid.jed,
+            },
+            "rsin2": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.jsd,
+                "jend": grid.jed,
+            },
+            "te_2d_": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+            },
+            "hs": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.jsd,
+                "jend": grid.jed,
+            },
+            "te0_2d_": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+            },
+            "area_64": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.jsd,
+                "jend": grid.jed,
+            },
         }
         # self.write_vars = ["gz", "cvm"]
         self.write_vars = ["qvapor", "qliquid", "qice", "qrain", "qsnow", "qgraupel","qcld"]
@@ -256,6 +300,7 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             "w_max",
             "w_min",
             "kord_mt",
+            "grav",
             # "zvir",
             # "last_step",
             # "consv_te",
@@ -431,6 +476,12 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 "jstart": grid.js,
                 "jend": grid.je,
             },
+            "te_2d_": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+            },
         }
 
         self.stencil_factory = stencil_factory
@@ -476,6 +527,13 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 grid.nid,
                 grid.njd,
                 grid.npz,
+            ), dtype=Float,
+        )
+
+        self._zsum1 = self.quantity_factory._numpy.zeros(
+            (
+                grid.nid,
+                grid.njd,
             ), dtype=Float,
         )
 
@@ -566,6 +624,24 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             moist_cv.moist_pkz,
             origin=grid.compute_origin(),
             domain=(grid.nic, 1, grid.npz),
+        )
+
+        self._moist_cv_te = stencil_factory.from_origin_domain(
+            moist_cv.moist_te,
+            origin=grid.compute_origin(),
+            domain=(grid.nic, 1, grid.npz+1),
+        )
+
+        self._te_zsum = stencil_factory.from_origin_domain(
+            moist_cv.te_zsum,
+            origin=grid.compute_origin(),
+            domain=(grid.nic, 1, grid.npz),
+        )
+
+        self._most_cv_pt_last_step = stencil_factory.from_origin_domain(
+            moist_cv.moist_pt_last_step,
+            origin=grid.compute_origin(),
+            domain=(grid.nic, grid.njc, grid.npz),
         )
 
     def compute_from_storage(self, inputs):
@@ -795,16 +871,57 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             Float(inputs["r_vir"]),
         )
 
-        # If loop based on if( last_step .and. (.not.do_adiabatic_init)  ) then
-            # PHIS computation
-            # Some variation of moist_cv_pt
-            # zsum1 computation
+        # May need if loop here based on if( last_step .and. (.not.do_adiabatic_init)  ) then
+
+        self._moist_cv_te(inputs["qvapor"],
+                          inputs["qliquid"],
+                          inputs["qrain"],
+                          inputs["qsnow"],
+                          inputs["qice"],
+                          inputs["qgraupel"],
+                          inputs["u"],
+                          inputs["v"],
+                          inputs["w"],
+                          inputs["te_2d_"],
+                          inputs["pt"],
+                          inputs["phis_"],
+                          inputs["delp"],
+                          inputs["rsin2"],
+                          inputs["cosa_s"],
+                          inputs["hs"],
+                          inputs["delz"],
+                          inputs["grav"],
+                        )
+
+        self._te_zsum(inputs["te_2d_"],
+                      inputs["te0_2d_"],
+                      inputs["delp"],
+                      inputs["pkz"],
+                      self._zsum1,
+                    )
         
-            # MPP GLOBAL SUM
-            # E_FLUX calcuation
+        # Note, since this is a serial translate test, mpp_global_sum won't work without the communicator.
+        # Also, mpp_global_sum is currently set up for the C24 TBC setup
+
+        # tesum = mpp_global_sum(inputs["te_2d_"]*inputs["area_64"], communicator, self.stencil_factory)
+
+        # I ignore the E_flux computation since it's not used elsewhere in our current setup once it's computed
+
+        # zsum = mpp_global_sum(self._zsum1*inputs["area_64"], communicator, self.stencil_factory)
+        # dtmp = tesum / (cv_air*zsum)
 
         # If loop based on if ( last_step .and. (.not. adiabatic) ) then
-            # Some variation of moist_cv_pt
-            # Condensation update
+        # self._most_cv_pt_last_step(inputs["qvapor"],
+        #                            inputs["qliquid"],
+        #                            inputs["qrain"],
+        #                            inputs["qsnow"],
+        #                            inputs["qice"],
+        #                            inputs["qgraupel"],
+        #                            self._gz,
+        #                            inputs["pt"],
+        #                            inputs["pkz"],
+        #                            dtmp,
+        #                            inputs["r_vir],
+        #                         )
 
         return inputs
