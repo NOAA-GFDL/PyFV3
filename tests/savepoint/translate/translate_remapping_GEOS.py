@@ -332,51 +332,51 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             "w": {
                 "kend": grid.npz-1,
             },
-            # "u": {
-            #     "istart": grid.isd,
-            #     "iend": grid.ied,
-            #     "jstart": grid.jsd,
-            #     "jend": grid.jed+1,
-            #     "kend": grid.npz-1,
-            # },
-            # "v": {
-            #     "istart": grid.isd,
-            #     "iend": grid.ied+1,
-            #     "jstart": grid.jsd,
-            #     "jend": grid.jed,
-            #     "kend": grid.npz-1,
-            # },
+            "u": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.jsd,
+                "jend": grid.jed+1,
+                "kend": grid.npz-1,
+            },
+            "v": {
+                "istart": grid.isd,
+                "iend": grid.ied+1,
+                "jstart": grid.jsd,
+                "jend": grid.jed,
+                "kend": grid.npz-1,
+            },
 
-            # "mfy": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je+1,
-            #     "kend": grid.npz-1,
-            # },
+            "mfy": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je+1,
+                "kend": grid.npz-1,
+            },
 
-            # "cy": {
-            #     "istart": grid.isd,
-            #     "iend": grid.ied,
-            #     "jstart": grid.js,
-            #     "jend": grid.je+1,
-            #     "kend": grid.npz-1,
-            # },
-            # "mfx_": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie+1,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz-1,
-            # },
+            "cy": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.js,
+                "jend": grid.je+1,
+                "kend": grid.npz-1,
+            },
+            "mfx_": {
+                "istart": grid.is_,
+                "iend": grid.ie+1,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz-1,
+            },
 
-            # "cx_": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie+1,
-            #     "jstart": grid.jsd,
-            #     "jend": grid.jed,
-            #     "kend": grid.npz-1,
-            # },
+            "cx_": {
+                "istart": grid.is_,
+                "iend": grid.ie+1,
+                "jstart": grid.jsd,
+                "jend": grid.jed,
+                "kend": grid.npz-1,
+            },
 
             # "peln_3d": {
             #     "istart": grid.is_,
@@ -386,13 +386,13 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             #     "kend": grid.npz + 1,
             # },
 
-            # "pe_": {
-            #     "istart": grid.is_-1,
-            #     "iend": grid.ie+1,
-            #     "jstart": grid.js-1,
-            #     "jend": grid.je+1,
-            #     "kend": grid.npz + 1,
-            # },
+            "pe_": {
+                "istart": grid.is_-1,
+                "iend": grid.ie+1,
+                "jstart": grid.js-1,
+                "jend": grid.je+1,
+                "kend": grid.npz + 1,
+            },
 
             # "pk": {
             #     "istart": grid.is_,
@@ -601,19 +601,19 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
         self._w_fix_consrv_moment = stencil_factory.from_origin_domain(
             func=W_fix_consrv_moment,
             origin=grid.compute_origin(),
-            domain=(grid.nic, 1, grid.npz),
+            domain=(grid.nic, grid.njc, grid.npz),
         )
 
         self._pressures_mapu = stencil_factory.from_origin_domain(
             pressures_mapu,
             origin=grid_indexing.origin_compute(),
-            domain=(grid_indexing.domain[0],1,grid_indexing.domain[2] + 1)
+            domain=(grid_indexing.domain[0],grid_indexing.domain[1],grid_indexing.domain[2] + 1)
         )
 
         self._pe0_ptop_xmax = stencil_factory.from_origin_domain(
             pe0_ptop_xmax,
-            origin=(grid_indexing.domain[0]+3,3,0),
-            domain=(1,1,grid_indexing.domain[2] + 1)
+            origin=(grid_indexing.n_halo+grid_indexing.domain[0],grid_indexing.n_halo,0),
+            domain=(1,grid_indexing.domain[1], 1)
         )
 
         self._pressures_mapv = stencil_factory.from_origin_domain(
@@ -621,7 +621,7 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             origin=grid_indexing.origin_compute(),
             domain=(
                 grid_indexing.domain[0] + 1,
-                1,
+                grid_indexing.domain[1],
                 grid_indexing.domain[2] + 1,
             ),
         )
@@ -775,95 +775,95 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             self._dp2,
         )
         
-        # self._w_fix_consrv_moment(
-        #              inputs["w"],
-        #              self._w2,
-        #              self._dp2,
-        #              self._gz,
-        #              inputs["w_max"],
-        #              inputs["w_min"],
-        #              self._compute_performed
-        #              )
+        self._w_fix_consrv_moment(
+                     inputs["w"],
+                     self._w2,
+                     self._dp2,
+                     self._gz,
+                     inputs["w_max"],
+                     inputs["w_min"],
+                     self._compute_performed
+                     )
 
-        # self._map1_ppm_u = MapSingle(
-        #     self.stencil_factory,
-        #     self.quantity_factory,
-        #     inputs["kord_mt"],
-        #     -1,
-        #     dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
-        # )
+        self._map1_ppm_u = MapSingle(
+            self.stencil_factory,
+            self.quantity_factory,
+            inputs["kord_mt"],
+            -1,
+            dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+        )
 
-        # self._pressures_mapu(
-        #         inputs["pe_"],
-        #         inputs["ak"],
-        #         inputs["bk"],
-        #         self._pe0,
-        #         self._pe3,
-        #         inputs["ptop"],
-        #     )
+        self._pressures_mapu(
+                inputs["pe_"],
+                inputs["ak"],
+                inputs["bk"],
+                self._pe0,
+                self._pe3,
+                inputs["ptop"],
+            )
         
-        # self._pe0_ptop_xmax(
-        #         self._pe0,
-        #         inputs["ptop"],
-        #     )
+        self._pe0_ptop_xmax(
+                self._pe0,
+                inputs["ptop"],
+            )
 
-        # self._map1_ppm_u(
-        #         inputs["u"],
-        #         self._pe0,
-        #         self._pe3,
-        #         interp=False,
-        #     )
+        self._map1_ppm_u(
+                inputs["u"],
+                self._pe0,
+                self._pe3,
+                interp=False,
+            )
         
-        # self._map1_ppm_u(
-        #         inputs["mfy"],
-        #         self._pe0,
-        #         self._pe3,
-        #         interp=False,
-        #     )
+        self._map1_ppm_u(
+                inputs["mfy"],
+                self._pe0,
+                self._pe3,
+                interp=False,
+            )
         
-        # self._map1_ppm_u(
-        #         inputs["cy"],
-        #         self._pe0,
-        #         self._pe3,
-        #         interp=False,
-        #     )
+        self._map1_ppm_u(
+                inputs["cy"],
+                self._pe0,
+                self._pe3,
+                interp=False,
+            )
         
-        # self._map1_ppm_v = MapSingle(
-        #     self.stencil_factory,
-        #     self.quantity_factory,
-        #     inputs["kord_mt"],
-        #     -1,
-        #     dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
-        # )
+        self._map1_ppm_v = MapSingle(
+            self.stencil_factory,
+            self.quantity_factory,
+            inputs["kord_mt"],
+            -1,
+            dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+        )
 
-        # self._pressures_mapv(
-        #         inputs["pe_"],
-        #         inputs["ak"],
-        #         inputs["bk"],
-        #         self._pe0,
-        #         self._pe3,
-        #     )
+        self._pressures_mapv(
+                inputs["pe_"],
+                inputs["ak"],
+                inputs["bk"],
+                self._pe0,
+                self._pe3,
+            )
 
-        # self._map1_ppm_v(
-        #         inputs["v"],
-        #         self._pe0,
-        #         self._pe3,
-        #         interp=False,
-        #     )
+        self._map1_ppm_v(
+                inputs["v"],
+                self._pe0,
+                self._pe3,
+                interp=False,
+            )
         
-        # self._map1_ppm_v(
-        #         inputs["mfx_"],
-        #         self._pe0,
-        #         self._pe3,
-        #         interp=False,
-        #     )
+        self._map1_ppm_v(
+                inputs["mfx_"],
+                self._pe0,
+                self._pe3,
+                interp=False,
+            )
         
-        # self._map1_ppm_v(
-        #         inputs["cx_"],
-        #         self._pe0,
-        #         self._pe3,
-        #         interp=False,
-        #     )
+        self._map1_ppm_v(
+                inputs["cx_"],
+                self._pe0,
+                self._pe3,
+                interp=False,
+            )
 
         # self._pe_pk_delp_peln(inputs["pe_"],
         #                       inputs["pk"],
