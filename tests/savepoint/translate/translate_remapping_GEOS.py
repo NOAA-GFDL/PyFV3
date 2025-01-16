@@ -271,7 +271,7 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             # "cappa": {},
             # "q_con": {},
             # "delp": {},
-            # "delz": {},
+            "delz": {},
             # "ps": {},
             # "dp2_3d": {
             #     "istart": grid.is_,
@@ -302,36 +302,36 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             #     "kend": grid.npz + 1,
             # },
 
-            # "qvapor": {
-            #     "kend": grid.npz-1,
-            # },
-            # "qliquid": {
-            #     "kend": grid.npz-1,
-            #     },
-            # "qice": {
-            #     "kend": grid.npz-1,
-            # },
-            # "qrain": {
-            #     "kend": grid.npz-1,
-            # },
-            # "qsnow": {
-            #     "kend": grid.npz-1,
-            # },
-            # "qgraupel": {
-            #     "kend": grid.npz-1,
-            # },
-            # "qcld": {
-            #     "kend": grid.npz-1,
-            # },
-            # "qo3mr": {
-            #     "kend": grid.npz-1,
-            # },
-            # "qsgs_tke": {
-            #     "kend": grid.npz-1,
-            # },
-            # "w": {
-            #     "kend": grid.npz-1,
-            # },
+            "qvapor": {
+                "kend": grid.npz-1,
+            },
+            "qliquid": {
+                "kend": grid.npz-1,
+                },
+            "qice": {
+                "kend": grid.npz-1,
+            },
+            "qrain": {
+                "kend": grid.npz-1,
+            },
+            "qsnow": {
+                "kend": grid.npz-1,
+            },
+            "qgraupel": {
+                "kend": grid.npz-1,
+            },
+            "qcld": {
+                "kend": grid.npz-1,
+            },
+            "qo3mr": {
+                "kend": grid.npz-1,
+            },
+            "qsgs_tke": {
+                "kend": grid.npz-1,
+            },
+            "w": {
+                "kend": grid.npz-1,
+            },
             # "u": {
             #     "istart": grid.isd,
             #     "iend": grid.ied,
@@ -569,13 +569,13 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             externals={"hydrostatic": hydrostatic},
             origin=grid_indexing.origin_compute(),
             # domain=grid_indexing.domain_compute(add=(0, 0, 1)),
-            domain=(grid_indexing.domain[0], 1, grid_indexing.domain[2]+1), # Note : Many intervals go from (0,-1) in this stencil
+            domain=(grid_indexing.domain[0], grid_indexing.domain[1], grid_indexing.domain[2]+1), # Note : Many intervals go from (0,-1) in this stencil
         )
 
         self._pn2_pk_delp = stencil_factory.from_origin_domain(
             pn2_pk_delp,
             origin=grid_indexing.origin_compute(add=(0,0,1)),
-            domain=(grid.nic, 1, grid.npz-1),
+            domain=(grid.nic, grid.njc, grid.npz-1),
         )
 
         self._map_scalar = MapSingle(
@@ -589,13 +589,13 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
         self._rescale_delz_1 = stencil_factory.from_origin_domain(
             rescale_delz_1,
             origin=grid.compute_origin(),
-            domain=(grid.nic, 1, grid.npz),
+            domain=(grid.nic, grid.njc, grid.npz),
         )
 
         self._rescale_delz_2 = stencil_factory.from_origin_domain(
             rescale_delz_2,
             origin=grid.compute_origin(),
-            domain=(grid.nic, 1, grid.npz),
+            domain=(grid.nic, grid.njc, grid.npz),
         )
 
         self._w_fix_consrv_moment = stencil_factory.from_origin_domain(
@@ -700,80 +700,80 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             Float(inputs["r_vir"]),
         )
 
-        # self._pn2_pk_delp(
-        #     self._pe2,
-        #     self._pn2,
-        #     self._pk2,
-        #     Float(inputs["akap"]),
-        # )
+        self._pn2_pk_delp(
+            self._pe2,
+            self._pn2,
+            self._pk2,
+            Float(inputs["akap"]),
+        )
 
-        # self._map_scalar(
-        #         inputs["pt"],
-        #         self._pn1,
-        #         self._pn2,
-        #         qmin=inputs["t_min"],
-        #         interp=True,
-        # )
+        self._map_scalar(
+                inputs["pt"],
+                self._pn1,
+                self._pn2,
+                qmin=inputs["t_min"],
+                interp=True,
+        )
 
-        # tracers = { "qvapor": inputs["qvapor"],
-        #             "qliquid": inputs["qliquid"],
-        #             "qice": inputs["qice"],
-        #             "qrain": inputs["qrain"],
-        #             "qsnow": inputs["qsnow"],
-        #             "qgraupel": inputs["qgraupel"],
-        #             "qcld": inputs["qcld"],
-        #             "qo3mr": inputs["qo3mr"],
-        #             "qsgs_tke": inputs["qsgs_tke"],
-        # }
+        tracers = { "qvapor": inputs["qvapor"],
+                    "qliquid": inputs["qliquid"],
+                    "qice": inputs["qice"],
+                    "qrain": inputs["qrain"],
+                    "qsnow": inputs["qsnow"],
+                    "qgraupel": inputs["qgraupel"],
+                    "qcld": inputs["qcld"],
+                    "qo3mr": inputs["qo3mr"],
+                    "qsgs_tke": inputs["qsgs_tke"],
+        }
 
-        # self._mapn_tracer = MapNTracer(
-        #     self.stencil_factory,
-        #     self.quantity_factory,
-        #     abs(self.kord),
-        #     self.nq,
-        #     fill=self.fill,
-        #     tracers=tracers,
-        # )
+        self._mapn_tracer = MapNTracer(
+            self.stencil_factory,
+            self.quantity_factory,
+            abs(self.kord),
+            self.nq,
+            fill=self.fill,
+            tracers=tracers,
+        )
 
-        # self._mapn_tracer(self._pe1, 
-        #                  self._pe2, 
-        #                  self._dp2,
-        #                  tracers)
+        self._mapn_tracer(self._pe1, 
+                         self._pe2, 
+                         self._dp2,
+                         tracers)
 
-        # self._map_single_w = MapSingle(
-        #     self.stencil_factory,
-        #     self.quantity_factory,
-        #     inputs["kord_wz"],
-        #     -2,
-        #     dims=[X_DIM, Y_DIM, Z_DIM],
-        # )
+        self._map_single_w = MapSingle(
+            self.stencil_factory,
+            self.quantity_factory,
+            inputs["kord_wz"],
+            -2,
+            dims=[X_DIM, Y_DIM, Z_DIM],
+        )
 
-        # self._map_single_delz = MapSingle(
-        #     self.stencil_factory,
-        #     self.quantity_factory,
-        #     inputs["kord_wz"],
-        #     1,
-        #     dims=[X_DIM, Y_DIM, Z_DIM],
-        # )
-        # self._map_single_w(inputs["w"], 
-        #                    self._pe1, 
-        #                    self._pe2, 
-        #                    qs=inputs["ws_"], 
-        #                    interp=False)
+        self._map_single_delz = MapSingle(
+            self.stencil_factory,
+            self.quantity_factory,
+            inputs["kord_wz"],
+            1,
+            dims=[X_DIM, Y_DIM, Z_DIM],
+        )
+        self._map_single_w(inputs["w"], 
+                           self._pe1, 
+                           self._pe2, 
+                           qs=inputs["ws_"], 
+                           interp=False)
         
-        # self._rescale_delz_1(
-        #     inputs["delz"],
-        #     inputs["delp"],
-        # )
+        self._rescale_delz_1(
+            inputs["delz"],
+            inputs["delp"],
+        )
         
-        # self._map_single_delz(inputs["delz"], 
-        #                       self._pe1, 
-        #                       self._pe2)
+        self._map_single_delz(inputs["delz"], 
+                              self._pe1, 
+                              self._pe2)
 
-        # self._rescale_delz_2(
-        #     inputs["delz"],
-        #     self._dp2,
-        # )
+        self._rescale_delz_2(
+            inputs["delz"],
+            self._dp2,
+        )
         
         # self._w_fix_consrv_moment(
         #              inputs["w"],
