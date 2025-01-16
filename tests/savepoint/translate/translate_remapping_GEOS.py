@@ -268,9 +268,9 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             #     "kend": grid.npz+1
             # },
             "pt": {},
-            # "cappa": {},
+            "cappa": {},
             # "q_con": {},
-            # "delp": {},
+            "delp": {},
             "delz": {},
             # "ps": {},
             # "dp2_3d": {
@@ -378,13 +378,13 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 "kend": grid.npz-1,
             },
 
-            # "peln_3d": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz + 1,
-            # },
+            "peln_3d": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            },
 
             "pe_": {
                 "istart": grid.is_-1,
@@ -394,19 +394,19 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 "kend": grid.npz + 1,
             },
 
-            # "pk": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz+1,
-            #     },
-            # "pkz": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            # },
+            "pk": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz+1,
+                },
+            "pkz": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+            },
             # "te_2d_": {
             #     "istart": grid.is_,
             #     "iend": grid.ie,
@@ -629,14 +629,14 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
         self._pe_pk_delp_peln = stencil_factory.from_origin_domain(
             pe_pk_delp_peln,
             origin=grid_indexing.origin_compute(),
-            domain=(grid_indexing.domain[0], 1, grid_indexing.domain[2] + 1,
+            domain=(grid_indexing.domain[0], grid_indexing.domain[1], grid_indexing.domain[2] + 1,
             ),
         )
 
         self._moist_cv_pkz = stencil_factory.from_origin_domain(
             moist_cv.moist_pkz,
             origin=grid.compute_origin(),
-            domain=(grid.nic, 1, grid.npz),
+            domain=(grid.nic, grid.njc, grid.npz),
         )
 
         self._moist_cv_te = stencil_factory.from_origin_domain(
@@ -865,33 +865,33 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 interp=False,
             )
 
-        # self._pe_pk_delp_peln(inputs["pe_"],
-        #                       inputs["pk"],
-        #                       inputs["delp"],
-        #                       inputs["peln_3d"],
-        #                       inputs["pe2_"],
-        #                       inputs["pk2_3d"],
-        #                       inputs["pn2_3d"],
-        #                       inputs["ak"],
-        #                       inputs["bk"],
-        #                       inputs["akap"],
-        #                       inputs["ptop"],
-        # )
+        self._pe_pk_delp_peln(inputs["pe_"],
+                              inputs["pk"],
+                              inputs["delp"],
+                              inputs["peln_3d"],
+                              self._pe2,
+                              self._pk2,
+                              self._pn2,
+                              inputs["ak"],
+                              inputs["bk"],
+                              inputs["akap"],
+                              inputs["ptop"],
+        )
 
-        # self._moist_cv_pkz(
-        #     inputs["qvapor"],
-        #     inputs["qliquid"],
-        #     inputs["qrain"],
-        #     inputs["qsnow"],
-        #     inputs["qice"],
-        #     inputs["qgraupel"],
-        #     inputs["pkz"],
-        #     inputs["pt"],
-        #     inputs["cappa"],
-        #     inputs["delp"],
-        #     inputs["delz"],
-        #     Float(inputs["r_vir"]),
-        # )
+        self._moist_cv_pkz(
+            inputs["qvapor"],
+            inputs["qliquid"],
+            inputs["qrain"],
+            inputs["qsnow"],
+            inputs["qice"],
+            inputs["qgraupel"],
+            inputs["pkz"],
+            inputs["pt"],
+            inputs["cappa"],
+            inputs["delp"],
+            inputs["delz"],
+            Float(inputs["r_vir"]),
+        )
 
         # # May need if loop here based on if( last_step .and. (.not.do_adiabatic_init)  ) then
 
