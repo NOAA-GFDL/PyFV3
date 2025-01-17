@@ -21,36 +21,6 @@ from ndsl.constants import (
 from ndsl.dsl.typing import Float, FloatField
 from pyFV3.stencils.mapn_tracer import MapNTracer
 
-def moist_pt(
-    qvapor: FloatField,
-    qliquid: FloatField,
-    qrain: FloatField,
-    qsnow: FloatField,
-    qice: FloatField,
-    qgraupel: FloatField,
-    q_con: FloatField,
-    pt: FloatField,
-    cappa: FloatField,
-    delp: FloatField,
-    delz: FloatField,
-    r_vir: Float,
-):
-    with computation(PARALLEL), interval(...):
-        cvm, gz, q_con, cappa, pt = moist_cv.moist_pt_func(
-            qvapor,
-            qliquid,
-            qrain,
-            qsnow,
-            qice,
-            qgraupel,
-            q_con,
-            pt,
-            cappa,
-            delp,
-            delz,
-            r_vir,
-        )
-
 class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
     def __init__(
         self,
@@ -215,12 +185,6 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             },
             "te": {}
         }
-        # self.write_vars = ["gz", "cvm"]
-        self.write_vars = ["qvapor", "qliquid", "qice", "qrain", "qsnow", "qgraupel","qcld"]
-        for k, v in self.in_vars["data_vars"].items():
-            # if k not in self.write_vars:
-            if k in self.write_vars:
-                v["axis"] = 1
         self.in_vars["parameters"] = [
             "ptop",
             "r_vir",
@@ -658,15 +622,6 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
         )
 
     def compute_from_storage(self, inputs):
-
-        # Replicates tracer values in I along the J direction
-        for name, value in inputs.items():
-            if hasattr(value, "shape") and len(value.shape) > 1 and value.shape[1] == 1:
-                inputs[name] = self.make_storage_data(
-                    pad_field_in_j(
-                        value, self.grid.njd, backend=self.stencil_factory.backend
-                    )
-                )
 
         self._init_pe(
             inputs["pe_"],
