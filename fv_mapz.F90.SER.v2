@@ -230,11 +230,11 @@ contains
    real, dimension(is:ie, js:je, km) :: w2_3d, dp2_3d
 
    real, dimension(is:ie, js:je) :: gz_2d, te_2d_f32, te0_2d_f32, zsum1_f32
-   real, dimension(isd:ied,jsd:jed) :: rsin2, cosa_s, area_64
+   real, dimension(isd:ied,jsd:jed) :: rsin2, cosa_s, area_64_
 
    logical :: serial_flag
 
-   real :: grav_
+   real :: grav_, consv_min_, cv_air_
 
 !$ser verbatim real :: w_max_, w_min_
 
@@ -255,6 +255,8 @@ contains
    !$ser verbatim pk2_3d = pk
    !$ser verbatim gz_2d = 0.0
    !$ser verbatim phis_3d = 0.0
+   !$ser verbatim consv_min_=consv_min
+   !$ser verbatim cv_air_=cv_air
 
    remap_t  = .false.
    remap_pt = .false.
@@ -378,7 +380,7 @@ contains
 !$OMP                                  pe_3d, pe1_3d, pe2_3d, pn1_3d, pn2_3d, pk2_3d, w2_3d, dp2_3d, &
 !$OMP                                  peln_3d, gz_2d, pe0_3d, pe3_3d, phis_3d, te_2d, te_2d_f32, te0_2d, te0_2d_f32) &
 !$OMP                          private(gz,cvm,bkh,dp2,   &
-!$OMP                                  pe0,pe1,pe2,pe3,pk1,pk2,pn1,pn2,phis,q2,w2,dpln,dlnp, w_max_, w_min_, rsin2, cosa_s, grav_, area_64)
+!$OMP                                  pe0,pe1,pe2,pe3,pk1,pk2,pn1,pn2,phis,q2,w2,dpln,dlnp, w_max_, w_min_, rsin2, cosa_s, grav_, area_64_)
 
 !$ser verbatim do k = 1, km+1
 !$ser verbatim    do j = js, je
@@ -401,7 +403,7 @@ contains
 !$ser verbatim cosa_s=gridstruct%cosa_s
 !$ser verbatim grav_=grav
 !$ser verbatim te_2d_f32 = real(te_2d)
-!$ser verbatim area_64 = real(gridstruct%area_64)
+!$ser verbatim area_64_ = real(gridstruct%area_64)
 !$ser verbatim te0_2d_f32 = real(te0_2d)
 !$ser savepoint Remapping_GEOS-In
 !$ser data pe_=pe_3d
@@ -456,9 +458,15 @@ contains
 !$ser data grav=grav_
 !$ser data te_2d_=te_2d_f32
 !$ser data te0_2d_=te0_2d_f32
-!$ser data area_64=area_64
+!$ser data area_64_=area_64_
 !$ser data te=te
-   
+!$ser data last_step=last_step
+!$ser data do_adiabatic_init=do_adiabatic_init
+!$ser data consv=consv
+!$ser data consv_min=consv_min_
+!$ser data cv_air=cv_air_
+!$ser data adiabatic=adiabatic
+
    do 1000 j=js,je+1
 
       do k=1,km+1
@@ -1427,7 +1435,7 @@ contains
 !$ser data grav=grav_
 !$ser data te_2d_=te_2d_f32
 !$ser data te0_2d_=te0_2d_f32
-!$ser data area_64=area_64
+!$ser data area_64_=area_64_
 !$ser data te=te
 
 ! Do total energy conservation and fast saturation adjustment as requested
