@@ -193,8 +193,8 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM],
             "units": "No Units",
         },
-        "area_64": {
-            "name": "area_64",
+        "area_64_": {
+            "name": "area_64_",
             "dims": [X_DIM, Y_DIM],
             "units": "No Units",
         },
@@ -481,7 +481,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 "jstart": grid.js,
                 "jend": grid.je,
             },
-            "area_64": {
+            "area_64_": {
                 "istart": grid.isd,
                 "iend": grid.ied,
                 "jstart": grid.jsd,
@@ -500,11 +500,12 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "w_min",
             "kord_mt",
             "grav",
-            # "zvir",
-            # "last_step",
-            # "consv_te",
-            # "mdt",
-            # "nq",
+            "last_step",
+            "do_adiabatic_init",
+            "consv",
+            "consv_min",
+            "cv_air",
+            "adiabatic",
         ]
         self._base.out_vars = {
             # "pe1_": {
@@ -910,13 +911,13 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         self._moist_cv_te = stencil_factory.from_origin_domain(
             moist_cv.moist_te,
             origin=grid.compute_origin(),
-            domain=(grid.nic, 1, grid.npz+1),
+            domain=(grid.nic, grid.njc, grid.npz+1),
         )
 
         self._te_zsum = stencil_factory.from_origin_domain(
             moist_cv.te_zsum,
             origin=grid.compute_origin(),
-            domain=(grid.nic, 1, grid.npz),
+            domain=(grid.nic, grid.njc, grid.npz),
         )
 
         self._most_cv_pt_last_step = stencil_factory.from_origin_domain(
@@ -926,289 +927,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         )
 
     def compute_sequential(self, inputs_list, communicator_list):
-        state_list = self.state_list_from_inputs_list(inputs_list)
-        for state in state_list:
-            state_namespace = SimpleNamespace(**state)
-
-            self._init_pe(
-                state_namespace.pe_,
-                self._pe1,
-                self._pe2,
-                state_namespace.ptop,
-            )
-
-            self._moist_cv_pt_pressure(
-                state_namespace.qvapor,
-                state_namespace.qliquid,
-                state_namespace.qrain,
-                state_namespace.qsnow,
-                state_namespace.qice,
-                state_namespace.qgraupel,
-                state_namespace.q_con,
-                state_namespace.pt,
-                state_namespace.cappa,
-                state_namespace.delp,
-                state_namespace.delz,
-                state_namespace.pe_,
-                self._pe2,
-                state_namespace.ak,
-                state_namespace.bk,
-                self._dp2,
-                self._ps,
-                self._pn1,
-                self._pn2,
-                state_namespace.peln_3d,
-                True,
-                Float(state_namespace.r_vir),
-            )
-
-            self._pn2_pk_delp(
-                self._pe2,
-                self._pn2,
-                self._pk2,
-                Float(state_namespace.akap),
-            )
-
-            self._map_scalar(
-                    state_namespace.pt,
-                    self._pn1,
-                    self._pn2,
-                    qmin=state_namespace.t_min,
-                    interp=True,
-            )
-
-            tracers = { "qvapor": state_namespace.qvapor,
-                        "qliquid": state_namespace.qliquid,
-                        "qice": state_namespace.qice,
-                        "qrain": state_namespace.qrain,
-                        "qsnow": state_namespace.qsnow,
-                        "qgraupel": state_namespace.qgraupel,
-                        "qcld": state_namespace.qcld,
-                        "qo3mr": state_namespace.qo3mr,
-                        "qsgs_tke": state_namespace.qsgs_tke,
-            }
-
-            self._mapn_tracer = MapNTracer(
-                self.stencil_factory,
-                self.quantity_factory,
-                abs(self.kord),
-                self.nq,
-                fill=self.fill,
-                tracers=tracers,
-            )
-
-            self._mapn_tracer(self._pe1, 
-                            self._pe2, 
-                            self._dp2,
-                            tracers)
-
-            self._map_single_w = MapSingle(
-                self.stencil_factory,
-                self.quantity_factory,
-                state_namespace.kord_wz,
-                -2,
-                dims=[X_DIM, Y_DIM, Z_DIM],
-            )
-
-            self._map_single_delz = MapSingle(
-                self.stencil_factory,
-                self.quantity_factory,
-                state_namespace.kord_wz,
-                1,
-                dims=[X_DIM, Y_DIM, Z_DIM],
-            )
-            self._map_single_w(state_namespace.w, 
-                            self._pe1, 
-                            self._pe2, 
-                            qs=state_namespace.ws_, 
-                            interp=False)
-            
-            self._rescale_delz_1(
-                state_namespace.delz,
-                state_namespace.delp,
-            )
-            
-            self._map_single_delz(state_namespace.delz, 
-                                self._pe1, 
-                                self._pe2)
-
-            self._rescale_delz_2(
-                state_namespace.delz,
-                self._dp2,
-            )
-            
-            self._w_fix_consrv_moment(
-                        state_namespace.w,
-                        self._w2,
-                        self._dp2,
-                        self._gz,
-                        state_namespace.w_max,
-                        state_namespace.w_min,
-                        self._compute_performed
-                        )
-
-            self._map1_ppm_u = MapSingle(
-                self.stencil_factory,
-                self.quantity_factory,
-                state_namespace.kord_mt,
-                -1,
-                dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
-            )
-
-            self._pressures_mapu(
-                    state_namespace.pe_,
-                    state_namespace.ak,
-                    state_namespace.bk,
-                    self._pe0,
-                    self._pe3,
-                    state_namespace.ptop,
-                )
-            
-            self._pe0_ptop_xmax(
-                    self._pe0,
-                    state_namespace.ptop,
-                )
-
-            self._map1_ppm_u(
-                    state_namespace.u,
-                    self._pe0,
-                    self._pe3,
-                    interp=False,
-                )
-            
-            self._map1_ppm_u(
-                    state_namespace.mfy,
-                    self._pe0,
-                    self._pe3,
-                    interp=False,
-                )
-            
-            self._map1_ppm_u(
-                    state_namespace.cy,
-                    self._pe0,
-                    self._pe3,
-                    interp=False,
-                )
-            
-            self._map1_ppm_v = MapSingle(
-                self.stencil_factory,
-                self.quantity_factory,
-                state_namespace.kord_mt,
-                -1,
-                dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
-            )
-
-            self._pressures_mapv(
-                    state_namespace.pe_,
-                    state_namespace.ak,
-                    state_namespace.bk,
-                    self._pe0,
-                    self._pe3,
-                )
-
-            self._map1_ppm_v(
-                    state_namespace.v,
-                    self._pe0,
-                    self._pe3,
-                    interp=False,
-                )
-            
-            self._map1_ppm_v(
-                    state_namespace.mfx_,
-                    self._pe0,
-                    self._pe3,
-                    interp=False,
-                )
-            
-            self._map1_ppm_v(
-                    state_namespace.cx_,
-                    self._pe0,
-                    self._pe3,
-                    interp=False,
-                )
-
-            self._pe_pk_delp_peln(state_namespace.pe_,
-                                state_namespace.pk,
-                                state_namespace.delp,
-                                state_namespace.peln_3d,
-                                self._pe2,
-                                self._pk2,
-                                self._pn2,
-                                state_namespace.ak,
-                                state_namespace.bk,
-                                state_namespace.akap,
-                                state_namespace.ptop,
-            )
-
-            self._moist_cv_pkz(
-                state_namespace.qvapor,
-                state_namespace.qliquid,
-                state_namespace.qrain,
-                state_namespace.qsnow,
-                state_namespace.qice,
-                state_namespace.qgraupel,
-                state_namespace.pkz,
-                state_namespace.pt,
-                state_namespace.cappa,
-                state_namespace.delp,
-                state_namespace.delz,
-                Float(state_namespace.r_vir),
-            )
-
-            # # May need if loop here based on if( last_step .and. (.not.do_adiabatic_init)  ) then
-
-            # self._moist_cv_te(state_namespace.qvapor,
-            #                   state_namespace.qliquid,
-            #                   state_namespace.qrain,
-            #                   state_namespace.qsnow,
-            #                   state_namespace.qice,
-            #                   state_namespace.qgraupel,
-            #                   state_namespace.u,
-            #                   state_namespace.v,
-            #                   state_namespace.w,
-            #                   state_namespace.te_2d_,
-            #                   state_namespace.pt,
-            #                   state_namespace.phis_,
-            #                   state_namespace.delp,
-            #                   state_namespace.rsin2,
-            #                   state_namespace.cosa_s,
-            #                   state_namespace.hs,
-            #                   state_namespace.delz,
-            #                   state_namespace.grav,
-            #                 )
-
-            # self._te_zsum(state_namespace.te_2d_,
-            #               state_namespace.te0_2d_,
-            #               state_namespace.delp,
-            #               state_namespace.pkz,
-            #               self._zsum1,
-            #             )
-            
-            # # Note, since this is a serial translate test, mpp_global_sum won't work without the communicator.
-            # # Also, mpp_global_sum is currently set up for the C24 TBC setup
-
-            # # tesum = mpp_global_sum(state_namespace.te_2d_*state_namespace.area_64, communicator, self.stencil_factory)
-
-            # # I ignore the E_flux computation since it's not used elsewhere in our current setup once it's computed
-
-            # # zsum = mpp_global_sum(self._zsum1*state_namespace.area_64, communicator, self.stencil_factory)
-            # # dtmp = tesum / (cv_air*zsum)
-
-            # # If loop based on if ( last_step .and. (.not. adiabatic) ) then
-            # # self._most_cv_pt_last_step(state_namespace.qvapor,
-            # #                            state_namespace.qliquid,
-            # #                            state_namespace.qrain,
-            # #                            state_namespace.qsnow,
-            # #                            state_namespace.qice,
-            # #                            state_namespace.qgraupel,
-            # #                            self._gz,
-            # #                            state_namespace.pt,
-            # #                            state_namespace.pkz,
-            # #                            dtmp,
-            # #                            state_namespace.r_vir],
-            # #                         )
-
-            return self.outputs_list_from_state_list(state_list)
+        print("No serial test available")
 
     def compute_parallel(self, inputs, communicator):
         state = self.state_from_inputs(inputs)
@@ -1438,58 +1157,77 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             state_namespace.delz,
             Float(state_namespace.r_vir),
         )
+ 
+        if state_namespace.last_step and not state_namespace.do_adiabatic_init:
+            
+            if state_namespace.consv > state_namespace.consv_min:
 
-        # # May need if loop here based on if( last_step .and. (.not.do_adiabatic_init)  ) then
+                self._moist_cv_te(state_namespace.qvapor,
+                                state_namespace.qliquid,
+                                state_namespace.qrain,
+                                state_namespace.qsnow,
+                                state_namespace.qice,
+                                state_namespace.qgraupel,
+                                state_namespace.u,
+                                state_namespace.v,
+                                state_namespace.w,
+                                state_namespace.te_2d_,
+                                state_namespace.pt,
+                                self._phis,
+                                state_namespace.delp,
+                                state_namespace.rsin2,
+                                state_namespace.cosa_s,
+                                state_namespace.hs,
+                                state_namespace.delz,
+                                state_namespace.grav,
+                                )
 
-        # self._moist_cv_te(state_namespace.qvapor,
-        #                   state_namespace.qliquid,
-        #                   state_namespace.qrain,
-        #                   state_namespace.qsnow,
-        #                   state_namespace.qice,
-        #                   state_namespace.qgraupel,
-        #                   state_namespace.u,
-        #                   state_namespace.v,
-        #                   state_namespace.w,
-        #                   state_namespace.te_2d_,
-        #                   state_namespace.pt,
-        #                   state_namespace.phis_,
-        #                   state_namespace.delp,
-        #                   state_namespace.rsin2,
-        #                   state_namespace.cosa_s,
-        #                   state_namespace.hs,
-        #                   state_namespace.delz,
-        #                   state_namespace.grav,
-        #                 )
+                print("sum(te_2d): ", sum(state_namespace.te_2d_.data)) # nans here
+                print("sum(qliquid): ", sum(sum(state_namespace.qliquid.data)))
+                print("sum(qrain): ", sum(sum(state_namespace.qrain.data)))
+                print("sum(qsnow): ", sum(sum(state_namespace.qsnow.data)))
+                print("sum(qice): ", sum(sum(state_namespace.qice.data)))
+                print("sum(qgraupel): ", sum(sum(state_namespace.qgraupel.data)))
+                print("sum(u): ", sum(sum(state_namespace.u.data))) # nans here
+                print("sum(v): ", sum(sum(state_namespace.v.data)))
+                print("sum(w): ", sum(sum(state_namespace.w.data)))
+                print("sum(pt): ", sum(sum(state_namespace.pt.data)))
+                print("sum(delp): ", sum(sum(state_namespace.delp.data)))
+                print("sum(rsin2): ", sum(state_namespace.rsin2.data))
+                print("sum(cosa_s): ", sum(state_namespace.cosa_s.data))
+                print("sum(hs): ", sum(state_namespace.hs.data))
+                print("sum(delz): ", sum(sum(state_namespace.delz.data)))
 
-        # self._te_zsum(state_namespace.te_2d_,
-        #               state_namespace.te0_2d_,
-        #               state_namespace.delp,
-        #               state_namespace.pkz,
-        #               self._zsum1,
-        #             )
+                # self._te_zsum(state_namespace.te_2d_,
+                #               state_namespace.te0_2d_,
+                #               state_namespace.delp,
+                #               state_namespace.pkz,
+                #               self._zsum1,
+                #             )
         
-        # # Note, since this is a serial translate test, mpp_global_sum won't work without the communicator.
-        # # Also, mpp_global_sum is currently set up for the C24 TBC setup
+                # # Note, mpp_global_sum is currently set up for the C24 TBC setup
+                # print("te_2d type :", type(state_namespace.te_2d_.data[0,0]))
+                # print("area_64 type :", type(state_namespace.area_64_.data[0,0]))
+                # tesum = mpp_global_sum(state_namespace.te_2d_.data*state_namespace.area_64_.data, communicator, self.stencil_factory)
+        #         zsum  = mpp_global_sum(self._zsum1*state_namespace.area_64_.data, communicator, self.stencil_factory)
 
-        # # tesum = mpp_global_sum(state_namespace.te_2d_*state_namespace.area_64, communicator, self.stencil_factory)
-
+        #         dtmp = tesum / (state_namespace.cv_air.data * zsum)
         # # I ignore the E_flux computation since it's not used elsewhere in our current setup once it's computed
 
-        # # zsum = mpp_global_sum(self._zsum1*state_namespace.area_64, communicator, self.stencil_factory)
-        # # dtmp = tesum / (cv_air*zsum)
 
-        # # If loop based on if ( last_step .and. (.not. adiabatic) ) then
-        # # self._most_cv_pt_last_step(state_namespace.qvapor,
-        # #                            state_namespace.qliquid,
-        # #                            state_namespace.qrain,
-        # #                            state_namespace.qsnow,
-        # #                            state_namespace.qice,
-        # #                            state_namespace.qgraupel,
-        # #                            self._gz,
-        # #                            state_namespace.pt,
-        # #                            state_namespace.pkz,
-        # #                            dtmp,
-        # #                            state_namespace.r_vir],
-        # #                         )
+        # if state_namespace.last_step and not state_namespace.adiabatic:
+
+        #     self._most_cv_pt_last_step(state_namespace.qvapor,
+        #                             state_namespace.qliquid,
+        #                             state_namespace.qrain,
+        #                             state_namespace.qsnow,
+        #                             state_namespace.qice,
+        #                             state_namespace.qgraupel,
+        #                             self._gz,
+        #                             state_namespace.pt,
+        #                             state_namespace.pkz,
+        #                             dtmp,
+        #                             state_namespace.r_vir,
+        #                         )
 
         return self.outputs_from_state(state)

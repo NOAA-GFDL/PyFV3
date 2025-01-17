@@ -15,14 +15,14 @@ def mpp_global_sum(inputArray, communicator, stencil_factory=None):
     mag_max_term = 0.0
 
     ints_sum = Quantity(
-                        data=np.zeros((NUMINT),dtype=np.float64),
+                        data=np.zeros((NUMINT),dtype=np.float32),
                         dims=["K"],
                         units="dunno",
                         gt4py_backend=stencil_factory.backend,
                     )
     
     ints_sum_reduce = Quantity(
-                        data=np.zeros((NUMINT),dtype=np.float64),
+                        data=np.zeros((NUMINT),dtype=np.float32),
                         dims=["K"],
                         units="dunno",
                         gt4py_backend=stencil_factory.backend,
