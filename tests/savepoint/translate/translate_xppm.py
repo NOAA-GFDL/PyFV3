@@ -14,12 +14,12 @@ class TranslateXPPM(TranslateDycoreFortranData2Py):
     ):
         super().__init__(grid, namelist, stencil_factory)
         self.in_vars["data_vars"] = {
-            "q": {"serialname": "qx", "jstart": "jfirst"},
-            "c": {"serialname": "cx", "istart": grid.is_},
+            "q": {"serialname": "xppm_q", "jstart": "jfirst"},
+            "c": {"serialname": "xppm_c", "istart": grid.is_},
         }
         self.in_vars["parameters"] = ["iord", "jfirst", "jlast"]
         self.out_vars = {
-            "xflux": {
+            "xppm_flux": {
                 "istart": grid.is_,
                 "iend": grid.ie + 1,
                 "jstart": "jfirst",
@@ -40,7 +40,7 @@ class TranslateXPPM(TranslateDycoreFortranData2Py):
 
     def compute(self, inputs):
         self.process_inputs(inputs)
-        inputs["xflux"] = utils.make_storage_from_shape(
+        inputs["xppm_flux"] = utils.make_storage_from_shape(
             inputs["q"].shape, backend=self.stencil_factory.backend
         )
         origin = self.grid.grid_indexing.origin_compute()
@@ -53,7 +53,7 @@ class TranslateXPPM(TranslateDycoreFortranData2Py):
             origin=(origin[0], int(inputs["jfirst"]), origin[2]),
             domain=(domain[0], int(inputs["jlast"] - inputs["jfirst"] + 1), domain[2]),
         )
-        self.compute_func(inputs["q"], inputs["c"], inputs["xflux"])
+        self.compute_func(inputs["q"], inputs["c"], inputs["xppm_flux"])
         return self.slice_output(inputs)
 
 
@@ -65,5 +65,5 @@ class TranslateXPPM_2(TranslateXPPM):
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
-        self.in_vars["data_vars"]["q"]["serialname"] = "q"
-        self.out_vars["xflux"]["serialname"] = "xflux_2"
+        self.in_vars["data_vars"]["q"]["serialname"] = "xppm_q2"
+        self.out_vars["xppm_flux"]["serialname"] = "xppm_flux_2"

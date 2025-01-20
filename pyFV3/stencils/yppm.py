@@ -46,12 +46,19 @@ def fx1_fn(courant, br, b0, bl):
 
 @gtscript.function
 def get_advection_mask(bl, b0, br):
-    from __externals__ import mord
+    from __externals__ import j_end, j_start, mord
 
     if __INLINED(mord == 5):
         smt5 = bl * br < 0
+    elif __INLINED(mord == -5):
+        compile_assert(False)
     else:
         smt5 = (3.0 * abs(b0)) < abs(bl - br)
+        # Fix edge issues
+        with horizontal(region[:, j_start - 1], region[:, j_start]):
+            smt5 = bl * br < 0.0
+        with horizontal(region[:, j_end], region[:, j_end + 1]):
+            smt5 = bl * br < 0.0
 
     if smt5[0, -1, 0] or smt5[0, 0, 0]:
         advection_mask = 1.0
@@ -162,10 +169,6 @@ def compute_al(q: FloatField, dya: FloatFieldIJ):
 
     al = ppm.p1 * (q[0, -1, 0] + q) + ppm.p2 * (q[0, -2, 0] + q[0, 1, 0])
 
-    if __INLINED(jord < 0):
-        compile_assert(False)
-        al = max(al, 0.0)
-
     if __INLINED(grid_type < 3):
         with horizontal(region[:, j_start - 1], region[:, j_end]):
             al = ppm.c1 * q[0, -2, 0] + ppm.c2 * q[0, -1, 0] + ppm.c3 * q
@@ -181,6 +184,9 @@ def compute_al(q: FloatField, dya: FloatFieldIJ):
             )
         with horizontal(region[:, j_start + 1], region[:, j_end + 2]):
             al = ppm.c3 * q[0, -1, 0] + ppm.c2 * q[0, 0, 0] + ppm.c1 * q[0, 1, 0]
+
+    if __INLINED(jord < 0):
+        al = max(al, 0.0)
 
     return al
 
@@ -273,7 +279,10 @@ def compute_blbr_ord8plus(q: FloatField, dya: FloatFieldIJ):
 
 
 def compute_y_flux(
-    q: FloatField, courant: FloatField, dya: FloatFieldIJ, yflux: FloatField
+    q: FloatField,
+    courant: FloatField,
+    dya: FloatFieldIJ,
+    yflux: FloatField,
 ):
     """
     Args:
@@ -296,6 +305,29 @@ def compute_y_flux(
 class YPiecewiseParabolic:
     """
     Fortran name is yppm
+
+    `jord` is `hord_dp` which is hord for `δp`, `δz`, where:
+
+    `δp`: Total air mass (including vapor and condensates)
+        Equal to hydrostatic pressure depth of layer
+    `δz`: Geometric layer depth (nonhydrostatic)
+
+    Value explainers:
+        5: Unlimited “fifth-order” scheme with weak 2∆x filter; fastest
+            and least diffusive (“inviscid”)
+        6: Intermediate-strength 2∆x filter. Gives best ACC and storm
+            structure but weaker TCs (“minimally-diffusive”)
+        8: Lin 2004 monotone PPM constraint (“monotonic”)
+        9: Hunyh constraint: more expensive but less diffusive than #8
+        -5: #5 with a positive-definite constraint
+
+    Undocumented values implemented in Fortran: 7, 10, 11, 12, 13.
+
+    The code below is capable of:
+        - Cube-sphere grid (no doubly periodic)
+        - `jord` == 8 for monotonic behaviors OR
+        - `jord` 5, 6
+        - `jord` must be positive
     """
 
     def __init__(
@@ -307,25 +339,29 @@ class YPiecewiseParabolic:
         origin: Index3D,
         domain: Index3D,
     ):
+        # Dev note: this could be rewrote to split monotonic and not, or per-type of
+        #           scheme as described above with compiler-time `jord` conditional to
+        #           direct the code
+
         orchestrate(obj=self, config=stencil_factory.config.dace_config)
         # Arguments come from:
         # namelist.grid_type
         # grid.dya
-        if grid_type == 3 or grid_type > 4:
+
+        available_grid_options = [0, 4]
+        if grid_type not in available_grid_options:
             raise NotImplementedError(
-                "Y Piecewise Parabolic (xppm): "
-                f" grid type {grid_type} not implemented. <3 or 4 available."
+                "Y Piecewise Parabolic (yppm) configuration: "
+                f"grid type {grid_type} not implemented. "
+                f"Options are {available_grid_options}."
             )
 
-        if abs(jord) >= 8 and jord != 8:
+        available_jords = [-6, 5, 6, 8]
+        if jord not in available_jords:
             raise NotImplementedError(
-                "Y Piecewise Parabolic (yppm): "
-                f"jord {jord} != 8 not implemented when >= 8."
-            )
-
-        if jord < 0:
-            raise NotImplementedError(
-                f"Y Piecewise Parabolic (yppm): jord {jord} < 0 not implemented."
+                "Y Piecewise Parabolic (yppm) configuration: "
+                f"jord {jord} not implemented. "
+                f"Options are {available_jords}."
             )
 
         self._dya = dya
@@ -373,7 +409,10 @@ class YPiecewiseParabolic:
         # were called "get_flux", while the routine which got the flux was called
         # fx1_fn. The final value was called yflux instead of q_out.
         self._compute_flux_stencil(
-            q_in, c, self._dya, q_mean_advected_through_y_interface
+            q_in,
+            c,
+            self._dya,
+            q_mean_advected_through_y_interface,
         )
         # bl and br are "edge perturbation values" as in equation 4.1
         # of the FV3 documentation
