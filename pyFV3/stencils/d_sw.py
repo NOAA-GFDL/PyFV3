@@ -1037,7 +1037,7 @@ class DGridShallowWaterLagrangianDynamics:
         )
         self._accumulate_delp = stencil_factory.from_dims_halo(
             func=delp_increment_accumulation,
-            compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[X_DIM, Y_DIM, Z_DIM],
         )
 
     def __call__(
