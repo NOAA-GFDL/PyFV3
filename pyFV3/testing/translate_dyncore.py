@@ -2,6 +2,7 @@ import ndsl.dsl.gt4py_utils as utils
 from ndsl import Namelist, Quantity, StencilFactory
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.stencils.testing import ParallelTranslate2PyState
+from numpy import dtype
 from pyFV3._config import DynamicalCoreConfig
 from pyFV3.dycore_state import DycoreState
 from pyFV3.stencils import dyn_core
@@ -101,6 +102,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
             "ak": {},
             "bk": {},
             "diss_estd": {},
+            "dpx": grid.compute_dict(),
         }
         self._base.in_vars["data_vars"]["wsd"]["kstart"] = grid.npz
         self._base.in_vars["data_vars"]["wsd"]["kend"] = None
@@ -150,7 +152,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
             tracer_list=[],  # No tracers used in acoustics
             allow_mismatch_float_precision=True,
         )
-        wsd: Quantity = self.grid.quantity_factory.zeros(
+        wsd = self.grid.quantity_factory.zeros(
             dims=[X_DIM, Y_DIM],
             units="unknown",
         )
@@ -162,11 +164,18 @@ class TranslateDynCore(ParallelTranslate2PyState):
                 state[name].data[selection] = value
             else:
                 setattr(state, name, value)
-        phis: Quantity = self.grid.quantity_factory.zeros(
+        phis = self.grid.quantity_factory.zeros(
             dims=[X_DIM, Y_DIM],
             units="m",
         )
         phis.data[:] = phis.np.asarray(inputs["phis"])
+        dpx = self.grid.quantity_factory.zeros(
+            dims=[X_DIM, Y_DIM, Z_DIM],
+            units="unknown",
+            dtype=inputs_dtypes["dpx"],
+            allow_mismatch_float_precision=True,
+        )
+        dpx.data[:] = dpx.np.asarray(inputs["dpx"])
         acoustic_dynamics = dyn_core.AcousticDynamics(
             comm=communicator,
             stencil_factory=self.stencil_factory,
@@ -183,7 +192,12 @@ class TranslateDynCore(ParallelTranslate2PyState):
         )
         acoustic_dynamics.cappa.data[:] = inputs["cappa"][:]
 
-        acoustic_dynamics(state, timestep=inputs["mdt"], n_map=state.n_map)
+        acoustic_dynamics(
+            state,
+            dpx=dpx,
+            timestep=inputs["mdt"],
+            n_map=state.n_map,
+        )
         # the "inputs" dict is not used to return, we construct a new dict based
         # on variables attached to `state`
         storages_only = {}
@@ -194,4 +208,5 @@ class TranslateDynCore(ParallelTranslate2PyState):
                 storages_only[name] = value
         storages_only["wsd"] = wsd.data
         storages_only["cappa"] = acoustic_dynamics.cappa.data
+        storages_only["dpx"] = dpx.data
         return self._base.slice_output(storages_only)

@@ -250,13 +250,6 @@ def dyncore_temporaries(
             units="unknown",
             dtype=Float,
         )
-    for name in ["dpx"]:
-        temporaries[name] = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM, Z_DIM],
-            units="unknown",
-            dtype=np.float64,
-            allow_mismatch_float_precision=True,
-        )
     return temporaries
 
 
@@ -749,6 +742,7 @@ class AcousticDynamics:
     def __call__(
         self,
         state: DycoreState,
+        dpx,
         timestep: Float,  # time to step forward by in seconds
         n_map=1,  # [DaCe] replaces state.n_map
     ):
@@ -915,7 +909,7 @@ class AcousticDynamics:
                 mfy=state.mfyd,
                 cx=state.cxd,
                 cy=state.cyd,
-                dpx=self._dpx,
+                dpx=dpx,
                 crx=self._crx,
                 cry=self._cry,
                 xfx=self._xfx,
