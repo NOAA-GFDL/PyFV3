@@ -6,7 +6,7 @@ from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 import ndsl.dsl.gt4py_utils as utils
 import pyFV3.stencils.moist_cv as moist_cv
-from ndsl import Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater, is
+from ndsl import Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater
 from ndsl.checkpointer import NullCheckpointer
 from ndsl.comm.mpi import MPI
 from ndsl.constants import KAPPA, NQ, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM, ZVIR
