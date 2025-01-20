@@ -41,3 +41,4 @@ Branches:
 - ⚙️ `fix/GEOS/TracerAdvection` @Florian: Allow for non-update of mass fluxes and courant number, f32 fixes, correct computation of `cmax` and `nsplit`, overcomputation into the algorithm
   - BASED ON `tracer_rework_part1`
   - REQUIRES: `ndsl` with tracer rework
+- ⚙️ `feature/fv_mapz/GEOS` @ Chris K: Remapping for GEOS
