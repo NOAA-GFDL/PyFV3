@@ -876,13 +876,13 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         self._pressures_mapu = stencil_factory.from_origin_domain(
             pressures_mapu,
             origin=grid_indexing.origin_compute(),
-            domain=(grid_indexing.domain[0],grid_indexing.domain[1],grid_indexing.domain[2] + 1)
+            domain=(grid_indexing.domain[0],grid_indexing.domain[1]+1,grid_indexing.domain[2] + 1)
         )
 
         self._pe0_ptop_xmax = stencil_factory.from_origin_domain(
             pe0_ptop_xmax,
             origin=(grid_indexing.n_halo+grid_indexing.domain[0],grid_indexing.n_halo,0),
-            domain=(1,grid_indexing.domain[1], 1)
+            domain=(1,grid_indexing.domain[1]+1, 1)
         )
 
         self._pressures_mapv = stencil_factory.from_origin_domain(

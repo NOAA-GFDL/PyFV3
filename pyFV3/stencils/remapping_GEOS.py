@@ -320,7 +320,7 @@ class LagrangianToEulerian_GEOS:
                 grid_indexing.n_halo,
                 0,
             ),
-            domain=(1, grid_indexing.domain[1], 1),
+            domain=(1, grid_indexing.domain[1]+1, 1),
         )
         self._pe_pk_delp_peln = stencil_factory.from_origin_domain(
             pe_pk_delp_peln,
