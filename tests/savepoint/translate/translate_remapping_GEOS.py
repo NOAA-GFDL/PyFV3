@@ -198,11 +198,11 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM],
             "units": "No Units",
         },
-        "te": {
-            "name": "te",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
+        # "te": {
+        #     "name": "te",
+        #     "dims": [X_DIM, Y_DIM, Z_DIM],
+        #     "units": "No Units",
+        # },
     }
     outputs = {
         "pt": {
@@ -325,6 +325,16 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
+        "te_2d_": {
+            "name": "te_2d_",
+            "dims": [X_DIM, Y_DIM],
+            "units": "No Units",
+        },
+        # "te": {
+        #     "name": "te",
+        #     "dims": [X_DIM, Y_DIM, Z_DIM],
+        #     "units": "No Units",
+        # },
     }
     def __init__(
         self,
@@ -487,7 +497,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 "jstart": grid.jsd,
                 "jend": grid.jed,
             },
-            "te": {}
+            # "te": {}
         }
         self._base.in_vars["parameters"] = [
             "ptop",
@@ -676,12 +686,12 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 "jstart": grid.js,
                 "jend": grid.je,
             },
-            # "te_2d_": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            # },
+            "te_2d_": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+            },
             # "te": {}
         }
 
@@ -980,9 +990,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 interp=True,
         )
 
-        print("sum(pn1) = ", sum(sum(self._pn1)))
-        print("sum(pn2) = ", sum(sum(self._pn2)))
-
         tracers = { "qvapor": state_namespace.qvapor,
                     "qliquid": state_namespace.qliquid,
                     "qice": state_namespace.qice,
@@ -1133,104 +1140,90 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 interp=False,
             )
 
-        # self._pe_pk_delp_peln(state_namespace.pe_,
-        #                     state_namespace.pk,
-        #                     state_namespace.delp,
-        #                     state_namespace.peln_3d,
-        #                     self._pe2,
-        #                     self._pk2,
-        #                     self._pn2,
-        #                     state_namespace.ak,
-        #                     state_namespace.bk,
-        #                     state_namespace.akap,
-        #                     state_namespace.ptop,
-        # )
+        self._pe_pk_delp_peln(state_namespace.pe_,
+                            state_namespace.pk,
+                            state_namespace.delp,
+                            state_namespace.peln_3d,
+                            self._pe2,
+                            self._pk2,
+                            self._pn2,
+                            state_namespace.ak,
+                            state_namespace.bk,
+                            state_namespace.akap,
+                            state_namespace.ptop,
+        )
 
-        # self._moist_cv_pkz(
-        #     state_namespace.qvapor,
-        #     state_namespace.qliquid,
-        #     state_namespace.qrain,
-        #     state_namespace.qsnow,
-        #     state_namespace.qice,
-        #     state_namespace.qgraupel,
-        #     state_namespace.pkz,
-        #     state_namespace.pt,
-        #     state_namespace.cappa,
-        #     state_namespace.delp,
-        #     state_namespace.delz,
-        #     Float(state_namespace.r_vir),
-        # )
+        self._moist_cv_pkz(
+            state_namespace.qvapor,
+            state_namespace.qliquid,
+            state_namespace.qrain,
+            state_namespace.qsnow,
+            state_namespace.qice,
+            state_namespace.qgraupel,
+            state_namespace.pkz,
+            state_namespace.pt,
+            state_namespace.cappa,
+            state_namespace.delp,
+            state_namespace.delz,
+            Float(state_namespace.r_vir),
+        )
  
-        # if state_namespace.last_step and not state_namespace.do_adiabatic_init:
+        if state_namespace.last_step and not state_namespace.do_adiabatic_init:
             
-        #     if state_namespace.consv > state_namespace.consv_min:
+            if state_namespace.consv > state_namespace.consv_min:
 
-        #         self._moist_cv_te(state_namespace.qvapor,
-        #                         state_namespace.qliquid,
-        #                         state_namespace.qrain,
-        #                         state_namespace.qsnow,
-        #                         state_namespace.qice,
-        #                         state_namespace.qgraupel,
-        #                         state_namespace.u,
-        #                         state_namespace.v,
-        #                         state_namespace.w,
-        #                         state_namespace.te_2d_,
-        #                         state_namespace.pt,
-        #                         self._phis,
-        #                         state_namespace.delp,
-        #                         state_namespace.rsin2,
-        #                         state_namespace.cosa_s,
-        #                         state_namespace.hs,
-        #                         state_namespace.delz,
-        #                         state_namespace.grav,
-        #                         )
+                self._moist_cv_te(state_namespace.qvapor,
+                                state_namespace.qliquid,
+                                state_namespace.qrain,
+                                state_namespace.qsnow,
+                                state_namespace.qice,
+                                state_namespace.qgraupel,
+                                state_namespace.u,
+                                state_namespace.v,
+                                state_namespace.w,
+                                state_namespace.te_2d_,
+                                state_namespace.pt,
+                                self._phis,
+                                state_namespace.delp,
+                                state_namespace.rsin2,
+                                state_namespace.cosa_s,
+                                state_namespace.hs,
+                                state_namespace.delz,
+                                state_namespace.grav,
+                                )
 
-        #         print("sum(te_2d): ", sum(state_namespace.te_2d_.data)) # nans here
-        #         print("sum(qliquid): ", sum(sum(state_namespace.qliquid.data)))
-        #         print("sum(qrain): ", sum(sum(state_namespace.qrain.data)))
-        #         print("sum(qsnow): ", sum(sum(state_namespace.qsnow.data)))
-        #         print("sum(qice): ", sum(sum(state_namespace.qice.data)))
-        #         print("sum(qgraupel): ", sum(sum(state_namespace.qgraupel.data)))
-        #         print("sum(u): ", sum(sum(state_namespace.u.data))) # nans here
-        #         print("sum(v): ", sum(sum(state_namespace.v.data)))
-        #         print("sum(w): ", sum(sum(state_namespace.w.data)))
-        #         print("sum(pt): ", sum(sum(state_namespace.pt.data)))
-        #         print("sum(delp): ", sum(sum(state_namespace.delp.data)))
-        #         print("sum(rsin2): ", sum(state_namespace.rsin2.data))
-        #         print("sum(cosa_s): ", sum(state_namespace.cosa_s.data))
-        #         print("sum(hs): ", sum(state_namespace.hs.data))
-        #         print("sum(delz): ", sum(sum(state_namespace.delz.data)))
-
-        #         # self._te_zsum(state_namespace.te_2d_,
-        #         #               state_namespace.te0_2d_,
-        #         #               state_namespace.delp,
-        #         #               state_namespace.pkz,
-        #         #               self._zsum1,
-        #         #             )
+                self._te_zsum(state_namespace.te_2d_,
+                              state_namespace.te0_2d_,
+                              state_namespace.delp,
+                              state_namespace.pkz,
+                              self._zsum1,
+                            )
         
-        #         # # Note, mpp_global_sum is currently set up for the C24 TBC setup
-        #         # print("te_2d type :", type(state_namespace.te_2d_.data[0,0]))
-        #         # print("area_64 type :", type(state_namespace.area_64_.data[0,0]))
-        #         # tesum = mpp_global_sum(state_namespace.te_2d_.data*state_namespace.area_64_.data, communicator, self.stencil_factory)
-        # #         zsum  = mpp_global_sum(self._zsum1*state_namespace.area_64_.data, communicator, self.stencil_factory)
+                # Note, mpp_global_sum is currently set up for the C24 TBC setup
+                inputArray = state_namespace.te_2d_.data*state_namespace.area_64_.data
+                tesum = mpp_global_sum(inputArray[3:27,3:27], communicator, self.stencil_factory)
+                # print("tesum: ", tesum)
+                inputArray = self._zsum1*state_namespace.area_64_.data[0:-1,0:-1]
+                zsum  = mpp_global_sum(inputArray[3:27,3:27], communicator, self.stencil_factory)
+                # print("zsum: ", zsum)
+                dtmp = tesum / (state_namespace.cv_air.data * zsum)
+                # print("dtmp: ", dtmp)
+        # I ignore the E_flux computation since it's not used elsewhere in our current setup once it's computed
 
-        # #         dtmp = tesum / (state_namespace.cv_air.data * zsum)
-        # # # I ignore the E_flux computation since it's not used elsewhere in our current setup once it's computed
 
+        # if state_namespace.last_step and not state_namespace.adiabatic:
 
-        # # if state_namespace.last_step and not state_namespace.adiabatic:
-
-        # #     self._most_cv_pt_last_step(state_namespace.qvapor,
-        # #                             state_namespace.qliquid,
-        # #                             state_namespace.qrain,
-        # #                             state_namespace.qsnow,
-        # #                             state_namespace.qice,
-        # #                             state_namespace.qgraupel,
-        # #                             self._gz,
-        # #                             state_namespace.pt,
-        # #                             state_namespace.pkz,
-        # #                             dtmp,
-        # #                             state_namespace.r_vir,
-        # #                         )
+        #     self._most_cv_pt_last_step(state_namespace.qvapor,
+        #                             state_namespace.qliquid,
+        #                             state_namespace.qrain,
+        #                             state_namespace.qsnow,
+        #                             state_namespace.qice,
+        #                             state_namespace.qgraupel,
+        #                             self._gz,
+        #                             state_namespace.pt,
+        #                             state_namespace.pkz,
+        #                             dtmp,
+        #                             state_namespace.r_vir,
+        #                         )
 
         return self.outputs_from_state(state)
