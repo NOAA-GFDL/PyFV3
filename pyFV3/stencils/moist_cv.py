@@ -92,7 +92,6 @@ def moist_pt_last_step(
     qsnow: FloatField,
     qice: FloatField,
     qgraupel: FloatField,
-    gz: FloatField,
     pt: FloatField,
     pkz: FloatField,
     dtmp: Float,
@@ -106,7 +105,6 @@ def moist_pt_last_step(
         qsnow (in):
         qice (in):
         qgraupel (in):
-        gz (out):
         pt (inout):
         pkz (in):
         dtmp (in):

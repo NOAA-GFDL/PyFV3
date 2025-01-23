@@ -178,11 +178,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM],
             "units": "No Units",
         },
-        "te_2d_": {
-            "name": "te_2d_",
-            "dims": [X_DIM, Y_DIM],
-            "units": "No Units",
-        },
         "hs": {
             "name": "hs",
             "dims": [X_DIM, Y_DIM],
@@ -198,11 +193,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM],
             "units": "No Units",
         },
-        # "te": {
-        #     "name": "te",
-        #     "dims": [X_DIM, Y_DIM, Z_DIM],
-        #     "units": "No Units",
-        # },
     }
     outputs = {
         "pt": {
@@ -325,16 +315,11 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "te_2d_": {
-            "name": "te_2d_",
-            "dims": [X_DIM, Y_DIM],
+        "q_con": {
+            "name": "q_con",
+            "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        # "te": {
-        #     "name": "te",
-        #     "dims": [X_DIM, Y_DIM, Z_DIM],
-        #     "units": "No Units",
-        # },
     }
     def __init__(
         self,
@@ -473,12 +458,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 "jstart": grid.jsd,
                 "jend": grid.jed,
             },
-            "te_2d_": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
-            },
             "hs": {
                 "istart": grid.isd,
                 "iend": grid.ied,
@@ -497,7 +476,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 "jstart": grid.jsd,
                 "jend": grid.jed,
             },
-            # "te": {}
         }
         self._base.in_vars["parameters"] = [
             "ptop",
@@ -518,69 +496,11 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "adiabatic",
         ]
         self._base.out_vars = {
-            # "pe1_": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz + 1,
-            # },
-            # "pe2_": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz + 1,
-            # },
-            # "pe0_": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie+1,
-            #     "jstart": grid.js,
-            #     "jend": grid.je+1,
-            #     "kend": grid.npz+1
-            # },
-            # "pe3_": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie+1,
-            #     "jstart": grid.js,
-            #     "jend": grid.je+1,
-            #     "kend": grid.npz+1
-            # },
             "pt": {},
             "cappa": {},
-            # "q_con": {},
+            "q_con": {},
             "delp": {},
             "delz": {},
-            # "ps": {},
-            # "dp2_3d": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz-1,
-            # },
-            # "pn1_3d": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz + 1,
-            # },
-            # "pn2_3d": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz + 1,
-            # },
-            # "pk2_3d": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz + 1,
-            # },
-
             "qvapor": {
                 "kend": grid.npz-1,
             },
@@ -686,13 +606,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 "jstart": grid.js,
                 "jend": grid.je,
             },
-            "te_2d_": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
-            },
-            # "te": {}
         }
 
         self.stencil_factory = stencil_factory
@@ -835,6 +748,13 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             ), dtype=Float,
         )
 
+        self._te_2d = self.quantity_factory._numpy.zeros(
+            (
+                grid.nid,
+                grid.njd,
+            ), dtype=Float,
+        )
+
 
         self._init_pe = stencil_factory.from_origin_domain(
             init_pe, 
@@ -932,6 +852,12 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
 
         self._most_cv_pt_last_step = stencil_factory.from_origin_domain(
             moist_cv.moist_pt_last_step,
+            origin=grid.compute_origin(),
+            domain=(grid.nic, grid.njc, grid.npz),
+        )
+
+        self._fill_cond = stencil_factory.from_origin_domain(
+            moist_cv.cond_output,
             origin=grid.compute_origin(),
             domain=(grid.nic, grid.njc, grid.npz),
         )
@@ -1181,7 +1107,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                                 state_namespace.u,
                                 state_namespace.v,
                                 state_namespace.w,
-                                state_namespace.te_2d_,
+                                self._te_2d,
                                 state_namespace.pt,
                                 self._phis,
                                 state_namespace.delp,
@@ -1192,7 +1118,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                                 state_namespace.grav,
                                 )
 
-                self._te_zsum(state_namespace.te_2d_,
+                self._te_zsum(self._te_2d,
                               state_namespace.te0_2d_,
                               state_namespace.delp,
                               state_namespace.pkz,
@@ -1200,7 +1126,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                             )
         
                 # Note, mpp_global_sum is currently set up for the C24 TBC setup
-                inputArray = state_namespace.te_2d_.data*state_namespace.area_64_.data
+                inputArray = self._te_2d.data*state_namespace.area_64_.data[0:-1,0:-1]
                 tesum = mpp_global_sum(inputArray[3:27,3:27], communicator, self.stencil_factory)
                 # print("tesum: ", tesum)
                 inputArray = self._zsum1*state_namespace.area_64_.data[0:-1,0:-1]
@@ -1211,19 +1137,26 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         # I ignore the E_flux computation since it's not used elsewhere in our current setup once it's computed
 
 
-        # if state_namespace.last_step and not state_namespace.adiabatic:
+        if state_namespace.last_step and not state_namespace.adiabatic:
 
-        #     self._most_cv_pt_last_step(state_namespace.qvapor,
-        #                             state_namespace.qliquid,
-        #                             state_namespace.qrain,
-        #                             state_namespace.qsnow,
-        #                             state_namespace.qice,
-        #                             state_namespace.qgraupel,
-        #                             self._gz,
-        #                             state_namespace.pt,
-        #                             state_namespace.pkz,
-        #                             dtmp,
-        #                             state_namespace.r_vir,
-        #                         )
+            self._most_cv_pt_last_step(state_namespace.qvapor,
+                                    state_namespace.qliquid,
+                                    state_namespace.qrain,
+                                    state_namespace.qsnow,
+                                    state_namespace.qice,
+                                    state_namespace.qgraupel,
+                                    state_namespace.pt,
+                                    state_namespace.pkz,
+                                    Float(dtmp),
+                                    state_namespace.r_vir,
+                                )
+            
+            self._fill_cond(state_namespace.q_con,
+                            state_namespace.qliquid,
+                            state_namespace.qrain,
+                            state_namespace.qsnow,
+                            state_namespace.qice,
+                            state_namespace.qgraupel,
+            )
 
         return self.outputs_from_state(state)
