@@ -402,7 +402,6 @@ contains
 !$ser verbatim rsin2=gridstruct%rsin2
 !$ser verbatim cosa_s=gridstruct%cosa_s
 !$ser verbatim grav_=grav
-!$ser verbatim te_2d_f32 = real(te_2d)
 !$ser verbatim area_64_ = real(gridstruct%area_64)
 !$ser verbatim te0_2d_f32 = real(te0_2d)
 !$ser savepoint Remapping_GEOS-In
@@ -456,10 +455,8 @@ contains
 !$ser data rsin2=rsin2
 !$ser data hs=hs
 !$ser data grav=grav_
-!$ser data te_2d_=te_2d_f32
 !$ser data te0_2d_=te0_2d_f32
 !$ser data area_64_=area_64_
-!$ser data te=te
 !$ser data last_step=last_step
 !$ser data do_adiabatic_init=do_adiabatic_init
 !$ser data consv=consv
@@ -1356,73 +1353,6 @@ contains
 
 2000  continue
 
-!!$ser verbatim do k = 1, km+1
-!!$ser verbatim    do j = js, je
-!!$ser verbatim       do i = is, ie
-!!$ser verbatim         peln_3d(i,j,k) = peln(i,k,j)
-!!$ser verbatim       enddo
-!!$ser verbatim     enddo
-!!$ser verbatim enddo
-!!$ser verbatim do k = 1, km+1
-!!$ser verbatim    do j = js-1, je+1 
-!!$ser verbatim       do i = is-1, ie+1
-!!$ser verbatim          pe_3d(i,j,k) = pe(i,k,j)
-!!$ser verbatim       enddo
-!!$ser verbatim    enddo
-!!$ser verbatim enddo
-!!$ser savepoint Remapping_GEOS-Out
-!!$ser data pe_=pe_3d
-!!$ser data qvapor=q(:,:,:,sphum)
-!!$ser data qliquid=q(:,:,:,liq_wat) 
-!!$ser data qice=q(:,:,:,ice_wat)
-!!$ser data qrain=q(:,:,:,rainwat) 
-!!$ser data qsnow=q(:,:,:,snowwat) 
-!!$ser data qgraupel=q(:,:,:,graupel)
-!!$ser data qcld=q(:,:,:,cld_amt)
-!!$ser data qo3mr=q(:,:,:,8)
-!!$ser data qsgs_tke=q(:,:,:,9)
-!!$ser data q_con=q_con
-!!$ser data pt=pt
-!!$ser data cappa=cappa
-!!$ser data delp=delp
-!!$ser data delz=delz
-!!$ser data ps=ps
-!!$ser data peln_3d=peln_3d
-!!$ser data r_vir=r_vir
-!!$ser data cvm=cvm
-!!$ser data pk=pk
-!!$ser data pkz=pkz
-!!$ser data akap=akap
-!!$ser data t_min=qmin
-!!$ser data kord_wz=kord_wz
-!!$ser data ws_=ws
-!!$ser data w=w
-!!$ser data u=u
-!!$ser data v=v
-!!$ser verbatim if (present(mfy)) then
-!!$ser data mfy=mfy
-!!$ser verbatim endif
-!!$ser verbatim if (present(cy)) then
-!!$ser data cy=cy
-!!$ser verbatim endif
-!!$ser verbatim if (present(mfx)) then
-!!$ser data mfx_=mfx
-!!$ser verbatim endif
-!!$ser verbatim if (present(cx)) then
-!!$ser data cx_=cx
-!!$ser verbatim endif
-!!$ser data w_max=w_max_
-!!$ser data w_min=w_min_
-!!$ser data kord_mt=kord_mt
-!!$ser data cosa_s=cosa_s
-!!$ser data rsin2=rsin2
-!!$ser data hs=hs
-!!$ser data grav=grav_
-!!$ser data te_2d_=te_2d_f32
-!!$ser data te0_2d_=te0_2d_f32
-!!$ser data area_64_=area_64_
-!!$ser data te=te
-
 ! Do total energy conservation and fast saturation adjustment as requested
 ! and fill new PT (Theta_V) for next k_split step or export dry T
 
@@ -1653,74 +1583,6 @@ contains
       endif        ! end consv check
    endif        ! end last_step check
 
-!$ser verbatim do k = 1, km+1
-!$ser verbatim    do j = js, je
-!$ser verbatim       do i = is, ie
-!$ser verbatim         peln_3d(i,j,k) = peln(i,k,j)
-!$ser verbatim       enddo
-!$ser verbatim     enddo
-!$ser verbatim enddo
-!$ser verbatim do k = 1, km+1
-!$ser verbatim    do j = js-1, je+1 
-!$ser verbatim       do i = is-1, ie+1
-!$ser verbatim          pe_3d(i,j,k) = pe(i,k,j)
-!$ser verbatim       enddo
-!$ser verbatim    enddo
-!$ser verbatim enddo
-!$ser verbatim   te_2d_f32 = real(te_2d)
-!$ser verbatim if(last_step .and. (.not.do_adiabatic_init)) then
-!$ser verbatim print*, 'tesum = ', tesum
-!$ser verbatim print*, 'zsum = ', zsum
-!$ser verbatim print*, 'dtmp = ', dtmp
-!$ser verbatim endif
-!$ser savepoint Remapping_GEOS-Out
-!$ser data pe_=pe_3d
-!$ser data qvapor=q(:,:,:,sphum)
-!$ser data qliquid=q(:,:,:,liq_wat) 
-!$ser data qice=q(:,:,:,ice_wat)
-!$ser data qrain=q(:,:,:,rainwat) 
-!$ser data qsnow=q(:,:,:,snowwat) 
-!$ser data qgraupel=q(:,:,:,graupel)
-!$ser data qcld=q(:,:,:,cld_amt)
-!$ser data qo3mr=q(:,:,:,8)
-!$ser data qsgs_tke=q(:,:,:,9)
-!$ser data q_con=q_con
-!$ser data pt=pt
-!$ser data cappa=cappa
-!$ser data delp=delp
-!$ser data delz=delz
-!$ser data ps=ps
-!$ser data peln_3d=peln_3d
-!$ser data r_vir=r_vir
-!$ser data cvm=cvm
-!$ser data pk=pk
-!$ser data pkz=pkz
-!$ser data akap=akap
-!$ser data w=w
-!$ser data u=u
-!$ser data v=v
-!$ser verbatim if (present(mfy)) then
-!$ser data mfy=mfy
-!$ser verbatim endif
-!$ser verbatim if (present(cy)) then
-!$ser data cy=cy
-!$ser verbatim endif
-!$ser verbatim if (present(mfx)) then
-!$ser data mfx_=mfx
-!$ser verbatim endif
-!$ser verbatim if (present(cx)) then
-!$ser data cx_=cx
-!$ser verbatim endif
-!$ser data kord_mt=kord_mt
-!$ser data cosa_s=cosa_s
-!$ser data rsin2=rsin2
-!$ser data hs=hs
-!$ser data grav=grav_
-!$ser data te_2d_=te_2d_f32
-!$ser data te0_2d_=te0_2d_f32
-!!$ser data area_64_=area_64_
-!!$ser data te=te
-
 ! Note: pt at this stage is T_v
    if ( do_sat_adj .and. nwat>=6 ) then
       print*,'CODE NOT TESTED HERE 15'
@@ -1862,6 +1724,71 @@ contains
 
    endif
 !$OMP end parallel
+
+!$ser verbatim do k = 1, km+1
+!$ser verbatim    do j = js, je
+!$ser verbatim       do i = is, ie
+!$ser verbatim         peln_3d(i,j,k) = peln(i,k,j)
+!$ser verbatim       enddo
+!$ser verbatim     enddo
+!$ser verbatim enddo
+!$ser verbatim do k = 1, km+1
+!$ser verbatim    do j = js-1, je+1 
+!$ser verbatim       do i = is-1, ie+1
+!$ser verbatim          pe_3d(i,j,k) = pe(i,k,j)
+!$ser verbatim       enddo
+!$ser verbatim    enddo
+!$ser verbatim enddo
+!$ser verbatim   te_2d_f32 = real(te_2d)
+!$ser verbatim if(last_step .and. (.not.do_adiabatic_init)) then
+!$ser verbatim print*, 'tesum = ', tesum
+!$ser verbatim print*, 'zsum = ', zsum
+!$ser verbatim print*, 'dtmp = ', dtmp
+!$ser verbatim endif
+!$ser savepoint Remapping_GEOS-Out
+!$ser data pe_=pe_3d
+!$ser data qvapor=q(:,:,:,sphum)
+!$ser data qliquid=q(:,:,:,liq_wat) 
+!$ser data qice=q(:,:,:,ice_wat)
+!$ser data qrain=q(:,:,:,rainwat) 
+!$ser data qsnow=q(:,:,:,snowwat) 
+!$ser data qgraupel=q(:,:,:,graupel)
+!$ser data qcld=q(:,:,:,cld_amt)
+!$ser data qo3mr=q(:,:,:,8)
+!$ser data qsgs_tke=q(:,:,:,9)
+!$ser data q_con=q_con
+!$ser data pt=pt
+!$ser data cappa=cappa
+!$ser data delp=delp
+!$ser data delz=delz
+!$ser data ps=ps
+!$ser data peln_3d=peln_3d
+!$ser data r_vir=r_vir
+!$ser data cvm=cvm
+!$ser data pk=pk
+!$ser data pkz=pkz
+!$ser data akap=akap
+!$ser data w=w
+!$ser data u=u
+!$ser data v=v
+!$ser verbatim if (present(mfy)) then
+!$ser data mfy=mfy
+!$ser verbatim endif
+!$ser verbatim if (present(cy)) then
+!$ser data cy=cy
+!$ser verbatim endif
+!$ser verbatim if (present(mfx)) then
+!$ser data mfx_=mfx
+!$ser verbatim endif
+!$ser verbatim if (present(cx)) then
+!$ser data cx_=cx
+!$ser verbatim endif
+!$ser data kord_mt=kord_mt
+!$ser data cosa_s=cosa_s
+!$ser data rsin2=rsin2
+!$ser data hs=hs
+!$ser data grav=grav_
+!$ser data te0_2d_=te0_2d_f32
 
 !$ser savepoint GetMPIProp-In
 !$ser data delz=delz
