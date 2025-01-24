@@ -2,6 +2,8 @@ import gt4py.cartesian.gtscript as gtscript
 from gt4py.cartesian.gtscript import (
     __INLINED,
     PARALLEL,
+    FORWARD,
+    BACKWARD,
     computation,
     exp,
     interval,
@@ -9,7 +11,7 @@ from gt4py.cartesian.gtscript import (
 )
 
 import ndsl.constants as constants
-from ndsl.dsl.typing import Float, FloatField
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 
 
 @gtscript.function
@@ -20,9 +22,10 @@ def set_cappa(qvapor, cvm, r_vir):
 
 @gtscript.function
 def moist_cvm(qvapor, gz, ql, qs):
+    # CK : GEOS applies the "max" function to tracer values
     cvm = (
-        (1.0 - (qvapor + gz)) * constants.CV_AIR
-        + qvapor * constants.CV_VAP
+        (1.0 - (max(qvapor, 0.0) + gz)) * constants.CV_AIR
+        + max(qvapor, 0.0) * constants.CV_VAP
         + ql * constants.C_LIQ
         + qs * constants.C_ICE
     )
@@ -38,8 +41,9 @@ def moist_cv_nwat6_fn(
     qice: FloatField,
     qgraupel: FloatField,
 ):
-    ql = qliquid + qrain
-    qs = qice + qsnow + qgraupel
+    # CK : GEOS applies the "max" function to tracer values
+    ql = max(qliquid, 0.0) + max(qrain, 0.0)
+    qs = max(qice, 0.0) + max(qsnow, 0.0) + max(qgraupel, 0.0)
     gz = ql + qs
     cvm = moist_cvm(qvapor, gz, ql, qs)
     return cvm, gz
@@ -88,7 +92,6 @@ def moist_pt_last_step(
     qsnow: FloatField,
     qice: FloatField,
     qgraupel: FloatField,
-    gz: FloatField,
     pt: FloatField,
     pkz: FloatField,
     dtmp: Float,
@@ -102,7 +105,6 @@ def moist_pt_last_step(
         qsnow (in):
         qice (in):
         qgraupel (in):
-        gz (out):
         pt (inout):
         pkz (in):
         dtmp (in):
@@ -134,9 +136,6 @@ def moist_pkz(
     qsnow: FloatField,
     qice: FloatField,
     qgraupel: FloatField,
-    q_con: FloatField,
-    gz: FloatField,
-    cvm: FloatField,
     pkz: FloatField,
     pt: FloatField,
     cappa: FloatField,
@@ -152,9 +151,6 @@ def moist_pkz(
         qsnow (in):
         qice (in):
         qgraupel (in):
-        q_con (out):
-        gz (out):
-        cvm (out):
         pkz (out):
         pt (in):
         cappa (out):
@@ -167,9 +163,114 @@ def moist_pkz(
         cvm, gz = moist_cv_nwat6_fn(
             qvapor, qliquid, qrain, qsnow, qice, qgraupel
         )  # if (nwat == 6) else moist_cv_default_fn(constants.CV_AIR)
-        q_con[0, 0, 0] = gz
+        # q_con[0, 0, 0] = gz
         cappa = set_cappa(qvapor, cvm, r_vir)
         pkz = compute_pkz_func(delp, delz, pt, cappa)
+
+
+def moist_te(
+    qvapor: FloatField,
+    qliquid: FloatField,
+    qrain: FloatField,
+    qsnow: FloatField,
+    qice: FloatField,
+    qgraupel: FloatField,
+    u: FloatField,
+    v: FloatField,
+    w: FloatField,
+    te: FloatFieldIJ,
+    pt: FloatField,
+    phis: FloatField,
+    delp: FloatField,
+    rsin2: FloatFieldIJ,
+    cosa_s: FloatFieldIJ,
+    hs: FloatFieldIJ,
+    delz: FloatField,
+    grav: Float,
+):
+    """
+    Args:
+        qvapor (in):
+        qliquid (in):
+        qrain (in):
+        qsnow (in):
+        qice (in):
+        qgraupel (in):
+        u (in):
+        v (in):
+        w (in):
+        te (out):
+        pt (in):
+        phis (in):
+        delp (in):
+        rsin2 (in):
+        cosa_s (in):
+        hs (in):
+    """
+    with computation(FORWARD), interval(-1, None):
+        te = 0.0
+        phis = hs
+    with computation(BACKWARD), interval(0, -1):
+        phis = phis[0, 0, 1] - grav * delz
+    with computation(FORWARD), interval(0, -1):
+        cvm, _gz = moist_cv_nwat6_fn(qvapor, qliquid, qrain, qsnow, qice, qgraupel)
+
+        te = te + delp * (
+            cvm * pt
+            + 0.5
+            * (
+                phis
+                + phis[0, 0, 1]
+                + w**2.0
+                + 0.5
+                * rsin2
+                * (
+                    u**2.0
+                    + u[0, 1, 0] ** 2.0
+                    + v**2.0
+                    + v[1, 0, 0] ** 2.0
+                    - (u + u[0, 1, 0]) * (v + v[1, 0, 0]) * cosa_s
+                )
+            )
+        )
+
+
+def te_zsum(
+    te_2d: FloatFieldIJ,
+    te0_2d: FloatFieldIJ,
+    delp: FloatField,
+    pkz: FloatField,
+    zsum1: FloatFieldIJ,
+):
+    with computation(FORWARD):
+        with interval(0, 1):
+            te_2d = te0_2d - te_2d
+            zsum1 = pkz * delp
+
+        with interval(1, None):
+            zsum1 = zsum1 + pkz * delp
+
+
+def cond_output(
+    q_con: FloatField,
+    qliquid: FloatField,
+    qrain: FloatField,
+    qsnow: FloatField,
+    qice: FloatField,
+    qgraupel: FloatField,
+):
+    with computation(PARALLEL), interval(...):
+        q_con = 0.0
+        if qliquid > 0.0:
+            q_con = q_con + qliquid
+        if qice > 0.0:
+            q_con = q_con + qice
+        if qrain > 0.0:
+            q_con = q_con + qrain
+        if qsnow > 0.0:
+            q_con = q_con + qsnow
+        if qgraupel > 0.0:
+            q_con = q_con + qgraupel
 
 
 def fv_setup(

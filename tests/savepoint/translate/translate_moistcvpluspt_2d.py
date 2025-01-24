@@ -1,7 +1,7 @@
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 from ndsl import StencilFactory
-from ndsl.dsl.typing import FloatField
+from ndsl.dsl.typing import FloatField, Float
 from ndsl.stencils.testing import TranslateFortranData2Py, pad_field_in_j
 from pyFV3.stencils import moist_cv
 
@@ -18,7 +18,7 @@ def moist_pt(
     cappa: FloatField,
     delp: FloatField,
     delz: FloatField,
-    r_vir: float,
+    r_vir: Float,
 ):
     with computation(PARALLEL), interval(...):
         cvm, gz, q_con, cappa, pt = moist_cv.moist_pt_func(

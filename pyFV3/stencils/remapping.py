@@ -99,8 +99,10 @@ def moist_cv_pt_pressure(
     bk: FloatFieldK,
     dp2: FloatField,
     ps: FloatFieldIJ,
+    pn1: FloatField,
     pn2: FloatField,
     peln: FloatField,
+    remap_t: bool,
     r_vir: Float,
 ):
     """
@@ -126,12 +128,15 @@ def moist_cv_pt_pressure(
         ps (out):
         pn2 (out):
         peln (in):
+        remap_t (in):
+        r_vir (in):
     """
-    from __externals__ import hydrostatic, kord_tm
+    from __externals__ import hydrostatic#, kord_tm
 
     # moist_cv.moist_pt
     with computation(PARALLEL), interval(0, -1):
-        if __INLINED(kord_tm < 0):
+        # if __INLINED(kord_tm < 0):
+        if(remap_t): 
             cvm, gz, q_con, cappa, pt = moist_pt_func(
                 qvapor,
                 qliquid,
@@ -146,9 +151,11 @@ def moist_cv_pt_pressure(
                 delz,
                 r_vir,
             )
-        # delz_adjust
-        if __INLINED(not hydrostatic):
-            delz = -delz / delp
+        # NOTE : GEOS does not perform the delz computation at this location
+        # # delz_adjust
+        # if __INLINED(not hydrostatic):
+        #     delz = -delz / delp
+   
     # pressure_updates
     with computation(FORWARD):
         with interval(-1, None):
@@ -156,23 +163,28 @@ def moist_cv_pt_pressure(
     with computation(PARALLEL):
         with interval(0, 1):
             pn2 = peln
+            pn1 = peln
         # TODO: refactor the pe2 = ptop assignment from
         # previous stencil into this one, and remove
         # pe2 from the other stencil
         with interval(1, -1):
             pe2 = ak + bk * ps
+            pn1 = peln
         with interval(-1, None):
             pn2 = peln
+            pn1 = peln
     with computation(BACKWARD), interval(0, -1):
         dp2 = pe2[0, 0, 1] - pe2
-    # copy_stencil
-    with computation(PARALLEL), interval(0, -1):
-        delp = dp2
+
+    # # NOTE : GEOS doesn't perform the delp calcuation at this location
+    # # copy_stencil
+    # # with computation(PARALLEL), interval(0, -1):
+    # #     delp = dp2
 
 
 def pn2_pk_delp(
-    dp2: FloatField,
-    delp: FloatField,
+    # dp2: FloatField,
+    # delp: FloatField,
     pe2: FloatField,
     pn2: FloatField,
     pk: FloatField,
@@ -187,18 +199,25 @@ def pn2_pk_delp(
         pk (out):
     """
     with computation(PARALLEL), interval(...):
-        delp = dp2
+        # NOTE : GEOS doesn't perform the delp calcuation at this location
+        #        Also, in moist_cv_pt_pressure, the below calculation is also done
+        # delp = dp2
         pn2 = log(pe2)
         pk = exp(akap * pn2)
 
+def pe0_ptop_xmax(pe0: FloatField, 
+                  ptop: Float):
+    with computation(PARALLEL), interval(0,1):
+        pe0 = ptop
 
 def pressures_mapu(
     pe: FloatField,
-    pe1: FloatField,
+    # pe1: FloatField,
     ak: FloatFieldK,
     bk: FloatFieldK,
     pe0: FloatField,
     pe3: FloatField,
+    ptop: Float,
 ):
     """
     Args:
@@ -212,18 +231,20 @@ def pressures_mapu(
     with computation(BACKWARD):
         with interval(-1, None):
             pe_bottom = pe
-            pe1_bottom = pe
+            # pe1_bottom = pe
         with interval(0, -1):
             pe_bottom = pe_bottom[0, 0, 1]
-            pe1_bottom = pe1_bottom[0, 0, 1]
+            # pe1_bottom = pe1_bottom[0, 0, 1]
     with computation(FORWARD):
         with interval(0, 1):
-            pe0 = pe
+            # pe0 = pe
+            pe0 = ptop
         with interval(1, None):
-            pe0 = 0.5 * (pe[0, -1, 0] + pe1)
+            # pe0 = 0.5 * (pe[0, -1, 0] + pe1)
+            pe0 = 0.5 * (pe[0, -1, 0] + pe)
     with computation(FORWARD), interval(...):
         bkh = 0.5 * bk
-        pe3 = ak + bkh * (pe_bottom[0, -1, 0] + pe1_bottom)
+        pe3 = ak + bkh * (pe_bottom[0, -1, 0] + pe_bottom)
 
 
 def pressures_mapv(
@@ -245,8 +266,9 @@ def pressures_mapv(
             pe_bottom = pe_bottom[0, 0, 1]
     with computation(FORWARD):
         with interval(0, 1):
-            pe3 = ak
-            pe0 = pe
+            bkh = 0.5 * bk
+            pe3 = ak + bkh * (pe_bottom[-1, 0, 0] + pe_bottom)
+            # pe0 = pe
         with interval(1, None):
             bkh = 0.5 * bk
             pe0 = 0.5 * (pe[-1, 0, 0] + pe)
@@ -281,6 +303,50 @@ def copy_from_below(a: FloatField, b: FloatField):
     with computation(PARALLEL), interval(1, None):
         b = a[0, 0, -1]
 
+def pe_pk_delp_peln(
+    pe: FloatField,
+    pk: FloatField,
+    delp: FloatField,
+    peln: FloatField,
+    pe2: FloatField,
+    pk2: FloatField,
+    pn2: FloatField,
+    ak: FloatFieldK,
+    bk: FloatFieldK,
+    akap: Float,
+    ptop: Float,
+):
+
+    with computation(BACKWARD):
+        with interval(-1, None):
+            pe_bottom = pe
+        with interval(0, -1):
+            pe_bottom = pe_bottom[0, 0, 1]
+
+    with computation(PARALLEL):
+        with interval(0, 1):
+            pe2 = ptop
+            pn2 = peln
+            pk2 = pk
+        with interval(1,-1):
+            pe2 = ak + bk * pe_bottom
+            pn2 = log(pe2)
+            pk2 = exp(akap*pn2)
+        with interval(-1, None):
+            pe2 = pe
+            pn2 = peln
+            pk2 = pk
+
+    with computation(PARALLEL):
+        with interval(0,-1):
+            pe = pe2
+            pk = pk2
+            delp = pe2[0,0,1] - pe2[0,0,0]
+            peln = pn2
+        with interval(-1,None):
+            pe = pe2
+            pk = pk2
+            peln = pn2
 
 class LagrangianToEulerian:
     """
@@ -375,6 +441,13 @@ class LagrangianToEulerian:
 
         self._do_sat_adjust = config.do_sat_adj
 
+        self._remap_t = False
+
+        # NOTE: In GEOS, remap_t is set to True in general
+        #       Add in the "remap_option" check later
+        if(True):
+            self._remap_t = True
+
         self.kmp = grid_indexing.domain[2] - 1
         for k in range(pfull.shape[0]):
             if pfull.view[k] > 10.0e2:
@@ -387,7 +460,8 @@ class LagrangianToEulerian:
 
         self._moist_cv_pt_pressure = stencil_factory.from_origin_domain(
             moist_cv_pt_pressure,
-            externals={"kord_tm": config.kord_tm, "hydrostatic": hydrostatic},
+            # externals={"kord_tm": config.kord_tm, "hydrostatic": hydrostatic},
+            externals={"hydrostatic": hydrostatic},
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(add=(0, 0, 1)),
         )
@@ -610,6 +684,7 @@ class LagrangianToEulerian:
             ps,
             self._pn2,
             peln,
+            self._remap_t,
             zvir,
         )
 
@@ -622,6 +697,8 @@ class LagrangianToEulerian:
 
         self._map_single_w(w, self._pe1, self._pe2, qs=wsd)
         self._map_single_delz(delz, self._pe1, self._pe2)
+
+        # W_limiter routine will go here        
 
         self._undo_delz_adjust_and_copy_peln(delp, delz, peln, self._pe0, self._pn2)
         # if do_omega:  # NOTE untested

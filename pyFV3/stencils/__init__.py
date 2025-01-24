@@ -28,6 +28,7 @@ from .updatedzc import UpdateGeopotentialHeightOnCGrid
 from .updatedzd import UpdateHeightOnDGrid
 from .xppm import XPiecewiseParabolic
 from .yppm import YPiecewiseParabolic
+from .mpp_global_sum import mpp_global_sum
 
 
 """
