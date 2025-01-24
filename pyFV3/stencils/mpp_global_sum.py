@@ -69,7 +69,7 @@ def increment_ints_faster(int_sum, pr, I_pr, r, max_mag_term):
 
 
 def carry_overflow(int_sum, prec, I_prec, prec_error):
-    for i in range(len(int_sum) - 1, 1, -1):
+    for i in range(len(int_sum) - 1, 0, -1):
         if abs(int_sum[i]) > prec:
             num_carry = int(int_sum[i] * I_prec)
             int_sum[i] = int_sum[i] - num_carry * prec
