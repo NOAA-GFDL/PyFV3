@@ -213,7 +213,7 @@ def moist_te(
     with computation(BACKWARD), interval(0, -1):
         phis = phis[0, 0, 1] - grav * delz
     with computation(FORWARD), interval(0, -1):
-        cvm, gz = moist_cv_nwat6_fn(qvapor, qliquid, qrain, qsnow, qice, qgraupel)
+        cvm, _gz = moist_cv_nwat6_fn(qvapor, qliquid, qrain, qsnow, qice, qgraupel)
 
         te = te + delp * (
             cvm * pt
@@ -261,15 +261,15 @@ def cond_output(
 ):
     with computation(PARALLEL), interval(...):
         q_con = 0.0
-        if(qliquid > 0.0):
+        if qliquid > 0.0:
             q_con = q_con + qliquid
-        if(qice > 0.0):
+        if qice > 0.0:
             q_con = q_con + qice
-        if(qrain > 0.0):
+        if qrain > 0.0:
             q_con = q_con + qrain
-        if(qsnow > 0.0):
+        if qsnow > 0.0:
             q_con = q_con + qsnow
-        if(qgraupel > 0.0):
+        if qgraupel > 0.0:
             q_con = q_con + qgraupel
 
 

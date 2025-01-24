@@ -38,6 +38,7 @@ from pyFV3.stencils.remapping import (
     CONSV_MIN,
 )
 from pyFV3.stencils.mpp_global_sum import mpp_global_sum
+from pyFV3.tracers import Tracers
 
 
 class LagrangianToEulerian_GEOS:
@@ -56,7 +57,8 @@ class LagrangianToEulerian_GEOS:
         grid_data: GridData,
         nq,
         pfull,
-        tracers: Dict[str, Quantity],
+        tracers: Tracers,
+        adiabatic: bool,
     ):
         orchestrate(
             obj=self,
@@ -68,23 +70,25 @@ class LagrangianToEulerian_GEOS:
         grid_indexing = stencil_factory.grid_indexing
 
         # Configuration
-        if config.kord_tm >= 0:
-            raise NotImplementedError("map ppm, untested mode where kord_tm >= 0")
         hydrostatic = config.hydrostatic
         if hydrostatic:
             raise NotImplementedError("Hydrostatic is not implemented")
+
+        if adiabatic:
+            raise NotImplementedError("Adiabatic is not implemented")
 
         self._t_min = Float(184.0)
         self._nq = nq
         self._w_max = Float(90.0)
         self._w_min = Float(-60.0)
         self._area_64 = grid_data.area_64
-        self._cosa = grid_data.cosa_s
+        self._cosa_s = grid_data.cosa_s
         self._rsin2 = grid_data.rsin2
         self._kord_tm = abs(config.kord_tm)
         self._kord_wz = config.kord_wz
         self._kord_mt = config.kord_mt
         self._do_sat_adjust = config.do_sat_adj
+        self._adiabatic = adiabatic
         self.kmp = grid_indexing.domain[2] - 1
         for k in range(pfull.shape[0]):
             if pfull.view[k] > 10.0e2:
@@ -93,12 +97,6 @@ class LagrangianToEulerian_GEOS:
         # do_omega = hydrostatic and last_step # TODO pull into inputs
 
         # Quantities
-        self._domain_jextra = (
-            grid_indexing.domain[0],
-            grid_indexing.domain[1] + 1,
-            grid_indexing.domain[2] + 1,
-        )
-
         self._pe1 = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             units="Pa",
@@ -115,6 +113,11 @@ class LagrangianToEulerian_GEOS:
             dtype=Float,
         )
         self._dp2 = quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_DIM],
+            units="Pa",
+            dtype=Float,
+        )
+        self._pn1 = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="Pa",
             dtype=Float,
@@ -136,7 +139,7 @@ class LagrangianToEulerian_GEOS:
         )
 
         self._gz = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [X_DIM, Y_DIM],
             units="m^2 s^-2",
             dtype=Float,
         )
@@ -150,7 +153,7 @@ class LagrangianToEulerian_GEOS:
             units="mask",
             dtype=bool,
         )
-        self._w2 = quantity_factory._numpy.zeros(
+        self._w2 = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="temp W",
             dtype=Float,
@@ -162,12 +165,6 @@ class LagrangianToEulerian_GEOS:
         )
 
         self._te_2d = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-
-        self._te0_2d = quantity_factory.zeros(
             [X_DIM, Y_DIM],
             units="Pa",
             dtype=Float,
@@ -187,12 +184,13 @@ class LagrangianToEulerian_GEOS:
         # Stencils
 
         self._init_pe = stencil_factory.from_origin_domain(
-            init_pe, origin=grid_indexing.origin_compute(), domain=self._domain_jextra
+            init_pe,
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(add=(0, 1, 1)),
         )
 
         self._moist_cv_pt_pressure = stencil_factory.from_origin_domain(
             moist_cv_pt_pressure,
-            # externals={"kord_tm": config.kord_tm, "hydrostatic": hydrostatic},
             externals={"hydrostatic": hydrostatic},
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(add=(0, 0, 1)),
@@ -200,8 +198,8 @@ class LagrangianToEulerian_GEOS:
 
         self._pn2_pk_delp = stencil_factory.from_origin_domain(
             pn2_pk_delp,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(),
+            origin=grid_indexing.origin_compute(add=(0, 0, 1)),
+            domain=grid_indexing.domain_compute(add=(0, 0, -1)),
         )
 
         self._map_single_pt = MapSingle(
@@ -216,9 +214,9 @@ class LagrangianToEulerian_GEOS:
             stencil_factory,
             quantity_factory,
             abs(config.kord_tr),
-            nq,
             fill=config.fill,
             tracers=tracers,
+            exclude_tracers=[],
         )
 
         self._map_single_w = MapSingle(
@@ -246,7 +244,7 @@ class LagrangianToEulerian_GEOS:
         self._pressures_mapu = stencil_factory.from_origin_domain(
             pressures_mapu,
             origin=grid_indexing.origin_compute(),
-            domain=self._domain_jextra,
+            domain=grid_indexing.domain_compute(add=(0, 1, 1)),
         )
 
         self._map_single_u = MapSingle(
@@ -260,11 +258,7 @@ class LagrangianToEulerian_GEOS:
         self._pressures_mapv = stencil_factory.from_origin_domain(
             pressures_mapv,
             origin=grid_indexing.origin_compute(),
-            domain=(
-                grid_indexing.domain[0] + 1,
-                grid_indexing.domain[1],
-                grid_indexing.domain[2] + 1,
-            ),
+            domain=grid_indexing.domain_compute(add=(1, 0, 1)),
         )
 
         self._map_single_v = MapSingle(
@@ -289,7 +283,13 @@ class LagrangianToEulerian_GEOS:
             ),
         )
 
-        self._basic_adjust_divide_stencil = stencil_factory.from_origin_domain(
+        self._fill_cond = stencil_factory.from_origin_domain(
+            moist_cv.cond_output,
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(),
+        )
+
+        self._adjust_divide = stencil_factory.from_origin_domain(
             adjust_divide_stencil,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
@@ -320,7 +320,7 @@ class LagrangianToEulerian_GEOS:
                 grid_indexing.n_halo,
                 0,
             ),
-            domain=(1, grid_indexing.domain[1]+1, 1),
+            domain=(1, grid_indexing.domain[1] + 1, 1),
         )
         self._pe_pk_delp_peln = stencil_factory.from_origin_domain(
             pe_pk_delp_peln,
@@ -341,7 +341,7 @@ class LagrangianToEulerian_GEOS:
 
     def __call__(
         self,
-        tracers: Dict[str, Quantity],
+        tracers: Tracers,
         pt: FloatField,  # type: ignore
         delp: FloatField,  # type: ignore
         delz: FloatField,  # type: ignore
@@ -355,11 +355,11 @@ class LagrangianToEulerian_GEOS:
         cy: FloatField,  # type: ignore
         cappa: FloatField,  # type: ignore
         q_con: FloatField,  # type: ignore
-        q_cld: FloatField,  # type: ignore
         pkz: FloatField,  # type: ignore
         pk: FloatField,  # type: ignore
         pe: FloatField,  # type: ignore
         hs: FloatFieldIJ,  # type: ignore
+        te0_2d: FloatFieldIJ,  # type: ignore
         ps: FloatFieldIJ,  # type: ignore
         wsd: FloatFieldIJ,  # type: ignore
         ak: FloatFieldK,  # type: ignore
@@ -389,12 +389,11 @@ class LagrangianToEulerian_GEOS:
             va (inout): A-grid y-velocity
             cappa (inout): Power to raise pressure to
             q_con (out): Total condensate mixing ratio
-            q_cld (out): Cloud fraction
             pkz (in): Layer mean pressure raised to the power of Kappa
             pk (out): Interface pressure raised to power of kappa, final acoustic value
             pe (in): Pressure at layer edges
             hs (in): Surface geopotential
-            te0_2d (unused): Atmosphere total energy in columns
+            te0_2d (inout): Atmosphere total energy in columns
             ps (out): Surface pressure
             wsd (in): Vertical velocity of the lowest level
             omga (unused): Vertical pressure velocity
@@ -418,40 +417,52 @@ class LagrangianToEulerian_GEOS:
         # Build remapping profiles
         self._init_pe(pe, self._pe1, self._pe2, ptop)
         self._moist_cv_pt_pressure(
-            tracers["qvapor"],
-            tracers["qliquid"],
-            tracers["qrain"],
-            tracers["qsnow"],
-            tracers["qice"],
-            tracers["qgraupel"],
-            q_con,
-            pt,
-            cappa,
-            delp,
-            delz,
-            pe,
-            self._pe2,
-            ak,
-            bk,
-            self._dp2,
-            ps,
-            self._pn2,
-            peln,
+            qvapor=tracers["vapor"],
+            qliquid=tracers["liquid"],
+            qrain=tracers["rain"],
+            qsnow=tracers["snow"],
+            qice=tracers["ice"],
+            qgraupel=tracers["graupel"],
+            q_con=q_con,
+            pt=pt,
+            cappa=cappa,
+            delp=delp,
+            delz=delz,
+            pe=pe,
+            pe2=self._pe2,
+            ak=ak,
+            bk=bk,
+            dp2=self._dp2,
+            ps=ps,
+            pn1=self._pn1,
+            pn2=self._pn2,
+            peln=peln,
             remap_t=True,
             r_vir=zvir,
         )
-        self._pn2_pk_delp(self._dp2, delp, self._pe2, self._pn2, pk, akap)
+        self._pn2_pk_delp(
+            pe2=self._pe2,
+            pn2=self._pn2,
+            pk=self._pk2,
+            akap=akap,
+        )
 
         # Now that we have the pressure profiles, we can start remapping
 
         # Map pressure
-        self._map_single_pt(pt, peln, self._pn2, qmin=self._t_min)
+        self._map_single_pt(
+            pt,
+            self._pn1,
+            self._pn2,
+            qmin=self._t_min,
+            interp=True,
+        )
 
         # Map all tracers
         self._mapn_tracer(self._pe1, self._pe2, self._dp2, tracers)
 
         # Map vertical wind
-        self._map_single_w(w, self._pe1, self._pe2, qs=wsd)
+        self._map_single_w(w, self._pe1, self._pe2, qs=wsd, interp=False)
         self._rescale_delz_1(delz, delp)
         self._map_single_delz(delz, self._pe1, self._pe2)
         self._rescale_delz_2(delz, self._dp2)
@@ -466,16 +477,16 @@ class LagrangianToEulerian_GEOS:
         )
 
         # Map horizontal winds, fluxes and courant number
-        self._pressures_mapu(pe, self._pe1, ak, bk, self._pe0, self._pe3)
+        self._pressures_mapu(pe, ak, bk, self._pe0, self._pe3, ptop)
         self._pe0_ptop_xmax(self._pe0, ptop)
-        self._map_single_u(u, self._pe0, self._pe3)
-        self._map_single_u(mfy, self._pe0, self._pe3)
-        self._map_single_u(cy, self._pe0, self._pe3)
+        self._map_single_u(u, self._pe0, self._pe3, interp=False)
+        self._map_single_u(mfy, self._pe0, self._pe3, interp=False)
+        self._map_single_u(cy, self._pe0, self._pe3, interp=False)
 
         self._pressures_mapv(pe, ak, bk, self._pe0, self._pe3)
-        self._map_single_v(v, self._pe0, self._pe3)
-        self._map_single_v(mfx, self._pe0, self._pe3)
-        self._map_single_v(cx, self._pe0, self._pe3)
+        self._map_single_v(v, self._pe0, self._pe3, interp=False)
+        self._map_single_v(mfx, self._pe0, self._pe3, interp=False)
+        self._map_single_v(cx, self._pe0, self._pe3, interp=False)
 
         self._pe_pk_delp_peln(
             pe=pe,
@@ -492,33 +503,30 @@ class LagrangianToEulerian_GEOS:
         )
 
         self._moist_cv_pkz(
-            tracers["qvapor"],
-            tracers["qliquid"],
-            tracers["qrain"],
-            tracers["qsnow"],
-            tracers["qice"],
-            tracers["qgraupel"],
-            q_con,
-            self._gz,
-            self._cvm,
-            pkz,
-            pt,
-            cappa,
-            delp,
-            delz,
-            zvir,
+            qvapor=tracers["vapor"],
+            qliquid=tracers["liquid"],
+            qrain=tracers["rain"],
+            qsnow=tracers["snow"],
+            qice=tracers["ice"],
+            qgraupel=tracers["graupel"],
+            pkz=pkz,
+            pt=pt,
+            cappa=cappa,
+            delp=delp,
+            delz=delz,
+            r_vir=zvir,
         )
 
         dtmp = 0.0
         if last_step:
             if consv_te > CONSV_MIN:
                 self._moist_cv_te(
-                    qvapor=tracers["qvapor"],
-                    qliquid=tracers["qliquid"],
-                    qrain=tracers["qrain"],
-                    qsnow=tracers["qsnow"],
-                    qice=tracers["qice"],
-                    qgraupel=tracers["qgraupel"],
+                    qvapor=tracers["vapor"],
+                    qliquid=tracers["liquid"],
+                    qrain=tracers["rain"],
+                    qsnow=tracers["snow"],
+                    qice=tracers["ice"],
+                    qgraupel=tracers["graupel"],
                     u=u,
                     v=v,
                     w=w,
@@ -527,7 +535,7 @@ class LagrangianToEulerian_GEOS:
                     phis=self._phis,
                     delp=delp,
                     rsin2=self._rsin2,
-                    cosa_s=self._cosa,
+                    cosa_s=self._cosa_s,
                     hs=hs,
                     delz=delz,
                     grav=GRAV,
@@ -535,18 +543,19 @@ class LagrangianToEulerian_GEOS:
 
                 self._te_zsum(
                     te_2d=self._te_2d,
-                    te0_2d=self._te0_2d,
+                    te0_2d=te0_2d,
                     delp=delp,
                     pkz=pkz,
                     zsum1=self._zsum1,
                 )
+
                 tesum = mpp_global_sum(
-                    inputArray=self._te_2d.data * self._area_64,
+                    inputArray=self._te_2d.view[:] * self._area_64.view[:],
                     communicator=self._comm,
                     stencil_factory=self._stencil_factory,
                 )
                 zsum = mpp_global_sum(
-                    inputArray=self._zsum1.data * self._area_64,
+                    inputArray=self._zsum1.view[:] * self._area_64.view[:],
                     communicator=self._comm,
                     stencil_factory=self._stencil_factory,
                 )
@@ -565,13 +574,13 @@ class LagrangianToEulerian_GEOS:
             fast_mp_consv = consv_te > CONSV_MIN
             self._saturation_adjustment(
                 dp1,
-                tracers["qvapor"],
-                tracers["qliquid"],
-                tracers["qice"],
-                tracers["qrain"],
-                tracers["qsnow"],
-                tracers["qgraupel"],
-                q_cld,
+                tracers["vapor"],
+                tracers["liquid"],
+                tracers["ice"],
+                tracers["rain"],
+                tracers["snow"],
+                tracers["graupel"],
+                tracers["cloud"],
                 hs,
                 peln,
                 delp,
@@ -588,23 +597,30 @@ class LagrangianToEulerian_GEOS:
                 self.kmp,
             )
 
-        if last_step:
+        if last_step and not self._adiabatic:
             # on the last step, we need the regular temperature to send
             # to the physics, but if we're staying in dynamics we need
             # to keep it as the virtual potential temperature
             self._moist_cv_last_step_stencil(
-                tracers["qvapor"],
-                tracers["qliquid"],
-                tracers["qrain"],
-                tracers["qsnow"],
-                tracers["qice"],
-                tracers["qgraupel"],
-                self._gz,
-                pt,
-                pkz,
-                dtmp,
-                zvir,
+                qvapor=tracers["vapor"],
+                qliquid=tracers["liquid"],
+                qrain=tracers["rain"],
+                qsnow=tracers["snow"],
+                qice=tracers["ice"],
+                qgraupel=tracers["graupel"],
+                pt=pt,
+                pkz=pkz,
+                dtmp=Float(dtmp),
+                r_vir=zvir,
+            )
+            self._fill_cond(
+                q_con=q_con,
+                qliquid=tracers["liquid"],
+                qrain=tracers["rain"],
+                qsnow=tracers["snow"],
+                qice=tracers["ice"],
+                qgraupel=tracers["graupel"],
             )
         else:
             # converts virtual temperature back to virtual potential temperature
-            self._basic_adjust_divide_stencil(pkz, pt)
+            self._adjust_divide(pkz, pt)
