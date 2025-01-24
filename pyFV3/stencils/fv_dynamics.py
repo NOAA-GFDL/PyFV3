@@ -25,8 +25,6 @@ from pyFV3.stencils.del2cubed import HyperdiffusionDamping
 from pyFV3.stencils.dyn_core import AcousticDynamics
 from pyFV3.stencils.neg_adj3 import AdjustNegativeTracerMixingRatio
 from pyFV3.stencils.remapping import LagrangianToEulerian
-from pyFV3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
-from pyFV3.version import IS_GEOS
 
 
 def pt_to_potential_density_pt(
@@ -319,16 +317,6 @@ class DynamicalCore:
             tracers=self.tracers,
             checkpointer=checkpointer,
         )
-        self._lagrangian_to_eulerian_GEOS = LagrangianToEulerian_GEOS(
-            stencil_factory=stencil_factory,
-            quantity_factory=quantity_factory,
-            config=config.remapping,
-            comm=comm,
-            grid_data=grid_data,
-            nq=NQ,
-            pfull=self._pfull,
-            tracers=self.tracers,
-        )
 
         full_xyz_spec = quantity_factory.get_quantity_halo_spec(
             dims=[X_DIM, Y_DIM, Z_DIM],
@@ -579,73 +567,39 @@ class DynamicalCore:
                 with timer.clock("Remapping"):
                     self._checkpoint_remapping_in(state)
 
-                    if IS_GEOS:
-                        self._lagrangian_to_eulerian_GEOS(
-                            tracers=self.tracers,
-                            pt=state.pt,
-                            delp=state.delp,
-                            delz=state.delz,
-                            peln=state.peln,
-                            u=state.u,
-                            v=state.v,
-                            w=state.w,
-                            mfx=state.mfxd,
-                            mfy=state.mfyd,
-                            cx=state.cxd,
-                            cy=state.cyd,
-                            cappa=self._cappa,
-                            q_con=state.q_con,
-                            q_cld=state.qcld,
-                            pkz=state.pkz,
-                            pk=state.pk,
-                            pe=state.pe,
-                            hs=state.phis,
-                            ps=state.ps,
-                            wsd=self._wsd,
-                            ak=self._ak,
-                            bk=self._bk,
-                            dp1=self._dp_initial,
-                            ptop=self._ptop,
-                            akap=KAPPA,
-                            zvir=ZVIR,
-                            last_step=last_step,
-                            consv_te=self._conserve_total_energy,
-                            mdt=self._timestep / self._k_split,
-                        )
-                    else:
-                        # TODO: When NQ=9, we shouldn't need to pass qcld explicitly
-                        #       since it's in self.tracers. It should not be an issue since
-                        #       we don't have self.tracers & qcld computation at the same
-                        #       time
-                        #       When NQ=8, we do need qcld passed explicitely
-                        self._lagrangian_to_eulerian_obj(
-                            self.tracers,
-                            state.pt,
-                            state.delp,
-                            state.delz,
-                            state.peln,
-                            state.u,
-                            state.v,
-                            state.w,
-                            self._cappa,
-                            state.q_con,
-                            state.qcld,
-                            state.pkz,
-                            state.pk,
-                            state.pe,
-                            state.phis,
-                            state.ps,
-                            self._wsd,
-                            self._ak,
-                            self._bk,
-                            self._dp_initial,
-                            self._ptop,
-                            KAPPA,
-                            ZVIR,
-                            last_step,
-                            self._conserve_total_energy,
-                            self._timestep / self._k_split,
-                        )
+                    # TODO: When NQ=9, we shouldn't need to pass qcld explicitly
+                    #       since it's in self.tracers. It should not be an issue since
+                    #       we don't have self.tracers & qcld computation at the same
+                    #       time
+                    #       When NQ=8, we do need qcld passed explicitely
+                    self._lagrangian_to_eulerian_obj(
+                        self.tracers,
+                        state.pt,
+                        state.delp,
+                        state.delz,
+                        state.peln,
+                        state.u,
+                        state.v,
+                        state.w,
+                        self._cappa,
+                        state.q_con,
+                        state.qcld,
+                        state.pkz,
+                        state.pk,
+                        state.pe,
+                        state.phis,
+                        state.ps,
+                        self._wsd,
+                        self._ak,
+                        self._bk,
+                        self._dp_initial,
+                        self._ptop,
+                        KAPPA,
+                        ZVIR,
+                        last_step,
+                        self._conserve_total_energy,
+                        self._timestep / self._k_split,
+                    )
                     self._checkpoint_remapping_out(state)
                 # TODO: can we pull this block out of the loop intead of
                 # using an if-statement?
