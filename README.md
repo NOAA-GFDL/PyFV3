@@ -42,3 +42,6 @@ Branches:
   - BASED ON `tracer_rework_part1`
   - REQUIRES: `ndsl` with tracer rework
 - ⚙️ `feature/fv_mapz/GEOS` @ Chris K: Remapping for GEOS
+- ⚙️ `fix/GEOSv11_4_2/Dynamics`@Florian: Fix for the f32 & GEOS version of dynamics
+  - REQUIRES: `ndsl` with tracer rework
+  - REQUIRES: `tracer_rework_part1`, `fix/GEOSv11_4_2/Dyncore`, `fix/GEOS/TracerAdvection`
