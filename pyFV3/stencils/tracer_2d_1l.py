@@ -1,4 +1,5 @@
 from typing import List
+import numpy as np
 
 import gt4py.cartesian.gtscript as gtscript
 from gt4py.cartesian.gtscript import (
@@ -30,6 +31,8 @@ from ndsl.dsl.typing import FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.comm.communicator import Communicator, ReductionOperator
 from pyFV3.stencils.fvtp2d import FiniteVolumeTransport
 from pyFV3.tracers import Tracers
+from ndsl.dsl.gt4py_utils import asarray
+from ndsl.utils import safe_assign_array
 
 
 @gtscript.function
@@ -368,10 +371,10 @@ class TracerAdvection:
             working_x_courant = x_courant
             working_y_courant = y_courant
         else:
-            self._tmp_mfx.data[:] = x_mass_flux.data[:]
-            self._tmp_mfy.data[:] = y_mass_flux.data[:]
-            self._tmp_cx.data[:] = x_courant.data[:]
-            self._tmp_cy.data[:] = y_courant.data[:]
+            safe_assign_array(self._tmp_mfx.data, x_mass_flux)
+            safe_assign_array(self._tmp_mfy.data, y_mass_flux)
+            safe_assign_array(self._tmp_cx.data, x_courant)
+            safe_assign_array(self._tmp_cy.data, y_courant)
             working_x_mass_flux = self._tmp_mfx
             working_y_mass_flux = self._tmp_mfy
             working_x_courant = self._tmp_cx
@@ -422,7 +425,8 @@ class TracerAdvection:
         # a loop on the highest number of nsplit, but restraining
         # actual update in `apply_tracer_flux` to only the valid
         # K level for each tracers
-        max_n_split = i32(1.0 + self._cmax.view[:].max())
+        cmax_on_host = asarray(self._cmax.view[:], to_type=np.ndarray)
+        max_n_split = i32(1.0 + cmax_on_host.max())
 
         for current_nsplit in range(int(max_n_split)):
             last_call = current_nsplit == max_n_split - 1

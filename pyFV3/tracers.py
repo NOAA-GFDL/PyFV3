@@ -6,6 +6,7 @@ import numpy as np
 
 from ndsl import Quantity, QuantityFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.utils import safe_assign_array
 
 
 # FOR REFERENCE - previous descriptive of the tracers, lining up with Pace work
@@ -42,7 +43,9 @@ class Tracers:
                 f"[pyFV3] Tracer {name} size ({data.shape}"
                 f" is bigger than grid {qty.data.shape})"
             )
-        qty.data[: data.shape[0], : data.shape[1], : data.shape[2]] = data
+        safe_assign_array(
+            qty.data[: data.shape[0], : data.shape[1], : data.shape[2]], data
+        )
         self._quantities[name] = qty
 
     @property
@@ -71,7 +74,7 @@ class Tracers:
         # Skip the extra data point that is meant to align interface
         # and non interface fields
         for idx, q in enumerate(self.values()):
-            var4d[:, :, :, idx] = q.data[:-1, :-1, :-1]
+            safe_assign_array(var4d[:, :, :, idx], q.data[:-1, :-1, :-1])
         return var4d
 
     def __getitem__(self, key):
