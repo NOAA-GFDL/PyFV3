@@ -30,7 +30,6 @@ from ndsl import (
     WrappedHaloUpdater,
     orchestrate,
 )
-from ndsl.checkpointer import NullCheckpointer
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,
@@ -42,7 +41,7 @@ from ndsl.constants import (
 from ndsl.dsl.dace.orchestration import dace_inhibitor
 from ndsl.dsl.typing import Float, FloatField, FloatField64, FloatFieldIJ
 from ndsl.grid import DampingCoefficients, GridData
-from ndsl.typing import Checkpointer, Communicator
+from ndsl.typing import Communicator
 from pyFV3._config import AcousticDynamicsConfig
 from pyFV3.dycore_state import DycoreState
 from pyFV3.stencils.c_sw import CGridShallowWaterDynamics
@@ -397,7 +396,6 @@ class AcousticDynamics:
         phis: FloatFieldIJ,
         wsd: FloatFieldIJ,
         state,  # [DaCe] hack to get around quantity as parameters for halo updates
-        checkpointer: Optional[Checkpointer] = None,
     ):
         """
         Args:
@@ -412,9 +410,6 @@ class AcousticDynamics:
             config: configuration settings
             pfull: atmospheric Eulerian grid reference pressure (Pa)
             phis: surface geopotential height
-            checkpointer: if given, used to perform operations on model data
-                at specific points in model execution, such as testing against
-                reference data
         """
         orchestrate(
             obj=self,
@@ -422,32 +417,6 @@ class AcousticDynamics:
             dace_compiletime_args=["state"],
         )
 
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            method_to_orchestrate="_checkpoint_csw",
-            dace_compiletime_args=["state", "tag"],
-        )
-
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            method_to_orchestrate="_checkpoint_dsw_in",
-            dace_compiletime_args=["state", "tag"],
-        )
-
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            method_to_orchestrate="_checkpoint_dsw_out",
-            dace_compiletime_args=["state", "tag"],
-        )
-
-        self.call_checkpointer = checkpointer is not None
-        if checkpointer is None:
-            self.checkpointer: Checkpointer = NullCheckpointer()
-        else:
-            self.checkpointer = checkpointer
         grid_indexing = stencil_factory.grid_indexing
         self.config = config
         if config.d_ext != 0:
@@ -666,68 +635,6 @@ class AcousticDynamics:
     def _get_da_min(self) -> Float:
         return Float(self._da_min)
 
-    def _checkpoint_csw(self, state: DycoreState, tag: str):
-        if self.call_checkpointer:
-            self.checkpointer(
-                f"C_SW-{tag}",
-                delpd=state.delp,
-                ptd=state.pt,
-                ud=state.u,
-                vd=state.v,
-                wd=state.w,
-                ucd=state.uc,
-                vcd=state.vc,
-                uad=state.ua,
-                vad=state.va,
-                utd=self._ut,
-                vtd=self._vt,
-                divgdd=self._divgd,
-            )
-
-    def _checkpoint_dsw_in(self, state: DycoreState):
-        if self.call_checkpointer:
-            self.checkpointer(
-                "D_SW-In",
-                ucd=state.uc,
-                vcd=state.vc,
-                wd=state.w,
-                # delpc is a temporary and not a variable in D_SW savepoint
-                delpcd=self._vt,
-                delpd=state.delp,
-                ud=state.u,
-                vd=state.v,
-                ptd=state.pt,
-                uad=state.ua,
-                vad=state.va,
-                zhd=self._zh,
-                divgdd=self._divgd,
-                xfxd=self._xfx,
-                yfxd=self._yfx,
-                mfxd=state.mfxd,
-                mfyd=state.mfyd,
-            )
-
-    def _checkpoint_dsw_out(self, state: DycoreState):
-        if self.call_checkpointer:
-            self.checkpointer(
-                "D_SW-Out",
-                ucd=state.uc,
-                vcd=state.vc,
-                wd=state.w,
-                delpcd=self._vt,
-                delpd=state.delp,
-                ud=state.u,
-                vd=state.v,
-                ptd=state.pt,
-                uad=state.ua,
-                vad=state.va,
-                divgdd=self._divgd,
-                xfxd=self._xfx,
-                yfxd=self._yfx,
-                mfxd=state.mfxd,
-                mfyd=state.mfyd,
-            )
-
     # TODO: fix me - we shouldn't need a function here, Dace is fudging the types
     # See https://github.com/GEOS-ESM/pace/issues/9
     @dace_inhibitor
@@ -742,6 +649,10 @@ class AcousticDynamics:
     def __call__(
         self,
         state: DycoreState,
+        mfxd,
+        mfyd,
+        cxd,
+        cyd,
         dpx,
         timestep: Float,  # time to step forward by in seconds
         n_map=1,  # [DaCe] replaces state.n_map
@@ -761,10 +672,10 @@ class AcousticDynamics:
         self._halo_updaters.q_con__cappa.wait()
 
         self._zero_data(
-            state.mfxd,
-            state.mfyd,
-            state.cxd,
-            state.cyd,
+            mfxd,
+            mfyd,
+            cxd,
+            cyd,
             self._heat_source,
             state.diss_estd,
             n_map == 1,
@@ -813,7 +724,6 @@ class AcousticDynamics:
                 self._halo_updaters.w.wait()
 
             # compute the c-grid winds at t + 1/2 timestep
-            self._checkpoint_csw(state, tag="In")
             self.cgrid_shallow_water_lagrangian_dynamics(
                 state.delp,
                 state.pt,
@@ -830,7 +740,6 @@ class AcousticDynamics:
                 state.omga,
                 dt2,
             )
-            self._checkpoint_csw(state, tag="Out")
 
             # TODO: Computing the pressure gradient outside of C_SW was originally done
             # so that we could transpose into a vertical-first memory ordering for the
@@ -892,7 +801,6 @@ class AcousticDynamics:
             self._halo_updaters.uc__vc.wait()
             # use the computed c-grid winds to evolve the d-grid winds forward
             # by 1 timestep
-            self._checkpoint_dsw_in(state)
             self.dgrid_shallow_water_lagrangian_dynamics(
                 delpc=self._vt,
                 delp=state.delp,
@@ -905,10 +813,10 @@ class AcousticDynamics:
                 ua=state.ua,
                 va=state.va,
                 divgd=self._divgd,
-                mfx=state.mfxd,
-                mfy=state.mfyd,
-                cx=state.cxd,
-                cy=state.cyd,
+                mfx=mfxd,
+                mfy=mfyd,
+                cx=cxd,
+                cy=cyd,
                 dpx=dpx,
                 crx=self._crx,
                 cry=self._cry,
@@ -920,7 +828,6 @@ class AcousticDynamics:
                 diss_est=state.diss_estd,
                 dt=dt_acoustic_substep,
             )
-            self._checkpoint_dsw_out(state)
             # note that uc and vc are not needed at all past this point.
             # they will be re-computed from scratch on the next acoustic timestep.
 

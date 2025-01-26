@@ -194,6 +194,10 @@ class TranslateDynCore(ParallelTranslate2PyState):
 
         acoustic_dynamics(
             state,
+            mfxd=state.mfxd,
+            mfyd=state.mfyd,
+            cxd=state.cxd,
+            cyd=state.cyd,
             dpx=dpx,
             timestep=inputs["mdt"],
             n_map=state.n_map,
