@@ -94,13 +94,13 @@ def regularize_ints(int_sum, prec, I_prec):
                 break
 
     if positive:
-        for i in range(len(int_sum) - 1, 1, -1):
+        for i in range(len(int_sum) - 1, 0, -1):
             if int_sum[i] < 0:
                 int_sum[i] = int_sum[i] + prec
                 int_sum[i - 1] = int_sum[i - 1] - 1
 
     else:
-        for i in range(len(int_sum) - 1, 1, -1):
+        for i in range(len(int_sum) - 1, 0, -1):
             if int_sum[i] > 0:
                 int_sum[i] = int_sum[i] - prec
                 int_sum[i - 1] = int_sum[i - 1] + 1
