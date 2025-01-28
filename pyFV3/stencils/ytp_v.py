@@ -32,6 +32,7 @@ def get_bl_br(v, dy, dya):
         compile_assert(jord == 8)
 
         bl, br = yppm.blbr_jord8(v, v_on_cell_corners, dm)
+
         if __INLINED(grid_type < 3):
             bl, br = yppm.bl_br_edges(bl, br, v, dya, v_on_cell_corners, dm)
 
