@@ -1,43 +1,37 @@
-from typing import Dict
-from ndsl import (
-    Quantity,
-    QuantityFactory,
-    StencilFactory,
-    orchestrate,
-)
+from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl.comm.communicator import Communicator
 from ndsl.constants import (
+    CV_AIR,
+    GRAV,
     X_DIM,
     X_INTERFACE_DIM,
     Y_DIM,
     Y_INTERFACE_DIM,
     Z_DIM,
     Z_INTERFACE_DIM,
-    GRAV,
-    CV_AIR,
 )
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
-from ndsl.stencils.basic_operations import adjust_divide_stencil
 from ndsl.grid import GridData
-from ndsl.comm.communicator import Communicator
+from ndsl.stencils.basic_operations import adjust_divide_stencil
 from pyFV3._config import RemappingConfig
 from pyFV3.stencils import moist_cv
 from pyFV3.stencils.map_single import MapSingle
 from pyFV3.stencils.mapn_tracer import MapNTracer
 from pyFV3.stencils.moist_cv import moist_pt_last_step
-from pyFV3.stencils.saturation_adjustment import SatAdjust3d
-from pyFV3.stencils.scale_delz import rescale_delz_1, rescale_delz_2
-from pyFV3.stencils.w_fix_consrv_moment import W_fix_consrv_moment
+from pyFV3.stencils.mpp_global_sum import mpp_global_sum
 from pyFV3.stencils.remapping import (
+    CONSV_MIN,
     init_pe,
     moist_cv_pt_pressure,
+    pe0_ptop_xmax,
+    pe_pk_delp_peln,
     pn2_pk_delp,
     pressures_mapu,
     pressures_mapv,
-    pe0_ptop_xmax,
-    pe_pk_delp_peln,
-    CONSV_MIN,
 )
-from pyFV3.stencils.mpp_global_sum import mpp_global_sum
+from pyFV3.stencils.saturation_adjustment import SatAdjust3d
+from pyFV3.stencils.scale_delz import rescale_delz_1, rescale_delz_2
+from pyFV3.stencils.w_fix_consrv_moment import W_fix_consrv_moment
 from pyFV3.tracers import Tracers
 
 
@@ -214,9 +208,10 @@ class LagrangianToEulerian_GEOS:
             stencil_factory,
             quantity_factory,
             abs(config.kord_tr),
+            self._nq,
             fill=config.fill,
             tracers=tracers,
-            exclude_tracers=[],
+            # exclude_tracers=[],
         )
 
         self._map_single_w = MapSingle(

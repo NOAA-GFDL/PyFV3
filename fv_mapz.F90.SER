@@ -390,7 +390,7 @@ contains
 !$ser verbatim     enddo
 !$ser verbatim enddo
 !$ser verbatim do k = 1, km+1
-!$ser verbatim    do j = js-1, je+1 
+!$ser verbatim    do j = js-1, je+1
 !$ser verbatim       do i = is-1, ie+1
 !$ser verbatim          pe_3d(i,j,k) = pe(i,k,j)
 !$ser verbatim       enddo
@@ -408,10 +408,10 @@ contains
 !$ser data pe_=pe_3d
 !$ser data ptop=ptop
 !$ser data qvapor=q(:,:,:,sphum)
-!$ser data qliquid=q(:,:,:,liq_wat) 
+!$ser data qliquid=q(:,:,:,liq_wat)
 !$ser data qice=q(:,:,:,ice_wat)
-!$ser data qrain=q(:,:,:,rainwat) 
-!$ser data qsnow=q(:,:,:,snowwat) 
+!$ser data qrain=q(:,:,:,rainwat)
+!$ser data qsnow=q(:,:,:,snowwat)
 !$ser data qgraupel=q(:,:,:,graupel)
 !$ser data qcld=q(:,:,:,cld_amt)
 !$ser data qo3mr=q(:,:,:,8)
@@ -492,7 +492,7 @@ contains
                enddo
             else
                ! Transform "density pt" to "density temp"
-               !$ser verbatim if(j == js2d) then 
+               !$ser verbatim if(j == js2d) then
                !!$ser verbatim print*,'MoistCVPlusPt_2D serialization'
                !$ser savepoint MoistCVPlusPt_2d-In
                !$ser data  qvapor_js=q(:,j,:,sphum) qliquid_js=q(:,j,:,liq_wat) qice_js=q(:,j,:,ice_wat) qrain_js=q(:,j,:,rainwat) qsnow_js=q(:,j,:,snowwat) qgraupel_js=q(:,j,:,graupel) qcld_js=q(:,j,:,cld_amt) gz1d=gz cvm=cvm r_vir=r_vir cappa=cappa rrg=rrg delp=delp delz=delz pt=pt k1k=k1k j_2d=js2d q_con=q_con
@@ -512,7 +512,7 @@ contains
                   enddo
 #endif
                enddo
-               !$ser verbatim if(j == js2d) then 
+               !$ser verbatim if(j == js2d) then
                !$ser savepoint MoistCVPlusPt_2d-Out
                !$ser data  gz1d=gz cvm=cvm pt=pt cappa=cappa q_con=q_con
                !$ser verbatim endif
@@ -660,7 +660,7 @@ contains
                               km,  pe2,  pt,       &
                               is, ie, j, isd, ied, jsd, jed, akap, gmao_remap, P_MAP=1, conserv=.false.)
             else
-               !$ser verbatim if(j == js2d) then 
+               !$ser verbatim if(j == js2d) then
                !$ser verbatim    do k = 1, km+1
                !$ser verbatim      do i = is, ie
                !$ser verbatim           pn1_3d(i,j,k) = pn1(i,k)
@@ -674,7 +674,7 @@ contains
                call map_scalar(km,  pn1,  pt, gz,   &
                               km,  pn2,  pt,       &
                               is, ie, j, isd, ied, jsd, jed, 1, abs(kord_tm), t_min)
-               !$ser verbatim if(j == js2d) then 
+               !$ser verbatim if(j == js2d) then
                !$ser savepoint Map_Scalar-Out
                !$ser data q1=pt
                !$ser verbatim endif
@@ -690,7 +690,7 @@ contains
             !$ser verbatim      do i = is, ie
             !$ser verbatim           pe1_3d(i,j,k) = pe1(i,k)
             !$ser verbatim           pe2_3d(i,j,k) = pe2(i,k)
-            !$ser verbatim           
+            !$ser verbatim
             !$ser verbatim           if (k < km+1) dp2_3d(i,j,k) = dp2(i,k)
             !$ser verbatim      enddo
             !$ser verbatim     enddo
@@ -708,7 +708,7 @@ contains
             !$ser verbatim endif
             call mapn_tracer(nq, km, pe1, pe2, q, dp2, kord_tr, j,     &
                               is, ie, isd, ied, jsd, jed, 0., fill)
-            !$ser verbatim if(j == js2d) then 
+            !$ser verbatim if(j == js2d) then
             !$ser savepoint MapN_Tracer_2d-Out
             !$ser data qvapor=q(:,:,:,1)
             !$ser data qliquid=q(:,:,:,2)
@@ -739,7 +739,7 @@ contains
 
          if ( .not. hydrostatic ) then
             ! Remap vertical wind:
-               !$ser verbatim if(j == js2d) then 
+               !$ser verbatim if(j == js2d) then
                !$ser verbatim    do k = 1, km+1
                !$ser verbatim      do i = is, ie
                !$ser verbatim           pn1_3d(i,j,k) = pn1(i,k)
@@ -756,12 +756,12 @@ contains
             call map1_ppm (km,   pe1,  w,  ws(is,j),   &
                            km,   pe2,  w,              &
                            is, ie, j, isd, ied, jsd, jed, -2, kord_wz)
-               !$ser verbatim if(j == js2d) then 
+               !$ser verbatim if(j == js2d) then
                !$ser savepoint Map1_PPM_W-Out
                !$ser data w_=w
                !$ser verbatim endif
 
-            !$ser verbatim if(j == js2d) then 
+            !$ser verbatim if(j == js2d) then
             !$ser verbatim    do k = 1, km+1
             !$ser verbatim      do i = is, ie
             !$ser verbatim           pn1_3d(i,j,k) = pn1(i,k)
@@ -801,7 +801,7 @@ contains
                   delz(i,j,k) = -delz(i,j,k)*dp2(i,k)
                enddo
             enddo
-            !$ser verbatim if(j == js2d) then 
+            !$ser verbatim if(j == js2d) then
             !$ser savepoint Map1_PPM_delz-Out
             !$ser data delz_=delz
             !$ser verbatim endif
@@ -809,7 +809,7 @@ contains
             !Fix excessive w - momentum conserving --- sjl
             ! gz(:) used here as a temporary array
             if ( w_limiter ) then
-!$ser verbatim if(j == js2d) then 
+!$ser verbatim if(j == js2d) then
 !$ser verbatim do k = 1, km
 !$ser verbatim            do i = is, ie
 !$ser verbatim               dp2_3d(i,:,k) = dp2(i,k)
@@ -888,7 +888,7 @@ contains
                      w(i,j,k) = w2(i,k)
                   enddo
                enddo
-!$ser verbatim if(j == js2d) then 
+!$ser verbatim if(j == js2d) then
 !$ser savepoint W_fix_consrv_moment-Out
 !$ser data w=w
 !$ser verbatim endif
@@ -914,8 +914,8 @@ contains
 !$ser data pe_=pe_3d
 !$ser data pe0_=pe0_3d
 !$ser data pe3_=pe3_3d
-!$ser data ak=ak 
-!$ser data bk=bk 
+!$ser data ak=ak
+!$ser data bk=bk
 !$ser data ptop=ptop
 !$ser data u_=u
 !$ser data kord_mt=kord_mt
@@ -1000,7 +1000,7 @@ contains
 !$ser data pe_=pe_3d
 !$ser data pe0_=pe0_3d
 !$ser data pe3_=pe3_3d
-!$ser data ak=ak 
+!$ser data ak=ak
 !$ser data bk=bk
 !$ser data v_=v
 !$ser data kord_mt=kord_mt
@@ -1266,22 +1266,22 @@ contains
          if (remap_t) then
             ! print*,'CODE EXECUTED'
 ! Note: pt at this stage is T_v or T_m
-            !$ser verbatim if(j == js2d) then 
+            !$ser verbatim if(j == js2d) then
             !!$ser verbatim print*,'MoistCVPlusPt_2D serialization'
             !$ser savepoint MoistCVPlusPkz_2d-In
-            !$ser data qvapor_js=q(:,j,:,sphum) 
-            !$ser data qliquid_js=q(:,j,:,liq_wat) 
-            !$ser data qice_js=q(:,j,:,ice_wat) 
-            !$ser data qrain_js=q(:,j,:,rainwat) 
-            !$ser data qsnow_js=q(:,j,:,snowwat) 
-            !$ser data qgraupel_js=q(:,j,:,graupel) 
-            !$ser data qcld_js=q(:,j,:,cld_amt) 
-            !$ser data r_vir=r_vir 
-            !$ser data cappa=cappa 
-            !$ser data rrg=rrg 
-            !$ser data delp=delp 
-            !$ser data delz=delz 
-            !$ser data pkz=pkz 
+            !$ser data qvapor_js=q(:,j,:,sphum)
+            !$ser data qliquid_js=q(:,j,:,liq_wat)
+            !$ser data qice_js=q(:,j,:,ice_wat)
+            !$ser data qrain_js=q(:,j,:,rainwat)
+            !$ser data qsnow_js=q(:,j,:,snowwat)
+            !$ser data qgraupel_js=q(:,j,:,graupel)
+            !$ser data qcld_js=q(:,j,:,cld_amt)
+            !$ser data r_vir=r_vir
+            !$ser data cappa=cappa
+            !$ser data rrg=rrg
+            !$ser data delp=delp
+            !$ser data delz=delz
+            !$ser data pkz=pkz
             !$ser data pt=pt
             !$ser data k1k=k1k
             !$ser verbatim endif
@@ -1299,9 +1299,9 @@ contains
                enddo
 #endif
             enddo
-            !$ser verbatim if(j == js2d) then 
+            !$ser verbatim if(j == js2d) then
             !$ser savepoint MoistCVPlusPkz_2d-Out
-            !$ser data pkz=pkz 
+            !$ser data pkz=pkz
             !$ser data cappa=cappa
             !$ser verbatim endif
          endif
@@ -1415,7 +1415,7 @@ contains
                !$ser verbatim   grav_=grav
                !!$ser verbatim print*,'MoistCVPlusTe_2D serialization'
                !$ser savepoint MoistCVPlusTe_2d-In
-               !$ser data qvapor_js=q(:,j,:,sphum) 
+               !$ser data qvapor_js=q(:,j,:,sphum)
                !$ser data qliquid_js=q(:,j,:,liq_wat)
                !$ser data qice_js=q(:,j,:,ice_wat)
                !$ser data qrain_js=q(:,j,:,rainwat)
@@ -1463,7 +1463,7 @@ contains
                   enddo
 #endif
                enddo   ! k-loop
-               !$ser verbatim if(j == js) then 
+               !$ser verbatim if(j == js) then
                !$ser verbatim   te_2d_f32 = real(te_2d)
                !$ser savepoint MoistCVPlusTe_2d-Out
                !$ser data te_2d_=te_2d_f32
@@ -1530,7 +1530,7 @@ contains
          !$ser verbatim te_2d=te_2d*gridstruct%area_64(is:ie,js:je)
          !!$ser verbatim print*,'Sum of input into mpp_global_sum = ', sum(te_2d)
          !$ser data inputArray=te_2d
-         
+
          !$ser savepoint Mpp_global_sum-Out
          !$ser data tesum=tesum
 
@@ -1632,14 +1632,14 @@ contains
       if ( .not. hydrostatic  ) then
          ! print*,'CODE EXECUTED'
       !$ser savepoint MoistCVPlusPt_2d_last_step-In
-      !$ser data qvapor=q(:,:,:,sphum) 
+      !$ser data qvapor=q(:,:,:,sphum)
       !$ser data qliquid=q(:,:,:,liq_wat)
       !$ser data qice=q(:,:,:,ice_wat)
       !$ser data qrain=q(:,:,:,rainwat)
       !$ser data qsnow=q(:,:,:,snowwat)
       !$ser data qgraupel=q(:,:,:,graupel)
-      !$ser data r_vir=r_vir 
-      !$ser data dtmp=dtmp 
+      !$ser data r_vir=r_vir
+      !$ser data dtmp=dtmp
       !$ser data pt=pt
       !$ser data pkz=pkz
 !$OMP do
@@ -1702,7 +1702,7 @@ contains
    elseif ( last_step .and. adiabatic ) then
       print*,'CODE NOT TESTED HERE 17'
 !$OMP do
-      do k=1,km                          
+      do k=1,km
          do j=js,je
             do i=is,ie
                pt(i,j,k) = (pt(i,j,k)+dtmp*pkz(i,j,k))
@@ -1733,7 +1733,7 @@ contains
 !$ser verbatim     enddo
 !$ser verbatim enddo
 !$ser verbatim do k = 1, km+1
-!$ser verbatim    do j = js-1, je+1 
+!$ser verbatim    do j = js-1, je+1
 !$ser verbatim       do i = is-1, ie+1
 !$ser verbatim          pe_3d(i,j,k) = pe(i,k,j)
 !$ser verbatim       enddo
@@ -1748,10 +1748,10 @@ contains
 !$ser savepoint Remapping_GEOS-Out
 !$ser data pe_=pe_3d
 !$ser data qvapor=q(:,:,:,sphum)
-!$ser data qliquid=q(:,:,:,liq_wat) 
+!$ser data qliquid=q(:,:,:,liq_wat)
 !$ser data qice=q(:,:,:,ice_wat)
-!$ser data qrain=q(:,:,:,rainwat) 
-!$ser data qsnow=q(:,:,:,snowwat) 
+!$ser data qrain=q(:,:,:,rainwat)
+!$ser data qsnow=q(:,:,:,snowwat)
 !$ser data qgraupel=q(:,:,:,graupel)
 !$ser data qcld=q(:,:,:,cld_amt)
 !$ser data qo3mr=q(:,:,:,8)
@@ -2104,7 +2104,7 @@ contains
    real   q4(4,i1:i2,km)
    real    pl, pr, qsum, dp, esl
    integer i, k, l, m, k0, jj
-   integer LM1,LP0,LP1 
+   integer LM1,LP0,LP1
 
 !$ser verbatim real q4_1_temp(i1:i2, i1:i2,km)
 !$ser verbatim real q4_2_temp(i1:i2, i1:i2,km)
@@ -2186,7 +2186,7 @@ contains
 
 ! NOTE : q1 and q2 fields being passed into map_scalar are identical variables
 !        even though q1 is declared at INTENT(IN) and q2 is declared as INTENT(IN/OUT).
-!$ser verbatim if(j == 1) then 
+!$ser verbatim if(j == 1) then
 !$ser verbatim do k = 1,kn
 !$ser verbatim    do i = i1,i2
 !$ser verbatim      q4_1_temp(i,j,k) = q4(1,i,k)
@@ -2206,7 +2206,7 @@ contains
 !$ser verbatim       pe2_temp(i,jj,km+1) = pe2(i,km+1)
 !$ser verbatim    enddo
 !$ser verbatim enddo
-!$ser savepoint Lagrangian_Contribution_Interp-In 
+!$ser savepoint Lagrangian_Contribution_Interp-In
 !$ser data q1=q1 pe1_=pe1_temp pe2_=pe2_temp q4_1=q4_1_temp q4_2=q4_2_temp
 !$ser data q4_3=q4_3_temp q4_4=q4_4_temp dp1_=dp1_temp
 !$ser verbatim endif
@@ -2283,9 +2283,9 @@ contains
 555   continue
   enddo
 
-!$ser verbatim if(j == 1) then 
+!$ser verbatim if(j == 1) then
 !$ser savepoint Lagrangian_Contribution_Interp-Out
-!$ser data q1=q2 
+!$ser data q1=q2
 !$ser verbatim endif
 
  end subroutine map_scalar

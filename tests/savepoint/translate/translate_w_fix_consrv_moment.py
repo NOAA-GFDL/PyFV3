@@ -1,7 +1,8 @@
 from ndsl.dsl.typing import Float
-from ndsl.stencils.testing.grid import Grid
 from ndsl.stencils.testing import TranslateFortranData2Py
+from ndsl.stencils.testing.grid import Grid
 from pyFV3.stencils.w_fix_consrv_moment import W_fix_consrv_moment
+
 
 class TranslateW_fix_consrv_moment(TranslateFortranData2Py):
     def __init__(self, grid: Grid, namelist, stencil_factory):
@@ -18,8 +19,8 @@ class TranslateW_fix_consrv_moment(TranslateFortranData2Py):
 
         self.in_vars["data_vars"] = {
             "w": {
-                "kend": grid.npz-1,
-                },
+                "kend": grid.npz - 1,
+            },
             "dp2_W": grid.compute_dict(),
         }
 
@@ -27,14 +28,15 @@ class TranslateW_fix_consrv_moment(TranslateFortranData2Py):
 
         self.out_vars = {
             "w": {
-                "kend": grid.npz-1,
-                },
+                "kend": grid.npz - 1,
+            },
         }
         self._gz = self.quantity_factory._numpy.zeros(
             (
                 grid.nid,
                 grid.njd,
-            ), dtype=Float,
+            ),
+            dtype=Float,
         )
 
         self._w2 = self.quantity_factory._numpy.zeros(
@@ -42,26 +44,28 @@ class TranslateW_fix_consrv_moment(TranslateFortranData2Py):
                 grid.nid,
                 grid.njd,
                 grid.npz,
-            ), dtype=Float,
+            ),
+            dtype=Float,
         )
 
         self._compute_performed = self.quantity_factory._numpy.zeros(
             (
                 grid.nid,
                 grid.njd,
-            ), dtype=bool,
+            ),
+            dtype=bool,
         )
 
     def compute_from_storage(self, inputs):
 
         self.compute_func(
-                     inputs["w"],
-                     self._w2,
-                     inputs["dp2_W"],
-                     self._gz,
-                     inputs["w_max"],
-                     inputs["w_min"],
-                     self._compute_performed
-                     )
-        
+            inputs["w"],
+            self._w2,
+            inputs["dp2_W"],
+            self._gz,
+            inputs["w_max"],
+            inputs["w_min"],
+            self._compute_performed,
+        )
+
         return inputs

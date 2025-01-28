@@ -1,6 +1,7 @@
 from ndsl.stencils.testing import TranslateFortranData2Py
 from pyFV3.stencils import moist_cv
 
+
 class TranslateTe_Zsum(TranslateFortranData2Py):
     def __init__(self, grid, namelist, stencil_factory):
         super().__init__(grid, namelist, stencil_factory)
@@ -57,12 +58,13 @@ class TranslateTe_Zsum(TranslateFortranData2Py):
         )
 
     def compute_from_storage(self, inputs):
-        
-        self.compute_func(inputs["te_2d_"],
-                          inputs["te0_2d_"],
-                          inputs["delp"],
-                          inputs["pkz"],
-                          inputs["zsum1"],
-                        )
+
+        self.compute_func(
+            inputs["te_2d_"],
+            inputs["te0_2d_"],
+            inputs["delp"],
+            inputs["pkz"],
+            inputs["zsum1"],
+        )
 
         return inputs

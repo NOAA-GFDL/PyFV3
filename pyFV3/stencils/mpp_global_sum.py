@@ -1,17 +1,18 @@
-from ndsl.quantity import Quantity
-from ndsl.comm.comm_abc import ReductionOperator
 import numpy as np
+
+from ndsl.comm.comm_abc import ReductionOperator
+from ndsl.quantity import Quantity
 
 
 def mpp_global_sum(inputArray, communicator, stencil_factory=None):
     NUMINT = 6
     NUMBIT = 46
-    r_prec = 2.0**NUMBIT
-    prec = 2**NUMBIT
-    I_prec = 1.0 / (2.0**NUMBIT)
-    pr = [r_prec**2, r_prec, 1.0, 1.0 / r_prec, 1.0 / r_prec**2, 1.0 / r_prec**3]
-    I_pr = [1.0 / r_prec**2, 1.0 / r_prec, 1.0, r_prec, r_prec**2, r_prec**3]
-    prec_error = (2**62 + (2**62 - 1)) / 6
+    r_prec = 2.0 ** NUMBIT
+    prec = 2 ** NUMBIT
+    I_prec = 1.0 / (2.0 ** NUMBIT)
+    pr = [r_prec ** 2, r_prec, 1.0, 1.0 / r_prec, 1.0 / r_prec ** 2, 1.0 / r_prec ** 3]
+    I_pr = [1.0 / r_prec ** 2, 1.0 / r_prec, 1.0, r_prec, r_prec ** 2, r_prec ** 3]
+    prec_error = (2 ** 62 + (2 ** 62 - 1)) / 6
     mag_max_term = 0.0
 
     ints_sum = Quantity(
@@ -35,15 +36,11 @@ def mpp_global_sum(inputArray, communicator, stencil_factory=None):
                 ints_sum.data, pr, I_pr, inputArray[i, j], mag_max_term
             )
 
-    # print("rank ", communicator.rank, "ints_sum = ", sum(ints_sum.data), ' before carry_over')
     carry_overflow(ints_sum.data, prec, I_prec, prec_error)
-    # print("rank ", communicator.rank, "ints_sum = ", sum(ints_sum.data), ' after carry_over')
 
     communicator.all_reduce(ints_sum, ReductionOperator.SUM, ints_sum_reduce)
 
-    # print("rank ", communicator.rank, "sum(ints_sum_reduce) = ", sum(ints_sum_reduce.data), ' after all_reduce')
     regularize_ints(ints_sum_reduce.data, prec, I_prec)
-    # print("rank ", communicator.rank,"ints_sum_reduce = ", sum(ints_sum_reduce.data), ' after regularize_ints')
 
     sum_ = ints_to_real(ints_sum_reduce.data, pr)
 

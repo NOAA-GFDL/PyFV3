@@ -1,10 +1,7 @@
-from gt4py.cartesian.gtscript import PARALLEL, computation, interval
-
 from ndsl import StencilFactory
-from ndsl.dsl.typing import FloatField, Float
+from ndsl.dsl.typing import Float, FloatField
 from ndsl.stencils.testing import TranslateFortranData2Py
 from pyFV3.stencils.remapping import pn2_pk_delp
-
 
 
 class testClass:
@@ -19,8 +16,8 @@ class testClass:
     ):
         self._pn2_pk_delp = stencil_factory.from_origin_domain(
             func=pn2_pk_delp,
-            origin=(3,3,1),
-            domain=(24,24,71),
+            origin=(3, 3, 1),
+            domain=(24, 24, 71),
         )
 
     def __call__(
@@ -32,14 +29,7 @@ class testClass:
         pk: FloatField,
         akap: Float,
     ):
-        self._pn2_pk_delp(
-            dp2,
-            delp,
-            pe2,
-            pn2,
-            pk,
-            akap
-        )
+        self._pn2_pk_delp(dp2, delp, pe2, pn2, pk, akap)
 
 
 class TranslatePN2_PK_DelP(TranslateFortranData2Py):
@@ -51,51 +41,62 @@ class TranslatePN2_PK_DelP(TranslateFortranData2Py):
         self.quantity_factory = grid.quantity_factory
 
         self.in_vars["data_vars"] = {
-            "pe2_": {"istart": grid.is_,
+            "pe2_": {
+                "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,
-                     },
-            "pn2_": {"istart": grid.is_,
+                "kend": grid.npz + 1,
+            },
+            "pn2_": {
+                "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,},
-            "pk_": {"istart": grid.is_,
+                "kend": grid.npz + 1,
+            },
+            "pk_": {
+                "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,},
-
+                "kend": grid.npz + 1,
+            },
         }
         self.in_vars["parameters"] = [
             "akap",
         ]
 
         self.out_vars = {
-            "pe2_": {"istart": grid.is_,
+            "pe2_": {
+                "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,},
-            "pn2_": {"istart": grid.is_,
+                "kend": grid.npz + 1,
+            },
+            "pn2_": {
+                "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,},
-            "pk_": {"istart": grid.is_,
+                "kend": grid.npz + 1,
+            },
+            "pk_": {
+                "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,},
+                "kend": grid.npz + 1,
+            },
         }
         self._dp2 = self.quantity_factory._numpy.zeros(
             (
                 31,
                 31,
                 73,
-            ), dtype=Float,
+            ),
+            dtype=Float,
         )
 
         self._delp = self.quantity_factory._numpy.zeros(
@@ -103,9 +104,9 @@ class TranslatePN2_PK_DelP(TranslateFortranData2Py):
                 31,
                 31,
                 73,
-            ), dtype=Float,
+            ),
+            dtype=Float,
         )
-
 
     def compute_from_storage(self, inputs):
 
@@ -119,10 +120,12 @@ class TranslatePN2_PK_DelP(TranslateFortranData2Py):
         # print('self.storage_vars() = ', self.storage_vars())
         # self.make_storage_data_input_vars(inputs)
         # exit(1)
-        self.compute_func(self._dp2,
-                     self._delp,
-                     inputs["pe2_"],
-                     inputs["pn2_"],
-                     inputs["pk_"],
-                     inputs["akap"])
+        self.compute_func(
+            self._dp2,
+            self._delp,
+            inputs["pe2_"],
+            inputs["pn2_"],
+            inputs["pk_"],
+            inputs["akap"],
+        )
         return inputs

@@ -1,7 +1,8 @@
-from ndsl import StencilFactory, Namelist
+from ndsl import Namelist, StencilFactory
 from ndsl.stencils.testing import TranslateFortranData2Py
-from pyFV3.stencils.remapping import pe_pk_delp_peln
 from ndsl.stencils.testing.grid import Grid
+from pyFV3.stencils.remapping import pe_pk_delp_peln
+
 
 class TranslatePE_pk_delp_peln(TranslateFortranData2Py):
     def __init__(self, grid: Grid, namelist: Namelist, stencil_factory: StencilFactory):
@@ -13,39 +14,39 @@ class TranslatePE_pk_delp_peln(TranslateFortranData2Py):
         self.in_vars["data_vars"] = {
             "pe2_": {
                 "istart": grid.is_,
-                "iend": grid.ie, 
+                "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,
-                },
+                "kend": grid.npz + 1,
+            },
             "pe_": {
-                "istart": grid.is_-1,
-                "iend": grid.ie+1,
-                "jstart": grid.js-1,
-                "jend": grid.je+1,
-                "kend": grid.npz+1,
-                },
+                "istart": grid.is_ - 1,
+                "iend": grid.ie + 1,
+                "jstart": grid.js - 1,
+                "jend": grid.je + 1,
+                "kend": grid.npz + 1,
+            },
             "peln_": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,
-                },
+                "kend": grid.npz + 1,
+            },
             "pn2_": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,
-                },
+                "kend": grid.npz + 1,
+            },
             "pk2_": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,
-                },
+                "kend": grid.npz + 1,
+            },
             "delp": {
                 # "istart": grid.isd,
                 # "iend": grid.ied,
@@ -58,12 +59,10 @@ class TranslatePE_pk_delp_peln(TranslateFortranData2Py):
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,
-                },
-            "ak":{
+                "kend": grid.npz + 1,
             },
-            "bk":{
-            },
+            "ak": {},
+            "bk": {},
         }
         self.in_vars["parameters"] = [
             "akap",
@@ -76,36 +75,36 @@ class TranslatePE_pk_delp_peln(TranslateFortranData2Py):
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,
-                },
+                "kend": grid.npz + 1,
+            },
             "pe_": {
-                "istart": grid.is_-1,
-                "iend": grid.ie+1,
-                "jstart": grid.js-1,
-                "jend": grid.je+1,
-                "kend": grid.npz+1,
-                },
+                "istart": grid.is_ - 1,
+                "iend": grid.ie + 1,
+                "jstart": grid.js - 1,
+                "jend": grid.je + 1,
+                "kend": grid.npz + 1,
+            },
             "peln_": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,
-                },
+                "kend": grid.npz + 1,
+            },
             "pn2_": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,
-                },
+                "kend": grid.npz + 1,
+            },
             "pk2_": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,
-                },
+                "kend": grid.npz + 1,
+            },
             "delp": {
                 # "istart": grid.isd,
                 # "iend": grid.ied,
@@ -118,8 +117,8 @@ class TranslatePE_pk_delp_peln(TranslateFortranData2Py):
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,
-                },
+                "kend": grid.npz + 1,
+            },
         }
 
         grid_indexing = stencil_factory.grid_indexing
@@ -129,7 +128,6 @@ class TranslatePE_pk_delp_peln(TranslateFortranData2Py):
             grid_indexing.domain[2] + 1,
         )
 
-
         self._pe_pk_delp_peln = stencil_factory.from_origin_domain(
             pe_pk_delp_peln,
             origin=grid_indexing.origin_compute(),
@@ -138,16 +136,17 @@ class TranslatePE_pk_delp_peln(TranslateFortranData2Py):
 
     def compute_from_storage(self, inputs):
 
-        self._pe_pk_delp_peln(inputs["pe_"],
-                              inputs["pk"],
-                              inputs["delp"],
-                              inputs["peln_"],
-                              inputs["pe2_"],
-                              inputs["pk2_"],
-                              inputs["pn2_"],
-                              inputs["ak"],
-                              inputs["bk"],
-                              inputs["akap"],
-                              inputs["ptop"],
+        self._pe_pk_delp_peln(
+            inputs["pe_"],
+            inputs["pk"],
+            inputs["delp"],
+            inputs["peln_"],
+            inputs["pe2_"],
+            inputs["pk2_"],
+            inputs["pn2_"],
+            inputs["ak"],
+            inputs["bk"],
+            inputs["akap"],
+            inputs["ptop"],
         )
         return inputs

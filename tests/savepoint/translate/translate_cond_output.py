@@ -1,9 +1,6 @@
-from gt4py.cartesian.gtscript import PARALLEL, computation, interval
-
-from ndsl import StencilFactory
-from ndsl.dsl.typing import FloatField, Float
-from ndsl.stencils.testing import TranslateFortranData2Py, pad_field_in_j
+from ndsl.stencils.testing import TranslateFortranData2Py
 from pyFV3.stencils import moist_cv
+
 
 class TranslateCond_output(TranslateFortranData2Py):
     def __init__(self, grid, namelist, stencil_factory):
@@ -11,28 +8,28 @@ class TranslateCond_output(TranslateFortranData2Py):
         self.stencil_factory = stencil_factory
         self.in_vars["data_vars"] = {
             "qliquid": {
-                "kend": grid.npz-1,
-                },
+                "kend": grid.npz - 1,
+            },
             "qice": {
-                "kend": grid.npz-1,
+                "kend": grid.npz - 1,
             },
             "qrain": {
-                "kend": grid.npz-1,
+                "kend": grid.npz - 1,
             },
             "qsnow": {
-                "kend": grid.npz-1,
+                "kend": grid.npz - 1,
             },
             "qgraupel": {
-                "kend": grid.npz-1,
+                "kend": grid.npz - 1,
             },
             "q_con": {
-                "kend": grid.npz-1,
-            }
+                "kend": grid.npz - 1,
+            },
         }
 
         self.out_vars = {
             "q_con": {
-                "kend": grid.npz-1,
+                "kend": grid.npz - 1,
             }
         }
 
@@ -44,11 +41,12 @@ class TranslateCond_output(TranslateFortranData2Py):
 
     def compute_from_storage(self, inputs):
 
-        self.compute_func(inputs["q_con"],
-                          inputs["qliquid"],
-                          inputs["qrain"],
-                          inputs["qsnow"],
-                          inputs["qice"],
-                          inputs["qgraupel"],
-                        )
+        self.compute_func(
+            inputs["q_con"],
+            inputs["qliquid"],
+            inputs["qrain"],
+            inputs["qsnow"],
+            inputs["qice"],
+            inputs["qgraupel"],
+        )
         return inputs
