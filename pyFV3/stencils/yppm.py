@@ -313,7 +313,7 @@ class YPiecewiseParabolic:
         # grid.dya
         if grid_type == 3 or grid_type > 4:
             raise NotImplementedError(
-                "Y Piecewise Parabolic (xppm): "
+                "Y Piecewise Parabolic (yppm): "
                 f" grid type {grid_type} not implemented. <3 or 4 available."
             )
 

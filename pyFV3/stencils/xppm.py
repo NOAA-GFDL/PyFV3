@@ -9,7 +9,7 @@ from gt4py.cartesian.gtscript import (
     region,
 )
 
-from ndsl import StencilFactory
+from ndsl import StencilFactory, orchestrate
 from ndsl.dsl.typing import FloatField, FloatFieldIJ, Index3D
 from ndsl.stencils.basic_operations import sign
 from pyFV3.stencils import ppm
@@ -307,6 +307,7 @@ class XPiecewiseParabolic:
         origin: Index3D,
         domain: Index3D,
     ):
+        orchestrate(obj=self, config=stencil_factory.config.dace_config)
         # Arguments come from:
         # namelist.grid_type
         # grid.dxa
