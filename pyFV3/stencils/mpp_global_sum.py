@@ -1,51 +1,77 @@
-from ndsl.quantity import Quantity
-from ndsl.comm.comm_abc import ReductionOperator
 import numpy as np
 
+from ndsl.comm.comm_abc import ReductionOperator
+from ndsl.dsl.typing import Float
+from ndsl.quantity import Quantity
 
-def mpp_global_sum(inputArray, communicator, stencil_factory=None):
-    NUMINT = 6
-    NUMBIT = 46
-    r_prec = 2.0**NUMBIT
-    prec = 2**NUMBIT
-    I_prec = 1.0 / (2.0**NUMBIT)
-    pr = [r_prec**2, r_prec, 1.0, 1.0 / r_prec, 1.0 / r_prec**2, 1.0 / r_prec**3]
-    I_pr = [1.0 / r_prec**2, 1.0 / r_prec, 1.0, r_prec, r_prec**2, r_prec**3]
-    prec_error = (2**62 + (2**62 - 1)) / 6
-    mag_max_term = 0.0
 
-    ints_sum = Quantity(
-        data=np.zeros((NUMINT), dtype=np.float32),
-        dims=["K"],
-        units="dunno",
-        gt4py_backend=stencil_factory.backend,
-    )
+def mpp_global_sum(
+    inputArray, communicator, stencil_factory=None, simplified_reduce=False
+):
+    if not simplified_reduce:
+        NUMINT = 6
+        NUMBIT = 46
+        r_prec = 2.0 ** NUMBIT
+        prec = 2 ** NUMBIT
+        I_prec = 1.0 / (2.0 ** NUMBIT)
+        pr = [
+            r_prec ** 2,
+            r_prec,
+            1.0,
+            1.0 / r_prec,
+            1.0 / r_prec ** 2,
+            1.0 / r_prec ** 3,
+        ]
+        I_pr = [1.0 / r_prec ** 2, 1.0 / r_prec, 1.0, r_prec, r_prec ** 2, r_prec ** 3]
+        prec_error = (2 ** 62 + (2 ** 62 - 1)) / 6
+        mag_max_term = 0.0
 
-    ints_sum_reduce = Quantity(
-        data=np.zeros((NUMINT), dtype=np.float32),
-        dims=["K"],
-        units="dunno",
-        gt4py_backend=stencil_factory.backend,
-    )
+        ints_sum = Quantity(
+            data=np.zeros((NUMINT), dtype=Float),
+            dims=["K"],
+            units="dunno",
+            gt4py_backend=stencil_factory.backend,
+        )
 
-    # Note: This loop range in i and j are for the TBC test case.
-    for j in range(inputArray.shape[1]):
-        for i in range(inputArray.shape[0]):
-            increment_ints_faster(
-                ints_sum.data, pr, I_pr, inputArray[i, j], mag_max_term
-            )
+        ints_sum_reduce = Quantity(
+            data=np.zeros((NUMINT), dtype=Float),
+            dims=["K"],
+            units="dunno",
+            gt4py_backend=stencil_factory.backend,
+        )
 
-    # print("rank ", communicator.rank, "ints_sum = ", sum(ints_sum.data), ' before carry_over')
-    carry_overflow(ints_sum.data, prec, I_prec, prec_error)
-    # print("rank ", communicator.rank, "ints_sum = ", sum(ints_sum.data), ' after carry_over')
+        # Note: This loop range in i and j are for the TBC test case.
+        for j in range(inputArray.shape[1]):
+            for i in range(inputArray.shape[0]):
+                increment_ints_faster(
+                    ints_sum.data, pr, I_pr, inputArray[i, j], mag_max_term
+                )
 
-    communicator.all_reduce(ints_sum, ReductionOperator.SUM, ints_sum_reduce)
+        carry_overflow(ints_sum.data, prec, I_prec, prec_error)
 
-    # print("rank ", communicator.rank, "sum(ints_sum_reduce) = ", sum(ints_sum_reduce.data), ' after all_reduce')
-    regularize_ints(ints_sum_reduce.data, prec, I_prec)
-    # print("rank ", communicator.rank,"ints_sum_reduce = ", sum(ints_sum_reduce.data), ' after regularize_ints')
+        communicator.all_reduce(ints_sum, ReductionOperator.SUM, ints_sum_reduce)
 
-    sum_ = ints_to_real(ints_sum_reduce.data, pr)
+        regularize_ints(ints_sum_reduce.data, prec, I_prec)
+
+        sum_ = ints_to_real(ints_sum_reduce.data, pr)
+    else:
+        inputArray_ = Quantity(
+            data=inputArray.astype(Float),
+            dims=["I", "J"],
+            units="dunno",
+            gt4py_backend=stencil_factory.backend,
+        )
+
+        ints_sum_reduce = Quantity(
+            data=np.zeros(inputArray.data.shape, dtype=Float),
+            dims=["I", "J"],
+            units="dunno",
+            gt4py_backend=stencil_factory.backend,
+        )
+
+        communicator.all_reduce(inputArray_, ReductionOperator.SUM, ints_sum_reduce)
+
+        sum_ = sum(sum(ints_sum_reduce.data))
 
     return sum_
 

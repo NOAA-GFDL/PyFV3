@@ -1,8 +1,9 @@
-from ndsl import StencilFactory, Namelist
-from ndsl.stencils.testing.grid import Grid
+from ndsl import Namelist, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.stencils.testing import TranslateFortranData2Py
+from ndsl.stencils.testing.grid import Grid
 from pyFV3.stencils.remap_profile import RemapProfile
+
 
 class TranslateCS_Profile(TranslateFortranData2Py):
     def __init__(self, grid: Grid, namelist: Namelist, stencil_factory: StencilFactory):
@@ -12,46 +13,47 @@ class TranslateCS_Profile(TranslateFortranData2Py):
         self.quantity_factory = grid.quantity_factory
 
         self.in_vars["data_vars"] = {
-            "qs_": {"istart": grid.is_,
+            "qs_": {
+                "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz-1,
+                "kend": grid.npz - 1,
             },
             "q4_1": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz-1,
-                },
+                "kend": grid.npz - 1,
+            },
             "q4_2": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz-1,
+                "kend": grid.npz - 1,
             },
             "q4_3": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz-1,
+                "kend": grid.npz - 1,
             },
             "q4_4": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz-1,
+                "kend": grid.npz - 1,
             },
-            "dp1_":{
+            "dp1_": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz-1,
+                "kend": grid.npz - 1,
             },
         }
         self.in_vars["parameters"] = [
@@ -60,29 +62,33 @@ class TranslateCS_Profile(TranslateFortranData2Py):
         ]
 
         self.out_vars = {
-            "q4_1": {"istart": grid.is_,
+            "q4_1": {
+                "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz-1,
+                "kend": grid.npz - 1,
             },
-            "q4_2": {"istart": grid.is_,
+            "q4_2": {
+                "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz-1,
+                "kend": grid.npz - 1,
             },
-            "q4_3": {"istart": grid.is_,
+            "q4_3": {
+                "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz-1,
+                "kend": grid.npz - 1,
             },
-            "q4_4": {"istart": grid.is_,
+            "q4_4": {
+                "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz-1,
+                "kend": grid.npz - 1,
             },
         }
 
@@ -92,15 +98,15 @@ class TranslateCS_Profile(TranslateFortranData2Py):
             self.quantity_factory,
             inputs["kord_"],
             inputs["iv_"],
-            dims=[X_DIM, Y_DIM, Z_DIM]
+            dims=[X_DIM, Y_DIM, Z_DIM],
         )
-       
+
         self._compute_func(
-                inputs["qs_"],
-                inputs["q4_1"],
-                inputs["q4_2"],
-                inputs["q4_3"],
-                inputs["q4_4"],
-                inputs["dp1_"],
-            )
+            inputs["qs_"],
+            inputs["q4_1"],
+            inputs["q4_2"],
+            inputs["q4_3"],
+            inputs["q4_4"],
+            inputs["dp1_"],
+        )
         return inputs

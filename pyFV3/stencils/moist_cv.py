@@ -1,9 +1,9 @@
 import gt4py.cartesian.gtscript as gtscript
 from gt4py.cartesian.gtscript import (
     __INLINED,
-    PARALLEL,
-    FORWARD,
     BACKWARD,
+    FORWARD,
+    PARALLEL,
     computation,
     exp,
     interval,
@@ -221,13 +221,13 @@ def moist_te(
             * (
                 phis
                 + phis[0, 0, 1]
-                + w**2.0
+                + w ** 2.0
                 + 0.5
                 * rsin2
                 * (
-                    u**2.0
+                    u ** 2.0
                     + u[0, 1, 0] ** 2.0
-                    + v**2.0
+                    + v ** 2.0
                     + v[1, 0, 0] ** 2.0
                     - (u + u[0, 1, 0]) * (v + v[1, 0, 0]) * cosa_s
                 )

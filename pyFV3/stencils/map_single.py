@@ -4,7 +4,14 @@ from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, interval
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntField, IntFieldIJ, BoolFieldIJ # noqa: F401
+from ndsl.dsl.typing import (  # noqa: F401
+    BoolFieldIJ,
+    Float,
+    FloatField,
+    FloatFieldIJ,
+    IntField,
+    IntFieldIJ,
+)
 from ndsl.stencils.basic_operations import copy_defn
 from pyFV3.stencils.remap_profile import RemapProfile
 
@@ -14,6 +21,7 @@ def set_dp(dp1: FloatField, pe1: FloatField, lev: IntFieldIJ):
         dp1 = pe1[0, 0, 1] - pe1
     with computation(FORWARD), interval(0, 1):
         lev = 0
+
 
 def lagrangian_contributions(
     q: FloatField,
@@ -77,6 +85,7 @@ def lagrangian_contributions(
             q = qsum / (pe2[0, 0, 1] - pe2)
         lev = lev - 1
 
+
 def lagrangian_contributions_interp(
     km: int,
     not_exit_loop: BoolFieldIJ,
@@ -109,58 +118,65 @@ def lagrangian_contributions_interp(
         lev (inout):
     """
 
-    # This computation creates a IntField that allows for "absolute" references in the k-dimension
-    # for q and pe1.
+    # This computation creates a IntField that allows for "absolute" references
+    # in the k-dimension for q and pe1.
 
-    # INDEX_LM1 and INDEX_LP0 is initialized such that if it's plugged into "q" (ex: q[0,0,INDEX_LM1]), the k level in
-    # q is "k = 0".
+    # INDEX_LM1 and INDEX_LP0 is initialized such that if it's plugged into "q"
+    # (ex: q[0,0,INDEX_LM1]), the k level in q is "k = 0".
 
     # For example, during the stencil computation at k = 2, INDEX_LM1[i,j,2] = -2
     with computation(FORWARD):
-        with interval(0,1):
+        with interval(0, 1):
             INDEX_LM1 = 0
             INDEX_LP0 = 0
-        with interval(1,None):
-            INDEX_LM1 = INDEX_LM1[0,0,-1] - 1
-            INDEX_LP0 = INDEX_LP0[0,0,-1] - 1
+        with interval(1, None):
+            INDEX_LM1 = INDEX_LM1[0, 0, -1] - 1
+            INDEX_LP0 = INDEX_LP0[0, 0, -1] - 1
 
     # TODO: Can we make lev a 2D temporary?
     with computation(FORWARD), interval(...):
         LM1 = 1
         LP0 = 1
         not_exit_loop = True
-        while(LP0 <= km and not_exit_loop):
-            if(pe1[0,0,INDEX_LP0] < pe2):
+        while LP0 <= km and not_exit_loop:
+            if pe1[0, 0, INDEX_LP0] < pe2:
                 LP0 = LP0 + 1
                 INDEX_LP0 = INDEX_LP0 + 1
             else:
                 not_exit_loop = False
 
-        LM1 = max(LP0-1,1)
+        LM1 = max(LP0 - 1, 1)
         INDEX_LM1 = INDEX_LM1 + (LM1 - 1)
         LP0 = min(LP0, km)
 
-        if(LP0 == 1):
+        if LP0 == 1:
             INDEX_LP0 = INDEX_LM1
-        elif(LP0 <= km):
-            INDEX_LP0 = INDEX_LM1+1
+        elif LP0 <= km:
+            INDEX_LP0 = INDEX_LM1 + 1
         else:
             INDEX_LP0 = INDEX_LM1
-            
-        if(LM1 == 1 and LP0 == 1):
-            q_temp = q[0,0,INDEX_LM1] + (q[0,0,INDEX_LM1+1] - q[0,0,INDEX_LM1]) * (pe2 - pe1[0,0,INDEX_LM1]) \
-                                    / (pe1[0,0,INDEX_LM1+1] - pe1[0,0,INDEX_LM1])
 
-        elif(LM1 == km and LP0 == km):
-            q_temp = q[0,0,INDEX_LM1] + (q[0,0,INDEX_LM1] - q[0,0,INDEX_LM1-1]) * (pe2 - pe1[0,0,INDEX_LM1]) \
-                                    / (pe1[0,0,INDEX_LM1] - pe1[0,0,INDEX_LM1-1])
+        if LM1 == 1 and LP0 == 1:
+            q_temp = q[0, 0, INDEX_LM1] + (
+                q[0, 0, INDEX_LM1 + 1] - q[0, 0, INDEX_LM1]
+            ) * (pe2 - pe1[0, 0, INDEX_LM1]) / (
+                pe1[0, 0, INDEX_LM1 + 1] - pe1[0, 0, INDEX_LM1]
+            )
 
-        elif(LM1 == 1 or LP0 == km):
-            q_temp = q[0,0,INDEX_LP0] + (q[0,0,INDEX_LM1] - q[0,0,INDEX_LP0]) * (pe2 - pe1[0,0,INDEX_LP0]) \
-                                    / (pe1[0,0,INDEX_LM1] - pe1[0,0,INDEX_LP0])
-            
+        elif LM1 == km and LP0 == km:
+            q_temp = q[0, 0, INDEX_LM1] + (
+                q[0, 0, INDEX_LM1] - q[0, 0, INDEX_LM1 - 1]
+            ) * (pe2 - pe1[0, 0, INDEX_LM1]) / (
+                pe1[0, 0, INDEX_LM1] - pe1[0, 0, INDEX_LM1 - 1]
+            )
+
+        elif LM1 == 1 or LP0 == km:
+            q_temp = q[0, 0, INDEX_LP0] + (q[0, 0, INDEX_LM1] - q[0, 0, INDEX_LP0]) * (
+                pe2 - pe1[0, 0, INDEX_LP0]
+            ) / (pe1[0, 0, INDEX_LM1] - pe1[0, 0, INDEX_LP0])
+
         else:
-            while(pe2 < pe1[0,0,lev] or pe2 > pe1[0,0,lev+1]):
+            while pe2 < pe1[0, 0, lev] or pe2 > pe1[0, 0, lev + 1]:
                 lev = lev + 1
             pl = (pe2 - pe1[0, 0, lev]) / dp1[0, 0, lev]
             if pe2[0, 0, 1] <= pe1[0, 0, lev + 1]:
@@ -201,6 +217,7 @@ def lagrangian_contributions_interp(
         lev = lev - 1
 
         q = q_temp
+
 
 class MapSingle:
     """
@@ -282,7 +299,9 @@ class MapSingle:
             dtype=int,
         )
         self._km = grid_indexing.domain[2]
-        self._not_exit_loop = quantity_factory.zeros([X_DIM, Y_DIM], units="", dtype=bool)
+        self._not_exit_loop = quantity_factory.zeros(
+            [X_DIM, Y_DIM], units="", dtype=bool
+        )
 
     @property
     def i_extent(self):
@@ -336,7 +355,7 @@ class MapSingle:
                 Float(qmin),
             )
 
-        if(interp == False):
+        if interp is False:
             self._lagrangian_contributions(
                 q1,
                 pe1,
