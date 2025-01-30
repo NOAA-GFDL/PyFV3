@@ -638,133 +638,93 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
 
         self.fill = True
 
-        self._gz = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-            ),
+        self._gz = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM],
+            units="m^2 s^-2",
             dtype=Float,
         )
 
-        self._w2 = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-                grid.npz,
-            ),
+        self._w2 = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_DIM],
+            units="temp W",
             dtype=Float,
         )
 
-        self._zsum1 = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-            ),
+        self._zsum1 = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM],
+            units="Pa",
             dtype=Float,
         )
 
-        self._compute_performed = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-            ),
+        self._compute_performed = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM],
+            units="mask",
             dtype=bool,
         )
 
-        self._ps = self._pe1 = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-            ),
+        self._ps = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM],
+            units="Pa",
             dtype=Float,
         )
 
-        self._pe0 = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-                grid.npz + 1,
-            ),
+        self._pe0 = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            units="Pa",
             dtype=Float,
         )
 
-        self._pe1 = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-                grid.npz + 1,
-            ),
+        self._pe1 = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            units="Pa",
             dtype=Float,
         )
 
-        self._pe2 = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-                grid.npz + 1,
-            ),
+        self._pe2 = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            units="Pa",
             dtype=Float,
         )
 
-        self._pe3 = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-                grid.npz + 1,
-            ),
+        self._pe3 = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            units="Pa",
             dtype=Float,
         )
 
-        self._pn1 = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-                grid.npz + 1,
-            ),
+        self._pn1 = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_DIM],
+            units="Pa",
             dtype=Float,
         )
 
-        self._pn2 = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-                grid.npz + 1,
-            ),
+        self._pn2 = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_DIM],
+            units="Pa",
             dtype=Float,
         )
 
-        self._dp2 = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-                grid.npz + 1,
-            ),
+        self._dp2 = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_DIM],
+            units="Pa",
             dtype=Float,
         )
 
-        self._pk2 = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-                grid.npz + 1,
-            ),
+        self._pk2 = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_DIM],
+            units="Pa",
             dtype=Float,
         )
 
-        self._phis = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-                grid.npz + 1,
-            ),
+        self._phis = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            units="n/a",
             dtype=Float,
         )
 
-        self._te_2d = self.quantity_factory._numpy.zeros(
-            (
-                grid.nid,
-                grid.njd,
-            ),
+        self._te_2d = self.quantity_factory.zeros(
+            [X_DIM, Y_DIM],
+            units="Pa",
             dtype=Float,
         )
 
@@ -1137,13 +1097,17 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
 
                 # Note, mpp_global_sum is currently set up for the C24 TBC setup
                 inputArray = (
-                    self._te_2d.data * state_namespace.area_64_.data[0:-1, 0:-1]
+                    self._te_2d.data[0:-1, 0:-1]
+                    * state_namespace.area_64_.data[0:-1, 0:-1]
                 )
                 tesum = mpp_global_sum(
                     inputArray[3:27, 3:27], communicator, self.stencil_factory
                 )
                 # print("tesum: ", tesum)
-                inputArray = self._zsum1 * state_namespace.area_64_.data[0:-1, 0:-1]
+                inputArray = (
+                    self._zsum1.data[0:-1, 0:-1]
+                    * state_namespace.area_64_.data[0:-1, 0:-1]
+                )
                 zsum = mpp_global_sum(
                     inputArray[3:27, 3:27], communicator, self.stencil_factory
                 )
