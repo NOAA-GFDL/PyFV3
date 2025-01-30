@@ -771,26 +771,20 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         self._init_pe = stencil_factory.from_origin_domain(
             init_pe,
             origin=grid_indexing.origin_compute(),
-            domain=(grid.nic, grid.njc, grid.npz + 1),
+            domain=grid_indexing.domain_compute(add=(0, 1, 1)),
         )
 
         self._moist_cv_pt_pressure = stencil_factory.from_origin_domain(
             moist_cv_pt_pressure,
-            # externals={"kord_tm": config.kord_tm, "hydrostatic": hydrostatic},
             externals={"hydrostatic": hydrostatic},
             origin=grid_indexing.origin_compute(),
-            # domain=grid_indexing.domain_compute(add=(0, 0, 1)),
-            domain=(
-                grid_indexing.domain[0],
-                grid_indexing.domain[1],
-                grid_indexing.domain[2] + 1,
-            ),  # Note : Many intervals go from (0,-1) in this stencil
+            domain=grid_indexing.domain_compute(add=(0, 0, 1)),
         )
 
         self._pn2_pk_delp = stencil_factory.from_origin_domain(
             pn2_pk_delp,
             origin=grid_indexing.origin_compute(add=(0, 0, 1)),
-            domain=(grid.nic, grid.njc, grid.npz - 1),
+            domain=grid_indexing.domain_compute(add=(0, 0, -1)),
         )
 
         self._map_scalar = MapSingle(
@@ -804,29 +798,25 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         self._rescale_delz_1 = stencil_factory.from_origin_domain(
             rescale_delz_1,
             origin=grid.compute_origin(),
-            domain=(grid.nic, grid.njc, grid.npz),
+            domain=grid_indexing.domain_compute(),
         )
 
         self._rescale_delz_2 = stencil_factory.from_origin_domain(
             rescale_delz_2,
             origin=grid.compute_origin(),
-            domain=(grid.nic, grid.njc, grid.npz),
+            domain=grid_indexing.domain_compute(),
         )
 
         self._w_fix_consrv_moment = stencil_factory.from_origin_domain(
             func=W_fix_consrv_moment,
             origin=grid.compute_origin(),
-            domain=(grid.nic, grid.njc, grid.npz),
+            domain=grid_indexing.domain_compute(),
         )
 
         self._pressures_mapu = stencil_factory.from_origin_domain(
             pressures_mapu,
             origin=grid_indexing.origin_compute(),
-            domain=(
-                grid_indexing.domain[0],
-                grid_indexing.domain[1] + 1,
-                grid_indexing.domain[2] + 1,
-            ),
+            domain=grid_indexing.domain_compute(add=(0, 1, 1)),
         )
 
         self._pe0_ptop_xmax = stencil_factory.from_origin_domain(
@@ -842,51 +832,43 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         self._pressures_mapv = stencil_factory.from_origin_domain(
             pressures_mapv,
             origin=grid_indexing.origin_compute(),
-            domain=(
-                grid_indexing.domain[0] + 1,
-                grid_indexing.domain[1],
-                grid_indexing.domain[2] + 1,
-            ),
+            domain=grid_indexing.domain_compute(add=(1, 0, 1)),
         )
 
         self._pe_pk_delp_peln = stencil_factory.from_origin_domain(
             pe_pk_delp_peln,
             origin=grid_indexing.origin_compute(),
-            domain=(
-                grid_indexing.domain[0],
-                grid_indexing.domain[1],
-                grid_indexing.domain[2] + 1,
-            ),
+            domain=grid_indexing.domain_compute(add=(0, 0, 1)),
         )
 
         self._moist_cv_pkz = stencil_factory.from_origin_domain(
             moist_cv.moist_pkz,
             origin=grid.compute_origin(),
-            domain=(grid.nic, grid.njc, grid.npz),
+            domain=grid_indexing.domain_compute(),
         )
 
         self._moist_cv_te = stencil_factory.from_origin_domain(
             moist_cv.moist_te,
             origin=grid.compute_origin(),
-            domain=(grid.nic, grid.njc, grid.npz + 1),
+            domain=grid_indexing.domain_compute(add=(0, 0, 1)),
         )
 
         self._te_zsum = stencil_factory.from_origin_domain(
             moist_cv.te_zsum,
             origin=grid.compute_origin(),
-            domain=(grid.nic, grid.njc, grid.npz),
+            domain=grid_indexing.domain_compute(),
         )
 
-        self._most_cv_pt_last_step = stencil_factory.from_origin_domain(
+        self._moist_cv_pt_last_step = stencil_factory.from_origin_domain(
             moist_cv.moist_pt_last_step,
             origin=grid.compute_origin(),
-            domain=(grid.nic, grid.njc, grid.npz),
+            domain=grid_indexing.domain_compute(add=(0, 0, 1)),
         )
 
         self._fill_cond = stencil_factory.from_origin_domain(
             moist_cv.cond_output,
             origin=grid.compute_origin(),
-            domain=(grid.nic, grid.njc, grid.npz),
+            domain=grid_indexing.domain_compute(),
         )
 
     def compute_sequential(self, inputs_list, communicator_list):
@@ -1173,7 +1155,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
 
         if state_namespace.last_step and not state_namespace.adiabatic:
 
-            self._most_cv_pt_last_step(
+            self._moist_cv_pt_last_step(
                 state_namespace.qvapor,
                 state_namespace.qliquid,
                 state_namespace.qrain,
