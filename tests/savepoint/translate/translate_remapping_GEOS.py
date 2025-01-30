@@ -1,7 +1,14 @@
 from types import SimpleNamespace
 
 from ndsl import Namelist, StencilFactory
-from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import (
+    X_DIM,
+    X_INTERFACE_DIM,
+    Y_DIM,
+    Y_INTERFACE_DIM,
+    Z_DIM,
+    Z_INTERFACE_DIM,
+)
 from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
 from pyFV3 import DynamicalCoreConfig
@@ -26,7 +33,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
     inputs = {
         "pe_": {
             "name": "pe_",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             "units": "No Units",
         },
         "qvapor": {
@@ -106,22 +113,22 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         },
         "peln_3d": {
             "name": "peln_3d",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             "units": "No Units",
         },
         "ak": {
             "name": "ak",
-            "dims": [X_DIM],
+            "dims": [Z_INTERFACE_DIM],
             "units": "No Units",
         },
         "bk": {
             "name": "bk",
-            "dims": [X_DIM],
+            "dims": [Z_INTERFACE_DIM],
             "units": "No Units",
         },
         "pk": {
             "name": "pk",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             "units": "No Units",
         },
         "pkz": {
@@ -141,12 +148,12 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         },
         "u": {
             "name": "u",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
             "units": "No Units",
         },
         "v": {
             "name": "v",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
         "mfy": {
@@ -268,12 +275,12 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         },
         "u": {
             "name": "u",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
             "units": "No Units",
         },
         "v": {
             "name": "v",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
         "mfy": {
@@ -298,17 +305,17 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         },
         "peln_3d": {
             "name": "peln_3d",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             "units": "No Units",
         },
         "pe_": {
             "name": "pe_",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             "units": "No Units",
         },
         "pk": {
             "name": "pk",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             "units": "No Units",
         },
         "pkz": {
