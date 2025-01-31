@@ -757,19 +757,19 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
 
         self._rescale_delz_1 = stencil_factory.from_origin_domain(
             rescale_delz_1,
-            origin=grid.compute_origin(),
+            origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
 
         self._rescale_delz_2 = stencil_factory.from_origin_domain(
             rescale_delz_2,
-            origin=grid.compute_origin(),
+            origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
 
         self._w_fix_consrv_moment = stencil_factory.from_origin_domain(
             func=W_fix_consrv_moment,
-            origin=grid.compute_origin(),
+            origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
 
@@ -803,31 +803,31 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
 
         self._moist_cv_pkz = stencil_factory.from_origin_domain(
             moist_cv.moist_pkz,
-            origin=grid.compute_origin(),
+            origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
 
         self._moist_cv_te = stencil_factory.from_origin_domain(
             moist_cv.moist_te,
-            origin=grid.compute_origin(),
+            origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(add=(0, 0, 1)),
         )
 
         self._te_zsum = stencil_factory.from_origin_domain(
             moist_cv.te_zsum,
-            origin=grid.compute_origin(),
+            origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
 
         self._moist_cv_pt_last_step = stencil_factory.from_origin_domain(
             moist_cv.moist_pt_last_step,
-            origin=grid.compute_origin(),
+            origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(add=(0, 0, 1)),
         )
 
         self._fill_cond = stencil_factory.from_origin_domain(
             moist_cv.cond_output,
-            origin=grid.compute_origin(),
+            origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
 
@@ -838,6 +838,18 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         state = self.state_from_inputs(inputs)
         state_namespace = SimpleNamespace(**state)
 
+        tracers = {
+            "qvapor": state_namespace.qvapor,
+            "qliquid": state_namespace.qliquid,
+            "qice": state_namespace.qice,
+            "qrain": state_namespace.qrain,
+            "qsnow": state_namespace.qsnow,
+            "qgraupel": state_namespace.qgraupel,
+            "qcld": state_namespace.qcld,
+            "qo3mr": state_namespace.qo3mr,
+            "qsgs_tke": state_namespace.qsgs_tke,
+        }
+
         self._init_pe(
             state_namespace.pe_,
             self._pe1,
@@ -846,12 +858,12 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         )
 
         self._moist_cv_pt_pressure(
-            state_namespace.qvapor,
-            state_namespace.qliquid,
-            state_namespace.qrain,
-            state_namespace.qsnow,
-            state_namespace.qice,
-            state_namespace.qgraupel,
+            tracers["qvapor"],
+            tracers["qliquid"],
+            tracers["qrain"],
+            tracers["qsnow"],
+            tracers["qice"],
+            tracers["qgraupel"],
             state_namespace.q_con,
             state_namespace.pt,
             state_namespace.cappa,
@@ -884,18 +896,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             qmin=state_namespace.t_min,
             interp=True,
         )
-
-        tracers = {
-            "qvapor": state_namespace.qvapor,
-            "qliquid": state_namespace.qliquid,
-            "qice": state_namespace.qice,
-            "qrain": state_namespace.qrain,
-            "qsnow": state_namespace.qsnow,
-            "qgraupel": state_namespace.qgraupel,
-            "qcld": state_namespace.qcld,
-            "qo3mr": state_namespace.qo3mr,
-            "qsgs_tke": state_namespace.qsgs_tke,
-        }
 
         self._mapn_tracer = MapNTracer(
             self.stencil_factory,
@@ -1048,12 +1048,12 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         )
 
         self._moist_cv_pkz(
-            state_namespace.qvapor,
-            state_namespace.qliquid,
-            state_namespace.qrain,
-            state_namespace.qsnow,
-            state_namespace.qice,
-            state_namespace.qgraupel,
+            tracers["qvapor"],
+            tracers["qliquid"],
+            tracers["qrain"],
+            tracers["qsnow"],
+            tracers["qice"],
+            tracers["qgraupel"],
             state_namespace.pkz,
             state_namespace.pt,
             state_namespace.cappa,
@@ -1067,12 +1067,12 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             if state_namespace.consv > state_namespace.consv_min:
 
                 self._moist_cv_te(
-                    state_namespace.qvapor,
-                    state_namespace.qliquid,
-                    state_namespace.qrain,
-                    state_namespace.qsnow,
-                    state_namespace.qice,
-                    state_namespace.qgraupel,
+                    tracers["qvapor"],
+                    tracers["qliquid"],
+                    tracers["qrain"],
+                    tracers["qsnow"],
+                    tracers["qice"],
+                    tracers["qgraupel"],
                     state_namespace.u,
                     state_namespace.v,
                     state_namespace.w,
@@ -1120,12 +1120,12 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         if state_namespace.last_step and not state_namespace.adiabatic:
 
             self._moist_cv_pt_last_step(
-                state_namespace.qvapor,
-                state_namespace.qliquid,
-                state_namespace.qrain,
-                state_namespace.qsnow,
-                state_namespace.qice,
-                state_namespace.qgraupel,
+                tracers["qvapor"],
+                tracers["qliquid"],
+                tracers["qrain"],
+                tracers["qsnow"],
+                tracers["qice"],
+                tracers["qgraupel"],
                 state_namespace.pt,
                 state_namespace.pkz,
                 Float(dtmp),
@@ -1134,11 +1134,11 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
 
             self._fill_cond(
                 state_namespace.q_con,
-                state_namespace.qliquid,
-                state_namespace.qrain,
-                state_namespace.qsnow,
-                state_namespace.qice,
-                state_namespace.qgraupel,
+                tracers["qliquid"],
+                tracers["qrain"],
+                tracers["qsnow"],
+                tracers["qice"],
+                tracers["qgraupel"],
             )
 
         return self.outputs_from_state(state)
