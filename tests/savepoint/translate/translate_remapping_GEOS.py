@@ -181,11 +181,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        # "rsin2": {
-        #     "name": "rsin2",
-        #     "dims": [X_DIM, Y_DIM],
-        #     "units": "No Units",
-        # },
         "hs": {
             "name": "hs",
             "dims": [X_DIM, Y_DIM],
@@ -196,11 +191,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM],
             "units": "No Units",
         },
-        # "area_64_": {
-        #     "name": "area_64_",
-        #     "dims": [X_DIM, Y_DIM],
-        #     "units": "No Units",
-        # },
     }
     outputs = {
         "pt": {
@@ -452,18 +442,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 "jend": grid.jed,
                 "kend": grid.npz - 1,
             },
-            # "cosa_s": {
-            #     "istart": grid.isd,
-            #     "iend": grid.ied,
-            #     "jstart": grid.jsd,
-            #     "jend": grid.jed,
-            # },
-            # "rsin2": {
-            #     "istart": grid.isd,
-            #     "iend": grid.ied,
-            #     "jstart": grid.jsd,
-            #     "jend": grid.jed,
-            # },
             "hs": {
                 "istart": grid.isd,
                 "iend": grid.ied,
@@ -476,24 +454,16 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 "jstart": grid.js,
                 "jend": grid.je,
             },
-            # "area_64_": {
-            #     "istart": grid.isd,
-            #     "iend": grid.ied,
-            #     "jstart": grid.jsd,
-            #     "jend": grid.jed,
-            # },
         }
         self._base.in_vars["parameters"] = [
             "ptop",
             "r_vir",
             "akap",
-            # "grav",
             "last_step",
             "do_adiabatic_init",
             "consv",
-            # "consv_min",
-            # "cv_air",
             "adiabatic",
+            "nq",
         ]
         self._base.out_vars = {
             "pt": {},
@@ -627,11 +597,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         self._kord_mt = config.kord_mt
         self._do_sat_adjust = config.do_sat_adj
 
-        # mode / iv set to 1 from GEOS
-        self.mode = 1
-
-        self.nq = 9
-
         self.fill = True
 
         self._gz = self.quantity_factory.zeros(
@@ -747,7 +712,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             self.stencil_factory,
             self.quantity_factory,
             self._kord_tm,
-            self.mode,
+            1,
             dims=[X_DIM, Y_DIM, Z_DIM],
         )
 
@@ -929,7 +894,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             self.stencil_factory,
             self.quantity_factory,
             abs(self._kord_tr),
-            self.nq,
+            state_namespace.nq,
             fill=self.fill,
             tracers=tracers,
         )
