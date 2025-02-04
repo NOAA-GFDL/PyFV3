@@ -2,6 +2,8 @@ from types import SimpleNamespace
 
 from ndsl import Namelist, StencilFactory
 from ndsl.constants import (
+    CV_AIR,
+    GRAV,
     X_DIM,
     X_INTERFACE_DIM,
     Y_DIM,
@@ -12,11 +14,14 @@ from ndsl.constants import (
 from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
 from pyFV3 import DynamicalCoreConfig
+
+# from pyFV3._config import RemappingConfig
 from pyFV3.stencils import moist_cv
 from pyFV3.stencils.map_single import MapSingle
 from pyFV3.stencils.mapn_tracer import MapNTracer
 from pyFV3.stencils.mpp_global_sum import mpp_global_sum
 from pyFV3.stencils.remapping import (
+    CONSV_MIN,
     init_pe,
     moist_cv_pt_pressure,
     pe0_ptop_xmax,
@@ -176,16 +181,11 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "cosa_s": {
-            "name": "cosa_s",
-            "dims": [X_DIM, Y_DIM],
-            "units": "No Units",
-        },
-        "rsin2": {
-            "name": "rsin2",
-            "dims": [X_DIM, Y_DIM],
-            "units": "No Units",
-        },
+        # "rsin2": {
+        #     "name": "rsin2",
+        #     "dims": [X_DIM, Y_DIM],
+        #     "units": "No Units",
+        # },
         "hs": {
             "name": "hs",
             "dims": [X_DIM, Y_DIM],
@@ -196,11 +196,11 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM],
             "units": "No Units",
         },
-        "area_64_": {
-            "name": "area_64_",
-            "dims": [X_DIM, Y_DIM],
-            "units": "No Units",
-        },
+        # "area_64_": {
+        #     "name": "area_64_",
+        #     "dims": [X_DIM, Y_DIM],
+        #     "units": "No Units",
+        # },
     }
     outputs = {
         "pt": {
@@ -452,18 +452,18 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 "jend": grid.jed,
                 "kend": grid.npz - 1,
             },
-            "cosa_s": {
-                "istart": grid.isd,
-                "iend": grid.ied,
-                "jstart": grid.jsd,
-                "jend": grid.jed,
-            },
-            "rsin2": {
-                "istart": grid.isd,
-                "iend": grid.ied,
-                "jstart": grid.jsd,
-                "jend": grid.jed,
-            },
+            # "cosa_s": {
+            #     "istart": grid.isd,
+            #     "iend": grid.ied,
+            #     "jstart": grid.jsd,
+            #     "jend": grid.jed,
+            # },
+            # "rsin2": {
+            #     "istart": grid.isd,
+            #     "iend": grid.ied,
+            #     "jstart": grid.jsd,
+            #     "jend": grid.jed,
+            # },
             "hs": {
                 "istart": grid.isd,
                 "iend": grid.ied,
@@ -476,28 +476,23 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 "jstart": grid.js,
                 "jend": grid.je,
             },
-            "area_64_": {
-                "istart": grid.isd,
-                "iend": grid.ied,
-                "jstart": grid.jsd,
-                "jend": grid.jed,
-            },
+            # "area_64_": {
+            #     "istart": grid.isd,
+            #     "iend": grid.ied,
+            #     "jstart": grid.jsd,
+            #     "jend": grid.jed,
+            # },
         }
         self._base.in_vars["parameters"] = [
             "ptop",
             "r_vir",
             "akap",
-            "t_min",
-            "kord_wz",
-            "w_max",
-            "w_min",
-            "kord_mt",
-            "grav",
+            # "grav",
             "last_step",
             "do_adiabatic_init",
             "consv",
-            "consv_min",
-            "cv_air",
+            # "consv_min",
+            # "cv_air",
             "adiabatic",
         ]
         self._base.out_vars = {
@@ -619,17 +614,18 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             raise NotImplementedError("Hydrostatic is not implemented")
 
         grid_indexing = stencil_factory.grid_indexing
-        self._domain_jextra = (
-            grid_indexing.domain[0],
-            grid_indexing.domain[1] + 1,
-            grid_indexing.domain[2] + 1,
-        )
 
-        # Value from GEOS
-        self.kord = 9
-
-        # Value from GEOS
-        self._kord_tm = 9
+        self._t_min = Float(184.0)
+        self._w_max = Float(90.0)
+        self._w_min = Float(-60.0)
+        self._area_64 = self.grid.grid_data.area_64
+        self._cosa_s = self.grid.grid_data.cosa_s
+        self._rsin2 = self.grid.grid_data.rsin2
+        self._kord_tr = config.kord_tr
+        self._kord_tm = abs(config.kord_tm)
+        self._kord_wz = config.kord_wz
+        self._kord_mt = config.kord_mt
+        self._do_sat_adjust = config.do_sat_adj
 
         # mode / iv set to 1 from GEOS
         self.mode = 1
@@ -831,6 +827,38 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             domain=grid_indexing.domain_compute(),
         )
 
+        self._map1_ppm_u = MapSingle(
+            self.stencil_factory,
+            self.quantity_factory,
+            self._kord_mt,
+            -1,
+            dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+        )
+
+        self._map1_ppm_v = MapSingle(
+            self.stencil_factory,
+            self.quantity_factory,
+            self._kord_mt,
+            -1,
+            dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+        )
+
+        self._map_single_w = MapSingle(
+            self.stencil_factory,
+            self.quantity_factory,
+            self._kord_wz,
+            -2,
+            dims=[X_DIM, Y_DIM, Z_DIM],
+        )
+
+        self._map_single_delz = MapSingle(
+            self.stencil_factory,
+            self.quantity_factory,
+            self._kord_wz,
+            1,
+            dims=[X_DIM, Y_DIM, Z_DIM],
+        )
+
     def compute_sequential(self, inputs_list, communicator_list):
         print("No serial test available")
 
@@ -893,14 +921,14 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             state_namespace.pt,
             self._pn1,
             self._pn2,
-            qmin=state_namespace.t_min,
+            self._t_min,
             interp=True,
         )
 
         self._mapn_tracer = MapNTracer(
             self.stencil_factory,
             self.quantity_factory,
-            abs(self.kord),
+            abs(self._kord_tr),
             self.nq,
             fill=self.fill,
             tracers=tracers,
@@ -908,21 +936,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
 
         self._mapn_tracer(self._pe1, self._pe2, self._dp2, tracers)
 
-        self._map_single_w = MapSingle(
-            self.stencil_factory,
-            self.quantity_factory,
-            state_namespace.kord_wz,
-            -2,
-            dims=[X_DIM, Y_DIM, Z_DIM],
-        )
-
-        self._map_single_delz = MapSingle(
-            self.stencil_factory,
-            self.quantity_factory,
-            state_namespace.kord_wz,
-            1,
-            dims=[X_DIM, Y_DIM, Z_DIM],
-        )
         self._map_single_w(
             state_namespace.w,
             self._pe1,
@@ -948,17 +961,9 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             self._w2,
             self._dp2,
             self._gz,
-            state_namespace.w_max,
-            state_namespace.w_min,
+            self._w_max,
+            self._w_min,
             self._compute_performed,
-        )
-
-        self._map1_ppm_u = MapSingle(
-            self.stencil_factory,
-            self.quantity_factory,
-            state_namespace.kord_mt,
-            -1,
-            dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
         )
 
         self._pressures_mapu(
@@ -994,14 +999,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             self._pe0,
             self._pe3,
             interp=False,
-        )
-
-        self._map1_ppm_v = MapSingle(
-            self.stencil_factory,
-            self.quantity_factory,
-            state_namespace.kord_mt,
-            -1,
-            dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
         )
 
         self._pressures_mapv(
@@ -1064,7 +1061,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
 
         if state_namespace.last_step and not state_namespace.do_adiabatic_init:
 
-            if state_namespace.consv > state_namespace.consv_min:
+            if state_namespace.consv > CONSV_MIN:
 
                 self._moist_cv_te(
                     tracers["qvapor"],
@@ -1080,11 +1077,11 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                     state_namespace.pt,
                     self._phis,
                     state_namespace.delp,
-                    state_namespace.rsin2,
-                    state_namespace.cosa_s,
+                    self._rsin2,
+                    self._cosa_s,
                     state_namespace.hs,
                     state_namespace.delz,
-                    state_namespace.grav,
+                    GRAV,
                 )
 
                 self._te_zsum(
@@ -1096,24 +1093,16 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 )
 
                 # Note, mpp_global_sum is currently set up for the C24 TBC setup
-                inputArray = (
-                    self._te_2d.data[0:-1, 0:-1]
-                    * state_namespace.area_64_.data[0:-1, 0:-1]
-                )
-                tesum = mpp_global_sum(
-                    inputArray[3:27, 3:27], communicator, self.stencil_factory
-                )
+                inputArray = self._te_2d.view[:] * self._area_64.view[:]
+                tesum = mpp_global_sum(inputArray, communicator, self.stencil_factory)
                 # print("tesum: ", tesum)
-                inputArray = (
-                    self._zsum1.data[0:-1, 0:-1]
-                    * state_namespace.area_64_.data[0:-1, 0:-1]
-                )
-                zsum = mpp_global_sum(
-                    inputArray[3:27, 3:27], communicator, self.stencil_factory
-                )
+                # print("type(self._zsum1) = ",type(self._zsum1))
+                # print("type(self._area_64) = ",type(self._area_64))
+                inputArray = self._zsum1.view[:] * self._area_64.view[:]
+                zsum = mpp_global_sum(inputArray, communicator, self.stencil_factory)
                 # print("zsum: ", zsum)
-                dtmp = tesum / (state_namespace.cv_air.data * zsum)
-                # print("dtmp: ", dtmp)
+                dtmp = tesum / (CV_AIR * zsum)
+                print("dtmp: ", dtmp)
         # I ignore the E_flux computation since it's not used elsewhere
         # in our current setup once it's computed
 

@@ -396,13 +396,12 @@ contains
 !$ser verbatim       enddo
 !$ser verbatim    enddo
 !$ser verbatim enddo
-!$ser verbatim qmin=t_min
-!$ser verbatim w_max_ = w_max
-!$ser verbatim w_min_ = w_min
-!$ser verbatim rsin2=gridstruct%rsin2
-!$ser verbatim cosa_s=gridstruct%cosa_s
-!$ser verbatim grav_=grav
-!$ser verbatim area_64_ = real(gridstruct%area_64)
+!!$ser verbatim qmin=t_min
+!!$ser verbatim w_max_ = w_max
+!!$ser verbatim w_min_ = w_min
+!!$ser verbatim rsin2=gridstruct%rsin2
+!!$ser verbatim grav_=grav
+!!$ser verbatim area_64_ = real(gridstruct%area_64)
 !$ser verbatim te0_2d_f32 = real(te0_2d)
 !$ser savepoint Remapping_GEOS-In
 !$ser data pe_=pe_3d
@@ -430,8 +429,8 @@ contains
 !$ser data pk=pk
 !$ser data pkz=pkz
 !$ser data akap=akap
-!$ser data t_min=qmin
-!$ser data kord_wz=kord_wz
+!!$ser data t_min=qmin
+!!$ser data kord_wz=kord_wz
 !$ser data ws_=ws
 !$ser data w=w
 !$ser data u=u
@@ -448,20 +447,19 @@ contains
 !$ser verbatim if (present(cx)) then
 !$ser data cx_=cx
 !$ser verbatim endif
-!$ser data w_max=w_max_
-!$ser data w_min=w_min_
-!$ser data kord_mt=kord_mt
-!$ser data cosa_s=cosa_s
-!$ser data rsin2=rsin2
+!!$ser data w_max=w_max_
+!!$ser data w_min=w_min_
+!!$ser data kord_mt=kord_mt
+!!$ser data rsin2=rsin2
 !$ser data hs=hs
-!$ser data grav=grav_
+!!$ser data grav=grav_
 !$ser data te0_2d_=te0_2d_f32
-!$ser data area_64_=area_64_
+!!$ser data area_64_=area_64_
 !$ser data last_step=last_step
 !$ser data do_adiabatic_init=do_adiabatic_init
 !$ser data consv=consv
-!$ser data consv_min=consv_min_
-!$ser data cv_air=cv_air_
+!!$ser data consv_min=consv_min_
+!!$ser data cv_air=cv_air_
 !$ser data adiabatic=adiabatic
 
    do 1000 j=js,je+1
@@ -1784,7 +1782,6 @@ contains
 !$ser data cx_=cx
 !$ser verbatim endif
 !$ser data kord_mt=kord_mt
-!$ser data cosa_s=cosa_s
 !$ser data rsin2=rsin2
 !$ser data hs=hs
 !$ser data grav=grav_
