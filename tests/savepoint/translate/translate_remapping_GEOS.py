@@ -575,8 +575,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         self.stencil_factory = stencil_factory
         self.quantity_factory = grid.quantity_factory
 
-        # self.namelist found in TranslateDycoreFortranData2Py
-        # self.namelist = DynamicalCoreConfig.from_namelist(namelist)
+        # self.namelist found in ParallelTranslateBaseSlicing
         config = DynamicalCoreConfig.from_namelist(self.namelist).remapping
 
         hydrostatic = config.hydrostatic
