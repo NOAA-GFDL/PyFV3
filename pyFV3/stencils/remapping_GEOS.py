@@ -85,7 +85,8 @@ class LagrangianToEulerian_GEOS:
         self._adiabatic = adiabatic
         self.kmp = grid_indexing.domain[2] - 1
         for k in range(pfull.shape[0]):
-            if pfull.view[k] > 10.0e2:
+            # if pfull.view[k] > 10.0e2:
+            if pfull[k] > 10.0e2:
                 self.kmp = k
                 break
         # do_omega = hydrostatic and last_step # TODO pull into inputs

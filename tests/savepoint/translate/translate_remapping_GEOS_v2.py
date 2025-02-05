@@ -12,9 +12,7 @@ from ndsl.constants import (
 from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
 from pyFV3 import DynamicalCoreConfig
-
-
-# from pyFV3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
+from pyFV3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
 
 
 # from pyFV3._config import RemappingConfig
@@ -503,69 +501,61 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
         state = self.state_from_inputs(inputs)
         state_namespace = SimpleNamespace(**state)
 
-        # tracers = {
-        #     "qvapor": state_namespace.qvapor,
-        #     "qliquid": state_namespace.qliquid,
-        #     "qice": state_namespace.qice,
-        #     "qrain": state_namespace.qrain,
-        #     "qsnow": state_namespace.qsnow,
-        #     "qgraupel": state_namespace.qgraupel,
-        #     "qcld": state_namespace.qcld,
-        #     "qo3mr": state_namespace.qo3mr,
-        #     "qsgs_tke": state_namespace.qsgs_tke,
-        # }
+        tracers = {
+            "vapor": state_namespace.qvapor,
+            "liquid": state_namespace.qliquid,
+            "ice": state_namespace.qice,
+            "rain": state_namespace.qrain,
+            "snow": state_namespace.qsnow,
+            "graupel": state_namespace.qgraupel,
+            "cloud": state_namespace.qcld,
+            "qo3mr": state_namespace.qo3mr,
+            "qsgs_tke": state_namespace.qsgs_tke,
+        }
 
-        # l_to_e = LagrangianToEulerian_GEOS(
-        #     self.stencil_factory,
-        #     self.quantity_factory,
-        #     DynamicalCoreConfig.from_namelist(self.namelist).remapping,
-        #     communicator,
-        #     self.grid.grid_data,
-        #     state_namespace.nq,
-        #     state_namespace.pfull,
-        #     tracers,
-        #     state_namespace.adiabatic,
-        # )
+        l_to_e = LagrangianToEulerian_GEOS(
+            self.stencil_factory,
+            self.quantity_factory,
+            DynamicalCoreConfig.from_namelist(self.namelist).remapping,
+            communicator,
+            self.grid.grid_data,
+            state_namespace.nq,
+            state_namespace.pfull,
+            tracers,
+            DynamicalCoreConfig.adiabatic,
+        )
 
-        # print("type(state_namespace.ptop): ", type(state_namespace.ptop))
-        # print("type(state_namespace.akap): ", type(state_namespace.akap))
-        # print("type(state_namespace.zvir): ", type(state_namespace.zvir))
-        # print("type(state_namespace.last_step): ", type(state_namespace.last_step))
-        # print("type(state_namespace.consv_te): ", type(state_namespace.consv_te))
-        # print("type(state_namespace.mdt): ", type(state_namespace.mdt))
-        # print("type(nq): ", type(state_namespace.nq))
-
-        # l_to_e(
-        #     tracers,
-        #     state_namespace.pt,
-        #     state_namespace.delp,
-        #     state_namespace.delz,
-        #     state_namespace.peln,
-        #     state_namespace.u,
-        #     state_namespace.v,
-        #     state_namespace.w,
-        #     state_namespace.mfx,
-        #     state_namespace.mfy,
-        #     state_namespace.cx,
-        #     state_namespace.cy,
-        #     state_namespace.cappa,
-        #     state_namespace.q_con,
-        #     state_namespace.pkz,
-        #     state_namespace.pk,
-        #     state_namespace.pe,
-        #     state_namespace.hs,
-        #     state_namespace.te0_2d,
-        #     state_namespace.ps,
-        #     state_namespace.wsd,
-        #     state_namespace.ak,
-        #     state_namespace.bk,
-        #     state_namespace.dp1,
-        #     Float(state_namespace.ptop),
-        #     Float(state_namespace.akap),
-        #     state_namespace.zvir,
-        #     state_namespace.last_step,
-        #     state_namespace.consv_te,
-        #     state_namespace.mdt,
-        # )
+        l_to_e(
+            tracers,
+            state_namespace.pt,
+            state_namespace.delp,
+            state_namespace.delz,
+            state_namespace.peln,
+            state_namespace.u,
+            state_namespace.v,
+            state_namespace.w,
+            state_namespace.mfx,
+            state_namespace.mfy,
+            state_namespace.cx,
+            state_namespace.cy,
+            state_namespace.cappa,
+            state_namespace.q_con,
+            state_namespace.pkz,
+            state_namespace.pk,
+            state_namespace.pe,
+            state_namespace.hs,
+            state_namespace.te0_2d,
+            state_namespace.ps,
+            state_namespace.wsd,
+            state_namespace.ak,
+            state_namespace.bk,
+            state_namespace.dp1,
+            Float(state_namespace.ptop),
+            Float(state_namespace.akap),
+            state_namespace.zvir,
+            state_namespace.last_step,
+            state_namespace.consv_te,
+            state_namespace.mdt,
+        )
 
         return self.outputs_from_state(state)

@@ -1,7 +1,9 @@
-from typing import Dict
+# from typing import Dict
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
+
+# from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
+from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Float, FloatField
 from pyFV3.stencils.fillz import FillNegativeTracerValues
@@ -20,7 +22,8 @@ class MapNTracer:
         kord: int,
         nq: int,
         fill: bool,
-        tracers: Dict[str, Quantity],
+        # tracers: Dict[str, Quantity],
+        tracers,
     ):
         orchestrate(
             obj=self,
@@ -64,7 +67,8 @@ class MapNTracer:
         pe1: FloatField,
         pe2: FloatField,
         dp2: FloatField,
-        tracers: Dict[str, Quantity],
+        # tracers: Dict[str, Quantity],
+        tracers,
     ):
         """
         Remaps the tracer species onto the Eulerian grid
