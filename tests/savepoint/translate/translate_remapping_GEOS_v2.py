@@ -9,9 +9,12 @@ from ndsl.constants import (
     Z_DIM,
     Z_INTERFACE_DIM,
 )
+from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
 from pyFV3 import DynamicalCoreConfig
-from pyFV3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
+
+
+# from pyFV3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
 
 
 # from pyFV3._config import RemappingConfig
@@ -19,8 +22,8 @@ from pyFV3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
 
 class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
     inputs = {
-        "pe_": {
-            "name": "pe_",
+        "pe": {
+            "name": "pe",
             "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             "units": "No Units",
         },
@@ -99,8 +102,8 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM],
             "units": "No Units",
         },
-        "peln_3d": {
-            "name": "peln_3d",
+        "peln": {
+            "name": "peln",
             "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             "units": "No Units",
         },
@@ -116,7 +119,7 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
         },
         "pk": {
             "name": "pk",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
         "pkz": {
@@ -127,11 +130,6 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
         "w": {
             "name": "w",
             "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "ws_": {
-            "name": "ws_",
-            "dims": [X_DIM, Y_DIM],
             "units": "No Units",
         },
         "u": {
@@ -154,13 +152,13 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "mfx_": {
-            "name": "mfx_",
+        "mfx": {
+            "name": "mfx",
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "cx_": {
-            "name": "cx_",
+        "cx": {
+            "name": "cx",
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
@@ -169,9 +167,19 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM],
             "units": "No Units",
         },
-        "te0_2d_": {
-            "name": "te0_2d_",
+        "te0_2d": {
+            "name": "te0_2d",
             "dims": [X_DIM, Y_DIM],
+            "units": "No Units",
+        },
+        "wsd": {
+            "name": "wsd",
+            "dims": [X_DIM, Y_DIM],
+            "units": "No Units",
+        },
+        "dp1": {
+            "name": "dp1",
+            "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
     }
@@ -266,29 +274,29 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "mfx_": {
-            "name": "mfx_",
+        "mfx": {
+            "name": "mfx",
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "cx_": {
-            "name": "cx_",
+        "cx": {
+            "name": "cx",
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "peln_3d": {
-            "name": "peln_3d",
+        "peln": {
+            "name": "peln",
             "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             "units": "No Units",
         },
-        "pe_": {
-            "name": "pe_",
+        "pe": {
+            "name": "pe",
             "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             "units": "No Units",
         },
         "pk": {
             "name": "pk",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
         "pkz": {
@@ -299,6 +307,16 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
         "q_con": {
             "name": "q_con",
             "dims": [X_DIM, Y_DIM, Z_DIM],
+            "units": "No Units",
+        },
+        "dp1": {
+            "name": "dp1",
+            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "units": "No Units",
+        },
+        "ps": {
+            "name": "ps",
+            "dims": [X_DIM, Y_DIM],
             "units": "No Units",
         },
     }
@@ -312,7 +330,34 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
         super().__init__(grid, namelist, stencil_factory)
 
         self._base.in_vars["data_vars"] = {
-            "tracers": {},
+            # "tracers": {},
+            "qvapor": {
+                "kend": grid.npz - 1,
+            },
+            "qliquid": {
+                "kend": grid.npz - 1,
+            },
+            "qice": {
+                "kend": grid.npz - 1,
+            },
+            "qrain": {
+                "kend": grid.npz - 1,
+            },
+            "qsnow": {
+                "kend": grid.npz - 1,
+            },
+            "qgraupel": {
+                "kend": grid.npz - 1,
+            },
+            "qcld": {
+                "kend": grid.npz - 1,
+            },
+            "qo3mr": {
+                "kend": grid.npz - 1,
+            },
+            "qsgs_tke": {
+                "kend": grid.npz - 1,
+            },
             "w": {
                 "kend": grid.npz - 1,
             },
@@ -330,7 +375,7 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz,
+                "kend": grid.npz + 1,
             },
             "peln": {
                 "istart": grid.is_,
@@ -348,9 +393,49 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
                 "kend": grid.npz + 1,
                 "kaxis": 1,
             },
-            "hs": {"serialname": "phis"},
+            # "hs": {"serialname": "phis"},
             "ps": {},
             "wsd": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+            },
+            "mfy": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je + 1,
+                "kend": grid.npz - 1,
+            },
+            "cy": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.js,
+                "jend": grid.je + 1,
+                "kend": grid.npz - 1,
+            },
+            "mfx": {
+                "istart": grid.is_,
+                "iend": grid.ie + 1,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz - 1,
+            },
+            "cx": {
+                "istart": grid.is_,
+                "iend": grid.ie + 1,
+                "jstart": grid.jsd,
+                "jend": grid.jed,
+                "kend": grid.npz - 1,
+            },
+            "hs": {
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.jsd,
+                "jend": grid.jed,
+            },
+            "te0_2d": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
@@ -377,7 +462,16 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
             "pk",
             "peln",
             "pt",
-            "tracers",
+            # "tracers",
+            "qvapor",
+            "qliquid",
+            "qice",
+            "qrain",
+            "qsnow",
+            "qgraupel",
+            "qcld",
+            "qo3mr",
+            "qsgs_tke",
             "cappa",
             "delp",
             "delz",
@@ -387,6 +481,10 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
             "w",
             "ps",
             "dp1",
+            "mfy",
+            "cy",
+            "mfx",
+            "cx",
         ]:
             self._base.out_vars[k] = self._base.in_vars["data_vars"][k]
 
@@ -401,64 +499,73 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
         print("No serial test available")
 
     def compute_parallel(self, inputs, communicator):
+        inputs["te0_2d"] = inputs["te0_2d"].astype(Float)
         state = self.state_from_inputs(inputs)
         state_namespace = SimpleNamespace(**state)
 
-        tracers = {
-            "qvapor": state_namespace.qvapor,
-            "qliquid": state_namespace.qliquid,
-            "qice": state_namespace.qice,
-            "qrain": state_namespace.qrain,
-            "qsnow": state_namespace.qsnow,
-            "qgraupel": state_namespace.qgraupel,
-            "qcld": state_namespace.qcld,
-            "qo3mr": state_namespace.qo3mr,
-            "qsgs_tke": state_namespace.qsgs_tke,
-        }
+        # tracers = {
+        #     "qvapor": state_namespace.qvapor,
+        #     "qliquid": state_namespace.qliquid,
+        #     "qice": state_namespace.qice,
+        #     "qrain": state_namespace.qrain,
+        #     "qsnow": state_namespace.qsnow,
+        #     "qgraupel": state_namespace.qgraupel,
+        #     "qcld": state_namespace.qcld,
+        #     "qo3mr": state_namespace.qo3mr,
+        #     "qsgs_tke": state_namespace.qsgs_tke,
+        # }
 
-        l_to_e = LagrangianToEulerian_GEOS(
-            self.stencil_factory,
-            self.quantity_factory,
-            DynamicalCoreConfig.from_namelist(self.namelist).remapping,
-            communicator,
-            self.grid.grid_data,
-            state_namespace.nq,
-            state_namespace.pfull,
-            tracers,
-            state_namespace.adiabatic,
-        )
+        # l_to_e = LagrangianToEulerian_GEOS(
+        #     self.stencil_factory,
+        #     self.quantity_factory,
+        #     DynamicalCoreConfig.from_namelist(self.namelist).remapping,
+        #     communicator,
+        #     self.grid.grid_data,
+        #     state_namespace.nq,
+        #     state_namespace.pfull,
+        #     tracers,
+        #     state_namespace.adiabatic,
+        # )
 
-        l_to_e(
-            tracers,
-            state_namespace.pt,
-            state_namespace.delp,
-            state_namespace.delz,
-            state_namespace.peln,
-            state_namespace.u,
-            state_namespace.v,
-            state_namespace.w,
-            state_namespace.mfx,
-            state_namespace.mfy,
-            state_namespace.cx,
-            state_namespace.cy,
-            state_namespace.cappa,
-            state_namespace.q_con,
-            state_namespace.pkz,
-            state_namespace.pk,
-            state_namespace.pe,
-            state_namespace.hs,
-            state_namespace.te0_2d,
-            state_namespace.ps,
-            state_namespace.wsd,
-            state_namespace.ak,
-            state_namespace.bk,
-            state_namespace.dp1,
-            state_namespace.ptop,
-            state_namespace.akap,
-            state_namespace.zvir,
-            state_namespace.last_step,
-            state_namespace.consv_te,
-            state_namespace.mdt,
-        )
+        # print("type(state_namespace.ptop): ", type(state_namespace.ptop))
+        # print("type(state_namespace.akap): ", type(state_namespace.akap))
+        # print("type(state_namespace.zvir): ", type(state_namespace.zvir))
+        # print("type(state_namespace.last_step): ", type(state_namespace.last_step))
+        # print("type(state_namespace.consv_te): ", type(state_namespace.consv_te))
+        # print("type(state_namespace.mdt): ", type(state_namespace.mdt))
+        # print("type(nq): ", type(state_namespace.nq))
+
+        # l_to_e(
+        #     tracers,
+        #     state_namespace.pt,
+        #     state_namespace.delp,
+        #     state_namespace.delz,
+        #     state_namespace.peln,
+        #     state_namespace.u,
+        #     state_namespace.v,
+        #     state_namespace.w,
+        #     state_namespace.mfx,
+        #     state_namespace.mfy,
+        #     state_namespace.cx,
+        #     state_namespace.cy,
+        #     state_namespace.cappa,
+        #     state_namespace.q_con,
+        #     state_namespace.pkz,
+        #     state_namespace.pk,
+        #     state_namespace.pe,
+        #     state_namespace.hs,
+        #     state_namespace.te0_2d,
+        #     state_namespace.ps,
+        #     state_namespace.wsd,
+        #     state_namespace.ak,
+        #     state_namespace.bk,
+        #     state_namespace.dp1,
+        #     Float(state_namespace.ptop),
+        #     Float(state_namespace.akap),
+        #     state_namespace.zvir,
+        #     state_namespace.last_step,
+        #     state_namespace.consv_te,
+        #     state_namespace.mdt,
+        # )
 
         return self.outputs_from_state(state)
