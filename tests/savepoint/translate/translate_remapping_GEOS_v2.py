@@ -13,6 +13,7 @@ from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
 from pyFV3 import DynamicalCoreConfig
 from pyFV3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
+from pyFV3.tracers import Tracers
 
 
 # from pyFV3._config import RemappingConfig
@@ -497,21 +498,34 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
         print("No serial test available")
 
     def compute_parallel(self, inputs, communicator):
+
+        tracers = Tracers(self.quantity_factory)
+
+        tracers.copy_tracer_data("qvapor", inputs["qvapor"])
+        tracers.copy_tracer_data("qliquid", inputs["qliquid"])
+        tracers.copy_tracer_data("qice", inputs["qice"])
+        tracers.copy_tracer_data("qrain", inputs["qrain"])
+        tracers.copy_tracer_data("qsnow", inputs["qsnow"])
+        tracers.copy_tracer_data("qgraupel", inputs["qgraupel"])
+        tracers.copy_tracer_data("qcld", inputs["qcld"])
+        tracers.copy_tracer_data("qo3mr", inputs["qo3mr"])
+        tracers.copy_tracer_data("qsgs_tke", inputs["qsgs_tke"])
+
         inputs["te0_2d"] = inputs["te0_2d"].astype(Float)
         state = self.state_from_inputs(inputs)
         state_namespace = SimpleNamespace(**state)
 
-        tracers = {
-            "vapor": state_namespace.qvapor,
-            "liquid": state_namespace.qliquid,
-            "ice": state_namespace.qice,
-            "rain": state_namespace.qrain,
-            "snow": state_namespace.qsnow,
-            "graupel": state_namespace.qgraupel,
-            "cloud": state_namespace.qcld,
-            "qo3mr": state_namespace.qo3mr,
-            "qsgs_tke": state_namespace.qsgs_tke,
-        }
+        # tracers = {
+        #     "qvapor": state_namespace.qvapor,
+        #     "qliquid": state_namespace.qliquid,
+        #     "qice": state_namespace.qice,
+        #     "qrain": state_namespace.qrain,
+        #     "qsnow": state_namespace.qsnow,
+        #     "qgraupel": state_namespace.qgraupel,
+        #     "qcld": state_namespace.qcld,
+        #     "qo3mr": state_namespace.qo3mr,
+        #     "qsgs_tke": state_namespace.qsgs_tke,
+        # }
 
         l_to_e = LagrangianToEulerian_GEOS(
             self.stencil_factory,
@@ -557,5 +571,15 @@ class TranslateRemapping_GEOS_v2(ParallelTranslateBaseSlicing):
             state_namespace.consv_te,
             state_namespace.mdt,
         )
+
+        state_namespace.qvapor.data = tracers["qvapor"].data
+        state_namespace.qliquid.data = tracers["qliquid"].data
+        state_namespace.qice.data = tracers["qice"].data
+        state_namespace.qrain.data = tracers["qrain"].data
+        state_namespace.qsnow.data = tracers["qsnow"].data
+        state_namespace.qgraupel.data = tracers["qgraupel"].data
+        state_namespace.qcld.data = tracers["qcld"].data
+        state_namespace.qo3mr.data = tracers["qo3mr"].data
+        state_namespace.qsgs_tke.data = tracers["qsgs_tke"].data
 
         return self.outputs_from_state(state)

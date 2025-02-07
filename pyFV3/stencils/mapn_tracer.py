@@ -1,13 +1,10 @@
-# from typing import Dict
-
 import ndsl.dsl.gt4py_utils as utils
-
-# from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Float, FloatField
 from pyFV3.stencils.fillz import FillNegativeTracerValues
 from pyFV3.stencils.map_single import MapSingle
+from pyFV3.tracers import Tracers
 
 
 class MapNTracer:
@@ -22,8 +19,7 @@ class MapNTracer:
         kord: int,
         nq: int,
         fill: bool,
-        # tracers: Dict[str, Quantity],
-        tracers,
+        tracers: Tracers,
     ):
         orchestrate(
             obj=self,
@@ -67,7 +63,7 @@ class MapNTracer:
         pe1: FloatField,
         pe2: FloatField,
         dp2: FloatField,
-        # tracers: Dict[str, Quantity],
+        # tracers: Tracers,
         tracers,
     ):
         """

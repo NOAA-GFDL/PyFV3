@@ -32,6 +32,9 @@ from pyFV3.stencils.moist_cv import moist_pt_func, moist_pt_last_step
 from pyFV3.stencils.saturation_adjustment import SatAdjust3d
 
 
+# from pyFV3.tracers import Tracers
+
+
 # TODO: Should this be set here or in global_constants?
 CONSV_MIN = 0.001
 
@@ -361,7 +364,8 @@ class LagrangianToEulerian:
         area_64,
         nq,
         pfull,
-        tracers: Dict[str, Quantity],
+        # tracers: Tracers,
+        tracers,
         checkpointer: Optional[Checkpointer] = None,
     ):
         orchestrate(
