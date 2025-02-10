@@ -1,14 +1,19 @@
 #!/bin/bash
 #
-# Script to convert xppm.py/xtp_u.py into yppm/ytp_v.py. Can be deleted once we
-# have a way to use the same codebase for x-direction and y-direction advection.
+# Script to automatically convert `xppm.py` and `xtp_u.py` into `yppm.py` and
+# `ytp_v.py` respectively. We use it as part of the linting workflow in the CI
+# to ensure these files stay in sync.
 #
+# This script (and the corresponding linting workflow) can be deleted once we
+# have a way to use the same codebase for x-direction and y-direction advection.
 
-set -e -x
+set -e
 
+# Copy XPPM codes into YPPM files
 cp pyFV3/stencils/xppm.py pyFV3/stencils/yppm.py
 cp pyFV3/stencils/xtp_u.py pyFV3/stencils/ytp_v.py
 
+# Fixup YPPM code
 for fname in pyFV3/stencils/yppm.py pyFV3/stencils/ytp_v.py
 do
     sed -i 's/ub/vb/g' $fname
