@@ -796,12 +796,11 @@ contains
          !$ser data iq=iq last_step=last_step consv_te=consv_te ps=ps pe=pe delp=delp pkz=pkz pk=pk mdt=mdt bdt=bdt sphum=sphum q_con=q_con u=u v=v w=w delz=delz pt=pt tracers=q phis=phis zvir=zvir akap=akap cappa=cappa kord_tracer=kord_tracer peln=peln te_2d=te_2d ua=ua va=va omga=omga dp1=dp1 wsd=ws  reproduce_sum=reproduce_sum ptop=ptop ak=ak bk=bk pfull=pfull hybrid_z=hybrid_z do_adiabatic_init=do_adiabatic_init nq=nq
          !$ser savepoint Remapping_GEOS_v2-In
          !$ser data last_step=last_step consv_te=consv_te ps=ps pe=pe delp=delp pkz=pkz mdt=mdt pdt=bdt
-         !$ser data km=npz nq=nq nwat=nwat sphum=sphum q_con=q_con u=u v=v w=w delz=delz pt=pt tracers=q
-         !$ser data hs=phis zvir=zvir cp=cp_air akap=akap cappa=cappa kord_tr=kord_tracer
-         !$ser data peln=peln te0_2d=te_2d ng=ng ua=ua va=va omga=omga dp1=dp1 wsd=ws fill=fill
-         !$ser data reproduce_sum=reproduce_sum dtdt=dtdt_m ptop=ptop ak=ak bk=bk pfull=pfull
-         !$ser data hydrostatic=hydrostatic hybrid_z=hybrid_z do_omega=do_omega
-         !$ser data do_adiabatic_init=do_adiabatic_init
+         !$ser data q_con=q_con nq=nq u=u v=v w=w delz=delz pt=pt tracers=q
+         !$ser data hs=phis zvir=zvir
+         !$ser data akap=akap cappa=cappa
+         !$ser data peln=peln te0_2d=te_2d dp1=dp1 wsd=ws
+         !$ser data ptop=ptop ak=ak bk=bk pfull=pfull
          !$ser data mfx=mfxL
          !$ser data mfy=mfyL
          !$ser data cx=cxL
@@ -831,7 +830,8 @@ contains
          !$ser data te_2d=te_2d pk=pk tracers=q delp=delp pe=pe ps=ps u=u v=v w=w pt=pt delz=delz q_con=q_con cappa=cappa ua=ua va=va omga=omga peln=peln pkz=pkz dp1=dp1
          !$ser savepoint Remapping_GEOS_v2-Out
          !$ser data ps=ps pe=pe pkz=pkz q_con=q_con u=u v=v w=w delz=delz pt=pt tracers=q cappa=cappa
-         !$ser data peln=peln te0_2d=te_2d ua=ua va=va omga=omga dp1=dp1 dtdt=dtdt_m
+         !$ser data peln=peln
+         !$ser data dp1=dp1
          !$ser data mfx=mfxL
          !$ser data mfy=mfyL
          !$ser data cx=cxL
