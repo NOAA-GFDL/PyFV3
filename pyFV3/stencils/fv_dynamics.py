@@ -608,7 +608,8 @@ class DynamicalCore:
 
         # Rayleigh fast
         if (
-            not self.config.acoustic_dynamics.rf_fast
+            not self.config.hydrostatic
+            and not self.config.acoustic_dynamics.rf_fast
             and self.config.acoustic_dynamics.tau > 0
         ):
             raise NotImplementedError(
