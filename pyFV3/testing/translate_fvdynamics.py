@@ -301,11 +301,11 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         input_storages = super().state_from_inputs(inputs)
         # making sure we init DycoreState with the exact set of variables
         accepted_keys = [_field.name for _field in fields(DycoreState)]
-        todelete = []
+        to_delete = []
         for name in input_storages.keys():
             if name not in accepted_keys:
-                todelete.append(name)
-        for name in todelete:
+                to_delete.append(name)
+        for name in to_delete:
             del input_storages[name]
 
         state = DycoreState.init_from_storages(input_storages, sizer=self.grid.sizer)

@@ -45,9 +45,9 @@ def flux_capacitor(
     Args:
         cx (inout): accumulated courant number in the x direction
         cy (inout): accumulated courant number in the y direction
-        xflux (inout): flux capacitor in the x direction, accumlated mass flux
-        yflux (inout): flux capacitor in the y direction, accumlated mass flux
-        crx_adv (in): local courant numver, dt*ut/dx
+        xflux (inout): flux capacitor in the x direction, accumulated mass flux
+        yflux (inout): flux capacitor in the y direction, accumulated mass flux
+        crx_adv (in): local courant number, dt*ut/dx
         cry_adv (in): local courant number dt*vt/dy
         fx (in): 1-D x-direction flux
         fy (in): 1-D y-direction flux

@@ -9,5 +9,3 @@ DycoreState: Dataclass containing state of the dynamical core
 DryConvectiveAdjustment: Sub-grid dry convective adjustment
 DynamicalCore: The FV3 dynamical core
 """
-
-__version__ = "0.2.0"

@@ -103,7 +103,7 @@ def finalize(
     last_call: bool,
 ):
     """
-    Updates auxilary pressure values
+    Updates auxiliary pressure values
 
     Args:
         zs (in):
