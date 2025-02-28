@@ -349,7 +349,7 @@ class FiniteVolumeTransport:
             self._q_advected_x, cry, self._q_advected_x_y_advected_mean
         )
 
-        # TODO [DACE]: due to an aliiasing issue (see above for original code)
+        # TODO [DACE]: due to an aliasing issue (see above for original code)
         # we duplicate the code here
         if x_mass_flux is None:
             if y_mass_flux is None:

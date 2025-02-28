@@ -72,7 +72,7 @@ def update_dz_c(
 ):
     """
     Step dz forward on c-grid
-    Eusures gz is monotonically increasing in z at the end
+    Ensures gz is monotonically increasing in z at the end
     Args:
         dp_ref:
         zs:

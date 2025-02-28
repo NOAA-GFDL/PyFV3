@@ -176,7 +176,7 @@ class HyperdiffusionDamping:
         Args:
             qdel (inout): Variable to be filtered
             nmax: Number of times to apply filtering
-            cd: Damping coeffcient
+            cd: Damping coefficient
         """
 
         for n in range(self._ntimes):

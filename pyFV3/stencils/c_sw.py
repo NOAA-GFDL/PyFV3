@@ -265,7 +265,7 @@ def compute_nonhydrostatic_fluxes_x(
         fx (out): heat (entropy) flux, first-order upwind flux of delp
             in units per second
         fx1 (out): first-order upwind flux of delp in units per second
-        fx2 (out): flux of veritcal momentum, first-order upwind flux of w
+        fx2 (out): flux of vertical momentum, first-order upwind flux of w
             in units per second
     """
     with computation(PARALLEL), interval(...):

@@ -30,7 +30,7 @@ T_0 = 288.0
 DELTA_T = 480000.0
 LAPSE_RATE = 0.005  # From Table VI of DCMIP2016
 # NOTE RADIUS = 6.3712e6 in FV3 vs Jabowski paper 6.371229e6
-R = constants.RADIUS / 10.0  # Perturbation radiusfor test case 13
+R = constants.RADIUS / 10.0  # Perturbation radius for test case 13
 NHALO = constants.N_HALO_DEFAULT
 
 
