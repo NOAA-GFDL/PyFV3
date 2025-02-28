@@ -506,7 +506,7 @@ def fxadv_fluxes_stencil(
 
 class FiniteVolumeFluxPrep:
     """
-    A large section of code near the beginning of Fortran's d_sw subroutinw
+    A large section of code near the beginning of Fortran's d_sw subroutine
     Known in this repo as FxAdv,
     """
 

@@ -18,7 +18,7 @@ from ndsl.grid import GridData
 from ndsl.stencils.basic_operations import copy_defn
 
 
-# comact 4-pt cubic interpolation
+# compact 4-pt cubic interpolation
 c1 = 2.0 / 3.0
 c2 = -1.0 / 6.0
 d1 = 0.375

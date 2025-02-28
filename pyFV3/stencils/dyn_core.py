@@ -245,7 +245,7 @@ def dyncore_temporaries(
 class AcousticDynamics:
     """
     Fortran name is dyn_core
-    Peforms the Lagrangian acoustic dynamics described by Lin 2004
+    Performs the Lagrangian acoustic dynamics described by Lin 2004
     """
 
     class _HaloUpdaters(object):
@@ -294,7 +294,7 @@ class AcousticDynamics:
 
             # Build the HaloUpdater. We could build one updater per specification group
             # but because of call overlap between different variable, we kept the
-            # straighforward solution of one HaloUpdater per group of updated variable.
+            # straightforward solution of one HaloUpdater per group of updated variable.
             # It also makes the code in call() more readable
             # [DaCe] Wrapping call to a DaCe readable halo updater
             #        Biggest parsing issue is that DaCe cannot do

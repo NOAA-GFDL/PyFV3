@@ -49,7 +49,7 @@ def omega_from_w(delp: FloatField, delz: FloatField, w: FloatField, omega: Float
         delp (in): vertical layer thickness in Pa
         delz (in): vertical layer thickness in m
         w (in): vertical wind in m/s
-        omga (out): vertical wind in Pa/s
+        omega (out): vertical wind in Pa/s
     """
     with computation(PARALLEL), interval(...):
         omega = delp / delz * w

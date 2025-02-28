@@ -184,7 +184,7 @@ class Sim1Solver:
         Chapter 7 of the FV3 documentation
 
         Args:
-          dt (in): timstep in seconds of solver
+          dt (in): timestep in seconds of solver
           gm (in): ?? 1 / (1 - cappa)
           cp3 (in): cappa
           pe (out): full hydrostatic pressure

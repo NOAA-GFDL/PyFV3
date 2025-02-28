@@ -21,7 +21,7 @@ def init_analytic_state(
     comm: Communicator,
 ) -> DycoreState:
     """
-    This method initializes the choosen analytic test case type
+    This method initializes the chosen analytic test case type
     Args:
         analytic_init_str:      test case specifier
         grid_data:              current selected grid data values

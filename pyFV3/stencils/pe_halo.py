@@ -6,7 +6,7 @@ from ndsl.dsl.typing import Float, FloatField
 def edge_pe(pe: FloatField, delp: FloatField, ptop: Float):
     """
     This corresponds to the pe_halo routine in FV3core
-    Updading the interface pressure from the pressure differences
+    Updating the interface pressure from the pressure differences
 
     Args:
         pe (out): The pressure on the interfaces of the cell

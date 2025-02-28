@@ -56,7 +56,7 @@ NonhydrostaticVerticalSolver: Calculates nonhydrostatic w and p after advection
 NonhydrostaticVerticalSolverCGrid: Calculates nonhydrostatic w and p after
                                    C-grid advection
 SatAdjust3d: Fast microphysical phase changes
-Sim1Solver: Semi-implict method solver
+Sim1Solver: Semi-implicit method solver
 TracerAdvection: Advects tracers
 UpdateGeopotentialHeightOnCGrid: Updates cell heights on C-grid
 UpdateHeightOnDGrid: Updates cell heights on D-grid
