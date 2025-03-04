@@ -1,4 +1,5 @@
 import gt4py.cartesian.gtscript as gtscript
+import numpy as np
 from gt4py.cartesian.gtscript import (
     __INLINED,
     PARALLEL,
@@ -24,6 +25,12 @@ from pyFV3.stencils.d2a2c_vect import contravariant
 @gtscript.function
 def damp_tmp(q, da_min_c, d2_bg, dddmp):
     mintmp = min(0.2, dddmp * abs(q))
+    damp = da_min_c * max(d2_bg, mintmp)
+    return damp
+
+@gtscript.function
+def damp_tmp2(q, da_min_c, d2_bg, dddmp):
+    mintmp = min(0.2, dddmp * q)
     damp = da_min_c * max(d2_bg, mintmp)
     return damp
 
@@ -58,10 +65,10 @@ def compute_u_contra_dyc(
         # TODO: why does vc_from_va sometimes have different sign than vc?
         vc_from_va = 0.5 * (va[0, -1, 0] + va)
         # TODO: why do we use vc_from_va and not just vc?
-        u_contra = contravariant(u, vc_from_va, cosa_v, sina_v)
+        u_contra_dyc = contravariant(u, vc_from_va, cosa_v, dyc)
+        u_contra_dyc = u_contra_dyc * sina_v
         with horizontal(region[:, j_start], region[:, j_end + 1]):
-            u_contra = u * sin_sg4[0, -1] if vc > 0 else u * sin_sg2
-        u_contra_dyc = u_contra * dyc
+            u_contra_dyc = u * dyc* sin_sg4[0, -1] if vc > 0 else u * dyc*sin_sg2
 
 
 def compute_v_contra_dxc(
@@ -93,10 +100,10 @@ def compute_v_contra_dxc(
         # TODO: why does uc_from_ua sometimes have different sign than uc?
         uc_from_ua = 0.5 * (ua[-1, 0, 0] + ua)
         # TODO: why do we use uc_from_ua and not just uc?
-        v_contra = contravariant(v, uc_from_ua, cosa_u, sina_u)
+        v_contra_dxc = contravariant(v, uc_from_ua, cosa_u, dxc)
+        v_contra_dxc = v_contra_dxc * sina_u
         with horizontal(region[i_start, :], region[i_end + 1, :]):
-            v_contra = v * sin_sg3[-1, 0] if uc > 0 else v * sin_sg1
-        v_contra_dxc = v_contra * dxc
+            v_contra_dxc = v * dxc*sin_sg3[-1, 0] if uc > 0 else v * dxc*sin_sg1
 
 
 def delpc_computation(
@@ -324,11 +331,11 @@ class DivergenceDamping:
         if nested:
             raise NotImplementedError("Divergence Dampoing: nested not implemented.")
         # TODO: make dddmp a compile-time external, instead of runtime scalar
-        self._dddmp = dddmp
+        self._dddmp = Float(dddmp)
         # TODO: make da_min_c a compile-time external, instead of runtime scalar
         self._damping_coefficients = damping_coefficients
         self._stretched_grid = stretched_grid
-        self._d4_bg = d4_bg
+        self._d4_bg = Float(d4_bg)
         self._grid_type = grid_type
         self._nord_column = nord_col
         self._d2_bg_column = d2_bg
@@ -539,12 +546,12 @@ class DivergenceDamping:
     # odd and adds a lot of boilerplate throughout the model code.
 
     @dace_inhibitor
-    def _get_da_min_c(self) -> float:
-        return self._damping_coefficients.da_min_c
+    def _get_da_min_c(self) -> Float:
+        return Float(self._damping_coefficients.da_min_c)
 
     @dace_inhibitor
-    def _get_da_min(self) -> float:
-        return self._damping_coefficients.da_min
+    def _get_da_min(self) -> Float:
+        return Float(self._damping_coefficients.da_min)
 
     def __call__(
         self,
@@ -697,9 +704,11 @@ class DivergenceDamping:
         da_min: Float = self._get_da_min()
         if self._stretched_grid:
             # reference https://github.com/NOAA-GFDL/GFDL_atmos_cubed_sphere/blob/main/model/sw_core.F90#L1422 # noqa: E501
-            dd8 = da_min * self._d4_bg ** (self._nonzero_nord + 1)
+            dd8 = da_min * np.power(self._d4_bg, (self._nonzero_nord + 1), dtype=Float)
         else:
-            dd8 = (da_min_c * self._d4_bg) ** (self._nonzero_nord + 1)
+            dd8 = np.power(
+                (da_min_c * self._d4_bg), (self._nonzero_nord + 1), dtype=Float
+            )
 
         self._damping_nord_highorder_stencil(
             damped_rel_vort_bgrid,
