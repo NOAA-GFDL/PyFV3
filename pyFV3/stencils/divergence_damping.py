@@ -28,6 +28,12 @@ def damp_tmp(q, da_min_c, d2_bg, dddmp):
     damp = da_min_c * max(d2_bg, mintmp)
     return damp
 
+@gtscript.function
+def damp_tmp2(q, da_min_c, d2_bg, dddmp):
+    mintmp = min(0.2, dddmp * q)
+    damp = da_min_c * max(d2_bg, mintmp)
+    return damp
+
 
 def compute_u_contra_dyc(
     u: FloatField,
@@ -52,6 +58,20 @@ def compute_u_contra_dyc(
         sin_sg2 (in):
         sin_sg4 (in):
         u_contra_dyc (out): contravariant u-wind on d-grid
+
+    Porting Notes
+    * The compute_u_contra_dyc and compute_v_contra_dxc functions have the dyc and dxc values
+      incorporated earlier in the calcuation rather than later, and this enables the u_contra_dyc
+      and v_contra_dxc values to match with the Fortran.  As a result, the delpc computation
+      matches the Fortran value of delpc.
+
+      Ex : Previous implementation of compute_u_contra_dyc
+      =================================================================
+           u_contra = contravariant(u, vc_from_va, cosa_v, sina_v)
+           with horizontal(region[:, j_start], region[:, j_end + 1]):
+               u_contra = u * sin_sg4[0, -1] if vc > 0 else u * sin_sg2
+           u_contra_dyc = u_contra * dyc
+      =================================================================
     """
     from __externals__ import j_end, j_start
 
@@ -59,10 +79,10 @@ def compute_u_contra_dyc(
         # TODO: why does vc_from_va sometimes have different sign than vc?
         vc_from_va = 0.5 * (va[0, -1, 0] + va)
         # TODO: why do we use vc_from_va and not just vc?
-        u_contra = contravariant(u, vc_from_va, cosa_v, sina_v)
+        u_contra_dyc = contravariant(u, vc_from_va, cosa_v, dyc)
+        u_contra_dyc = u_contra_dyc * sina_v
         with horizontal(region[:, j_start], region[:, j_end + 1]):
-            u_contra = u * sin_sg4[0, -1] if vc > 0 else u * sin_sg2
-        u_contra_dyc = u_contra * dyc
+            u_contra_dyc = u * dyc* sin_sg4[0, -1] if vc > 0 else u * dyc*sin_sg2
 
 
 def compute_v_contra_dxc(
@@ -87,6 +107,19 @@ def compute_v_contra_dxc(
         uc (in):
         sin_sg3 (in):
         sin_sg1 (in):
+
+    Porting Notes
+    * The compute_u_contra_dyc and compute_v_contra_dxc functions have the dyc and dxc values
+      incorporated earlier in the calcuation rather than later, and this enables the u_contra_dyc
+      and v_contra_dxc values to match with the Fortran.  As a result, the delpc computation
+      matches the Fortran value of delpc.
+
+      Ex : Previous implementation of compute_v_contra_dxc
+        =================================================================
+        v_contra = contravariant(v, uc_from_ua, cosa_u, sina_u)
+        with horizontal(region[i_start, :], region[i_end + 1, :]):
+            v_contra = v * sin_sg3[-1, 0] if uc > 0 else v * sin_sg1
+        v_contra_dxc = v_contra * dxc
     """
     from __externals__ import i_end, i_start
 
@@ -94,10 +127,10 @@ def compute_v_contra_dxc(
         # TODO: why does uc_from_ua sometimes have different sign than uc?
         uc_from_ua = 0.5 * (ua[-1, 0, 0] + ua)
         # TODO: why do we use uc_from_ua and not just uc?
-        v_contra = contravariant(v, uc_from_ua, cosa_u, sina_u)
+        v_contra_dxc = contravariant(v, uc_from_ua, cosa_u, dxc)
+        v_contra_dxc = v_contra_dxc * sina_u
         with horizontal(region[i_start, :], region[i_end + 1, :]):
-            v_contra = v * sin_sg3[-1, 0] if uc > 0 else v * sin_sg1
-        v_contra_dxc = v_contra * dxc
+            v_contra_dxc = v * dxc*sin_sg3[-1, 0] if uc > 0 else v * dxc*sin_sg1
 
 
 def delpc_computation(
@@ -573,6 +606,13 @@ class DivergenceDamping:
 
         Applies both a background second-order diffusion (with strength controlled by
         d2_bg passed on init) and a higher-order hyperdiffusion.
+
+        Porting Notes
+        * The dd8 computation has different results when comparing between Fortran and Python,
+        which is likely due to the user of the power function.  The difference in dd8 results in
+        the ke value having on the order of 10,000 total error difference when running the translate
+        test.
+
 
         Args:
             u (in): x-velocity on d-grid

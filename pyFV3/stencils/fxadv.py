@@ -484,24 +484,44 @@ def fxadv_fluxes_stencil(
         y_area_flux (out):
         uc_contra (in):
         vc_contra (in):
-    """
-    from __externals__ import local_ie, local_is, local_je, local_js
 
-    with computation(PARALLEL), interval(...):
-        with horizontal(region[local_is : local_ie + 2, :]):
-            if uc_contra > 0:
+    Porting Note
+    * The tmp introduced in the computation allows fxadv_fluxes_stencil to closely match the Fortran order
+      of computation, which allows the x_area_flux and y_area_flux match the
+      respective Fortran values.
+
+      Example of previous stencil looked as follows:
+        ==========================================================
+        if uc_contra > 0:
                 crx = dt * uc_contra * rdxa[-1, 0]
                 x_area_flux = dy * dt * uc_contra * sin_sg3[-1, 0]
             else:
                 crx = dt * uc_contra * rdxa
                 x_area_flux = dy * dt * uc_contra * sin_sg1
-        with horizontal(region[:, local_js : local_je + 2]):
-            if vc_contra > 0:
-                cry = dt * vc_contra * rdya[0, -1]
-                y_area_flux = dx * dt * vc_contra * sin_sg4[0, -1]
+        ==========================================================
+    """
+    from __externals__ import local_ie, local_is, local_je, local_js
+
+    with computation(PARALLEL), interval(...):
+        with horizontal(region[local_is : local_ie + 2, :]):
+            # Including the temporary (tmp) calculation enables x_area_flux and y_area_flux 
+            # to more closely precision match the respective Fortran calculation 
+            # since Fortran also performs this temporary calcuation
+            tmp = dt * uc_contra
+            if uc_contra > 0:
+                crx = tmp * rdxa[-1, 0]
+                x_area_flux = dy * tmp * sin_sg3[-1, 0]
             else:
-                cry = dt * vc_contra * rdya
-                y_area_flux = dx * dt * vc_contra * sin_sg2
+                crx = tmp * rdxa
+                x_area_flux = dy * tmp * sin_sg1
+        with horizontal(region[:, local_js : local_je + 2]):
+            tmp = dt * vc_contra
+            if vc_contra > 0:
+                cry = tmp * rdya[0, -1]
+                y_area_flux = dx * tmp * sin_sg4[0, -1]
+            else:
+                cry = tmp * rdya
+                y_area_flux = dx * tmp * sin_sg2
 
 
 class FiniteVolumeFluxPrep:
