@@ -24,7 +24,7 @@ from ndsl.dsl.typing import (
     FloatField,
     FloatField64,
     FloatFieldIJ64,
-    global_set_floating_point_precision,
+    get_precision,
     NDSL_32BIT_FLOAT_TYPE,
     NDSL_64BIT_FLOAT_TYPE,
 )
@@ -479,9 +479,7 @@ class DynamicalCore:
         self._timestep = timestep.total_seconds()
 
         # At 32-bit precision we still need
-        self._f32_correction = (
-            global_set_floating_point_precision() == NDSL_32BIT_FLOAT_TYPE
-        )
+        self._f32_correction = get_precision() == NDSL_32BIT_FLOAT_TYPE
         if self._f32_correction:
             self._mfx_f64 = quantity_factory.zeros(
                 dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
