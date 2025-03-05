@@ -58,6 +58,20 @@ def compute_u_contra_dyc(
         sin_sg2 (in):
         sin_sg4 (in):
         u_contra_dyc (out): contravariant u-wind on d-grid
+
+    Porting Notes
+    * The compute_u_contra_dyc and compute_v_contra_dxc functions have the dyc and dxc values
+      incorporated earlier in the calcuation rather than later, and this enables the u_contra_dyc
+      and v_contra_dxc values to match with the Fortran.  As a result, the delpc computation
+      matches the Fortran value of delpc.
+
+      Ex : Previous implementation of compute_u_contra_dyc
+      =================================================================
+           u_contra = contravariant(u, vc_from_va, cosa_v, sina_v)
+           with horizontal(region[:, j_start], region[:, j_end + 1]):
+               u_contra = u * sin_sg4[0, -1] if vc > 0 else u * sin_sg2
+           u_contra_dyc = u_contra * dyc
+      =================================================================
     """
     from __externals__ import j_end, j_start
 
@@ -93,6 +107,19 @@ def compute_v_contra_dxc(
         uc (in):
         sin_sg3 (in):
         sin_sg1 (in):
+
+    Porting Notes
+    * The compute_u_contra_dyc and compute_v_contra_dxc functions have the dyc and dxc values
+      incorporated earlier in the calcuation rather than later, and this enables the u_contra_dyc
+      and v_contra_dxc values to match with the Fortran.  As a result, the delpc computation
+      matches the Fortran value of delpc.
+
+      Ex : Previous implementation of compute_v_contra_dxc
+        =================================================================
+        v_contra = contravariant(v, uc_from_ua, cosa_u, sina_u)
+        with horizontal(region[i_start, :], region[i_end + 1, :]):
+            v_contra = v * sin_sg3[-1, 0] if uc > 0 else v * sin_sg1
+        v_contra_dxc = v_contra * dxc
     """
     from __externals__ import i_end, i_start
 
@@ -579,6 +606,13 @@ class DivergenceDamping:
 
         Applies both a background second-order diffusion (with strength controlled by
         d2_bg passed on init) and a higher-order hyperdiffusion.
+
+        Porting Notes
+        * The dd8 computation has different results when comparing between Fortran and Python,
+        which is likely due to the user of the power function.  The difference in dd8 results in
+        the ke value having on the order of 10,000 total error difference when running the translate
+        test.
+
 
         Args:
             u (in): x-velocity on d-grid

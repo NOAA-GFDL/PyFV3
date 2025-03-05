@@ -484,6 +484,21 @@ def fxadv_fluxes_stencil(
         y_area_flux (out):
         uc_contra (in):
         vc_contra (in):
+
+    Porting Note
+    * The tmp introduced in the computation allows fxadv_fluxes_stencil to closely match the Fortran order
+      of computation, which allows the x_area_flux and y_area_flux match the
+      respective Fortran values.
+
+      Example of previous stencil looked as follows:
+        ==========================================================
+        if uc_contra > 0:
+                crx = dt * uc_contra * rdxa[-1, 0]
+                x_area_flux = dy * dt * uc_contra * sin_sg3[-1, 0]
+            else:
+                crx = dt * uc_contra * rdxa
+                x_area_flux = dy * dt * uc_contra * sin_sg1
+        ==========================================================
     """
     from __externals__ import local_ie, local_is, local_je, local_js
 
