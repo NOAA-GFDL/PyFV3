@@ -15,7 +15,15 @@ from gt4py.cartesian.gtscript import (
 
 import ndsl.constants as constants
 from ndsl import StencilFactory, orchestrate
-from ndsl.constants import SECONDS_PER_DAY, X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.boilerplate import get_factories_single_tile
+from ndsl.constants import (
+    SECONDS_PER_DAY,
+    X_INTERFACE_DIM,
+    Y_INTERFACE_DIM,
+    Z_DIM,
+    X_DIM,
+    Y_DIM,
+)
 from ndsl.dsl.typing import Float, FloatField, FloatFieldK
 
 
@@ -43,14 +51,31 @@ def dm_layer(rf, dp, wind):
     return (1.0 - rf) * dp * wind
 
 
+def ray_fast_damping_increment(
+    pfull: FloatFieldK,  # type:ignore
+    dt: Float,  # type:ignore
+    ptop: Float,  # type:ignore
+    rf: FloatField,  # type:ignore
+):
+    """rf is rayleigh damping increment, fraction of vertical velocity
+    left after doing rayleigh damping (w -> w * rf)
+    """
+    from __externals__ import rf_cutoff, tau
+
+    with computation(PARALLEL), interval(...):
+        if pfull < rf_cutoff:
+            # rf is rayleigh damping increment, fraction of vertical velocity
+            # left after doing rayleigh damping (w -> w * rf)
+            rf = compute_rff_vals(pfull, dt, rf_cutoff, tau * SECONDS_PER_DAY, ptop)
+
+
 def ray_fast_wind_compute(
     u: FloatField,
     v: FloatField,
     w: FloatField,
     delta_p_ref: FloatFieldK,  # reference delta pressure
     pfull: FloatFieldK,  # input layer pressure reference?
-    dt: Float,
-    ptop: Float,
+    rf: FloatFieldK,
     rf_cutoff_nudge: Float,
 ):
     """
@@ -68,13 +93,6 @@ def ray_fast_wind_compute(
     from __externals__ import hydrostatic, local_ie, local_je, rf_cutoff, tau
 
     # dm_stencil
-    with computation(PARALLEL), interval(...):
-        # TODO -- in the fortran model rf is only computed once, repeating
-        # the computation every time ray_fast is run is inefficient
-        if pfull < rf_cutoff:
-            # rf is rayleigh damping increment, fraction of vertical velocity
-            # left after doing rayleigh damping (w -> w * rf)
-            rf = compute_rff_vals(pfull, dt, rf_cutoff, tau * SECONDS_PER_DAY, ptop)
     with computation(FORWARD):
         with interval(0, 1):
             if pfull < rf_cutoff_nudge:
@@ -191,6 +209,29 @@ class RayleighDamping:
             },
         )
 
+        # We compute the damping increment once using a trick to write a
+        # FloatFieldK as a (1, 1, K) 3D writable Field
+        K_stencil_factory, K_quantity_factory = get_factories_single_tile(
+            1,
+            1,
+            domain[2],
+            0,
+            stencil_factory.backend,
+        )
+        self._ray_fast_damping_increment = K_stencil_factory.from_origin_domain(
+            ray_fast_damping_increment,
+            origin=(0, 0, origin[2]),
+            domain=(1, 1, domain[2]),
+            externals={
+                "rf_cutoff": self._rf_cutoff,
+                "tau": tau,
+            },
+        )
+        self._damping_increment = K_quantity_factory.ones(
+            [X_DIM, Y_DIM, Z_DIM], units="n/a"
+        )
+        self._initialize_damping_increment = False
+
     def __call__(
         self,
         u: FloatField,
@@ -203,13 +244,17 @@ class RayleighDamping:
     ):
         rf_cutoff_nudge = self._rf_cutoff + min(Float(100.0), Float(10.0) * ptop)
 
+        if not self._initialize_damping_increment:
+            self._ray_fast_damping_increment(
+                pfull=pfull, dt=dt, ptop=ptop, rf=self._damping_increment
+            )
+            self._initialize_damping_increment = True
         self._ray_fast_wind_compute(
-            u,
-            v,
-            w,
-            dp,
-            pfull,
-            dt,
-            ptop,
-            rf_cutoff_nudge,
+            u=u,
+            v=v,
+            w=w,
+            delta_p_ref=dp,
+            pfull=pfull,
+            rf=self._damping_increment.view[0, 0, :],
+            rf_cutoff_nudge=rf_cutoff_nudge,
         )
