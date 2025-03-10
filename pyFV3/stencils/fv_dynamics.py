@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import List, Mapping, Optional
 
 from dace.frontend.python.interface import nounroll as dace_no_unroll
-from gt4py.cartesian.gtscript import PARALLEL, FORWARD, computation, interval
+from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, interval
 
 import pyFV3.stencils.moist_cv as moist_cv
 from ndsl import Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater
@@ -11,22 +11,21 @@ from ndsl.constants import (
     KAPPA,
     NQ,
     X_DIM,
+    X_INTERFACE_DIM,
     Y_DIM,
+    Y_INTERFACE_DIM,
     Z_DIM,
     Z_INTERFACE_DIM,
     ZVIR,
-    Y_INTERFACE_DIM,
-    X_INTERFACE_DIM,
 )
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
 from ndsl.dsl.typing import (
+    NDSL_64BIT_FLOAT_TYPE,
     Float,
     FloatField,
     FloatField64,
     FloatFieldIJ64,
     get_precision,
-    NDSL_32BIT_FLOAT_TYPE,
-    NDSL_64BIT_FLOAT_TYPE,
 )
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log
@@ -37,12 +36,12 @@ from ndsl.typing import Communicator
 from pyFV3._config import DynamicalCoreConfig
 from pyFV3.dycore_state import DycoreState
 from pyFV3.stencils import fvtp2d, tracer_2d_1l
+from pyFV3.stencils.compute_total_energy import ComputeTotalEnergy
 from pyFV3.stencils.del2cubed import HyperdiffusionDamping
 from pyFV3.stencils.dyn_core import AcousticDynamics
 from pyFV3.stencils.neg_adj3 import AdjustNegativeTracerMixingRatio
 from pyFV3.stencils.remapping import LagrangianToEulerian
 from pyFV3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
-from pyFV3.stencils.compute_total_energy import ComputeTotalEnergy
 from pyFV3.version import IS_GEOS
 
 
@@ -479,7 +478,7 @@ class DynamicalCore:
         self._timestep = timestep.total_seconds()
 
         # At 32-bit precision we still need
-        self._f32_correction = get_precision() == NDSL_32BIT_FLOAT_TYPE
+        self._f32_correction = get_precision() == 32
         if self._f32_correction:
             self._mfx_f64 = quantity_factory.zeros(
                 dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
