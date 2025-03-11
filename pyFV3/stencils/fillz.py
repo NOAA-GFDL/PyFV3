@@ -1,12 +1,12 @@
 import typing
-from typing import Dict
 
 from gt4py.cartesian.gtscript import BACKWARD, FORWARD, PARALLEL, computation, interval
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
+from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntFieldIJ
+from pyFV3.tracers import Tracers
 
 
 @typing.no_type_check
@@ -118,7 +118,7 @@ class FillNegativeTracerValues:
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
         nq: int,
-        tracers: Dict[str, Quantity],
+        tracers: Tracers,
     ):
         orchestrate(
             obj=self,
@@ -152,7 +152,7 @@ class FillNegativeTracerValues:
     def __call__(
         self,
         dp2: FloatField,
-        tracers: Dict[str, Quantity],
+        tracers: Tracers,
     ):
         """
         Args:
