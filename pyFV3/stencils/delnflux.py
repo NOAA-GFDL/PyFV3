@@ -376,7 +376,6 @@ class DelnFlux:
         rarea: Quantity,
         nord_col: Quantity,
         damp_c: Quantity,
-        damp_coeff: Quantity | None = None,
     ):
         """
         nord sets the order of damping to apply:
@@ -425,14 +424,9 @@ class DelnFlux:
             func=diffusive_damp, compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM]
         )
 
-        damp_c.to_netcdf("damp_c.nc4")
-        nord_col.to_netcdf("nord_col.nc4")
-        if damp_coeff is None:
-            self._damp = calc_damp(
-                damp_c=damp_c, da_min=damping_coefficients.da_min, nord=nord_col
-            )
-        else:
-            self._damp = damp_coeff
+        self._damp = calc_damp(
+            damp_c=damp_c, da_min=damping_coefficients.da_min, nord=nord_col
+        )
 
         self.delnflux_nosg = DelnFluxNoSG(
             stencil_factory, damping_coefficients, rarea, nord_col, nk=nk
