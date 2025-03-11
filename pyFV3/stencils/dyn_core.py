@@ -1,4 +1,4 @@
-from typing import Dict, Mapping, Optional
+from typing import Dict, Mapping
 
 import numpy as np
 from dace.frontend.python.interface import nounroll as dace_nounroll
@@ -632,8 +632,8 @@ class AcousticDynamics:
 
     # See divergence_damping.py, _get_da_min for explanation of this function
     @dace_inhibitor
-    def _get_da_min(self) -> Float:
-        return Float(self._da_min)
+    def _get_da_min(self) -> np.float64:
+        return self._da_min
 
     # TODO: fix me - we shouldn't need a function here, Dace is fudging the types
     # See https://github.com/GEOS-ESM/pace/issues/9
