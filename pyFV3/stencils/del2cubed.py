@@ -1,3 +1,4 @@
+import numpy as np
 from gt4py.cartesian.gtscript import PARALLEL, computation, horizontal, interval, region
 
 import ndsl.stencils.corners as corners
@@ -68,7 +69,7 @@ def corner_fill(q_in: FloatField, q_out: FloatField):
 # Q update stencil
 # ------------------
 def update_q(
-    q: FloatField, rarea: FloatFieldIJ, fx: FloatField, fy: FloatField, cd: Float
+    q: FloatField, rarea: FloatFieldIJ, fx: FloatField, fy: FloatField, cd: np.float64
 ):
     with computation(PARALLEL), interval(...):
         q += cd * rarea * (fx - fx[1, 0, 0] + fy - fy[0, 1, 0])
@@ -169,7 +170,7 @@ class HyperdiffusionDamping:
             update_q, origins, domains, stencil_factory=stencil_factory
         )
 
-    def __call__(self, qdel: FloatField, cd: Float):
+    def __call__(self, qdel: FloatField, cd: np.float64):
         """
         Perform hyperdiffusion damping/filtering.
 
