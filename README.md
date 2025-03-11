@@ -31,12 +31,14 @@ Branches:
 - 🔶 `fix/RayleighDamping_mixed_precision`@Florian: fix the Ray_Fast test
 - 🔶 `GEOS_update/yppm_xppm`@Florian: fix the YPPM/XPPM with `hord = -6`
 - 🔶 `fix/DelnFlux_f32_support`@Florian: Fix for f32 support for DelnFlux (partial pass)
+- 🔶 `fix/GEOSv11_4_2/HyperDiffusionDamping`@Florian: fix the Hyperdiffusion Damping by restoring factor to be 64-bit float
 - ⚙️ `fix/GEOS/D_SW`@Florian: Fix D_SW heat dissipation, column calculation and new `dpx` accumulation (partial pass)
 - ⚙️ `fix/GEOSv11_4_2/A2B_Ord4`@Florian: Fix for 32-bit A2B_Ord4
 - ⚙️ `fix/GEOSv11_4_2/RiemanSolver`@Florian: Fix for 32-bit A2B_Ord4
 - ⚙️ `fix/GEOSv11_4_2/C_SW`@Florian: Fix for C_SW for 32-bit
 - ⚙️ `fix/GEOSv11_4_2/Dyncore`@Florian: Fix for Acoustics and DycoreState for 32-bit and `dpx` calculation
   - MERGE ORDER: after `fix/GEOS/D_SW`
+  - MERGE ORDER: after `fix/GEOSv11_4_2/HyperDiffusionDamping`
 - ⚙️ `feature/tracer_rework_part1` @Florian: Allow for update of N Tracers
 - ⚙️ `fix/GEOS/TracerAdvection` @Florian: Allow for non-update of mass fluxes and courant number, f32 fixes, correct computation of `cmax` and `nsplit`, overcomputation into the algorithm
   - BASED ON `tracer_rework_part1`
@@ -45,3 +47,4 @@ Branches:
 - ⚙️ `fix/GEOSv11_4_2/Dynamics`@Florian: Fix for the f32 & GEOS version of dynamics
   - REQUIRES: `ndsl` with tracer rework
   - REQUIRES: `tracer_rework_part1`, `fix/GEOSv11_4_2/Dyncore`, `fix/GEOS/TracerAdvection`
+  - MERGE ORDER: after `fix/GEOSv11_4_2/HyperDiffusionDamping`
