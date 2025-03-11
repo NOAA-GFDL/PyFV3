@@ -17,7 +17,12 @@ def calc_damp(damp_c: Quantity, da_min: Float, nord: Quantity) -> Quantity:
             "current implementation requires damp_c and nord to have "
             "identical data shape and dims"
         )
-    data = np.power((damp_c.data * da_min), (nord.data + 1), dtype=Float)
+    # `da_min` is a 64 bit float and we have to cast the array to deal
+    # with downcasting behavior of array * scalar in numpy
+    # We then reproduce the proper casting so `calc_damp` is a 32-bit float
+    data = np.power(
+        (damp_c.data.astype(np.float64) * da_min), (nord.data + 1), dtype=np.float64
+    ).astype(Float)
     return Quantity(
         data=data,
         dims=damp_c.dims,
@@ -371,6 +376,7 @@ class DelnFlux:
         rarea: Quantity,
         nord_col: Quantity,
         damp_c: Quantity,
+        damp_coeff: Quantity | None = None,
     ):
         """
         nord sets the order of damping to apply:
@@ -419,9 +425,14 @@ class DelnFlux:
             func=diffusive_damp, compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM]
         )
 
-        self._damp = calc_damp(
-            damp_c=damp_c, da_min=damping_coefficients.da_min, nord=nord_col
-        )
+        damp_c.to_netcdf("damp_c.nc4")
+        nord_col.to_netcdf("nord_col.nc4")
+        if damp_coeff is None:
+            self._damp = calc_damp(
+                damp_c=damp_c, da_min=damping_coefficients.da_min, nord=nord_col
+            )
+        else:
+            self._damp = damp_coeff
 
         self.delnflux_nosg = DelnFluxNoSG(
             stencil_factory, damping_coefficients, rarea, nord_col, nk=nk
