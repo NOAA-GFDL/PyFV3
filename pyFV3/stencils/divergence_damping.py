@@ -4,6 +4,7 @@ from gt4py.cartesian.gtscript import (
     __INLINED,
     PARALLEL,
     computation,
+    f32,
     horizontal,
     interval,
     region,
@@ -24,14 +25,13 @@ from pyFV3.stencils.d2a2c_vect import contravariant
 
 @gtscript.function
 def damp_tmp(q, da_min_c, d2_bg, dddmp):
-    mintmp = min(0.2, dddmp * abs(q))
-    damp = da_min_c * max(d2_bg, mintmp)
+    damp: f32 = da_min_c * max(d2_bg, min(0.2, dddmp * abs(q)))
     return damp
+
 
 @gtscript.function
 def damp_tmp2(q, da_min_c, d2_bg, dddmp):
-    mintmp = min(0.2, dddmp * q)
-    damp = da_min_c * max(d2_bg, mintmp)
+    damp: f32 = da_min_c * max(d2_bg, min(0.2, dddmp * q))
     return damp
 
 
@@ -60,10 +60,11 @@ def compute_u_contra_dyc(
         u_contra_dyc (out): contravariant u-wind on d-grid
 
     Porting Notes
-    * The compute_u_contra_dyc and compute_v_contra_dxc functions have the dyc and dxc values
-      incorporated earlier in the calcuation rather than later, and this enables the u_contra_dyc
-      and v_contra_dxc values to match with the Fortran.  As a result, the delpc computation
-      matches the Fortran value of delpc.
+    * The compute_u_contra_dyc and compute_v_contra_dxc functions have
+      the dyc and dxc values incorporated earlier in the calcuation rather than later,
+      and this enables the u_contra_dyc and v_contra_dxc values
+      to match with the Fortran.
+      As a result, the delpc computation matches the Fortran value of delpc.
 
       Ex : Previous implementation of compute_u_contra_dyc
       =================================================================
@@ -82,7 +83,7 @@ def compute_u_contra_dyc(
         u_contra_dyc = contravariant(u, vc_from_va, cosa_v, dyc)
         u_contra_dyc = u_contra_dyc * sina_v
         with horizontal(region[:, j_start], region[:, j_end + 1]):
-            u_contra_dyc = u * dyc* sin_sg4[0, -1] if vc > 0 else u * dyc*sin_sg2
+            u_contra_dyc = u * dyc * sin_sg4[0, -1] if vc > 0 else u * dyc * sin_sg2
 
 
 def compute_v_contra_dxc(
@@ -109,9 +110,10 @@ def compute_v_contra_dxc(
         sin_sg1 (in):
 
     Porting Notes
-    * The compute_u_contra_dyc and compute_v_contra_dxc functions have the dyc and dxc values
-      incorporated earlier in the calcuation rather than later, and this enables the u_contra_dyc
-      and v_contra_dxc values to match with the Fortran.  As a result, the delpc computation
+    * The compute_u_contra_dyc and compute_v_contra_dxc functions
+      have the dyc and dxc values incorporated earlier in the calcuation
+      rather than later, and this enables the u_contra_dyc and v_contra_dxc
+      values to match with the Fortran.  As a result, the delpc computation
       matches the Fortran value of delpc.
 
       Ex : Previous implementation of compute_v_contra_dxc
@@ -130,7 +132,7 @@ def compute_v_contra_dxc(
         v_contra_dxc = contravariant(v, uc_from_ua, cosa_u, dxc)
         v_contra_dxc = v_contra_dxc * sina_u
         with horizontal(region[i_start, :], region[i_end + 1, :]):
-            v_contra_dxc = v * dxc*sin_sg3[-1, 0] if uc > 0 else v * dxc*sin_sg1
+            v_contra_dxc = v * dxc * sin_sg3[-1, 0] if uc > 0 else v * dxc * sin_sg1
 
 
 def delpc_computation(
@@ -175,7 +177,7 @@ def damping(
     vort: FloatField,
     ke: FloatField,
     d2_bg: FloatFieldK,
-    da_min_c: Float,
+    da_min_c: np.float64,
     dddmp: Float,
     dt: Float,
 ):
@@ -199,7 +201,7 @@ def damping_nord_highorder_stencil(
     delpc: FloatField,
     divg_d: FloatField,
     d2_bg: FloatFieldK,
-    da_min_c: Float,
+    da_min_c: np.float64,
     dddmp: Float,
     dd8: Float,
 ):
@@ -215,7 +217,7 @@ def damping_nord_highorder_stencil(
     """
     # TODO: propagate variable renaming into this routine
     with computation(PARALLEL), interval(...):
-        damp = damp_tmp(vort, da_min_c, d2_bg, dddmp)
+        damp = damp_tmp2(vort, da_min_c, d2_bg, dddmp)
         vort = damp * delpc + dd8 * divg_d
         ke = ke + vort
 
@@ -283,7 +285,7 @@ def smagorinsky_diffusion_approx(delpc: FloatField, vort: FloatField, absdt: Flo
         absdt (in): abs(dt)
     """
     with computation(PARALLEL), interval(...):
-        vort = absdt * (delpc ** 2.0 + vort ** 2.0) ** 0.5
+        vort = absdt * sqrt(delpc ** 2 + vort ** 2)
 
 
 def smag_corner(
@@ -573,12 +575,12 @@ class DivergenceDamping:
     # odd and adds a lot of boilerplate throughout the model code.
 
     @dace_inhibitor
-    def _get_da_min_c(self) -> Float:
-        return Float(self._damping_coefficients.da_min_c)
+    def _get_da_min_c(self) -> np.float64:
+        return self._damping_coefficients.da_min_c
 
     @dace_inhibitor
-    def _get_da_min(self) -> Float:
-        return Float(self._damping_coefficients.da_min)
+    def _get_da_min(self) -> np.float64:
+        return self._damping_coefficients.da_min
 
     def __call__(
         self,
@@ -606,13 +608,6 @@ class DivergenceDamping:
 
         Applies both a background second-order diffusion (with strength controlled by
         d2_bg passed on init) and a higher-order hyperdiffusion.
-
-        Porting Notes
-        * The dd8 computation has different results when comparing between Fortran and Python,
-        which is likely due to the user of the power function.  The difference in dd8 results in
-        the ke value having on the order of 10,000 total error difference when running the translate
-        test.
-
 
         Args:
             u (in): x-velocity on d-grid
@@ -673,7 +668,7 @@ class DivergenceDamping:
                 self.v_contra_dxc,
             )
 
-            da_min_c: Float = self._get_da_min_c()
+            da_min_c = self._get_da_min_c()
             self._damping(
                 delpc,
                 damped_rel_vort_bgrid,
@@ -735,13 +730,13 @@ class DivergenceDamping:
                     abs(dt),
                 )
 
-        da_min: Float = self._get_da_min()
+        da_min = self._get_da_min()
         if self._stretched_grid:
             # reference https://github.com/NOAA-GFDL/GFDL_atmos_cubed_sphere/blob/main/model/sw_core.F90#L1422 # noqa: E501
-            dd8 = da_min * np.power(self._d4_bg, (self._nonzero_nord + 1), dtype=Float)
+            dd8 = Float(da_min * np.power(self._d4_bg, (self._nonzero_nord + 1)))
         else:
-            dd8 = np.power(
-                (da_min_c * self._d4_bg), (self._nonzero_nord + 1), dtype=Float
+            dd8 = np.power((da_min_c * self._d4_bg), (self._nonzero_nord + 1)).astype(
+                Float
             )
 
         self._damping_nord_highorder_stencil(
