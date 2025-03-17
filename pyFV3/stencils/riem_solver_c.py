@@ -65,7 +65,7 @@ def precompute(
         dz = gz[0, 0, 1] - gz
     with computation(PARALLEL), interval(...):
         gm = 1.0 / (1.0 - cappa)
-        dm /= constants.GRAV
+        dm *= constants.RGRAV
     with computation(PARALLEL), interval(0, -1):
         # (1) From \partial p*/\partial z = -\rho g, we can separate and integrate
         # over a layer to get
