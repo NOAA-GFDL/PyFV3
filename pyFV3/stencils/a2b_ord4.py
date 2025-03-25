@@ -1,3 +1,4 @@
+import xarray as xr
 import gt4py.cartesian.gtscript as gtscript
 from gt4py.cartesian.gtscript import (
     PARALLEL,
@@ -9,11 +10,18 @@ from gt4py.cartesian.gtscript import (
     region,
     sin,
     sqrt,
+    f64,
 )
 
 from ndsl import GridIndexing, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
-from ndsl.dsl.typing import Float, FloatField, FloatFieldI, FloatFieldIJ
+from ndsl.dsl.typing import (
+    Float,
+    FloatField,
+    FloatFieldI64,
+    FloatFieldIJ,
+    FloatFieldIJ64,
+)
 from ndsl.grid import GridData
 from ndsl.stencils.basic_operations import copy_defn
 
@@ -24,18 +32,26 @@ c2 = Float(-1.0) / Float(6.0)
 d1 = Float(0.375)
 d2 = Float(-1.0) / Float(24.0)
 # PPM volume mean form
-b1 = Float(7.0) / Float(12.0)
+b1 = Float(7.0) / Float(12.0)  # 0.58333333
 b2 = Float(-1.0) / Float(12.0)
 # 4-pt Lagrange interpolation
-a1 = Float(9.0) / Float(16.0)
-a2 = Float(-1.0) / Float(16.0)
+a1 = Float(0.5625)  # 9/16
+a2 = Float(-0.0625)  # -1/16
+
+r3 = Float(1.0 / 3.0)
 
 
 @gtscript.function
 def great_circle_dist(p1a, p1b, p2a, p2b):
-    tb = sin((p1b - p2b) / 2.0) ** 2.0
-    ta = sin((p1a - p2a) / 2.0) ** 2.0
-    return asin(sqrt(tb + cos(p1b) * cos(p2b) * ta)) * 2.0
+    return (
+        asin(
+            sqrt(
+                sin((p1b - p2b) / 2.0) ** 2.0
+                + cos(p1b) * cos(p2b) * sin((p1a - p2a) / 2.0) ** 2.0
+            )
+        )
+        * 2.0
+    )
 
 
 @gtscript.function
@@ -105,7 +121,7 @@ def _sw_corner(
             qin[1, -2, 0],
         )
 
-        qout = (ec1 + ec2 + ec3) * (1.0 / 3.0)
+        qout = (ec1 + ec2 + ec3) * r3
         tmp_qout_edges = qout
 
 
@@ -159,7 +175,7 @@ def _nw_corner(
             qin[0, 0, 0],
             qin[1, 1, 0],
         )
-        qout = (ec1 + ec2 + ec3) * (1.0 / 3.0)
+        qout = (ec1 + ec2 + ec3) * r3
         tmp_qout_edges = qout
 
 
@@ -213,7 +229,7 @@ def _ne_corner(
             qin[-1, 0, 0],
             qin[-2, 1, 0],
         )
-        qout = (ec1 + ec2 + ec3) * (1.0 / 3.0)
+        qout = (ec1 + ec2 + ec3) * r3
         tmp_qout_edges = qout
 
 
@@ -267,7 +283,7 @@ def _se_corner(
             qin[0, 0, 0],
             qin[1, 1, 0],
         )
-        qout = (ec1 + ec2 + ec3) * (1.0 / 3.0)
+        qout = (ec1 + ec2 + ec3) * r3
         tmp_qout_edges = qout
 
 
@@ -284,7 +300,7 @@ def lagrange_x_func(qy):
 def qout_x_edge(
     qin: FloatField,
     dxa: FloatFieldIJ,
-    edge_w: FloatFieldIJ,
+    edge_w: FloatFieldIJ64,
     qout: FloatField,
     tmp_qout_edges: FloatField,
 ):
@@ -305,7 +321,7 @@ def qout_x_edge(
 def qout_y_edge(
     qin: FloatField,
     dya: FloatFieldIJ,
-    edge_s: FloatFieldI,
+    edge_s: FloatFieldI64,
     qout: FloatField,
     tmp_qout_edges: FloatField,
 ):
@@ -510,11 +526,11 @@ def doubly_periodic_a2b_ord4(qin):
     Grid conversion is much simpler on a doubly-periodic, orthogonal grid so we
     can bypass most of the above code
     """
-    qx = b1 * (qin[-1, 0, 0] + qin) + b2 * (qin[-2, 0, 0] + qin[1, 0, 0])
-    qy = b1 * (qin[0, -1, 0] + qin) + b2 * (qin[0, -2, 0] + qin[0, 1, 0])
+    qx = b2 * (qin[-2, 0, 0] + qin[1, 0, 0]) * b1 * (qin[-1, 0, 0] + qin)
+    qy = b2 * (qin[0, -2, 0] + qin[0, 1, 0]) * b1 * (qin[0, -1, 0] + qin)
     qout = 0.5 * (
-        a1 * (qx[0, -1, 0] + qx + qy[-1, 0, 0] + qy)
-        + a2 * (qx[0, -2, 0] + qx[0, 1, 0] + qy[-2, 0, 0] + qy[1, 0, 0])
+        a2 * (qx[0, -2, 0] + qx[0, 1, 0] + qy[-2, 0, 0] + qy[1, 0, 0])
+        + a1 * (qx[0, -1, 0] + qx + qy[-1, 0, 0] + qy)
     )
     return qout
 
