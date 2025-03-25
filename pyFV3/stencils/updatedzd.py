@@ -3,7 +3,6 @@ from typing import Tuple
 import gt4py.cartesian.gtscript as gtscript
 from gt4py.cartesian.gtscript import BACKWARD, FORWARD, PARALLEL, computation, interval
 
-import ndsl.constants as constants
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import (
     X_DIM,
@@ -17,9 +16,6 @@ from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients, GridData
 from pyFV3.stencils.delnflux import DelnFluxNoSG
 from pyFV3.stencils.fvtp2d import FiniteVolumeTransport
-
-
-DZ_MIN = constants.DZ_MIN
 
 
 @gtscript.function
@@ -75,6 +71,7 @@ def apply_height_fluxes(
     surface_height: FloatFieldIJ,
     ws: FloatFieldIJ,
     dt: Float,
+    dz_min: Float,
 ):
     """
     Apply all computed fluxes to height profile.
@@ -98,6 +95,7 @@ def apply_height_fluxes(
         surface_height (in): surface height
         ws (out): vertical velocity of the lowest level (to keep it at the surface)
         dt (in): acoustic timestep (seconds)
+        dz_min(in): controls minimum thickness in NH solver
     Grid variable inputs:
         area
     """
@@ -116,7 +114,7 @@ def apply_height_fluxes(
             ws = (surface_height - height) / dt
         with interval(0, -1):
             # ensure layer thickness exceeds minimum
-            other = height[0, 0, 1] + DZ_MIN
+            other = height[0, 0, 1] + dz_min
             height = height if height > other else other
 
 
@@ -215,8 +213,20 @@ class UpdateHeightOnDGrid:
         grid_data: GridData,
         grid_type: int,
         hord_tm: int,
+        dz_min: Float,
         column_namelist,
     ):
+        """
+        Args:
+            stencil_factory
+            quantity_factory
+            damping_coefficients
+            grid_data
+            grid_type
+            hord_tm
+            dz_min (in): controls minimum thickness in NH solver
+            column_namelist
+        """
         orchestrate(
             obj=self,
             config=stencil_factory.config.dace_config,
@@ -229,6 +239,7 @@ class UpdateHeightOnDGrid:
             raise NotImplementedError(
                 "damp <= 1e-5 in column_namelist is not implemented"
             )
+        self._dz_min = dz_min
         self._dp_ref = grid_data.dp_ref
         self._allocate_temporary_storages(quantity_factory)
         self._gk, self._beta, self._gamma = cubic_spline_interpolation_constants(
@@ -381,4 +392,5 @@ class UpdateHeightOnDGrid:
             surface_height,
             ws,
             dt,
+            self._dz_min,
         )

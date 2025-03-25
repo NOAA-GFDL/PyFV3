@@ -1,14 +1,10 @@
 import gt4py.cartesian.gtscript as gtscript
 from gt4py.cartesian.gtscript import BACKWARD, FORWARD, PARALLEL, computation, interval
 
-import ndsl.constants as constants
 from ndsl import Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.stencils import corners
-
-
-DZ_MIN = constants.DZ_MIN
 
 
 @gtscript.function
@@ -69,23 +65,25 @@ def update_dz_c(
     ws: FloatFieldIJ,
     *,
     dt: Float,
+    dz_min: Float,
 ):
     """
     Step dz forward on c-grid
     Eusures gz is monotonically increasing in z at the end
     Args:
-        dp_ref:
-        zs:
+        dp_ref: layer thickness in Pa
+        zs: surface height in m
         area:
-        ut:
-        vt:
-        gz:
+        ut: horizontal wind (TODO: covariant or contravariant?)
+        vt: horizontal wind (TODO: covariant or contravariant?)
+        gz: geopotential height on model interfaces
         gz_x: gz with corners copied to perform derivatives in x-direction
         gz_y: gz with corners copied to perform derivatives in y-direction
         ws: lagrangian (parcel-following) surface vertical wind implied by
             lowest-level gz change note that a parcel moving horizontally
             across terrain will be moving in the vertical (eqn 5.5 in documentation)
-        dt:
+        dt: timestep over which to evolve the geopotential height, in seconds
+        dz_min: Controls minimum thickness in NH solver
     """
 
     # there's some complexity due to gz being defined on interfaces
@@ -112,7 +110,7 @@ def update_dz_c(
         rdt = 1.0 / dt
         ws = (zs - gz) * rdt
     with computation(BACKWARD), interval(0, -1):
-        gz_kp1 = gz[0, 0, 1] + DZ_MIN
+        gz_kp1 = gz[0, 0, 1] + dz_min
         gz = gz if gz > gz_kp1 else gz_kp1
 
 
@@ -123,11 +121,18 @@ class UpdateGeopotentialHeightOnCGrid:
         quantity_factory: QuantityFactory,
         area: Quantity,
         dp_ref: Quantity,
-        grid_type,
+        grid_type: int,
+        dz_min: Float,
     ):
+        """
+        Args:
+            dz_min: controls minimum thickness in NH solver
+        """
+
         grid_indexing = stencil_factory.grid_indexing
         self._area = area
         self._grid_type = grid_type
+        self._dz_min = dz_min
         # TODO: this is needed because GridData.dp_ref does not have access
         # to a QuantityFactory, we should add a way to perform operations on
         # Quantity and persist the QuantityFactory choices
@@ -221,4 +226,5 @@ class UpdateGeopotentialHeightOnCGrid:
             self._gz_y,
             ws,
             dt=dt,
+            dz_min=self._dz_min,
         )
