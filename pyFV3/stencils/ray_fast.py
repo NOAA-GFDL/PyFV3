@@ -242,6 +242,16 @@ class RayleighDamping:
         dt: Float,
         ptop: Float,
     ):
+        """
+        Args:
+            u (inout)
+            v (inout)
+            w (inout)
+            dp (in)
+            pfull (in)
+            dt (in)
+            ptop (in)
+        """
         rf_cutoff_nudge = self._rf_cutoff + min(Float(100.0), Float(10.0) * ptop)
 
         if not self._initialize_damping_increment:
