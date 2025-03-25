@@ -8,6 +8,8 @@ from gt4py.cartesian.gtscript import (
     horizontal,
     interval,
     region,
+    I,
+    J,
 )
 
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
@@ -16,7 +18,6 @@ from ndsl.dsl.typing import Float, FloatField, FloatField64, FloatFieldIJ, Float
 from ndsl.grid import DampingCoefficients, GridData
 from pyFV3._config import DGridShallowWaterLagrangianDynamicsConfig
 from pyFV3.stencils import delnflux
-from pyFV3.stencils.d2a2c_vect import contravariant
 from pyFV3.stencils.delnflux import DelnFluxNoSG
 from pyFV3.stencils.divergence_damping import DivergenceDamping
 from pyFV3.stencils.fvtp2d import FiniteVolumeTransport
@@ -254,20 +255,22 @@ def compute_kinetic_energy(
     from __externals__ import grid_type
 
     with computation(PARALLEL), interval(...):
+        dt4 = 0.25 * dt
+        dt5 = 0.5 * dt
         if __INLINED(grid_type < 3):
             ub_contra, vb_contra = interpolate_uc_vc_to_cell_corners(
-                uc, vc, cosa, rsina, uc_contra, vc_contra
+                uc, vc, cosa, rsina, uc_contra, vc_contra, dt4, dt5
             )
         else:
-            ub_contra = 0.5 * (uc[0, -1, 0] + uc)
-            vb_contra = 0.5 * (vc[-1, 0, 0] + vc)
+            ub_contra = dt5 * (uc[0, -1, 0] + uc)
+            vb_contra = dt5 * (vc[-1, 0, 0] + vc)
         advected_v = advect_v_along_y(v, vb_contra, rdy=rdy, dy=dy, dya=dya, dt=dt)
         advected_u = advect_u_along_x(u, ub_contra, rdx=rdx, dx=dx, dxa=dxa, dt=dt)
         # makes sure the kinetic energy part of the governing equation is computed
         # the same way as the vorticity flux part (in terms of time splitting)
         # to avoid a Hollingsworth-Kallberg instability
-        dt_kinetic_energy_on_cell_corners = (
-            0.5 * dt * (ub_contra * advected_u + vb_contra * advected_v)
+        dt_kinetic_energy_on_cell_corners = 0.5 * (
+            ub_contra * advected_u + vb_contra * advected_v
         )
         dt_kinetic_energy_on_cell_corners = all_corners_ke(
             dt_kinetic_energy_on_cell_corners, u, v, uc_contra, vc_contra, dt
@@ -339,11 +342,9 @@ def compute_vorticity(
         # cell-mean vorticity is equal to the circulation around the gridcell
         # divided by the area of the gridcell. It isn't exactly true that
         # area = dx * dy, so the form below is necessary to get an exact result.
-        rdy_tmp = rarea * dx
-        rdx_tmp = rarea * dy
-        vorticity = (u - u[0, 1, 0] * dx[0, 1] / dx) * rdy_tmp + (
-            v[1, 0, 0] * dy[1, 0] / dy - v
-        ) * rdx_tmp
+        ut = v * dy
+        vt = u * dx
+        vorticity = rarea * (vt - vt[J + 1] - ut + ut[I + 1])
 
 
 def adjust_w_and_qcon(
@@ -742,42 +743,39 @@ def get_column_namelist(
 
 @gtscript.function
 def interpolate_uc_vc_to_cell_corners(
-    uc_cov, vc_cov, cosa, rsina, uc_contra, vc_contra
+    uc_cov, vc_cov, cosa, rsina, uc_contra, vc_contra, dt4, dt5
 ):
     """
     Convert covariant C-grid winds to contravariant B-grid (cell-corner) winds.
     """
     from __externals__ import i_end, i_start, j_end, j_start
 
-    # In the original Fortran, this routine was given dt4 (0.25 * dt)
-    # and dt5 (0.5 * dt), and its outputs were wind times timestep. This has
-    # been refactored so the timestep is later explicitly multiplied, when
-    # the wind is integrated forward in time.
-    # TODO: ask Lucas why we interpolate then convert to contravariant in tile center,
-    # but convert to contravariant and then interpolate on tile edges.
-    ub_cov = 0.5 * (uc_cov[0, -1, 0] + uc_cov)
-    vb_cov = 0.5 * (vc_cov[-1, 0, 0] + vc_cov)
-    ub_contra = contravariant(ub_cov, vb_cov, cosa, rsina)
-    vb_contra = contravariant(vb_cov, ub_cov, cosa, rsina)
-    # ASSUME : if __INLINED(namelist.grid_type < 3):
-    with horizontal(region[:, j_start], region[:, j_end + 1]):
-        ub_contra = 0.25 * (
-            -uc_contra[0, -2, 0]
-            + 3.0 * (uc_contra[0, -1, 0] + uc_contra)
-            - uc_contra[0, 1, 0]
-        )
-    with horizontal(region[i_start, :], region[i_end + 1, :]):
-        ub_contra = 0.5 * (uc_contra[0, -1, 0] + uc_contra)
-    with horizontal(region[i_start, :], region[i_end + 1, :]):
-        vb_contra = 0.25 * (
-            -vc_contra[-2, 0, 0]
-            + 3.0 * (vc_contra[-1, 0, 0] + vc_contra)
-            - vc_contra[1, 0, 0]
-        )
-    with horizontal(region[:, j_start], region[:, j_end + 1]):
-        vb_contra = 0.5 * (vc_contra[-1, 0, 0] + vc_contra)
+    # Orders matter because corners take the last edge computation values
 
-    return ub_contra, vb_contra
+    # Center domain
+    ub = dt5 * (uc_cov[J - 1] + uc_cov - (vc_cov[I - 1] + vc_cov) * cosa) * rsina
+    vb = dt5 * (vc_cov[I - 1] + vc_cov - (uc_cov[J - 1] + uc_cov) * cosa) * rsina
+    # UB - Orders matter because corners take the last edge computation values
+    # North/South edge
+    with horizontal(region[:, j_start], region[:, j_end + 1]):
+        ub = dt4 * (
+            -uc_contra[J - 2] + 3.0 * (uc_contra[J - 1] + uc_contra) - uc_contra[J + 1]
+        )
+    # East/West
+    with horizontal(region[i_start, :], region[i_end + 1, :]):
+        ub = dt5 * (uc_contra[J - 1] + uc_contra)
+
+    # VB - Orders matter because corners take the last edge computation values
+    # North/South edge
+    with horizontal(region[i_start, :], region[i_end + 1, :]):
+        vb = dt4 * (
+            -vc_contra[I - 2] + 3.0 * (vc_contra[I - 1] + vc_contra) - vc_contra[I + 1]
+        )
+    # East/West
+    with horizontal(region[:, j_start], region[:, j_end + 1]):
+        vb = dt5 * (vc_contra[I - 1] + vc_contra)
+
+    return ub, vb
 
 
 class DGridShallowWaterLagrangianDynamics:
