@@ -85,7 +85,7 @@ def advect_u_along_x(
 
     bl, br = get_bl_br(u, dx, dxa)
     b0 = bl + br
-    cfl = ub_contra * dt * rdx[-1, 0] if ub_contra > 0 else ub_contra * dt * rdx
+    cfl = ub_contra * rdx[-1, 0] if ub_contra > 0 else ub_contra * rdx
     fx0 = xppm.fx1_fn(cfl, br, b0, bl)
 
     if __INLINED(iord < 8):
