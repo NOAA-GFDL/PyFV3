@@ -5,6 +5,8 @@ from gt4py.cartesian.gtscript import (  # noqa
     horizontal,
     interval,
     region,
+    I,
+    J,
 )
 
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
@@ -378,7 +380,8 @@ def transportdelp_update_vorticity_and_kineticenergy(
             with horizontal(region[i_end + 1, :], region[i_start, :]):
                 ke = ke * sin_sg1 + v * cos_sg1 if ua > 0.0 else ke
 
-        ke = 0.5 * dt2 * (ua * ke + va * vort)
+        dt4 = 0.5 * dt2
+        ke = dt4 * (ua * ke + va * vort)
 
 
 def circulation_cgrid(
@@ -400,18 +403,18 @@ def circulation_cgrid(
     from __externals__ import i_end, i_start, j_end, j_start
 
     with computation(PARALLEL), interval(...):
-        fx = dxc * uc
-        fy = dyc * vc
-        # fx1 and fy1 are the shifted versions of fx and fy and are defined
-        # because temporaries are not allowed to be accessed with offsets in regions.
-        fx1 = dxc[0, -1] * uc[0, -1, 0]
-        fy1 = dyc[-1, 0] * vc[-1, 0, 0]
+        fx = uc * dxc
+        fy = vc * dyc
 
-        vort_c = fx1 - fx - fy1 + fy
+        vort_c = fx[J - 1] - fx - fy[I - 1] + fy
+
+        # Remove the extra term at the corners
+        # WEST
         with horizontal(region[i_start, j_start], region[i_start, j_end + 1]):
-            vort_c = fx1 - fx + fy
+            vort_c = vort_c + (vc[I - 1] * dyc[I - 1])
+        # EAST
         with horizontal(region[i_end + 1, j_start], region[i_end + 1, j_end + 1]):
-            vort_c = fx1 - fx - fy1
+            vort_c = vort_c - fy
 
 
 def absolute_vorticity(vort: FloatField, fC: FloatFieldIJ, rarea_c: FloatFieldIJ):
