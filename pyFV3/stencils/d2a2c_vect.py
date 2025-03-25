@@ -3,7 +3,7 @@ from gt4py.cartesian.gtscript import PARALLEL, computation, horizontal, interval
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, get_precision
 from ndsl.grid import GridData
 from ndsl.stencils import corners
 from pyFV3.stencils.a2b_ord4 import a1, a2, lagrange_x_func, lagrange_y_func
@@ -140,7 +140,7 @@ def east_west_edges(
             uc = utc * sin_sg3[-1, 0] if utc > 0 else utc * sin_sg1
 
         with horizontal(region[i_end + 2, local_js - 1 : local_je + 2]):
-            uc = vol_conserv_cubic_interp_func_x_rev(utmp)
+            uc = vol_conserv_cubic_interp_func_x_rev_2(utmp)
 
         with horizontal(region[i_end, local_js - 1 : local_je + 2]):
             utc = contravariant(uc, v, cosa_u, rsin_u)
@@ -301,6 +301,13 @@ def vol_conserv_cubic_interp_func_x_rev(u):
 
 
 @gtscript.function
+def vol_conserv_cubic_interp_func_x_rev_2(u):
+    """Series order is reversed compared to original
+    vol_conserv_cubic_interp_func_x_rev to match Fortran"""
+    return c3 * u[-1, 0, 0] + c2 * u + c1 * u[1, 0, 0]
+
+
+@gtscript.function
 def vol_conserv_cubic_interp_func_y(v):
     return c1 * v[0, -2, 0] + c2 * v[0, -1, 0] + c3 * v
 
@@ -361,18 +368,20 @@ def vc_y_edge1(
 def edge_interpolate4_x(ua, dxa):
     t1 = dxa[-2, 0] + dxa[-1, 0]
     t2 = dxa[0, 0] + dxa[1, 0]
-    n1 = (t1 + dxa[-1, 0]) * ua[-1, 0, 0] - dxa[-1, 0] * ua[-2, 0, 0]
-    n2 = (t1 + dxa[0, 0]) * ua[0, 0, 0] - dxa[0, 0] * ua[1, 0, 0]
-    return 0.5 * (n1 / t1 + n2 / t2)
+    return 0.5 * (
+        ((t1 + dxa[-1, 0]) * ua[-1, 0, 0] - dxa[-1, 0] * ua[-2, 0, 0]) / t1
+        + ((t1 + dxa[0, 0]) * ua[0, 0, 0] - dxa[0, 0] * ua[1, 0, 0]) / t2
+    )
 
 
 @gtscript.function
 def edge_interpolate4_y(va, dya):
     t1 = dya[0, -2] + dya[0, -1]
     t2 = dya[0, 0] + dya[0, 1]
-    n1 = (t1 + dya[0, -1]) * va[0, -1, 0] - dya[0, -1] * va[0, -2, 0]
-    n2 = (t1 + dya[0, 0]) * va[0, 0, 0] - dya[0, 0] * va[0, 1, 0]
-    return 0.5 * (n1 / t1 + n2 / t2)
+    return 0.5 * (
+        ((t1 + dya[0, -1]) * va[0, -1, 0] - dya[0, -1] * va[0, -2, 0]) / t1
+        + ((t1 + dya[0, 0]) * va[0, 0, 0] - dya[0, 0] * va[0, 1, 0]) / t2
+    )
 
 
 class DGrid2AGrid2CGridVectors:
@@ -409,7 +418,7 @@ class DGrid2AGrid2CGridVectors:
         self._sin_sg4 = grid_data.sin_sg4
         self._grid_type = grid_type
 
-        self._big_number = Float(1e30)  # 1e8 if 32 bit
+        self._big_number = Float(1e30) if get_precision() == 64 else Float(1e8)
         nx = grid_indexing.iec + 1  # grid.npx + 2
         ny = grid_indexing.jec + 1  # grid.npy + 2
         i1 = grid_indexing.isc - 1
@@ -640,15 +649,6 @@ class DGrid2AGrid2CGridVectors:
             va,
         )
 
-        self._ut_main(
-            self._utmp,
-            uc,
-            v,
-            self._cosa_u,
-            self._rsin_u,
-            utc,
-        )
-
         if self._grid_type < 3:
             self._east_west_edges(
                 u,
@@ -663,6 +663,15 @@ class DGrid2AGrid2CGridVectors:
                 self._rsin_u,
                 self._dxa,
             )
+
+        self._ut_main(
+            self._utmp,
+            uc,
+            v,
+            self._cosa_u,
+            self._rsin_u,
+            utc,
+        )
 
         # Ydir:
         self._fill_corners_y(
