@@ -172,7 +172,7 @@ class NonHydrostaticPressureGradient:
             z_dim=Z_INTERFACE_DIM,
             replace=True,
         )
-        self.a2b_kbuffer = AGrid2BGridFourthOrder(
+        self.a2b_kinterface = AGrid2BGridFourthOrder(
             stencil_factory,
             quantity_factory=quantity_factory,
             grid_data=grid_data,
@@ -245,7 +245,7 @@ class NonHydrostaticPressureGradient:
         self.a2b_k1(pp, self._tmp_wk1)
         self.a2b_k1(pk3, self._tmp_wk1)
 
-        self.a2b_kbuffer(gz, self._tmp_wk1)
+        self.a2b_kinterface(gz, self._tmp_wk1)
         self.a2b_kstandard(delp, self._tmp_wk1)
 
         self._set_k0_and_calc_wk_stencil(pp, pk3, self._tmp_wk, top_value)
