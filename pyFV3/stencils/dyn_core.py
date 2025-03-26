@@ -496,6 +496,7 @@ class AcousticDynamics:
                 grid_data=grid_data,
                 grid_type=grid_type,
                 hord_tm=config.hord_tm,
+                dz_min=constants.DZ_MIN,
                 column_namelist=column_namelist,
             )
             self.vertical_solver = NonhydrostaticVerticalSolver(
@@ -563,6 +564,7 @@ class AcousticDynamics:
                 area=grid_data.area,
                 dp_ref=grid_data.dp_ref,
                 grid_type=config.grid_type,
+                dz_min=constants.DZ_MIN,
             )
         )
 
