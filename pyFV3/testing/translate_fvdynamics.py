@@ -367,7 +367,8 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
             config=DynamicalCoreConfig.from_namelist(self.namelist),
             phis=state.phis,
             state=state,
-            timestep=timedelta(seconds=inputs["bdt"]),
+            exclude_tracers=["cloud"],
+            timestep=timedelta(seconds=float(inputs["bdt"])),
         )
         self.dycore.step_dynamics(state, NullTimer())
         outputs = self.outputs_from_state(state)
