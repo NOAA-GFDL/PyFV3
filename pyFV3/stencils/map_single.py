@@ -257,7 +257,7 @@ class MapSingle:
             units="unknown",
             dtype=Float,
         )
-        self._lev = quantity_factory.zeros([X_DIM, Y_DIM], units="", dtype=int)
+        self._lev = quantity_factory.zeros([X_DIM, Y_DIM], units="", dtype=Int)
 
         self._copy_stencil = stencil_factory.from_dims_halo(
             copy_defn,
@@ -290,13 +290,13 @@ class MapSingle:
         self._INDEX_LM1 = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="",
-            dtype=int,
+            dtype=Int,
         )
 
         self._INDEX_LP0 = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="",
-            dtype=int,
+            dtype=Int,
         )
         self._km = grid_indexing.domain[2]
         self._not_exit_loop = quantity_factory.zeros(
@@ -369,17 +369,17 @@ class MapSingle:
             )
         else:
             self._lagrangian_contributions_interp(
-                self._km,
-                self._not_exit_loop,
-                self._INDEX_LM1,
-                self._INDEX_LP0,
-                q1,
-                pe1,
-                pe2,
-                self._q4_1,
-                self._q4_2,
-                self._q4_3,
-                self._q4_4,
-                self._dp1,
-                self._lev,
+                km=self._km,
+                not_exit_loop=self._not_exit_loop,
+                INDEX_LM1=self._INDEX_LM1,
+                INDEX_LP0=self._INDEX_LP0,
+                q=q1,
+                pe1=pe1,
+                pe2=pe2,
+                q4_1=self._q4_1,
+                q4_2=self._q4_2,
+                q4_3=self._q4_3,
+                q4_4=self._q4_4,
+                dp1=self._dp1,
+                lev=self._lev,
             )
