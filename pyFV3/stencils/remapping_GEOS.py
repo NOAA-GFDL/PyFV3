@@ -85,8 +85,7 @@ class LagrangianToEulerian_GEOS:
         self._adiabatic = adiabatic
         self.kmp = grid_indexing.domain[2] - 1
         for k in range(pfull.shape[0]):
-            # if pfull.view[k] > 10.0e2:
-            if pfull[k] > 10.0e2:
+            if pfull.view[k] > 10.0e2:
                 self.kmp = k
                 break
         # do_omega = hydrostatic and last_step # TODO pull into inputs
@@ -208,11 +207,10 @@ class LagrangianToEulerian_GEOS:
         self._mapn_tracer = MapNTracer(
             stencil_factory,
             quantity_factory,
-            abs(config.kord_tr),
-            self._nq,
+            kord=abs(config.kord_tr),
             fill=config.fill,
             tracers=tracers,
-            # exclude_tracers=[],
+            exclude_tracers=[],
         )
 
         self._map_single_w = MapSingle(
@@ -413,12 +411,12 @@ class LagrangianToEulerian_GEOS:
         # Build remapping profiles
         self._init_pe(pe, self._pe1, self._pe2, ptop)
         self._moist_cv_pt_pressure(
-            qvapor=tracers["qvapor"],
-            qliquid=tracers["qliquid"],
-            qrain=tracers["qrain"],
-            qsnow=tracers["qsnow"],
-            qice=tracers["qice"],
-            qgraupel=tracers["qgraupel"],
+            qvapor=tracers["vapor"],
+            qliquid=tracers["liquid"],
+            qrain=tracers["rain"],
+            qsnow=tracers["snow"],
+            qice=tracers["ice"],
+            qgraupel=tracers["graupel"],
             q_con=q_con,
             pt=pt,
             cappa=cappa,
@@ -499,12 +497,12 @@ class LagrangianToEulerian_GEOS:
         )
 
         self._moist_cv_pkz(
-            qvapor=tracers["qvapor"],
-            qliquid=tracers["qliquid"],
-            qrain=tracers["qrain"],
-            qsnow=tracers["qsnow"],
-            qice=tracers["qice"],
-            qgraupel=tracers["qgraupel"],
+            qvapor=tracers["vapor"],
+            qliquid=tracers["liquid"],
+            qrain=tracers["rain"],
+            qsnow=tracers["snow"],
+            qice=tracers["ice"],
+            qgraupel=tracers["graupel"],
             pkz=pkz,
             pt=pt,
             cappa=cappa,
@@ -517,12 +515,12 @@ class LagrangianToEulerian_GEOS:
         if last_step:
             if consv_te > CONSV_MIN:
                 self._moist_cv_te(
-                    qvapor=tracers["qvapor"],
-                    qliquid=tracers["qliquid"],
-                    qrain=tracers["qrain"],
-                    qsnow=tracers["qsnow"],
-                    qice=tracers["qice"],
-                    qgraupel=tracers["qgraupel"],
+                    qvapor=tracers["vapor"],
+                    qliquid=tracers["liquid"],
+                    qrain=tracers["rain"],
+                    qsnow=tracers["snow"],
+                    qice=tracers["ice"],
+                    qgraupel=tracers["graupel"],
                     u=u,
                     v=v,
                     w=w,
@@ -570,13 +568,13 @@ class LagrangianToEulerian_GEOS:
             fast_mp_consv = consv_te > CONSV_MIN
             self._saturation_adjustment(
                 dp1,
-                tracers["qvapor"],
-                tracers["qliquid"],
-                tracers["qice"],
-                tracers["qrain"],
-                tracers["qsnow"],
-                tracers["qgraupel"],
-                tracers["qcld"],
+                tracers["vapor"],
+                tracers["liquid"],
+                tracers["ice"],
+                tracers["rain"],
+                tracers["snow"],
+                tracers["graupel"],
+                tracers["cloud"],
                 hs,
                 peln,
                 delp,
@@ -598,12 +596,12 @@ class LagrangianToEulerian_GEOS:
             # to the physics, but if we're staying in dynamics we need
             # to keep it as the virtual potential temperature
             self._moist_cv_last_step_stencil(
-                qvapor=tracers["qvapor"],
-                qliquid=tracers["qliquid"],
-                qrain=tracers["qrain"],
-                qsnow=tracers["qsnow"],
-                qice=tracers["qice"],
-                qgraupel=tracers["qgraupel"],
+                qvapor=tracers["vapor"],
+                qliquid=tracers["liquid"],
+                qrain=tracers["rain"],
+                qsnow=tracers["snow"],
+                qice=tracers["ice"],
+                qgraupel=tracers["graupel"],
                 pt=pt,
                 pkz=pkz,
                 dtmp=Float(dtmp),
@@ -611,11 +609,11 @@ class LagrangianToEulerian_GEOS:
             )
             self._fill_cond(
                 q_con=q_con,
-                qliquid=tracers["qliquid"],
-                qrain=tracers["qrain"],
-                qsnow=tracers["qsnow"],
-                qice=tracers["qice"],
-                qgraupel=tracers["qgraupel"],
+                qliquid=tracers["liquid"],
+                qrain=tracers["rain"],
+                qsnow=tracers["snow"],
+                qice=tracers["ice"],
+                qgraupel=tracers["graupel"],
             )
         else:
             # converts virtual temperature back to virtual potential temperature
