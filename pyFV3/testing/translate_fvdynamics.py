@@ -376,7 +376,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
             phis=state.phis,
             state=state,
             exclude_tracers=["cloud"],
-            timestep=timedelta(seconds=inputs["bdt"]),
+            timestep=timedelta(seconds=float(inputs["bdt"])),
         )
         self.dycore.step_dynamics(state, NullTimer())
         outputs = self.outputs_from_state(state)

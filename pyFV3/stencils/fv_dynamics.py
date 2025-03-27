@@ -542,8 +542,8 @@ class DynamicalCore:
 
     # See divergence_damping.py, _get_da_min for explanation of this function
     @dace_inhibitor
-    def _get_da_min(self) -> Float:  # type: ignore
-        return Float(self._da_min)
+    def _get_da_min(self) -> NDSL_64BIT_FLOAT_TYPE:  # type: ignore
+        return self._da_min
 
     def step_dynamics(
         self,
