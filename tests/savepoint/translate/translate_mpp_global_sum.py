@@ -1,10 +1,10 @@
-from ndsl import StencilFactory, Namelist
+from ndsl import Namelist, StencilFactory
+from ndsl.stencils.testing import ParallelTranslate
 from ndsl.stencils.testing.grid import Grid
-from ndsl.stencils.testing import TranslateFortranData2Py, ParallelTranslate
-import numpy as np
 from ndsl.typing import Communicator
-from ndsl.quantity import Quantity
 from pyFV3.stencils.mpp_global_sum import mpp_global_sum
+
+
 class TranslateMpp_global_sum(ParallelTranslate):
     def __init__(
         self,
@@ -17,25 +17,23 @@ class TranslateMpp_global_sum(ParallelTranslate):
         self.grid = grid
 
         self._base.in_vars["data_vars"] = {
-            "inputArray" :{
+            "inputArray": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
             },
-            "tesum":{
-
-            }
+            "tesum": {},
         }
 
-        self._base.out_vars = {
-            "tesum":{
+        self._base.out_vars = {"tesum": {}}
 
-            }
-        }
-    
     def compute_parallel(self, inputs, communicator: Communicator):
 
-        inputs["tesum"] = mpp_global_sum(inputs["inputArray"], communicator, self.stencil_factory)
-        
+        inputs["tesum"] = mpp_global_sum(
+            inputs["inputArray"],
+            communicator,
+            self.stencil_factory,
+        )
+
         return inputs

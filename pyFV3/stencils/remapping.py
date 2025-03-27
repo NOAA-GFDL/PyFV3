@@ -1,7 +1,6 @@
 from typing import List, Optional
 
 from gt4py.cartesian.gtscript import (
-    __INLINED,
     BACKWARD,
     FORWARD,
     PARALLEL,
@@ -32,6 +31,9 @@ from pyFV3.stencils.mapn_tracer import MapNTracer
 from pyFV3.stencils.moist_cv import moist_pt_func, moist_pt_last_step
 from pyFV3.stencils.saturation_adjustment import SatAdjust3d
 from pyFV3.tracers import Tracers
+
+
+# from pyFV3.tracers import Tracers
 
 
 # TODO: Should this be set here or in global_constants?
@@ -131,12 +133,11 @@ def moist_cv_pt_pressure(
         remap_t (in):
         r_vir (in):
     """
-    from __externals__ import hydrostatic#, kord_tm
 
     # moist_cv.moist_pt
     with computation(PARALLEL), interval(0, -1):
         # if __INLINED(kord_tm < 0):
-        if(remap_t): 
+        if remap_t:
             cvm, gz, q_con, cappa, pt = moist_pt_func(
                 qvapor,
                 qliquid,
@@ -155,7 +156,7 @@ def moist_cv_pt_pressure(
         # # delz_adjust
         # if __INLINED(not hydrostatic):
         #     delz = -delz / delp
-   
+
     # pressure_updates
     with computation(FORWARD):
         with interval(-1, None):
@@ -205,10 +206,11 @@ def pn2_pk_delp(
         pn2 = log(pe2)
         pk = exp(akap * pn2)
 
-def pe0_ptop_xmax(pe0: FloatField, 
-                  ptop: Float):
-    with computation(PARALLEL), interval(0,1):
+
+def pe0_ptop_xmax(pe0: FloatField, ptop: Float):
+    with computation(PARALLEL), interval(0, 1):
         pe0 = ptop
+
 
 def pressures_mapu(
     pe: FloatField,
@@ -303,6 +305,7 @@ def copy_from_below(a: FloatField, b: FloatField):
     with computation(PARALLEL), interval(1, None):
         b = a[0, 0, -1]
 
+
 def pe_pk_delp_peln(
     pe: FloatField,
     pk: FloatField,
@@ -316,7 +319,6 @@ def pe_pk_delp_peln(
     akap: Float,
     ptop: Float,
 ):
-
     with computation(BACKWARD):
         with interval(-1, None):
             pe_bottom = pe
@@ -328,25 +330,26 @@ def pe_pk_delp_peln(
             pe2 = ptop
             pn2 = peln
             pk2 = pk
-        with interval(1,-1):
+        with interval(1, -1):
             pe2 = ak + bk * pe_bottom
             pn2 = log(pe2)
-            pk2 = exp(akap*pn2)
+            pk2 = exp(akap * pn2)
         with interval(-1, None):
             pe2 = pe
             pn2 = peln
             pk2 = pk
 
     with computation(PARALLEL):
-        with interval(0,-1):
+        with interval(0, -1):
             pe = pe2
             pk = pk2
-            delp = pe2[0,0,1] - pe2[0,0,0]
+            delp = pe2[0, 0, 1] - pe2[0, 0, 0]
             peln = pn2
-        with interval(-1,None):
+        with interval(-1, None):
             pe = pe2
             pk = pk2
             peln = pn2
+
 
 class LagrangianToEulerian:
     """
@@ -445,7 +448,7 @@ class LagrangianToEulerian:
 
         # NOTE: In GEOS, remap_t is set to True in general
         #       Add in the "remap_option" check later
-        if(True):
+        if True:
             self._remap_t = True
 
         self.kmp = grid_indexing.domain[2] - 1
@@ -698,7 +701,7 @@ class LagrangianToEulerian:
         self._map_single_w(w, self._pe1, self._pe2, qs=wsd)
         self._map_single_delz(delz, self._pe1, self._pe2)
 
-        # W_limiter routine will go here        
+        # W_limiter routine will go here
 
         self._undo_delz_adjust_and_copy_peln(delp, delz, peln, self._pe0, self._pn2)
         # if do_omega:  # NOTE untested

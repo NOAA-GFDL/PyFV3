@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import List, Mapping, Optional
+from typing import List, Mapping
 
 from dace.frontend.python.interface import nounroll as dace_no_unroll
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, interval

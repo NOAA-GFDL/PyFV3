@@ -1,6 +1,7 @@
 from ndsl.stencils.testing import TranslateFortranData2Py, pad_field_in_j
 from pyFV3.stencils import moist_cv
 
+
 class TranslateMoistCVPlusTe_2d(TranslateFortranData2Py):
     def __init__(self, grid, namelist, stencil_factory):
         super().__init__(grid, namelist, stencil_factory)
@@ -19,7 +20,7 @@ class TranslateMoistCVPlusTe_2d(TranslateFortranData2Py):
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz+1,
+                "kend": grid.npz + 1,
             },
             "te_2d_": {
                 "istart": grid.is_,
@@ -29,9 +30,9 @@ class TranslateMoistCVPlusTe_2d(TranslateFortranData2Py):
             },
             "u": {
                 "istart": grid.isd,
-                "iend": grid.ied ,
+                "iend": grid.ied,
                 "jstart": grid.jsd,
-                "jend": grid.jed+1,
+                "jend": grid.jed + 1,
                 "kend": grid.npz,
             },
             "v": {
@@ -41,7 +42,7 @@ class TranslateMoistCVPlusTe_2d(TranslateFortranData2Py):
                 "jend": grid.jed,
                 "kend": grid.npz,
             },
-            "w":{
+            "w": {
                 "kend": grid.npz,
             },
             "cosa_s": {
@@ -62,7 +63,7 @@ class TranslateMoistCVPlusTe_2d(TranslateFortranData2Py):
                 "jstart": grid.jsd,
                 "jend": grid.jed,
             },
-            "delz": {}
+            "delz": {},
         }
         self.write_vars = ["qvapor", "qliquid", "qice", "qrain", "qsnow", "qgraupel"]
         for k, v in self.in_vars["data_vars"].items():
@@ -82,7 +83,7 @@ class TranslateMoistCVPlusTe_2d(TranslateFortranData2Py):
         self.compute_func = stencil_factory.from_origin_domain(
             moist_cv.moist_te,
             origin=grid.compute_origin(),
-            domain=(grid.nic, 1, grid.npz+1),
+            domain=(grid.nic, 1, grid.npz + 1),
         )
 
     def compute_from_storage(self, inputs):
@@ -94,24 +95,25 @@ class TranslateMoistCVPlusTe_2d(TranslateFortranData2Py):
                     )
                 )
 
-        self.compute_func(inputs["qvapor"],
-                          inputs["qliquid"],
-                          inputs["qrain"],
-                          inputs["qsnow"],
-                          inputs["qice"],
-                          inputs["qgraupel"],
-                          inputs["u"],
-                          inputs["v"],
-                          inputs["w"],
-                          inputs["te_2d_"],
-                          inputs["pt"],
-                          inputs["phis_"],
-                          inputs["delp"],
-                          inputs["rsin2"],
-                          inputs["cosa_s"],
-                          inputs["hs"],
-                          inputs["delz"],
-                          inputs["grav"],
-                        )
+        self.compute_func(
+            inputs["qvapor"],
+            inputs["qliquid"],
+            inputs["qrain"],
+            inputs["qsnow"],
+            inputs["qice"],
+            inputs["qgraupel"],
+            inputs["u"],
+            inputs["v"],
+            inputs["w"],
+            inputs["te_2d_"],
+            inputs["pt"],
+            inputs["phis_"],
+            inputs["delp"],
+            inputs["rsin2"],
+            inputs["cosa_s"],
+            inputs["hs"],
+            inputs["delz"],
+            inputs["grav"],
+        )
 
         return inputs

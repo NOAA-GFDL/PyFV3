@@ -1,7 +1,7 @@
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 from ndsl import StencilFactory
-from ndsl.dsl.typing import FloatField, Float
+from ndsl.dsl.typing import Float, FloatField
 from ndsl.stencils.testing import TranslateFortranData2Py, pad_field_in_j
 from pyFV3.stencils import moist_cv
 

@@ -131,7 +131,7 @@ class FillNegativeTracerValues:
 
         # Setting initial value of upper_fix to zero is only needed for validation.
         # The values in the compute domain are set to zero in the stencil.
-        self._zfix = quantity_factory.zeros([X_DIM, Y_DIM], units="unknown", dtype=int)
+        self._zfix = quantity_factory.zeros([X_DIM, Y_DIM], units="unknown", dtype=Int)
         self._sum0 = quantity_factory.zeros(
             [X_DIM, Y_DIM],
             units="unknown",
