@@ -5,6 +5,7 @@ from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, interval
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import (  # noqa: F401
+    Int,
     BoolFieldIJ,
     Float,
     FloatField,
