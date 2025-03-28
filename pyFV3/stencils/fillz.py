@@ -4,7 +4,7 @@ from gt4py.cartesian.gtscript import BACKWARD, FORWARD, PARALLEL, computation, i
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntFieldIJ
+from ndsl.dsl.typing import Float, Int, FloatField, FloatFieldIJ, IntFieldIJ
 from pyFV3.tracers import Tracers
 
 
