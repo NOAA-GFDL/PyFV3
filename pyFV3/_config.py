@@ -269,7 +269,7 @@ class DynamicalCoreConfig:
     convert_ke: bool = NamelistDefaults.convert_ke
     breed_vortex_inline: bool = NamelistDefaults.breed_vortex_inline
     use_old_omega: bool = NamelistDefaults.use_old_omega
-    rf_fast: bool = NamelistDefaults.rf_fast
+    RF_fast: bool = NamelistDefaults.rf_fast
     adiabatic: bool = NamelistDefaults.adiabatic
     nf_omega: int = NamelistDefaults.nf_omega
     fv_sg_adj: int = NamelistDefaults.fv_sg_adj
@@ -378,7 +378,7 @@ class DynamicalCoreConfig:
             convert_ke=namelist.convert_ke,
             breed_vortex_inline=namelist.breed_vortex_inline,
             use_old_omega=namelist.use_old_omega,
-            rf_fast=namelist.rf_fast,
+            RF_fast=namelist.rf_fast,
             adiabatic=namelist.adiabatic,
             nf_omega=namelist.nf_omega,
             fv_sg_adj=namelist.fv_sg_adj,
@@ -482,7 +482,7 @@ class DynamicalCoreConfig:
             n_split=self.n_split,
             m_split=self.m_split,
             delt_max=self.delt_max,
-            rf_fast=self.rf_fast,
+            rf_fast=self.RF_fast,
             rf_cutoff=self.rf_cutoff,
             breed_vortex_inline=self.breed_vortex_inline,
             use_old_omega=self.use_old_omega,
