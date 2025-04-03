@@ -483,10 +483,10 @@ class DynamicalCore:
                 "Dynamical Core (fv_dynamics): compute total energy is not implemented"
             )
 
-        if (not self.config.rf_fast) and self.config.tau != 0:
+        if (not self.config.RF_fast) and self.config.tau != 0:
             raise NotImplementedError(
                 "Dynamical Core (fv_dynamics): Rayleigh_Super,"
-                " called when rf_fast=False and tau !=0, is not implemented"
+                " called when RF_fast=False and tau !=0, is not implemented"
             )
 
         if self.config.adiabatic and self.config.kord_tm > 0:
