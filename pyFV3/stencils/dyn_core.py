@@ -923,8 +923,9 @@ class AcousticDynamics:
             # to damp
             self._hyperdiffusion(self._heat_source, cd)
             if not self.config.hydrostatic:
-                delt_time_factor = abs(
-                    dt_acoustic_substep * Float(self.config.delt_max)
+                delt_time_factor = np.abs(
+                    dt_acoustic_substep * Float(self.config.delt_max),
+                    dtype=Float,
                 )
                 # TODO: it looks like state.pkz is being used as a temporary here,
                 # and overwritten at the start of remapping. See if we can make it
