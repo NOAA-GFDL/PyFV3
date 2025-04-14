@@ -999,7 +999,7 @@ class DGridShallowWaterLagrangianDynamics:
         self._heat_source_from_vorticity_damping_stencil = (
             stencil_factory.from_dims_halo(
                 func=heat_source_from_vorticity_damping,
-                compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+                compute_dims=[X_DIM, Y_DIM, Z_DIM],
                 externals={
                     "do_stochastic_ke_backscatter": config.do_skeb,
                     "d_con": config.d_con,
