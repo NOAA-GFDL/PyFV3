@@ -486,7 +486,7 @@ class AcousticDynamics:
                 dtype=Float,
             )
             self._zs.data[:] = self._zs.np.asarray(
-                phis.data / constants.GRAV, dtype=self._zs.data.dtype
+                phis.data * constants.RGRAV, dtype=self._zs.data.dtype
             )
 
             self.update_height_on_d_grid = updatedzd.UpdateHeightOnDGrid(
@@ -498,6 +498,7 @@ class AcousticDynamics:
                 hord_tm=config.hord_tm,
                 dz_min=constants.DZ_MIN,
                 column_namelist=column_namelist,
+                dz_min=Float(config.dz_min),
             )
             self.vertical_solver = NonhydrostaticVerticalSolver(
                 stencil_factory,
@@ -564,7 +565,7 @@ class AcousticDynamics:
                 area=grid_data.area,
                 dp_ref=grid_data.dp_ref,
                 grid_type=config.grid_type,
-                dz_min=constants.DZ_MIN,
+                dz_min=Float(config.dz_min),
             )
         )
 
