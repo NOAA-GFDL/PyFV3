@@ -112,6 +112,7 @@ class AcousticDynamicsConfig:
     """
     mainly for backwards compatibility, not really used anymore
     """
+    dz_min: float
     riemann: RiemannConfig
     d_grid_shallow_water: DGridShallowWaterLagrangianDynamicsConfig
 
@@ -274,6 +275,7 @@ class DynamicalCoreConfig:
     nf_omega: int = NamelistDefaults.nf_omega
     fv_sg_adj: int = NamelistDefaults.fv_sg_adj
     n_sponge: int = NamelistDefaults.n_sponge
+    dz_min: float = Namelist.dz_min
     namelist_override: Optional[str] = None
 
     def __post_init__(self):
@@ -488,6 +490,7 @@ class DynamicalCoreConfig:
             use_old_omega=self.use_old_omega,
             riemann=self.riemann,
             d_grid_shallow_water=self.d_grid_shallow_water,
+            dz_min=self.dz_min,
         )
 
     @property
