@@ -496,7 +496,6 @@ class AcousticDynamics:
                 grid_data=grid_data,
                 grid_type=grid_type,
                 hord_tm=config.hord_tm,
-                dz_min=constants.DZ_MIN,
                 column_namelist=column_namelist,
                 dz_min=Float(config.dz_min),
             )
