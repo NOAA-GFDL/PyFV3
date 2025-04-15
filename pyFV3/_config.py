@@ -275,7 +275,8 @@ class DynamicalCoreConfig:
     nf_omega: int = NamelistDefaults.nf_omega
     fv_sg_adj: int = NamelistDefaults.fv_sg_adj
     n_sponge: int = NamelistDefaults.n_sponge
-    dz_min: float = Namelist.dz_min
+    dz_min: float = 2.0
+    """Controls minimum thickness in NH solver"""
     namelist_override: Optional[str] = None
 
     def __post_init__(self):
