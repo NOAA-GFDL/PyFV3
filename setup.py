@@ -20,7 +20,7 @@ test_requirements = [
     "serialbox",
 ]
 
-ndsl_requirements = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@2024.09.00"]
+ndsl_requirements = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@2025.03.00"]
 
 develop_requirements = [
     *ndsl_requirements,
