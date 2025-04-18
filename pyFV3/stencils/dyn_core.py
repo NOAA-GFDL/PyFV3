@@ -472,6 +472,7 @@ class AcousticDynamics:
 
         if not config.hydrostatic:
             self._pk3.data[:] = HUGE_R
+        self._gz.data[:] = HUGE_R
 
         column_namelist = d_sw.get_column_namelist(
             config.d_grid_shallow_water, quantity_factory=quantity_factory
@@ -764,7 +765,12 @@ class AcousticDynamics:
                     )
             if not self.config.hydrostatic:
                 self.update_geopotential_height_on_c_grid(
-                    self._zs, self._ut, self._vt, self._gz, self._ws3, dt2
+                    zs=self._zs,
+                    ut=self._ut,
+                    vt=self._vt,
+                    gz=self._gz,
+                    ws=self._ws3,
+                    dt=dt2,
                 )
                 # TODO (floriand): Due to DaCe VRAM pooling creating a memory
                 # leak with the usage pattern of those two fields
@@ -774,28 +780,28 @@ class AcousticDynamics:
                 # DaCe has already a fix on their side and it awaits release
                 # issue
                 self.vertical_solver_cgrid(
-                    dt2,
-                    self.cappa,
-                    self._ptop,
-                    state.phis,
-                    self._ws3,
-                    self.cgrid_shallow_water_lagrangian_dynamics.ptc,
-                    state.q_con,
-                    self.cgrid_shallow_water_lagrangian_dynamics.delpc,
-                    self._gz,
-                    self._pkc,
-                    state.omga,
+                    dt2=dt2,
+                    cappa=self.cappa,
+                    ptop=self._ptop,
+                    hs=state.phis,
+                    ws=self._ws3,
+                    ptc=self.cgrid_shallow_water_lagrangian_dynamics.ptc,
+                    q_con=state.q_con,
+                    delpc=self.cgrid_shallow_water_lagrangian_dynamics.delpc,
+                    gz=self._gz,
+                    pef=self._pkc,
+                    w3=state.omga,
                 )
 
             self._p_grad_c(
-                self.grid_data.rdxc,
-                self.grid_data.rdyc,
-                state.uc,
-                state.vc,
-                self.cgrid_shallow_water_lagrangian_dynamics.delpc,
-                self._pkc,
-                self._gz,
-                dt2,
+                rdxc=self.grid_data.rdxc,
+                rdyc=self.grid_data.rdyc,
+                uc=state.uc,
+                vc=state.vc,
+                delpc=self.cgrid_shallow_water_lagrangian_dynamics.delpc,
+                pkc=self._pkc,
+                gz=self._gz,
+                dt2=dt2,
             )
             self._halo_updaters.uc__vc.start()
             if self.config.nord > 0:
@@ -854,23 +860,23 @@ class AcousticDynamics:
                     dt=dt_acoustic_substep,
                 )
                 self.vertical_solver(
-                    remap_step,
-                    dt_acoustic_substep,
-                    self.cappa,
-                    self._ptop,
-                    self._zs,
-                    self._wsd,
-                    state.delz,
-                    state.q_con,
-                    state.delp,
-                    state.pt,
-                    self._zh,
-                    state.pe,
-                    self._pkc,
-                    self._pk3,
-                    state.pk,
-                    state.peln,
-                    state.w,
+                    last_call=remap_step,
+                    dt=dt_acoustic_substep,
+                    cappa=self.cappa,
+                    ptop=self._ptop,
+                    zs=self._zs,
+                    ws=self._wsd,
+                    delz=state.delz,
+                    q_con=state.q_con,
+                    delp=state.delp,
+                    pt=state.pt,
+                    zh=self._zh,
+                    p=state.pe,
+                    ppe=self._pkc,
+                    pk3=self._pk3,
+                    pk=state.pk,
+                    log_p_interface=state.peln,
+                    w=state.w,
                 )
 
                 self._halo_updaters.zh.start()
@@ -893,15 +899,15 @@ class AcousticDynamics:
                 self._halo_updaters.pkc.wait()
 
                 self.nonhydrostatic_pressure_gradient(
-                    state.u,
-                    state.v,
-                    self._pkc,
-                    self._gz,
-                    self._pk3,
-                    state.delp,
-                    dt_acoustic_substep,
-                    self._ptop,
-                    self._akap,
+                    u=state.u,
+                    v=state.v,
+                    pp=self._pkc,
+                    gz=self._gz,
+                    pk3=self._pk3,
+                    delp=state.delp,
+                    dt=dt_acoustic_substep,
+                    ptop=self._ptop,
+                    akap=self._akap,
                 )
 
             if self.config.rf_fast:
