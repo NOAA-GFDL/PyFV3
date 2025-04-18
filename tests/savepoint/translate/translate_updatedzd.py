@@ -33,7 +33,7 @@ class TranslateUpdateDzD(TranslateDycoreFortranData2Py):
         self.in_vars["data_vars"]["height"]["serialname"] = "zh"
         self.in_vars["data_vars"]["ws"]["serialname"] = "wsd"
 
-        self.in_vars["parameters"] = ["dt"]
+        self.in_vars["parameters"] = ["dt", "dz_min"]
         out_vars = [
             "height",
             "courant_number_x",
@@ -66,6 +66,7 @@ class TranslateUpdateDzD(TranslateDycoreFortranData2Py):
             self.grid.grid_data,
             self.grid.grid_type,
             self.namelist.hord_tm,
+            dz_min=inputs.pop("dz_min"),
             column_namelist=d_sw.get_column_namelist(
                 self.namelist, quantity_factory=self.grid.quantity_factory
             ),
