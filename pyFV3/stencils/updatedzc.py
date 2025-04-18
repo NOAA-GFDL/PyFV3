@@ -57,6 +57,11 @@ def double_copy(q_in: FloatField, copy_1: FloatField, copy_2: FloatField):
         copy_2 = q_in
 
 
+def copy(q_in: FloatField, q_copy: FloatField):
+    with computation(PARALLEL), interval(...):
+        q_copy = q_in
+
+
 def update_dz_c(
     dp_ref: FloatFieldK,
     zs: FloatFieldIJ,
@@ -66,6 +71,7 @@ def update_dz_c(
     gz: FloatField,
     gz_x: FloatField,
     gz_y: FloatField,
+    gz_filled: FloatField,
     ws: FloatFieldIJ,
     *,
     dt: Float,
@@ -74,18 +80,19 @@ def update_dz_c(
     Step dz forward on c-grid
     Eusures gz is monotonically increasing in z at the end
     Args:
-        dp_ref:
-        zs:
-        area:
-        ut:
-        vt:
-        gz:
-        gz_x: gz with corners copied to perform derivatives in x-direction
-        gz_y: gz with corners copied to perform derivatives in y-direction
-        ws: lagrangian (parcel-following) surface vertical wind implied by
+        dp_ref(in): layer thickness in Pa
+        zs(in): surface height in m
+        area(in):
+        ut(in): horizontal wind (TODO: covariant or contravariant?)
+        vt(in): horizontal wind (TODO: covariant or contravariant?)
+        gz(inout): geopotential height on model interfaces
+        gz_x(in): gz with corners copied to perform derivatives in x-direction
+        gz_y(in): gz with corners copied to perform derivatives in y-direction
+        ws(out): lagrangian (parcel-following) surface vertical wind implied by
             lowest-level gz change note that a parcel moving horizontally
             across terrain will be moving in the vertical (eqn 5.5 in documentation)
-        dt:
+        dt(in): timestep over which to evolve the geopotential height, in seconds
+        dz_min(in): Controls minimum thickness in NH solver
     """
 
     # there's some complexity due to gz being defined on interfaces
@@ -105,7 +112,7 @@ def update_dz_c(
     # xfx/yfx are now ut/vt interpolated to layer interfaces
     with computation(PARALLEL), interval(...):
         fx, fy = xy_flux(gz_x, gz_y, xfx, yfx)
-        gz = (gz * area + (fx - fx[1, 0, 0]) + (fy - fy[0, 1, 0])) / (
+        gz = (gz_filled * area + (fx - fx[1, 0, 0]) + (fy - fy[0, 1, 0])) / (
             area + (xfx - xfx[1, 0, 0]) + (yfx - yfx[0, 1, 0])
         )
     with computation(FORWARD), interval(-1, None):
@@ -150,10 +157,20 @@ class UpdateGeopotentialHeightOnCGrid:
             units="m**2/s**2",
             dtype=Float,
         )
+        self._gz_filled = quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_DIM],
+            units="m**2/s**2",
+            dtype=Float,
+        )
         full_origin = grid_indexing.origin_full()
         full_domain = grid_indexing.domain_full(add=(0, 0, 1))
         self._double_copy_stencil = stencil_factory.from_origin_domain(
             double_copy,
+            origin=full_origin,
+            domain=full_domain,
+        )
+        self._copy_stencil = stencil_factory.from_origin_domain(
+            copy,
             origin=full_origin,
             domain=full_domain,
         )
@@ -203,6 +220,10 @@ class UpdateGeopotentialHeightOnCGrid:
         # TODO: is this advecting gz, and if so can we name it that?
         # Can we reduce duplication of advection logic with other stencils?
 
+        self._copy_stencil(gz, self._gz_filled)
+        self._fill_corners_x_stencil(self._gz_filled, self._gz_filled)
+        self._fill_corners_y_stencil(self._gz_filled, self._gz_filled)
+
         self._double_copy_stencil(gz, self._gz_x, self._gz_y)
 
         # TODO(eddied): We pass the same fields 2x to avoid GTC validation errors
@@ -211,14 +232,15 @@ class UpdateGeopotentialHeightOnCGrid:
             self._fill_corners_y_stencil(self._gz_y, self._gz_y)
 
         self._update_dz_c(
-            self._dp_ref,
-            zs,
-            self._area,
-            ut,
-            vt,
-            gz,
-            self._gz_x,
-            self._gz_y,
-            ws,
+            dp_ref=self._dp_ref,
+            zs=zs,
+            area=self._area,
+            ut=ut,
+            vt=vt,
+            gz=gz,
+            gz_x=self._gz_x,
+            gz_y=self._gz_y,
+            gz_filled=self._gz_filled,
+            ws=ws,
             dt=dt,
         )
