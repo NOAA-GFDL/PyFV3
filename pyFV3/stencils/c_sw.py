@@ -161,7 +161,8 @@ def divergence_corner(
                 )
                 vf0 = v * dxc * 0.5 * (sin_sg3[-1, 0] + sin_sg1)
                 uf0 = u * dyc * 0.5 * (sin_sg4[0, -1] + sin_sg2)
-                divg_d = (-vf0 + uf1 - uf0) * rarea_c
+                divg_d = vf1 - vf0 + uf1 - uf0
+                divg_d = rarea_c * (divg_d - vf1)
 
             with horizontal(region[i_end + 1, j_end + 1], region[i_start, j_end + 1]):
                 vf1 = (
@@ -171,8 +172,8 @@ def divergence_corner(
                     u[-1, 0, 0] * dyc[-1, 0] * 0.5 * (sin_sg4[-1, -1] + sin_sg2[-1, 0])
                 )
                 uf0 = u * dyc * 0.5 * (sin_sg4[0, -1] + sin_sg2)
-                divg_d = (vf1 + uf1 - uf0) * rarea_c
-
+                divg_d = vf1 - vf0 + uf1 - uf0
+                divg_d = rarea_c * (divg_d + vf0)
             # ---------
 
 
