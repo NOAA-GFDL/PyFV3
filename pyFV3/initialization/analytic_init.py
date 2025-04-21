@@ -8,6 +8,7 @@ from pyFV3.dycore_state import DycoreState
 
 class Cases(Enum, metaclass=MetaEnumStr):
     baroclinic = "baroclinic"
+    rossby = "rossby"
     tropicalcyclone = "tropicalcyclone"
 
 
@@ -58,6 +59,16 @@ def init_analytic_state(
                 grid_data=grid_data,
                 quantity_factory=quantity_factory,
                 hydrostatic=hydrostatic,
+                comm=comm,
+            )
+        elif analytic_init_case == Cases.rossby.value:  # type: ignore
+            import pyFV3.initialization.test_cases.initialize_rossby as rossby
+
+            assert isinstance(comm, CubedSphereCommunicator)
+
+            return rossby.init_rossby_state(
+                grid_data=grid_data,
+                quantity_factory=quantity_factory,
                 comm=comm,
             )
         else:
