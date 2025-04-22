@@ -1,13 +1,12 @@
 """ Test case initialization for Rossby-Haurwitz wave 4
 
 Corresponds to Fortran shallow-water test #6 found in tools/test_cases.F90 of
-https://github.com/NOAA-GFDL/GFDL_atmos_cubed_sphere.git 
+https://github.com/NOAA-GFDL/GFDL_atmos_cubed_sphere.git
 """
 
 import numpy as np
 
-from ndsl import constants
-from ndsl import CubedSphereCommunicator, QuantityFactory
+from ndsl import CubedSphereCommunicator, QuantityFactory, constants
 from ndsl.grid import GridData
 from pyFV3.dycore_state import DycoreState
 from pyFV3.initialization import init_utils
@@ -16,14 +15,12 @@ from pyFV3.initialization import init_utils
 NHALO = constants.N_HALO_DEFAULT
 OMG = 7.848e-6
 RK = 7.848e-6
-R = 4.0 # Wave Number (likely)
+R = 4.0  # Wave Number (likely)
 GH0 = 8.0e3 * constants.GRAV
 
 
-def _preinit_for_all_sw(numpy_state: DycoreState,
-                        shape
-):
-    """ Pre-initialization for all shallow water tests
+def _preinit_for_all_sw(numpy_state: DycoreState, shape):
+    """Pre-initialization for all shallow water tests
 
     Args:
         numpy_state: DycoreState modified to update pe, pt, delp
@@ -41,7 +38,7 @@ def _preinit_for_all_sw(numpy_state: DycoreState,
 
 
 def _calc_rossby_winds(p1, p2):
-    """ Calculates initial u or v winds specific to Rossby-Haurwitz wave test
+    """Calculates initial u or v winds specific to Rossby-Haurwitz wave test
 
     Args
         p1: np.ndarray
@@ -50,25 +47,32 @@ def _calc_rossby_winds(p1, p2):
     Returns
         np.ndarray: representing u or v (D-winds)
     """
-    muv = init_utils._find_midpoint_unit_vectors(p1, p2) # TODO: Refactor to non-protected
+    muv = init_utils._find_midpoint_unit_vectors(
+        p1, p2
+    )  # TODO: Refactor to non-protected
     p3 = muv["midpoint"]
     e2 = muv["unit_dir"]
     ex = muv["exv"]
     ey = muv["eyv"]
-    utmp = (
-        constants.RADIUS * OMG * np.cos(p3[:, :, 1]) + constants.RADIUS * RK
-        * (np.cos(p3[:, :, 1])**(R-1))
-        * (R * np.sin(p3[:, :, 1])**2 - np.cos(p3[:, :, 1])**2)*np.cos(R*p3[:, :, 0])
+    utmp = constants.RADIUS * OMG * np.cos(p3[:, :, 1]) + constants.RADIUS * RK * (
+        np.cos(p3[:, :, 1]) ** (R - 1)
+    ) * (R * np.sin(p3[:, :, 1]) ** 2 - np.cos(p3[:, :, 1]) ** 2) * np.cos(
+        R * p3[:, :, 0]
     )
     vtmp = (
-        -1 * constants.RADIUS * RK * R * np.sin(p3[:, :, 1])
-        * np.sin(R * p3[:, :, 0]) * np.cos(p3[:, :, 1])**(R-1)
+        -1
+        * constants.RADIUS
+        * RK
+        * R
+        * np.sin(p3[:, :, 1])
+        * np.sin(R * p3[:, :, 0])
+        * np.cos(p3[:, :, 1]) ** (R - 1)
     )
     return utmp * np.sum(e2 * ex, 2) + vtmp * np.sum(e2 * ey, 2)
 
 
 def _calc_rossby_delp(grid_data: GridData):
-    """ Calculates initial delp, specific to Rossby-Haurwitz wave test
+    """Calculates initial delp, specific to Rossby-Haurwitz wave test
 
     Args
         grid_Data GridData
@@ -78,20 +82,32 @@ def _calc_rossby_delp(grid_data: GridData):
     """
     agd0 = grid_data.lon_agrid.data[:]
     agd1 = grid_data.lat_agrid.data[:]
-    a = (0.5 * OMG * (2 * constants.OMEGA + OMG) * (np.cos(agd1)**2)
-         + 0.25 * RK * RK * (np.cos(agd1)**(R + R))
-         * ((R + 1) * (np.cos(agd1)**2) + (2 * R * R - R - 2) - 2 * (R * R) * np.cos(agd1)**(-2)))
-    b = ((2 * (constants.OMEGA + OMG) * RK / ((R+1) * (R+2)))
-         * (np.cos(agd1)**R) * ((R*R+2 * R + 2) - ((R + 1) * np.cos(agd1))**2 ))
-    c = 0.25 * RK * RK * (np.cos(agd1)**(2 * R)) * ((R + 1) * (np.cos(agd1)**2) - (R+2))
-    return (GH0 + constants.RADIUS * constants.RADIUS
-            * ( a + b * np.cos(R * agd0) + c * np.cos(2 * R * agd0)))
+    a = 0.5 * OMG * (2 * constants.OMEGA + OMG) * (
+        np.cos(agd1) ** 2
+    ) + 0.25 * RK * RK * (np.cos(agd1) ** (R + R)) * (
+        (R + 1) * (np.cos(agd1) ** 2)
+        + (2 * R * R - R - 2)
+        - 2 * (R * R) * np.cos(agd1) ** (-2)
+    )
+    b = (
+        (2 * (constants.OMEGA + OMG) * RK / ((R + 1) * (R + 2)))
+        * (np.cos(agd1) ** R)
+        * ((R * R + 2 * R + 2) - ((R + 1) * np.cos(agd1)) ** 2)
+    )
+    c = (
+        0.25
+        * RK
+        * RK
+        * (np.cos(agd1) ** (2 * R))
+        * ((R + 1) * (np.cos(agd1) ** 2) - (R + 2))
+    )
+    return GH0 + constants.RADIUS * constants.RADIUS * (
+        a + b * np.cos(R * agd0) + c * np.cos(2 * R * agd0)
+    )
 
 
-def _init_for_rossby(numpy_state: DycoreState,
-                     grid_data: GridData
-):
-    """ Initialization specific to Rossby-Haurwitz wave test
+def _init_for_rossby(numpy_state: DycoreState, grid_data: GridData):
+    """Initialization specific to Rossby-Haurwitz wave test
 
     Args
         numpy_state: DycoreState, modified to update the phis, delp, u, v
@@ -100,11 +116,11 @@ def _init_for_rossby(numpy_state: DycoreState,
     numpy_state.phis[:] = 0.0
 
     # Initialize delp
-    numpy_state.delp[:,:,0] = _calc_rossby_delp(grid_data)
-    numpy_state.delp[:,:,0] = numpy_state.delp[:,:,0] - numpy_state.phis[:]
+    numpy_state.delp[:, :, 0] = _calc_rossby_delp(grid_data)
+    numpy_state.delp[:, :, 0] = numpy_state.delp[:, :, 0] - numpy_state.phis[:]
 
     grid = np.transpose(
-        np.stack( # TODO: Refactor to non-protected _horizontal_data
+        np.stack(  # TODO: Refactor to non-protected _horizontal_data
             [grid_data._horizontal_data.lon.data, grid_data._horizontal_data.lat.data]
         ),
         [1, 2, 0],
@@ -120,23 +136,23 @@ def _init_for_rossby(numpy_state: DycoreState,
     p2 = grid[:, 1:, :]
     numpy_state.v[:, :-1, 0] = _calc_rossby_winds(p1, p2)
 
-    # NOTE: Fortran test_cases.F90 has dtoa and atoc calls, but they're not implemented here.
+    # NOTE: test_cases.F90 has dtoa and atoc calls, but not implemented here.
 
 
 def _postinit_for_all_sw(numpy_state: DycoreState):
-    """ Post-initialization from test_cases.F90 that applies to all shallow water tests
+    """Post-initialization from test_cases.F90 that applies to all shallow water tests
 
     Args
         numpy_state: DycoreState - modified
     """
 
-    # NOTE: The cl/cl2 tracers from the original Fortran test_cases.F90 are not brought over.
+    # NOTE: The cl/cl2 tracers from the original test_cases.F90 aren't brought over.
     # NOTE: A-grid and C-grid winds are not initialized here.
 
-    numpy_state.delp[:,:,1:] = numpy_state.delp[:,:,0][:,:,np.newaxis]
-    numpy_state.u[:,:,1:] = numpy_state.u[:,:,0][:,:,np.newaxis]
-    numpy_state.v[:,:,1:] = numpy_state.v[:,:,0][:,:,np.newaxis]
-    numpy_state.ps[:] = numpy_state.delp[:,:,0]
+    numpy_state.delp[:, :, 1:] = numpy_state.delp[:, :, 0][:, :, np.newaxis]
+    numpy_state.u[:, :, 1:] = numpy_state.u[:, :, 0][:, :, np.newaxis]
+    numpy_state.v[:, :, 1:] = numpy_state.v[:, :, 0][:, :, np.newaxis]
+    numpy_state.ps[:] = numpy_state.delp[:, :, 0]
 
 
 def init_rossby_state(
