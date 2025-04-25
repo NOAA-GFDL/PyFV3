@@ -1,6 +1,6 @@
-import gt4py.cartesian.gtscript as gtscript
-from gt4py.cartesian.gtscript import (
+from ndsl.dsl.gt4py import (
     PARALLEL,
+    function,
     asin,
     computation,
     cos,
@@ -31,14 +31,14 @@ a1 = 9.0 / 16.0
 a2 = -1.0 / 16.0
 
 
-@gtscript.function
+@function
 def great_circle_dist(p1a, p1b, p2a, p2b):
     tb = sin((p1b - p2b) / 2.0) ** 2.0
     ta = sin((p1a - p2a) / 2.0) ** 2.0
     return asin(sqrt(tb + cos(p1b) * cos(p2b) * ta)) * 2.0
 
 
-@gtscript.function
+@function
 def extrap_corner(
     p0a,
     p0b,
@@ -271,12 +271,12 @@ def _se_corner(
         tmp_qout_edges = qout
 
 
-@gtscript.function
+@function
 def lagrange_y_func(qx):
     return a2 * (qx[0, -2, 0] + qx[0, 1, 0]) + a1 * (qx[0, -1, 0] + qx)
 
 
-@gtscript.function
+@function
 def lagrange_x_func(qy):
     return a2 * (qy[-2, 0, 0] + qy[1, 0, 0]) + a1 * (qy[-1, 0, 0] + qy)
 
@@ -323,7 +323,7 @@ def qout_y_edge(
         tmp_qout_edges = qout
 
 
-@gtscript.function
+@function
 def qx_edge_west(qin: FloatField, dxa: FloatFieldIJ):
     g_in = dxa[1, 0] / dxa
     g_ou = dxa[-2, 0] / dxa[-1, 0]
@@ -333,7 +333,7 @@ def qx_edge_west(qin: FloatField, dxa: FloatFieldIJ):
     )
 
 
-@gtscript.function
+@function
 def qx_edge_west2(qin: FloatField, dxa: FloatFieldIJ):
     g_in = dxa / dxa[-1, 0]
     g_ou = dxa[-3, 0] / dxa[-2, 0]
@@ -347,7 +347,7 @@ def qx_edge_west2(qin: FloatField, dxa: FloatFieldIJ):
     )
 
 
-@gtscript.function
+@function
 def qx_edge_east(qin: FloatField, dxa: FloatFieldIJ):
     g_in = dxa[-2, 0] / dxa[-1, 0]
     g_ou = dxa[1, 0] / dxa
@@ -357,7 +357,7 @@ def qx_edge_east(qin: FloatField, dxa: FloatFieldIJ):
     )
 
 
-@gtscript.function
+@function
 def qx_edge_east2(qin: FloatField, dxa: FloatFieldIJ):
     g_in = dxa[-1, 0] / dxa
     g_ou = dxa[2, 0] / dxa[1, 0]
@@ -371,7 +371,7 @@ def qx_edge_east2(qin: FloatField, dxa: FloatFieldIJ):
     )
 
 
-@gtscript.function
+@function
 def qy_edge_south(qin: FloatField, dya: FloatFieldIJ):
     g_in = dya[0, 1] / dya
     g_ou = dya[0, -2] / dya[0, -1]
@@ -381,7 +381,7 @@ def qy_edge_south(qin: FloatField, dya: FloatFieldIJ):
     )
 
 
-@gtscript.function
+@function
 def qy_edge_south2(qin: FloatField, dya: FloatFieldIJ):
     g_in = dya / dya[0, -1]
     g_ou = dya[0, -3] / dya[0, -2]
@@ -395,7 +395,7 @@ def qy_edge_south2(qin: FloatField, dya: FloatFieldIJ):
     )
 
 
-@gtscript.function
+@function
 def qy_edge_north(qin: FloatField, dya: FloatFieldIJ):
     g_in = dya[0, -2] / dya[0, -1]
     g_ou = dya[0, 1] / dya
@@ -405,7 +405,7 @@ def qy_edge_north(qin: FloatField, dya: FloatFieldIJ):
     )
 
 
-@gtscript.function
+@function
 def qy_edge_north2(qin: FloatField, dya: FloatFieldIJ):
     g_in = dya[0, -1] / dya
     g_ou = dya[0, 2] / dya[0, 1]
@@ -504,7 +504,7 @@ def a2b_interpolation(
         qout = 0.5 * (qxx + qyy)
 
 
-@gtscript.function
+@function
 def doubly_periodic_a2b_ord4(qin):
     """
     Grid conversion is much simpler on a doubly-periodic, orthogonal grid so we

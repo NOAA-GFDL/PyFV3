@@ -1,8 +1,7 @@
 import math
 import typing
 
-from gt4py.cartesian.gtscript import (
-    __INLINED,
+from ndsl.dsl.gt4py import (
     BACKWARD,
     FORWARD,
     PARALLEL,
@@ -18,6 +17,8 @@ from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from pyFV3._config import RiemannConfig
 from pyFV3.stencils.sim1_solver import Sim1Solver
+
+from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 
 @typing.no_type_check

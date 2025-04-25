@@ -2,8 +2,7 @@ from typing import Dict, Mapping, Optional
 
 import numpy as np
 from dace.frontend.python.interface import nounroll as dace_nounroll
-from gt4py.cartesian.gtscript import (
-    __INLINED,
+from ndsl.dsl.gt4py import (
     BACKWARD,
     FORWARD,
     PARALLEL,
@@ -51,6 +50,7 @@ from pyFV3.stencils.pk3_halo import PK3Halo
 from pyFV3.stencils.riem_solver3 import NonhydrostaticVerticalSolver
 from pyFV3.stencils.riem_solver_c import NonhydrostaticVerticalSolverCGrid
 
+from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 if Float == np.float32:
     HUGE_R = Float(1.0e8)

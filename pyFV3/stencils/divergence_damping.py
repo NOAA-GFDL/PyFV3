@@ -1,8 +1,7 @@
-import gt4py.cartesian.gtscript as gtscript
 import numpy as np
-from gt4py.cartesian.gtscript import (
-    __INLINED,
+from ndsl.dsl.gt4py import (
     PARALLEL,
+    function,
     computation,
     horizontal,
     interval,
@@ -21,8 +20,10 @@ from ndsl.grid import DampingCoefficients, GridData
 from pyFV3.stencils.a2b_ord4 import AGrid2BGridFourthOrder, doubly_periodic_a2b_ord4
 from pyFV3.stencils.d2a2c_vect import contravariant
 
+from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
-@gtscript.function
+
+@function
 def damp_tmp(q, da_min_c, d2_bg, dddmp):
     mintmp = min(0.2, dddmp * abs(q))
     damp = da_min_c * max(d2_bg, mintmp)
@@ -250,7 +251,7 @@ def smagorinsky_diffusion_approx(delpc: FloatField, vort: FloatField, absdt: Flo
         absdt (in): abs(dt)
     """
     with computation(PARALLEL), interval(...):
-        vort = absdt * (delpc ** 2.0 + vort ** 2.0) ** 0.5
+        vort = absdt * (delpc**2.0 + vort**2.0) ** 0.5
 
 
 def smag_corner(
@@ -294,7 +295,7 @@ def smag_corner(
         wk = rarea * (vt2 - vt2[0, 1, 0] + ut2 - ut2[1, 0, 0])
 
         shear = doubly_periodic_a2b_ord4(wk)
-        smag_c = dt * sqrt(shear ** 2 + smag_c_t ** 2)
+        smag_c = dt * sqrt(shear**2 + smag_c_t**2)
 
 
 class DivergenceDamping:

@@ -1,9 +1,8 @@
 # mypy: ignore-errors
 import collections
 
-import gt4py.cartesian.gtscript as gtscript
-from gt4py.cartesian.gtscript import (
-    __INLINED,
+from ndsl.dsl.gt4py import (
+    function,
     BACKWARD,
     PARALLEL,
     computation,
@@ -30,6 +29,7 @@ from ndsl.dsl.typing import Float, FloatField
 from ndsl.stencils.basic_operations import dim
 from pyFV3.dycore_state import DycoreState
 
+from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 RK = CP_AIR / RDGAS + 1.0
 G2 = 0.5 * GRAV
@@ -42,7 +42,7 @@ RI_MAX = 1.0
 RI_MIN = 0.25
 
 
-@gtscript.function
+@function
 def standard_cm(cpm, cvm, q0_vapor, q0_liquid, q0_rain, q0_ice, q0_snow, q0_graupel):
     q_liq = q0_liquid + q0_rain
     q_sol = q0_ice + q0_snow + q0_graupel
@@ -61,9 +61,9 @@ def standard_cm(cpm, cvm, q0_vapor, q0_liquid, q0_rain, q0_ice, q0_snow, q0_grau
     return cpm, cvm
 
 
-@gtscript.function
+@function
 def tvol(gz, u0, v0, w0):
-    return gz + 0.5 * (u0 ** 2 + v0 ** 2 + w0 ** 2)
+    return gz + 0.5 * (u0**2 + v0**2 + w0**2)
 
 
 def init(
@@ -128,12 +128,12 @@ def init(
         gzh = gzh[0, 0, 1] - GRAV * delz
 
 
-@gtscript.function
+@function
 def qcon_func(q0_liquid, q0_ice, q0_snow, q0_rain, q0_graupel):
     return q0_liquid + q0_ice + q0_snow + q0_rain + q0_graupel
 
 
-@gtscript.function
+@function
 def adjust_cvm(
     cpm,
     cvm,
@@ -163,7 +163,7 @@ def adjust_cvm(
     return cpm, cvm, t0, static_energy
 
 
-@gtscript.function
+@function
 def compute_richardson_number(
     t0, q0_vapor, qcon, pkz, delp, peln, gz, u0, v0, xvir, t_max, t_min
 ):
@@ -193,7 +193,7 @@ def compute_richardson_number(
     return ri, ri_ref
 
 
-@gtscript.function
+@function
 def compute_mass_flux(ri, ri_ref, delp, ratio):
     max_ri_ratio = ri / ri_ref
     mc = 0.0
@@ -210,19 +210,19 @@ def compute_mass_flux(ri, ri_ref, delp, ratio):
     return mc
 
 
-@gtscript.function
+@function
 def kh_adjust_down(mc, delp, q0, h0):
     h0 = mc * (q0 - q0[0, 0, -1])
     return q0 - h0 / delp, h0
 
 
-@gtscript.function
+@function
 def kh_adjust_energy_down(mc, delp, static_energy, total_energy, h0):
     h0 = mc * (static_energy - static_energy[0, 0, -1])
     return total_energy - h0 / delp, h0
 
 
-@gtscript.function
+@function
 def kh_adjust_up(delp, h0, q0):
     return q0 + h0[0, 0, 1] / delp
 
@@ -659,7 +659,7 @@ def m_loop(
             )
 
 
-@gtscript.function
+@function
 def readjust_by_frac(a0, a, fra):
     return a + (a0 - a) * fra
 

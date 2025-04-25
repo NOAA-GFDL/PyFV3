@@ -1,7 +1,6 @@
 from typing import Dict, Optional
 
-from gt4py.cartesian.gtscript import (
-    __INLINED,
+from ndsl.dsl.gt4py import (
     BACKWARD,
     FORWARD,
     PARALLEL,
@@ -32,6 +31,7 @@ from pyFV3.stencils.mapn_tracer import MapNTracer
 from pyFV3.stencils.moist_cv import moist_pt_func, moist_pt_last_step
 from pyFV3.stencils.saturation_adjustment import SatAdjust3d
 
+from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 # TODO: Should this be set here or in global_constants?
 CONSV_MIN = 0.001

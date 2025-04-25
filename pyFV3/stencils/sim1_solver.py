@@ -1,6 +1,6 @@
 import typing
 
-from gt4py.cartesian.gtscript import (
+from ndsl.dsl.gt4py import (
     BACKWARD,
     FORWARD,
     PARALLEL,

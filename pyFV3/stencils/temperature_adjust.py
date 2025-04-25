@@ -1,4 +1,4 @@
-from gt4py.cartesian.gtscript import PARALLEL, computation, exp, interval, log
+from ndsl.dsl.gt4py import PARALLEL, computation, exp, interval, log
 
 import ndsl.constants as constants
 from ndsl.dsl.typing import Float, FloatField
