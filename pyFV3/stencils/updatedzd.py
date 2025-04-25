@@ -1,7 +1,6 @@
 from typing import Tuple
 
-import gt4py.cartesian.gtscript as gtscript
-from gt4py.cartesian.gtscript import BACKWARD, FORWARD, PARALLEL, computation, interval
+from ndsl.dsl.gt4py import function, BACKWARD, FORWARD, PARALLEL, computation, interval
 
 import ndsl.constants as constants
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
@@ -22,7 +21,7 @@ from pyFV3.stencils.fvtp2d import FiniteVolumeTransport
 DZ_MIN = constants.DZ_MIN
 
 
-@gtscript.function
+@function
 def _apply_height_advective_flux(
     height: FloatField,
     area: FloatFieldIJ,

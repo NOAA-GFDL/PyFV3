@@ -1,5 +1,4 @@
-from gt4py.cartesian.gtscript import (
-    __INLINED,
+from ndsl.dsl.gt4py import (
     PARALLEL,
     computation,
     horizontal,
@@ -11,6 +10,8 @@ from ndsl import StencilFactory, orchestrate
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from pyFV3.stencils.d2a2c_vect import contravariant
+
+from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 
 def main_uc_vc_contra(

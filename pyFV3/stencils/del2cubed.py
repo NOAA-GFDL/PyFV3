@@ -1,4 +1,4 @@
-from gt4py.cartesian.gtscript import PARALLEL, computation, horizontal, interval, region
+from ndsl.dsl.gt4py import PARALLEL, computation, horizontal, interval, region
 
 import ndsl.stencils.corners as corners
 from ndsl import QuantityFactory, StencilFactory, orchestrate

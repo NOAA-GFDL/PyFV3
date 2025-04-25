@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Mapping, Optional
 
 from dace.frontend.python.interface import nounroll as dace_no_unroll
-from gt4py.cartesian.gtscript import PARALLEL, computation, interval
+from ndsl.dsl.gt4py import PARALLEL, computation, interval
 
 import ndsl.dsl.gt4py_utils as utils
 import pyFV3.stencils.moist_cv as moist_cv

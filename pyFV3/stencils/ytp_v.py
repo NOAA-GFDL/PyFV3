@@ -1,11 +1,12 @@
-from gt4py.cartesian import gtscript
-from gt4py.cartesian.gtscript import __INLINED, compile_assert, horizontal, region
+from ndsl.dsl.gt4py import function, compile_assert, horizontal, region
 
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from pyFV3.stencils import ppm, yppm
 
+from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
-@gtscript.function
+
+@function
 def get_bl_br(v, dy, dya):
     """
     Args:
@@ -53,7 +54,7 @@ def get_bl_br(v, dy, dya):
     return bl, br
 
 
-@gtscript.function
+@function
 def advect_v_along_y(
     v: FloatField,
     vb_contra: FloatField,

@@ -1,7 +1,6 @@
-from gt4py.cartesian import gtscript
-from gt4py.cartesian.gtscript import (
-    __INLINED,
+from ndsl.dsl.gt4py import (
     PARALLEL,
+    function,
     compile_assert,
     computation,
     horizontal,
@@ -14,8 +13,10 @@ from ndsl.dsl.typing import FloatField, FloatFieldIJ, Index3D
 from ndsl.stencils.basic_operations import sign
 from pyFV3.stencils import ppm
 
+from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
-@gtscript.function
+
+@function
 def apply_flux(courant, q, fx1, mask):
     """
     Args:
@@ -28,7 +29,7 @@ def apply_flux(courant, q, fx1, mask):
     return q[0, -1, 0] + fx1 * mask if courant > 0.0 else q + fx1 * mask
 
 
-@gtscript.function
+@function
 def fx1_fn(courant, br, b0, bl):
     """
     Args:
@@ -44,7 +45,7 @@ def fx1_fn(courant, br, b0, bl):
     return ret
 
 
-@gtscript.function
+@function
 def get_advection_mask(bl, b0, br):
     from __externals__ import mord
 
@@ -61,7 +62,7 @@ def get_advection_mask(bl, b0, br):
     return advection_mask
 
 
-@gtscript.function
+@function
 def get_flux(q: FloatField, courant: FloatField, al: FloatField):
     bl = al[0, 0, 0] - q[0, 0, 0]
     br = al[0, 1, 0] - q[0, 0, 0]
@@ -72,7 +73,7 @@ def get_flux(q: FloatField, courant: FloatField, al: FloatField):
     return apply_flux(courant, q, fx1, advection_mask)  # noqa
 
 
-@gtscript.function
+@function
 def get_flux_ord8plus(
     q: FloatField, courant: FloatField, bl: FloatField, br: FloatField
 ):
@@ -81,7 +82,7 @@ def get_flux_ord8plus(
     return apply_flux(courant, q, fx1, 1.0)
 
 
-@gtscript.function
+@function
 def dm_jord8plus(q: FloatField):
     yt = 0.25 * (q[0, 1, 0] - q[0, -1, 0])
     dqr = max(max(q, q[0, -1, 0]), q[0, 1, 0]) - q
@@ -89,12 +90,12 @@ def dm_jord8plus(q: FloatField):
     return sign(min(min(abs(yt), dqr), dql), yt)
 
 
-@gtscript.function
+@function
 def al_jord8plus(q: FloatField, dm: FloatField):
     return 0.5 * (q[0, -1, 0] + q) + 1.0 / 3.0 * (dm[0, -1, 0] - dm)
 
 
-@gtscript.function
+@function
 def blbr_jord8(q: FloatField, al: FloatField, dm: FloatField):
     yt = 2.0 * dm
     bl = -1.0 * sign(min(abs(yt), abs(al - q)), yt)
@@ -102,7 +103,7 @@ def blbr_jord8(q: FloatField, al: FloatField, dm: FloatField):
     return bl, br
 
 
-@gtscript.function
+@function
 def yt_dya_edge_0_base(q, dya):
     return 0.5 * (
         ((2.0 * dya + dya[0, -1]) * q - dya * q[0, -1, 0]) / (dya[0, -1] + dya)
@@ -111,7 +112,7 @@ def yt_dya_edge_0_base(q, dya):
     )
 
 
-@gtscript.function
+@function
 def yt_dya_edge_1_base(q, dya):
     return 0.5 * (
         ((2.0 * dya[0, -1] + dya[0, -2]) * q[0, -1, 0] - dya[0, -1] * q[0, -2, 0])
@@ -120,7 +121,7 @@ def yt_dya_edge_1_base(q, dya):
     )
 
 
-@gtscript.function
+@function
 def yt_dya_edge_0(q, dya):
     from __externals__ import yt_minmax
 
@@ -132,7 +133,7 @@ def yt_dya_edge_0(q, dya):
     return yt
 
 
-@gtscript.function
+@function
 def yt_dya_edge_1(q, dya):
     from __externals__ import yt_minmax
 
@@ -144,7 +145,7 @@ def yt_dya_edge_1(q, dya):
     return yt
 
 
-@gtscript.function
+@function
 def compute_al(q: FloatField, dya: FloatFieldIJ):
     """
     Interpolate q at interface.
@@ -185,7 +186,7 @@ def compute_al(q: FloatField, dya: FloatFieldIJ):
     return al
 
 
-@gtscript.function
+@function
 def bl_br_edges(bl, br, q, dya, al, dm):
     from __externals__ import j_end, j_start
 
@@ -250,7 +251,7 @@ def bl_br_edges(bl, br, q, dya, al, dm):
     return bl, br
 
 
-@gtscript.function
+@function
 def compute_blbr_ord8plus(q: FloatField, dya: FloatFieldIJ):
     from __externals__ import grid_type, j_end, j_start, jord
 
