@@ -4,6 +4,9 @@ from ndsl import CubedSphereCommunicator, MetaEnumStr, QuantityFactory
 from ndsl.grid import GridData
 from ndsl.typing import Communicator
 from pyFV3.dycore_state import DycoreState
+import pyFV3.initialization.test_cases.initialize_baroclinic as bc
+import pyFV3.initialization.test_cases.initialize_tc as tc
+import pyFV3.initialization.test_cases.initialize_rossby as rossby
 
 
 class Cases(Enum, metaclass=MetaEnumStr):
@@ -36,11 +39,13 @@ def init_analytic_state(
         an instance of DycoreState class
     """
     if analytic_init_case in Cases:  # type: ignore
+        if not isinstance(comm, CubedSphereCommunicator):
+            raise TypeError(
+                f"Expected CubedSphereCommunicator instance for 'comm', "
+                f"got {type(comm).__name__} instead."
+            )
+
         if analytic_init_case == Cases.baroclinic.value:  # type: ignore
-            import pyFV3.initialization.test_cases.initialize_baroclinic as bc
-
-            assert isinstance(comm, CubedSphereCommunicator)
-
             return bc.init_baroclinic_state(
                 grid_data=grid_data,
                 quantity_factory=quantity_factory,
@@ -49,12 +54,7 @@ def init_analytic_state(
                 moist_phys=moist_phys,
                 comm=comm,
             )
-
         elif analytic_init_case == Cases.tropicalcyclone.value:  # type: ignore
-            import pyFV3.initialization.test_cases.initialize_tc as tc
-
-            assert isinstance(comm, CubedSphereCommunicator)
-
             return tc.init_tc_state(
                 grid_data=grid_data,
                 quantity_factory=quantity_factory,
@@ -62,10 +62,6 @@ def init_analytic_state(
                 comm=comm,
             )
         elif analytic_init_case == Cases.rossby.value:  # type: ignore
-            import pyFV3.initialization.test_cases.initialize_rossby as rossby
-
-            assert isinstance(comm, CubedSphereCommunicator)
-
             return rossby.init_rossby_state(
                 grid_data=grid_data,
                 quantity_factory=quantity_factory,
