@@ -92,7 +92,6 @@ from .translate_qsinit import TranslateQSInit
 from .translate_ray_fast import TranslateRay_Fast
 from .translate_remapping import TranslateRemapping
 from .translate_remapping_GEOS import TranslateRemapping_GEOS
-from .translate_remapping_GEOS_v2 import TranslateRemapping_GEOS_v2
 from .translate_riem_solver3 import TranslateRiem_Solver3
 from .translate_riem_solver_c import TranslateRiem_Solver_C
 from .translate_satadjust3d import TranslateSatAdjust3d
