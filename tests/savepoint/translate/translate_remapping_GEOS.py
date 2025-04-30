@@ -1,9 +1,7 @@
 from types import SimpleNamespace
 
-from ndsl import Namelist, StencilFactory
+from ndsl import Namelist, StencilFactory, Quantity
 from ndsl.constants import (
-    CV_AIR,
-    GRAV,
     X_DIM,
     X_INTERFACE_DIM,
     Y_DIM,
@@ -14,76 +12,15 @@ from ndsl.constants import (
 from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
 from pyFV3 import DynamicalCoreConfig
-
-# from pyFV3._config import RemappingConfig
-from pyFV3.stencils import moist_cv
-from pyFV3.stencils.map_single import MapSingle
-from pyFV3.stencils.mapn_tracer import MapNTracer
-from pyFV3.stencils.mpp_global_sum import mpp_global_sum
-from pyFV3.stencils.remapping import (
-    CONSV_MIN,
-    init_pe,
-    moist_cv_pt_pressure,
-    pe0_ptop_xmax,
-    pe_pk_delp_peln,
-    pn2_pk_delp,
-    pressures_mapu,
-    pressures_mapv,
-)
-from pyFV3.stencils.scale_delz import rescale_delz_1, rescale_delz_2
-from pyFV3.stencils.w_fix_consrv_moment import W_fix_consrv_moment
+from pyFV3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
+from pyFV3.tracers import Tracers
 
 
 class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
     inputs = {
-        "pe_": {
-            "name": "pe_",
+        "pe": {
+            "name": "pe",
             "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
-            "units": "No Units",
-        },
-        "qvapor": {
-            "name": "qvapor",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qliquid": {
-            "name": "qliquid",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qice": {
-            "name": "qice",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qrain": {
-            "name": "qrain",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qsnow": {
-            "name": "qsnow",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qgraupel": {
-            "name": "qgraupel",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qcld": {
-            "name": "qcld",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qo3mr": {
-            "name": "qo3mr",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qsgs_tke": {
-            "name": "qsgs_tke",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
         "delp": {
@@ -116,8 +53,8 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM],
             "units": "No Units",
         },
-        "peln_3d": {
-            "name": "peln_3d",
+        "peln": {
+            "name": "peln",
             "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             "units": "No Units",
         },
@@ -133,7 +70,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         },
         "pk": {
             "name": "pk",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
         "pkz": {
@@ -146,11 +83,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "ws_": {
-            "name": "ws_",
-            "dims": [X_DIM, Y_DIM],
-            "units": "No Units",
-        },
         "u": {
             "name": "u",
             "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
@@ -161,34 +93,49 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "mfy": {
+        "mfy_R4": {
             "name": "mfy",
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "cy": {
+        "cy_R4": {
             "name": "cy",
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "mfx_": {
-            "name": "mfx_",
+        "mfx_R4": {
+            "name": "mfx",
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "cx_": {
-            "name": "cx_",
+        "cx_R4": {
+            "name": "cx",
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "hs": {
-            "name": "hs",
+        "phis": {
+            "name": "phis",
             "dims": [X_DIM, Y_DIM],
             "units": "No Units",
         },
-        "te0_2d_": {
-            "name": "te0_2d_",
+        "te_2d": {
+            "name": "te_2d",
             "dims": [X_DIM, Y_DIM],
+            "units": "No Units",
+        },
+        "wsd": {
+            "name": "wsd",
+            "dims": [X_DIM, Y_DIM],
+            "units": "No Units",
+        },
+        "dp1": {
+            "name": "dp1",
+            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "units": "No Units",
+        },
+        "pfull": {
+            "name": "pfull",
+            "dims": [Z_DIM],
             "units": "No Units",
         },
     }
@@ -213,51 +160,6 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "qvapor": {
-            "name": "qvapor",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qliquid": {
-            "name": "qliquid",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qice": {
-            "name": "qice",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qrain": {
-            "name": "qrain",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qsnow": {
-            "name": "qsnow",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qgraupel": {
-            "name": "qgraupel",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qcld": {
-            "name": "qcld",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qo3mr": {
-            "name": "qo3mr",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
-        "qsgs_tke": {
-            "name": "qsgs_tke",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
-            "units": "No Units",
-        },
         "w": {
             "name": "w",
             "dims": [X_DIM, Y_DIM, Z_DIM],
@@ -273,39 +175,39 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "mfy": {
+        "mfy_R4": {
             "name": "mfy",
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "cy": {
+        "cy_R4": {
             "name": "cy",
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "mfx_": {
-            "name": "mfx_",
+        "mfx_R4": {
+            "name": "mfx",
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "cx_": {
-            "name": "cx_",
+        "cx_R4": {
+            "name": "cx",
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
-        "peln_3d": {
-            "name": "peln_3d",
+        "peln": {
+            "name": "peln",
             "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             "units": "No Units",
         },
-        "pe_": {
-            "name": "pe_",
+        "pe": {
+            "name": "pe",
             "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             "units": "No Units",
         },
         "pk": {
             "name": "pk",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [X_DIM, Y_DIM, Z_DIM],
             "units": "No Units",
         },
         "pkz": {
@@ -316,6 +218,16 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         "q_con": {
             "name": "q_con",
             "dims": [X_DIM, Y_DIM, Z_DIM],
+            "units": "No Units",
+        },
+        "dp1": {
+            "name": "dp1",
+            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "units": "No Units",
+        },
+        "ps": {
+            "name": "ps",
+            "dims": [X_DIM, Y_DIM],
             "units": "No Units",
         },
     }
@@ -329,55 +241,19 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         super().__init__(grid, namelist, stencil_factory)
 
         self._base.in_vars["data_vars"] = {
-            "pe_": {
-                "istart": grid.is_ - 1,
-                "iend": grid.ie + 1,
-                "jstart": grid.js - 1,
-                "jend": grid.je + 1,
-                "kend": grid.npz + 1,
-            },
-            "qvapor": {
+            "tracers": {},
+            "w": {
                 "kend": grid.npz - 1,
             },
-            "qliquid": {
-                "kend": grid.npz - 1,
-            },
-            "qice": {
-                "kend": grid.npz - 1,
-            },
-            "qrain": {
-                "kend": grid.npz - 1,
-            },
-            "qsnow": {
-                "kend": grid.npz - 1,
-            },
-            "qgraupel": {
-                "kend": grid.npz - 1,
-            },
-            "qcld": {
-                "kend": grid.npz - 1,
-            },
-            "qo3mr": {
-                "kend": grid.npz - 1,
-            },
-            "qsgs_tke": {
-                "kend": grid.npz - 1,
-            },
-            "delp": {},
+            "u": grid.y3d_domain_dict(),
+            "v": grid.x3d_domain_dict(),
             "delz": {},
-            "q_con": {},
             "pt": {},
+            "dp1": {},
+            "delp": {},
             "cappa": {},
-            "ps": {},
-            "peln_3d": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
-                "kend": grid.npz + 1,
-            },
-            "ak": {},
-            "bk": {},
+            "q_con": {},
+            "pkz": grid.compute_dict(),
             "pk": {
                 "istart": grid.is_,
                 "iend": grid.ie,
@@ -385,713 +261,209 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 "jend": grid.je,
                 "kend": grid.npz + 1,
             },
-            "pkz": {
+            "peln": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kaxis": 1,
+                "kend": grid.npz,
+            },
+            "pe": {
+                "istart": grid.is_ - 1,
+                "iend": grid.ie + 1,
+                "jstart": grid.js - 1,
+                "jend": grid.je + 1,
+                "kend": grid.npz + 1,
+                "kaxis": 1,
+            },
+            "ps": {},
+            "wsd": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
             },
-            "w": {
-                "kend": grid.npz - 1,
-            },
-            "ws_": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
-            },
-            "u": {
-                "istart": grid.isd,
-                "iend": grid.ied,
-                "jstart": grid.jsd,
-                "jend": grid.jed + 1,
-                "kend": grid.npz,
-            },
-            "v": {
-                "istart": grid.isd,
-                "iend": grid.ied + 1,
-                "jstart": grid.jsd,
-                "jend": grid.jed,
-                "kend": grid.npz,
-            },
-            "mfy": {
+            "mfy_R4": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je + 1,
                 "kend": grid.npz - 1,
             },
-            "cy": {
+            "cy_R4": {
                 "istart": grid.isd,
                 "iend": grid.ied,
                 "jstart": grid.js,
                 "jend": grid.je + 1,
                 "kend": grid.npz - 1,
             },
-            "mfx_": {
+            "mfx_R4": {
                 "istart": grid.is_,
                 "iend": grid.ie + 1,
                 "jstart": grid.js,
                 "jend": grid.je,
                 "kend": grid.npz - 1,
             },
-            "cx_": {
+            "cx_R4": {
                 "istart": grid.is_,
                 "iend": grid.ie + 1,
                 "jstart": grid.jsd,
                 "jend": grid.jed,
                 "kend": grid.npz - 1,
             },
-            "hs": {
+            "phis": {
                 "istart": grid.isd,
                 "iend": grid.ied,
                 "jstart": grid.jsd,
                 "jend": grid.jed,
             },
-            "te0_2d_": {
+            "te_2d": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
             },
+            # column variables...
+            "ak": {},
+            "bk": {},
+            "pfull": grid.compute_buffer_k_dict(),
         }
         self._base.in_vars["parameters"] = [
             "ptop",
-            "r_vir",
             "akap",
+            "zvir",
             "last_step",
-            "do_adiabatic_init",
-            "consv",
-            "adiabatic",
+            "consv_te",
+            "mdt",
             "nq",
         ]
-        self._base.out_vars = {
-            "pt": {},
-            "cappa": {},
-            "q_con": {},
-            "delp": {},
-            "delz": {},
-            "qvapor": {
-                "kend": grid.npz - 1,
-            },
-            "qliquid": {
-                "kend": grid.npz - 1,
-            },
-            "qice": {
-                "kend": grid.npz - 1,
-            },
-            "qrain": {
-                "kend": grid.npz - 1,
-            },
-            "qsnow": {
-                "kend": grid.npz - 1,
-            },
-            "qgraupel": {
-                "kend": grid.npz - 1,
-            },
-            "qcld": {
-                "kend": grid.npz - 1,
-            },
-            "qo3mr": {
-                "kend": grid.npz - 1,
-            },
-            "qsgs_tke": {
-                "kend": grid.npz - 1,
-            },
-            "w": {
-                "kend": grid.npz - 1,
-            },
-            "u": {
-                "istart": grid.isd,
-                "iend": grid.ied,
-                "jstart": grid.jsd,
-                "jend": grid.jed + 1,
-                "kend": grid.npz - 1,
-            },
-            "v": {
-                "istart": grid.isd,
-                "iend": grid.ied + 1,
-                "jstart": grid.jsd,
-                "jend": grid.jed,
-                "kend": grid.npz - 1,
-            },
-            "mfy": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je + 1,
-                "kend": grid.npz - 1,
-            },
-            "cy": {
-                "istart": grid.isd,
-                "iend": grid.ied,
-                "jstart": grid.js,
-                "jend": grid.je + 1,
-                "kend": grid.npz - 1,
-            },
-            "mfx_": {
-                "istart": grid.is_,
-                "iend": grid.ie + 1,
-                "jstart": grid.js,
-                "jend": grid.je,
-                "kend": grid.npz - 1,
-            },
-            "cx_": {
-                "istart": grid.is_,
-                "iend": grid.ie + 1,
-                "jstart": grid.jsd,
-                "jend": grid.jed,
-                "kend": grid.npz - 1,
-            },
-            "peln_3d": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
-                "kend": grid.npz + 1,
-            },
-            "pe_": {
-                "istart": grid.is_ - 1,
-                "iend": grid.ie + 1,
-                "jstart": grid.js - 1,
-                "jend": grid.je + 1,
-                "kend": grid.npz + 1,
-            },
-            "pk": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
-                "kend": grid.npz + 1,
-            },
-            "pkz": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
-            },
-        }
+        self._base.out_vars = {}
+        for k in [
+            "tracers",
+            "pe",
+            "pkz",
+            "pk",
+            "peln",
+            "pt",
+            "cappa",
+            "delp",
+            "delz",
+            "q_con",
+            "u",
+            "v",
+            "w",
+            "ps",
+            "dp1",
+            "mfy_R4",
+            "cy_R4",
+            "mfx_R4",
+            "cx_R4",
+        ]:
+            self._base.out_vars[k] = self._base.in_vars["data_vars"][k]
 
         self.stencil_factory = stencil_factory
         self.quantity_factory = grid.quantity_factory
 
-        # self.namelist found in ParallelTranslateBaseSlicing
-        config = DynamicalCoreConfig.from_namelist(self.namelist).remapping
-
-        hydrostatic = config.hydrostatic
-        if hydrostatic:
-            raise NotImplementedError("Hydrostatic is not implemented")
-
-        grid_indexing = stencil_factory.grid_indexing
-
-        self._t_min = Float(184.0)
-        self._w_max = Float(90.0)
-        self._w_min = Float(-60.0)
-        self._area_64 = self.grid.grid_data.area_64
-        self._cosa_s = self.grid.grid_data.cosa_s
-        self._rsin2 = self.grid.grid_data.rsin2
-        self._kord_tr = config.kord_tr
-        self._kord_tm = abs(config.kord_tm)
-        self._kord_wz = config.kord_wz
-        self._kord_mt = config.kord_mt
-        self._do_sat_adjust = config.do_sat_adj
-
-        self.fill = True
-
-        self._gz = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM],
-            units="m^2 s^-2",
-            dtype=Float,
-        )
-
-        self._w2 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
-            units="temp W",
-            dtype=Float,
-        )
-
-        self._zsum1 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-
-        self._compute_performed = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM],
-            units="mask",
-            dtype=bool,
-        )
-
-        self._ps = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-
-        self._pe0 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-
-        self._pe1 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-
-        self._pe2 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-
-        self._pe3 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-
-        self._pn1 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-
-        self._pn2 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-
-        self._dp2 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-
-        self._pk2 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-
-        self._phis = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
-            units="n/a",
-            dtype=Float,
-        )
-
-        self._te_2d = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-
-        self._init_pe = stencil_factory.from_origin_domain(
-            init_pe,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(add=(0, 1, 1)),
-        )
-
-        self._moist_cv_pt_pressure = stencil_factory.from_origin_domain(
-            moist_cv_pt_pressure,
-            externals={"hydrostatic": hydrostatic},
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(add=(0, 0, 1)),
-        )
-
-        self._pn2_pk_delp = stencil_factory.from_origin_domain(
-            pn2_pk_delp,
-            origin=grid_indexing.origin_compute(add=(0, 0, 1)),
-            domain=grid_indexing.domain_compute(add=(0, 0, -1)),
-        )
-
-        self._map_scalar = MapSingle(
-            self.stencil_factory,
-            self.quantity_factory,
-            self._kord_tm,
-            1,
-            dims=[X_DIM, Y_DIM, Z_DIM],
-        )
-
-        self._rescale_delz_1 = stencil_factory.from_origin_domain(
-            rescale_delz_1,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(),
-        )
-
-        self._rescale_delz_2 = stencil_factory.from_origin_domain(
-            rescale_delz_2,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(),
-        )
-
-        self._w_fix_consrv_moment = stencil_factory.from_origin_domain(
-            func=W_fix_consrv_moment,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(),
-        )
-
-        self._pressures_mapu = stencil_factory.from_origin_domain(
-            pressures_mapu,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(add=(0, 1, 1)),
-        )
-
-        self._pe0_ptop_xmax = stencil_factory.from_origin_domain(
-            pe0_ptop_xmax,
-            origin=(
-                grid_indexing.n_halo + grid_indexing.domain[0],
-                grid_indexing.n_halo,
-                0,
-            ),
-            domain=(1, grid_indexing.domain[1] + 1, 1),
-        )
-
-        self._pressures_mapv = stencil_factory.from_origin_domain(
-            pressures_mapv,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(add=(1, 0, 1)),
-        )
-
-        self._pe_pk_delp_peln = stencil_factory.from_origin_domain(
-            pe_pk_delp_peln,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(add=(0, 0, 1)),
-        )
-
-        self._moist_cv_pkz = stencil_factory.from_origin_domain(
-            moist_cv.moist_pkz,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(),
-        )
-
-        self._moist_cv_te = stencil_factory.from_origin_domain(
-            moist_cv.moist_te,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(add=(0, 0, 1)),
-        )
-
-        self._te_zsum = stencil_factory.from_origin_domain(
-            moist_cv.te_zsum,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(),
-        )
-
-        self._moist_cv_pt_last_step = stencil_factory.from_origin_domain(
-            moist_cv.moist_pt_last_step,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(add=(0, 0, 1)),
-        )
-
-        self._fill_cond = stencil_factory.from_origin_domain(
-            moist_cv.cond_output,
-            origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(),
-        )
-
-        self._map1_ppm_u = MapSingle(
-            self.stencil_factory,
-            self.quantity_factory,
-            self._kord_mt,
-            -1,
-            dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
-        )
-
-        self._map1_ppm_v = MapSingle(
-            self.stencil_factory,
-            self.quantity_factory,
-            self._kord_mt,
-            -1,
-            dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
-        )
-
-        self._map_single_w = MapSingle(
-            self.stencil_factory,
-            self.quantity_factory,
-            self._kord_wz,
-            -2,
-            dims=[X_DIM, Y_DIM, Z_DIM],
-        )
-
-        self._map_single_delz = MapSingle(
-            self.stencil_factory,
-            self.quantity_factory,
-            self._kord_wz,
-            1,
-            dims=[X_DIM, Y_DIM, Z_DIM],
-        )
+        self.stencil_factory = stencil_factory
+        self.namelist = DynamicalCoreConfig.from_namelist(namelist)
+        self.grid = grid
 
     def compute_sequential(self, inputs_list, communicator_list):
         print("No serial test available")
 
+    def state_from_inputs(self, inputs: dict, tracers: Tracers) -> SimpleNamespace:
+        input_storages = super().state_from_inputs(inputs)
+        # Rename fluxes and courant numbers
+        input_storages["mfx"] = input_storages.pop("mfx_R4")
+        input_storages["mfy"] = input_storages.pop("mfy_R4")
+        input_storages["cx"] = input_storages.pop("cx_R4")
+        input_storages["cy"] = input_storages.pop("cy_R4")
+        # Make tracers
+        input_storages["tracers"] = tracers
+        return SimpleNamespace(**input_storages)
+
+    def outputs_from_state(self, state: dict):
+        if len(self.outputs) == 0:
+            return {}
+        outputs = {}
+        storages = {}
+        for name, properties in self.outputs.items():
+            if name in ["mfx_R4", "mfy_R4", "cx_R4", "cy_R4"]:
+                storages[name] = state[name[:-3]]
+            elif isinstance(state[name], Quantity):
+                storages[name] = state[name].data
+            elif len(self.outputs[name]["dims"]) > 0:
+                storages[name] = state[name]  # assume it's a storage
+            else:
+                outputs[name] = state[name]  # scalar
+        # Put tracers
+        storages["tracers"] = state["tracers"].as_4D_array()
+        outputs.update(self._base.slice_output(storages))
+        return outputs
+
     def compute_parallel(self, inputs, communicator):
-        state = self.state_from_inputs(inputs)
-        state_namespace = SimpleNamespace(**state)
-
-        tracers = {
-            "qvapor": state_namespace.qvapor,
-            "qliquid": state_namespace.qliquid,
-            "qice": state_namespace.qice,
-            "qrain": state_namespace.qrain,
-            "qsnow": state_namespace.qsnow,
-            "qgraupel": state_namespace.qgraupel,
-            "qcld": state_namespace.qcld,
-            "qo3mr": state_namespace.qo3mr,
-            "qsgs_tke": state_namespace.qsgs_tke,
-        }
-
-        self._init_pe(
-            state_namespace.pe_,
-            self._pe1,
-            self._pe2,
-            state_namespace.ptop,
+        tracers_mapping = Tracers.blind_mapping_from_data(inputs["tracers"])
+        tracers_mapping[0] = "vapor"
+        tracers_mapping[1] = "liquid"
+        tracers_mapping[2] = "rain"
+        tracers_mapping[3] = "snow"
+        tracers_mapping[4] = "ice"
+        tracers_mapping[5] = "graupel"
+        tracers_mapping[6] = "cloud"
+        tracers = Tracers.make_from_4D_array(
+            self.quantity_factory,
+            tracers_mapping,
+            inputs["tracers"],
         )
 
-        self._moist_cv_pt_pressure(
-            tracers["qvapor"],
-            tracers["qliquid"],
-            tracers["qrain"],
-            tracers["qsnow"],
-            tracers["qice"],
-            tracers["qgraupel"],
-            state_namespace.q_con,
-            state_namespace.pt,
-            state_namespace.cappa,
-            state_namespace.delp,
-            state_namespace.delz,
-            state_namespace.pe_,
-            self._pe2,
-            state_namespace.ak,
-            state_namespace.bk,
-            self._dp2,
-            self._ps,
-            self._pn1,
-            self._pn2,
-            state_namespace.peln_3d,
-            True,
-            Float(state_namespace.r_vir),
-        )
+        inputs["te_2d"] = inputs["te_2d"].astype(Float)
+        state = self.state_from_inputs(inputs, tracers)
 
-        self._pn2_pk_delp(
-            self._pe2,
-            self._pn2,
-            self._pk2,
-            Float(state_namespace.akap),
-        )
-
-        self._map_scalar(
-            state_namespace.pt,
-            self._pn1,
-            self._pn2,
-            self._t_min,
-            interp=True,
-        )
-
-        self._mapn_tracer = MapNTracer(
+        l_to_e = LagrangianToEulerian_GEOS(
             self.stencil_factory,
             self.quantity_factory,
-            abs(self._kord_tr),
-            state_namespace.nq,
-            fill=self.fill,
-            tracers=tracers,
+            DynamicalCoreConfig.from_namelist(self.namelist).remapping,
+            communicator,
+            self.grid.grid_data,
+            state.nq,
+            state.pfull,
+            state.tracers,
+            DynamicalCoreConfig.adiabatic,
         )
 
-        self._mapn_tracer(self._pe1, self._pe2, self._dp2, tracers)
-
-        self._map_single_w(
-            state_namespace.w,
-            self._pe1,
-            self._pe2,
-            qs=state_namespace.ws_,
-            interp=False,
+        l_to_e(
+            state.tracers,
+            state.pt,
+            state.delp,
+            state.delz,
+            state.peln,
+            state.u,
+            state.v,
+            state.w,
+            state.mfx,
+            state.mfy,
+            state.cx,
+            state.cy,
+            state.cappa,
+            state.q_con,
+            state.pkz,
+            state.pk,
+            state.pe,
+            state.phis,
+            state.te_2d,
+            state.ps,
+            state.wsd,
+            state.ak,
+            state.bk,
+            state.dp1,
+            state.ptop,
+            state.akap,
+            state.zvir,
+            state.last_step,
+            state.consv_te,
+            state.mdt,
         )
 
-        self._rescale_delz_1(
-            state_namespace.delz,
-            state_namespace.delp,
-        )
-
-        self._map_single_delz(state_namespace.delz, self._pe1, self._pe2)
-
-        self._rescale_delz_2(
-            state_namespace.delz,
-            self._dp2,
-        )
-
-        self._w_fix_consrv_moment(
-            state_namespace.w,
-            self._w2,
-            self._dp2,
-            self._gz,
-            self._w_max,
-            self._w_min,
-            self._compute_performed,
-        )
-
-        self._pressures_mapu(
-            state_namespace.pe_,
-            state_namespace.ak,
-            state_namespace.bk,
-            self._pe0,
-            self._pe3,
-            state_namespace.ptop,
-        )
-
-        self._pe0_ptop_xmax(
-            self._pe0,
-            state_namespace.ptop,
-        )
-
-        self._map1_ppm_u(
-            state_namespace.u,
-            self._pe0,
-            self._pe3,
-            interp=False,
-        )
-
-        self._map1_ppm_u(
-            state_namespace.mfy,
-            self._pe0,
-            self._pe3,
-            interp=False,
-        )
-
-        self._map1_ppm_u(
-            state_namespace.cy,
-            self._pe0,
-            self._pe3,
-            interp=False,
-        )
-
-        self._pressures_mapv(
-            state_namespace.pe_,
-            state_namespace.ak,
-            state_namespace.bk,
-            self._pe0,
-            self._pe3,
-        )
-
-        self._map1_ppm_v(
-            state_namespace.v,
-            self._pe0,
-            self._pe3,
-            interp=False,
-        )
-
-        self._map1_ppm_v(
-            state_namespace.mfx_,
-            self._pe0,
-            self._pe3,
-            interp=False,
-        )
-
-        self._map1_ppm_v(
-            state_namespace.cx_,
-            self._pe0,
-            self._pe3,
-            interp=False,
-        )
-
-        self._pe_pk_delp_peln(
-            state_namespace.pe_,
-            state_namespace.pk,
-            state_namespace.delp,
-            state_namespace.peln_3d,
-            self._pe2,
-            self._pk2,
-            self._pn2,
-            state_namespace.ak,
-            state_namespace.bk,
-            state_namespace.akap,
-            state_namespace.ptop,
-        )
-
-        self._moist_cv_pkz(
-            tracers["qvapor"],
-            tracers["qliquid"],
-            tracers["qrain"],
-            tracers["qsnow"],
-            tracers["qice"],
-            tracers["qgraupel"],
-            state_namespace.pkz,
-            state_namespace.pt,
-            state_namespace.cappa,
-            state_namespace.delp,
-            state_namespace.delz,
-            Float(state_namespace.r_vir),
-        )
-
-        if state_namespace.last_step and not state_namespace.do_adiabatic_init:
-
-            if state_namespace.consv > CONSV_MIN:
-
-                self._moist_cv_te(
-                    tracers["qvapor"],
-                    tracers["qliquid"],
-                    tracers["qrain"],
-                    tracers["qsnow"],
-                    tracers["qice"],
-                    tracers["qgraupel"],
-                    state_namespace.u,
-                    state_namespace.v,
-                    state_namespace.w,
-                    self._te_2d,
-                    state_namespace.pt,
-                    self._phis,
-                    state_namespace.delp,
-                    self._rsin2,
-                    self._cosa_s,
-                    state_namespace.hs,
-                    state_namespace.delz,
-                    GRAV,
-                )
-
-                self._te_zsum(
-                    self._te_2d,
-                    state_namespace.te0_2d_,
-                    state_namespace.delp,
-                    state_namespace.pkz,
-                    self._zsum1,
-                )
-
-                # Note, mpp_global_sum is currently set up for the C24 TBC setup
-                inputArray = self._te_2d.view[:] * self._area_64.view[:]
-                tesum = mpp_global_sum(inputArray, communicator, self.stencil_factory)
-                # print("tesum: ", tesum)
-                # print("type(self._zsum1) = ",type(self._zsum1))
-                # print("type(self._area_64) = ",type(self._area_64))
-                inputArray = self._zsum1.view[:] * self._area_64.view[:]
-                zsum = mpp_global_sum(inputArray, communicator, self.stencil_factory)
-                # print("zsum: ", zsum)
-                dtmp = tesum / (CV_AIR * zsum)
-                print("dtmp: ", dtmp)
-        # I ignore the E_flux computation since it's not used elsewhere
-        # in our current setup once it's computed
-
-        if state_namespace.last_step and not state_namespace.adiabatic:
-
-            self._moist_cv_pt_last_step(
-                tracers["qvapor"],
-                tracers["qliquid"],
-                tracers["qrain"],
-                tracers["qsnow"],
-                tracers["qice"],
-                tracers["qgraupel"],
-                state_namespace.pt,
-                state_namespace.pkz,
-                Float(dtmp),
-                state_namespace.r_vir,
-            )
-
-            self._fill_cond(
-                state_namespace.q_con,
-                tracers["qliquid"],
-                tracers["qrain"],
-                tracers["qsnow"],
-                tracers["qice"],
-                tracers["qgraupel"],
-            )
-
-        return self.outputs_from_state(state)
+        outputs = self.outputs_from_state(vars(state))
+        return outputs
