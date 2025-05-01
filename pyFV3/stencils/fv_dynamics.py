@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import List, Mapping
+from typing import Mapping
 
 from dace.frontend.python.interface import nounroll as dace_no_unroll
 from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, interval
@@ -321,6 +321,7 @@ class DynamicalCore:
                 f" {state.tracers.names()}"
             )
 
+        self._comm = comm
         self.comm_rank = comm.rank
         self.grid_data = grid_data
         self.grid_indexing = grid_indexing
@@ -537,7 +538,7 @@ class DynamicalCore:
         self._copy_cast = stencil_factory.from_origin_domain(
             func=_copy_cast_defn,
             origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(),
+            domain=grid_indexing.domain_compute(add=(1, 1, 0)),
         )
 
     # See divergence_damping.py, _get_da_min for explanation of this function
