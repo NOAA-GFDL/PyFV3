@@ -126,11 +126,9 @@ def compute_geopotential(zh: FloatField, gz: FloatField):
         gz = zh * constants.GRAV
 
 
-def p_grad_c_stencil(
+def p_grad_c_stencil_x(
     rdxc: FloatFieldIJ,
-    rdyc: FloatFieldIJ,
     uc: FloatField,
-    vc: FloatField,
     delpc: FloatField,
     pkc: FloatField,
     gz: FloatField,
@@ -147,10 +145,7 @@ def p_grad_c_stencil(
 
     Args:
         rdxc (in):
-        rdyc (in):
         uc (inout): x-velocity on the C-grid, has been updated due to advection
-            but not yet due to pressure gradient force
-        vc (inout): y-velocity on the C-grid, has been updated due to advection
             but not yet due to pressure gradient force
         delpc (in): vertical delta in pressure
         pkc (in): pressure if non-hydrostatic,
@@ -174,6 +169,26 @@ def p_grad_c_stencil(
             + (gz[-1, 0, 0] - gz[0, 0, 1]) * (pkc[-1, 0, 1] - pkc)
         )
 
+
+def p_grad_c_stencil_y(
+    rdyc: FloatFieldIJ,
+    vc: FloatField,
+    delpc: FloatField,
+    pkc: FloatField,
+    gz: FloatField,
+    dt2: Float,
+):
+    """
+    See p_grad_c_stencil_y
+    """
+    from __externals__ import hydrostatic
+
+    with computation(PARALLEL), interval(...):
+        if __INLINED(hydrostatic):
+            wk = pkc[0, 0, 1] - pkc
+        else:
+            wk = delpc
+        # wk is pressure gradient
         vc = vc + dt2 * rdyc / (wk[0, -1, 0] + wk) * (
             (gz[0, -1, 1] - gz) * (pkc[0, 0, 1] - pkc[0, -1, 0])
             + (gz[0, -1, 0] - gz[0, 0, 1]) * (pkc[0, -1, 1] - pkc)
@@ -551,10 +566,16 @@ class AcousticDynamics:
             )
         )
 
-        self._p_grad_c = stencil_factory.from_origin_domain(
-            p_grad_c_stencil,
+        self._p_grad_c_x = stencil_factory.from_origin_domain(
+            p_grad_c_stencil_x,
             origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(add=(1, 1, 0)),
+            domain=grid_indexing.domain_compute(add=(1, 0, 0)),
+            externals={"hydrostatic": config.hydrostatic},
+        )
+        self._p_grad_c_y = stencil_factory.from_origin_domain(
+            p_grad_c_stencil_y,
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(add=(0, 1, 0)),
             externals={"hydrostatic": config.hydrostatic},
         )
 
@@ -572,7 +593,7 @@ class AcousticDynamics:
         self._zero_data = stencil_factory.from_origin_domain(
             zero_data,
             origin=grid_indexing.origin_full(),
-            domain=grid_indexing.domain_full(),
+            domain=grid_indexing.domain_full(add=(1, 1, 0)),
         )
         ax_offsets_pe = grid_indexing.axis_offsets(
             grid_indexing.origin_full(),
@@ -793,16 +814,23 @@ class AcousticDynamics:
                     w3=state.omga,
                 )
 
-            self._p_grad_c(
+            self._p_grad_c_x(
                 rdxc=self.grid_data.rdxc,
-                rdyc=self.grid_data.rdyc,
                 uc=state.uc,
+                delpc=self.cgrid_shallow_water_lagrangian_dynamics.delpc,
+                pkc=self._pkc,
+                gz=self._gz,
+                dt2=dt2,
+            )
+            self._p_grad_c_y(
+                rdyc=self.grid_data.rdyc,
                 vc=state.vc,
                 delpc=self.cgrid_shallow_water_lagrangian_dynamics.delpc,
                 pkc=self._pkc,
                 gz=self._gz,
                 dt2=dt2,
             )
+
             self._halo_updaters.uc__vc.start()
             if self.config.nord > 0:
                 self._halo_updaters.divgd.wait()
