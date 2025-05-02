@@ -1,5 +1,11 @@
 import gt4py.cartesian.gtscript as gtscript
-from gt4py.cartesian.gtscript import BACKWARD, FORWARD, PARALLEL, computation, interval
+from gt4py.cartesian.gtscript import (
+    BACKWARD,
+    FORWARD,
+    PARALLEL,
+    computation,
+    interval,
+)
 
 import ndsl.constants as constants
 from ndsl import Quantity, QuantityFactory, StencilFactory
@@ -12,16 +18,14 @@ DZ_MIN = constants.DZ_MIN
 
 
 @gtscript.function
-def p_weighted_average_top(vel, dp0):
+def p_weighted_average_top(vel, top_dp_ratio):
     # TODO: ratio is a constant, where should this be placed?
-    ratio = dp0 / (dp0 + dp0[1])
-    return vel + (vel - vel[0, 0, 1]) * ratio
+    return vel + (vel - vel[0, 0, 1]) * top_dp_ratio
 
 
 @gtscript.function
-def p_weighted_average_bottom(vel, dp0):
-    ratio = dp0[-1] / (dp0[-2] + dp0[-1])
-    return vel[0, 0, -1] + (vel[0, 0, -1] - vel[0, 0, -2]) * ratio
+def p_weighted_average_bottom(vel, bottom_dp_ratio):
+    return vel[0, 0, -1] + (vel[0, 0, -1] - vel[0, 0, -2]) * bottom_dp_ratio
 
 
 @gtscript.function
