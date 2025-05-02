@@ -1,9 +1,11 @@
+import numpy as np
 from typing import Any, Dict
 
 from ndsl import Namelist, StencilFactory, orchestrate
-from ndsl.constants import Z_DIM
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from pyFV3.stencils import DivergenceDamping
 from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyFV3.utils.functional_validation import get_subset_func
 
 
 class A2B_Ord4Compute:
@@ -58,6 +60,11 @@ class TranslateA2B_Ord4(TranslateDycoreFortranData2Py):
         self.namelist = namelist  # type: ignore
         self.stencil_factory = stencil_factory
         self.compute_obj = A2B_Ord4Compute(stencil_factory)
+        self._subset = get_subset_func(
+            self.grid.grid_indexing,
+            dims=[X_DIM, Y_DIM, Z_DIM],
+            n_halo=((3, 3), (3, 3)),
+        )
 
     def compute_from_storage(self, inputs):
         nord_col = self.grid.quantity_factory.zeros(dims=[Z_DIM], units="unknown")
@@ -80,3 +87,13 @@ class TranslateA2B_Ord4(TranslateDycoreFortranData2Py):
         inputs["grid_type"] = 0
         self.compute_obj(divdamp, **inputs)
         return inputs
+
+    def subset_output(self, varname: str, output: np.ndarray) -> np.ndarray:
+        """
+        Given an output array, return the slice of the array which we'd
+        like to validate against reference data
+        """
+        if varname in ["wk"]:
+            return self._subset(output)
+        else:
+            return output
