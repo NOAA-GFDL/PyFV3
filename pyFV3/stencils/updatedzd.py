@@ -113,7 +113,8 @@ def apply_height_fluxes(
 
     with computation(BACKWARD):
         with interval(-1, None):
-            ws = (surface_height - height) / dt
+            rdt = 1 / dt
+            ws = (surface_height - height) * rdt
         with interval(0, -1):
             # ensure layer thickness exceeds minimum
             other = height[0, 0, 1] + DZ_MIN
