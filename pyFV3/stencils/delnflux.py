@@ -429,7 +429,11 @@ class DelnFlux:
         )
 
         self.delnflux_nosg = DelnFluxNoSG(
-            stencil_factory, damping_coefficients, rarea, nord_col, nk=nk
+            stencil_factory,
+            damping_coefficients,
+            rarea,
+            nord_col,
+            nk=nk,
         )
 
     def __call__(
@@ -443,11 +447,11 @@ class DelnFlux:
         """
         Del-n damping for fluxes, where n = 2 * nord + 2
         Args:
-            q: Field for which to calculate damped fluxes (in)
-            fx: x-flux on A-grid (inout)
-            fy: y-flux on A-grid (inout)
-            d2: A damped copy of the q field (in)
-            mass: Mass to weight the diffusive flux by (in)
+            q (in): Field for which to calculate damped fluxes
+            fx (inout): x-flux on A-grid
+            fy (inout): y-flux on A-grid
+            d2 (in): A damped copy of the q field
+            mass (in): Mass to weight the diffusive flux by
         """
         if self._no_compute is True:
             return fx, fy
@@ -617,14 +621,12 @@ class DelnFluxNoSG:
             externals={**corner_axis_offsets},
             origin=corner_origin,
             domain=corner_domain,
-            skip_passes=("UnreachableStmtPruning",),
         )
         self._copy_corners_y_nord = stencil_factory.from_origin_domain(
             copy_corners_y_nord,
             externals={**corner_axis_offsets},
             origin=corner_origin,
             domain=corner_domain,
-            skip_passes=("UnreachableStmtPruning",),
         )
 
     def __call__(self, q, fx2, fy2, damp_c, d2, mass=None):
@@ -645,17 +647,46 @@ class DelnFluxNoSG:
         """
 
         if mass is None:
-            self._d2_damp(q=q, d2=d2, damp=damp_c, nord=self._nord)
+            self._d2_damp(
+                q=q,
+                d2=d2,
+                damp=damp_c,
+                nord=self._nord,
+            )
         else:
-            self._copy_stencil_interval(q_in=q, q_out=d2, nord=self._nord)
+            self._copy_stencil_interval(
+                q_in=q,
+                q_out=d2,
+                nord=self._nord,
+            )
 
-        self._copy_corners_x_nord(q_in=d2, q_out=d2, nord=self._nord, current_nord=0)
+        self._copy_corners_x_nord(
+            q_in=d2,
+            q_out=d2,
+            nord=self._nord,
+            current_nord=0,
+        )
 
-        self._fx_calc_stencil(q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord)
+        self._fx_calc_stencil(
+            q=d2,
+            del6_v=self._del6_v,
+            fx=fx2,
+            nord=self._nord,
+        )
 
-        self._copy_corners_y_nord(q_in=d2, q_out=d2, nord=self._nord, current_nord=0)
+        self._copy_corners_y_nord(
+            q_in=d2,
+            q_out=d2,
+            nord=self._nord,
+            current_nord=0,
+        )
 
-        self._fy_calc_stencil(q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord)
+        self._fy_calc_stencil(
+            q=d2,
+            del6_u=self._del6_u,
+            fy=fy2,
+            nord=self._nord,
+        )
 
         for n in range(self._nmax):
             self._d2_stencil[n](
@@ -668,17 +699,31 @@ class DelnFluxNoSG:
             )
 
             self._copy_corners_x_nord(
-                q_in=d2, q_out=d2, nord=self._nord, current_nord=n
+                q_in=d2,
+                q_out=d2,
+                nord=self._nord,
+                current_nord=n,
             )
 
             self._column_conditional_fx_calculation[n](
-                q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord, current_nord=n
+                q=d2,
+                del6_v=self._del6_v,
+                fx=fx2,
+                nord=self._nord,
+                current_nord=n,
             )
 
             self._copy_corners_y_nord(
-                q_in=d2, q_out=d2, nord=self._nord, current_nord=n
+                q_in=d2,
+                q_out=d2,
+                nord=self._nord,
+                current_nord=n,
             )
 
             self._column_conditional_fy_calculation[n](
-                q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord, current_nord=n
+                q=d2,
+                del6_u=self._del6_u,
+                fy=fy2,
+                nord=self._nord,
+                current_nord=n,
             )
