@@ -1,6 +1,8 @@
+import numpy as np
 from typing import Any, Dict
 
 from ndsl import Namelist, StencilFactory
+from ndsl.dsl.typing import Float
 from pyFV3 import DynamicalCoreConfig
 from pyFV3.stencils import temperature_adjust
 from pyFV3.stencils.dyn_core import get_nk_heat_dissipation
@@ -42,7 +44,9 @@ class TranslatePressureAdjustedTemperature_NonHydrostatic(
         self.stencil_factory = stencil_factory
 
     def compute_from_storage(self, inputs):
-        inputs["delt_time_factor"] = abs(inputs["bdt"] * self.namelist.delt_max)
+        inputs["delt_time_factor"] = np.abs(
+            inputs["bdt"] * self.namelist.delt_max, dtype=Float
+        )
         del inputs["bdt"]
         self.compute_func(**inputs)
         return inputs
