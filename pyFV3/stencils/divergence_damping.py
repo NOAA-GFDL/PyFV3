@@ -501,7 +501,6 @@ class DivergenceDamping:
             func=corners.fill_corners_dgrid_defn,
             compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
             compute_halos=(self.grid_indexing.n_halo, self.grid_indexing.n_halo),
-            skip_passes=("UnreachableStmtPruning",),
         )
 
         self._redo_divg_d_stencils = get_stencils_with_varied_bounds(
