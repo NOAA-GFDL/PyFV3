@@ -274,7 +274,7 @@ class FiniteVolumeTransport:
         by contrast are area weighted.
 
         Args:
-            q (in): scalar to be transported
+            q (inout): scalar to be transported (corners are copied in halo)
             crx (in): Courant number in x-direction
             cry (in): Courant number in y-direction
             x_area_flux (in): flux of area in x-direction, in units of m^2
