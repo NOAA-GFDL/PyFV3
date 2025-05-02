@@ -367,7 +367,7 @@ class TracerAdvection:
 
         if self._update_mass_courant:
             working_x_mass_flux = x_mass_flux
-            working_y_mass_flux = x_mass_flux
+            working_y_mass_flux = y_mass_flux
             working_x_courant = x_courant
             working_y_courant = y_courant
         else:
@@ -402,13 +402,13 @@ class TracerAdvection:
         )
 
         self._divide_fluxes_by_n_substeps(
-            working_x_courant,
-            self._x_area_flux,
-            working_x_mass_flux,
-            working_y_courant,
-            self._y_area_flux,
-            working_y_mass_flux,
-            self._cmax,
+            cxd=working_x_courant,
+            xfx=self._x_area_flux,
+            mfxd=working_x_mass_flux,
+            cyd=working_y_courant,
+            yfx=self._y_area_flux,
+            mfyd=working_y_mass_flux,
+            cmax=self._cmax,
         )
 
         self._tracers_halo_updater.update()
