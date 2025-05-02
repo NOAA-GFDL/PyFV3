@@ -52,7 +52,7 @@ class TranslateUpdateDzD(TranslateDycoreFortranData2Py):
         self._subset = get_subset_func(
             self.grid.grid_indexing,
             dims=[X_DIM, Y_DIM, Z_DIM],
-            n_halo=((0, 0), (0, 0)),
+            n_halo=((3, 3), (3, 3)),
         )
         self.ignore_near_zero_errors = {"zh": True, "wsd": True}
         self.near_zero = 1e-30
