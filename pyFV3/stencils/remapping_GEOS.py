@@ -547,11 +547,13 @@ class LagrangianToEulerian_GEOS:
                     inputArray=self._te_2d.view[:] * self._area_64.view[:],
                     communicator=self._comm,
                     stencil_factory=self._stencil_factory,
+                    simplified_reduce=True,
                 )
                 zsum = mpp_global_sum(
                     inputArray=self._zsum1.view[:] * self._area_64.view[:],
                     communicator=self._comm,
                     stencil_factory=self._stencil_factory,
+                    simplified_reduce=True,
                 )
                 dtmp = tesum / (CV_AIR * zsum)
 
