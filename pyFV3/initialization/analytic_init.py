@@ -1,12 +1,12 @@
 from enum import Enum
 
+import pyFV3.initialization.test_cases.initialize_baroclinic as bc
+import pyFV3.initialization.test_cases.initialize_rossby as rossby
+import pyFV3.initialization.test_cases.initialize_tc as tc
 from ndsl import CubedSphereCommunicator, MetaEnumStr, QuantityFactory
 from ndsl.grid import GridData
 from ndsl.typing import Communicator
 from pyFV3.dycore_state import DycoreState
-import pyFV3.initialization.test_cases.initialize_baroclinic as bc
-import pyFV3.initialization.test_cases.initialize_tc as tc
-import pyFV3.initialization.test_cases.initialize_rossby as rossby
 
 
 class Cases(Enum, metaclass=MetaEnumStr):
@@ -38,7 +38,15 @@ def init_analytic_state(
     Returns:
         an instance of DycoreState class
     """
-    if analytic_init_case in Cases:  # type: ignore
+    # Cases that expect Cubed Sphere Communicator
+    spherical_cases = [
+        Cases.baroclinic.value,
+        Cases.tropicalcyclone.value,
+        Cases.rossby.value,
+    ]
+
+    if analytic_init_case in spherical_cases:  # type: ignore
+        # TODO: Consider CubedSphereCommunicator check within individual init_*() calls
         if not isinstance(comm, CubedSphereCommunicator):
             raise TypeError(
                 f"Expected CubedSphereCommunicator instance for 'comm', "
