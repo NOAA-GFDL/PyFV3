@@ -108,18 +108,22 @@ def _calc_rossby_delp(grid_data: GridData):
     )
 
 
-def _init_for_rossby(numpy_state: DycoreState, grid_data: GridData):
+def _init_for_rossby(numpy_state: DycoreState, grid_data: GridData, shape):
     """Initialization specific to Rossby-Haurwitz wave test
 
     Args
         numpy_state: DycoreState, modified to update the phis, delp, u, v
         grid_Data: GridData
     """
+    nx, ny, _ = init_utils.local_compute_size(shape)
+    _, _, slice_3d_buffer, slice_2d_buffer = init_utils.compute_slices(nx + 1, ny + 1)
+    slice_3d_buffer_orig = slice_3d_buffer
+    slice_3d_buffer = (slice_3d_buffer[0], slice_3d_buffer[1], 0)
     numpy_state.phis[:] = 0.0
 
     # Initialize delp
-    numpy_state.delp[:, :, 0] = _calc_rossby_delp(grid_data)
-    numpy_state.delp[:, :, 0] = numpy_state.delp[:, :, 0] - numpy_state.phis[:]
+    numpy_state.delp[slice_3d_buffer] = _calc_rossby_delp(grid_data)[slice_2d_buffer]
+    numpy_state.delp[slice_3d_buffer] = numpy_state.delp[slice_3d_buffer] - numpy_state.phis[slice_2d_buffer]
 
     grid = np.transpose(
         np.stack(  # TODO: Refactor to non-protected _horizontal_data
@@ -131,12 +135,30 @@ def _init_for_rossby(numpy_state: DycoreState, grid_data: GridData):
     # Initialize u winds
     p1 = grid[:-1, :, :]
     p2 = grid[1:, :, :]
-    numpy_state.u[:-1, :, 0] = _calc_rossby_winds(p1, p2)
+    u_buffer = (
+        slice(slice_2d_buffer[0].start, slice_2d_buffer[0].stop - 1, None),
+        slice_2d_buffer[1]
+    )
+    u_buffer_0 = (
+        slice(slice_2d_buffer[0].start, slice_2d_buffer[0].stop - 1, None),
+        slice_2d_buffer[1],
+        0
+    )
+    numpy_state.u[u_buffer_0] = _calc_rossby_winds(p1, p2)[u_buffer]
 
     # Initialize v winds
     p1 = grid[:, :-1, :]
     p2 = grid[:, 1:, :]
-    numpy_state.v[:, :-1, 0] = _calc_rossby_winds(p1, p2)
+    v_buffer = (
+        slice_2d_buffer[0],
+        slice(slice_2d_buffer[1].start, slice_2d_buffer[1].stop - 1, None)
+    )
+    v_buffer_0 = (
+        slice_2d_buffer[0],
+        slice(slice_2d_buffer[1].start, slice_2d_buffer[1].stop - 1, None),
+        0
+    )
+    numpy_state.v[v_buffer_0] = _calc_rossby_winds(p1, p2)[v_buffer]
 
     # NOTE: test_cases.F90 has dtoa and atoc calls, but not implemented here.
 
@@ -178,7 +200,7 @@ def init_rossby_state(
     numpy_state = init_utils.empty_numpy_dycore_state(shape)
 
     _preinit_for_all_sw(numpy_state, shape)
-    _init_for_rossby(numpy_state, grid_data)
+    _init_for_rossby(numpy_state, grid_data, shape)
     _postinit_for_all_sw(numpy_state)
 
     state = DycoreState.init_from_numpy_arrays(
