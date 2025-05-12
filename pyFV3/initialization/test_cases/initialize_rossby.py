@@ -7,16 +7,17 @@ https://github.com/NOAA-GFDL/GFDL_atmos_cubed_sphere.git
 import numpy as np
 
 from ndsl import CubedSphereCommunicator, QuantityFactory, constants
+from ndsl.dsl.typing import Float
 from ndsl.grid import GridData
 from pyFV3.dycore_state import DycoreState
 from pyFV3.initialization import init_utils
 
 
 NHALO = constants.N_HALO_DEFAULT
-OMG = 7.848e-6
-RK = 7.848e-6
-R = 4.0  # Wave Number (likely)
-GH0 = 8.0e3 * constants.GRAV
+OMG = Float(7.848e-6)
+RK = Float(7.848e-6)
+R = Float(4.0)  # Wave Number (likely)
+GH0 = Float(8.0e3) * constants.GRAV
 
 
 def _preinit_for_all_sw(numpy_state: DycoreState, shape):
@@ -49,7 +50,7 @@ def _calc_rossby_winds(p1, p2):
     """
     muv = init_utils._find_midpoint_unit_vectors(
         p1, p2
-    )  # TODO: Refactor to non-protected
+    )  # TODO: Refactor to non-protected call
     p3 = muv["midpoint"]
     e2 = muv["unit_dir"]
     ex = muv["exv"]
@@ -82,9 +83,10 @@ def _calc_rossby_delp(grid_data: GridData):
     """
     agd0 = grid_data.lon_agrid.data[:]
     agd1 = grid_data.lat_agrid.data[:]
-    a = 0.5 * OMG * (2 * constants.OMEGA + OMG) * (
-        np.cos(agd1) ** 2
-    ) + 0.25 * RK * RK * (np.cos(agd1) ** (R + R)) * (
+
+    a = Float(0.5) * OMG * (2 * constants.OMEGA + OMG) * (np.cos(agd1) ** 2) + Float(
+        0.25
+    ) * RK * RK * (np.cos(agd1) ** (R + R)) * (
         (R + 1) * (np.cos(agd1) ** 2)
         + (2 * R * R - R - 2)
         - 2 * (R * R) * np.cos(agd1) ** (-2)
@@ -95,7 +97,7 @@ def _calc_rossby_delp(grid_data: GridData):
         * ((R * R + 2 * R + 2) - ((R + 1) * np.cos(agd1)) ** 2)
     )
     c = (
-        0.25
+        Float(0.25)
         * RK
         * RK
         * (np.cos(agd1) ** (2 * R))
