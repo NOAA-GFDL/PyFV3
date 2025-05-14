@@ -1,13 +1,7 @@
 from ndsl import StencilFactory, orchestrate
-from ndsl.dsl.gt4py import (
-    PARALLEL,
-    compile_assert,
-    computation,
-    function,
-    horizontal,
-    interval,
-    region,
-)
+from ndsl.dsl.gt4py import PARALLEL, compile_assert, computation
+from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.typing import FloatField, FloatFieldIJ, Index3D
 from ndsl.stencils.basic_operations import sign
 from pyFV3.stencils import ppm
@@ -16,7 +10,7 @@ from pyFV3.stencils import ppm
 from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 
-@function
+@gtfunction
 def apply_flux(courant, q, fx1, mask):
     """
     Args:
@@ -29,7 +23,7 @@ def apply_flux(courant, q, fx1, mask):
     return q[-1, 0, 0] + fx1 * mask if courant > 0.0 else q + fx1 * mask
 
 
-@function
+@gtfunction
 def fx1_fn(courant, br, b0, bl):
     """
     Args:
@@ -45,7 +39,7 @@ def fx1_fn(courant, br, b0, bl):
     return ret
 
 
-@function
+@gtfunction
 def get_advection_mask(bl, b0, br):
     from __externals__ import mord
 
@@ -62,7 +56,7 @@ def get_advection_mask(bl, b0, br):
     return advection_mask
 
 
-@function
+@gtfunction
 def get_flux(q: FloatField, courant: FloatField, al: FloatField):
     bl = al[0, 0, 0] - q[0, 0, 0]
     br = al[1, 0, 0] - q[0, 0, 0]
@@ -73,7 +67,7 @@ def get_flux(q: FloatField, courant: FloatField, al: FloatField):
     return apply_flux(courant, q, fx1, advection_mask)  # noqa
 
 
-@function
+@gtfunction
 def get_flux_ord8plus(
     q: FloatField, courant: FloatField, bl: FloatField, br: FloatField
 ):
@@ -82,7 +76,7 @@ def get_flux_ord8plus(
     return apply_flux(courant, q, fx1, 1.0)
 
 
-@function
+@gtfunction
 def dm_iord8plus(q: FloatField):
     xt = 0.25 * (q[1, 0, 0] - q[-1, 0, 0])
     dqr = max(max(q, q[-1, 0, 0]), q[1, 0, 0]) - q
@@ -90,12 +84,12 @@ def dm_iord8plus(q: FloatField):
     return sign(min(min(abs(xt), dqr), dql), xt)
 
 
-@function
+@gtfunction
 def al_iord8plus(q: FloatField, dm: FloatField):
     return 0.5 * (q[-1, 0, 0] + q) + 1.0 / 3.0 * (dm[-1, 0, 0] - dm)
 
 
-@function
+@gtfunction
 def blbr_iord8(q: FloatField, al: FloatField, dm: FloatField):
     xt = 2.0 * dm
     bl = -1.0 * sign(min(abs(xt), abs(al - q)), xt)
@@ -103,7 +97,7 @@ def blbr_iord8(q: FloatField, al: FloatField, dm: FloatField):
     return bl, br
 
 
-@function
+@gtfunction
 def xt_dxa_edge_0_base(q, dxa):
     return 0.5 * (
         ((2.0 * dxa + dxa[-1, 0]) * q - dxa * q[-1, 0, 0]) / (dxa[-1, 0] + dxa)
@@ -112,7 +106,7 @@ def xt_dxa_edge_0_base(q, dxa):
     )
 
 
-@function
+@gtfunction
 def xt_dxa_edge_1_base(q, dxa):
     return 0.5 * (
         ((2.0 * dxa[-1, 0] + dxa[-2, 0]) * q[-1, 0, 0] - dxa[-1, 0] * q[-2, 0, 0])
@@ -121,7 +115,7 @@ def xt_dxa_edge_1_base(q, dxa):
     )
 
 
-@function
+@gtfunction
 def xt_dxa_edge_0(q, dxa):
     from __externals__ import xt_minmax
 
@@ -133,7 +127,7 @@ def xt_dxa_edge_0(q, dxa):
     return xt
 
 
-@function
+@gtfunction
 def xt_dxa_edge_1(q, dxa):
     from __externals__ import xt_minmax
 
@@ -145,7 +139,7 @@ def xt_dxa_edge_1(q, dxa):
     return xt
 
 
-@function
+@gtfunction
 def compute_al(q: FloatField, dxa: FloatFieldIJ):
     """
     Interpolate q at interface.
@@ -186,7 +180,7 @@ def compute_al(q: FloatField, dxa: FloatFieldIJ):
     return al
 
 
-@function
+@gtfunction
 def bl_br_edges(bl, br, q, dxa, al, dm):
     from __externals__ import i_end, i_start
 
@@ -251,7 +245,7 @@ def bl_br_edges(bl, br, q, dxa, al, dm):
     return bl, br
 
 
-@function
+@gtfunction
 def compute_blbr_ord8plus(q: FloatField, dxa: FloatFieldIJ):
     from __externals__ import grid_type, i_end, i_start, iord
 

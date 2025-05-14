@@ -1,6 +1,8 @@
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from ndsl.dsl.gt4py import PARALLEL, computation, function, horizontal, interval, region
+from ndsl.dsl.gt4py import PARALLEL, computation
+from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from ndsl.stencils import corners
@@ -20,7 +22,7 @@ def set_tmps(utmp: FloatField, vtmp: FloatField, big_number: Float):
 
 
 # almost the same as a2b_ord4's version
-@function
+@gtfunction
 def lagrange_y_func_p1(qx):
     return a2 * (qx[0, -1, 0] + qx[0, 2, 0]) + a1 * (qx + qx[0, 1, 0])
 
@@ -30,7 +32,7 @@ def lagrange_interpolation_y_p1(qx: FloatField, qout: FloatField):
         qout = lagrange_y_func_p1(qx)
 
 
-@function
+@gtfunction
 def lagrange_x_func_p1(qy):
     return a2 * (qy[-1, 0, 0] + qy[2, 0, 0]) + a1 * (qy + qy[1, 0, 0])
 
@@ -217,7 +219,7 @@ def vt_main(
         vt = contravariant(vc, u, cosa_v, rsin_v)
 
 
-@function
+@gtfunction
 def contravariant(v1, v2, cosa, rsin2):
     """
     Retrieve the contravariant component of the wind from its covariant
@@ -288,22 +290,22 @@ def contravariant_stencil(
         out = contravariant(u, v, cosa, rsin)
 
 
-@function
+@gtfunction
 def vol_conserv_cubic_interp_func_x(u):
     return c1 * u[-2, 0, 0] + c2 * u[-1, 0, 0] + c3 * u
 
 
-@function
+@gtfunction
 def vol_conserv_cubic_interp_func_x_rev(u):
     return c1 * u[1, 0, 0] + c2 * u + c3 * u[-1, 0, 0]
 
 
-@function
+@gtfunction
 def vol_conserv_cubic_interp_func_y(v):
     return c1 * v[0, -2, 0] + c2 * v[0, -1, 0] + c3 * v
 
 
-@function
+@gtfunction
 def vol_conserv_cubic_interp_func_y_rev(v):
     return c1 * v[0, 1, 0] + c2 * v + c3 * v[0, -1, 0]
 
@@ -355,7 +357,7 @@ def vc_y_edge1(
         vc = vt * sin_sg4[0, -1] if vt > 0 else vt * sin_sg2
 
 
-@function
+@gtfunction
 def edge_interpolate4_x(ua, dxa):
     t1 = dxa[-2, 0] + dxa[-1, 0]
     t2 = dxa[0, 0] + dxa[1, 0]
@@ -364,7 +366,7 @@ def edge_interpolate4_x(ua, dxa):
     return 0.5 * (n1 / t1 + n2 / t2)
 
 
-@function
+@gtfunction
 def edge_interpolate4_y(va, dya):
     t1 = dya[0, -2] + dya[0, -1]
     t2 = dya[0, 0] + dya[0, 1]

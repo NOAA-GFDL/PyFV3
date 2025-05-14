@@ -16,13 +16,15 @@ from ndsl.constants import (
     Y_INTERFACE_DIM,
     Z_DIM,
 )
-from ndsl.dsl.gt4py import PARALLEL, computation, function, horizontal, interval, region
+from ndsl.dsl.gt4py import PARALLEL, computation
+from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.typing import Communicator
 from pyFV3.stencils.fvtp2d import FiniteVolumeTransport
 
 
-@function
+@gtfunction
 def flux_x(cx, dxa, dy, sin_sg3, sin_sg1, xfx):
     from __externals__ import local_ie, local_is, local_je, local_js
 
@@ -33,7 +35,7 @@ def flux_x(cx, dxa, dy, sin_sg3, sin_sg1, xfx):
     return xfx
 
 
-@function
+@gtfunction
 def flux_y(cy, dya, dx, sin_sg4, sin_sg2, yfx):
     from __externals__ import local_ie, local_is, local_je, local_js
 

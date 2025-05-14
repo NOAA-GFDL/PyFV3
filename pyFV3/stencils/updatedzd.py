@@ -10,7 +10,9 @@ from ndsl.constants import (
     Z_DIM,
     Z_INTERFACE_DIM,
 )
-from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, function, interval
+from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
+from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients, GridData
 from pyFV3.stencils.delnflux import DelnFluxNoSG
@@ -20,7 +22,7 @@ from pyFV3.stencils.fvtp2d import FiniteVolumeTransport
 DZ_MIN = constants.DZ_MIN
 
 
-@function
+@gtfunction
 def _apply_height_advective_flux(
     height: FloatField,
     area: FloatFieldIJ,

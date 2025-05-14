@@ -1,4 +1,4 @@
-from ndsl.dsl.gt4py import function
+from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.typing import FloatField
 
 
@@ -17,7 +17,7 @@ s14 = 4.0 / 7.0
 s15 = 3.0 / 14.0
 
 
-@function
+@gtfunction
 def pert_ppm_standard_constraint_fcn(a0: FloatField, al: FloatField, ar: FloatField):
     if al * ar < 0.0:
         da1 = al - ar
@@ -34,7 +34,7 @@ def pert_ppm_standard_constraint_fcn(a0: FloatField, al: FloatField, ar: FloatFi
     return al, ar
 
 
-@function
+@gtfunction
 def pert_ppm_positive_definite_constraint_fcn(
     a0: FloatField, al: FloatField, ar: FloatField
 ):
