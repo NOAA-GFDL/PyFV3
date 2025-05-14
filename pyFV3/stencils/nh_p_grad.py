@@ -1,8 +1,8 @@
 import numpy as np
-from ndsl.dsl.gt4py import PARALLEL, computation, interval
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_INTERFACE_DIM
+from ndsl.dsl.gt4py import PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from pyFV3.stencils.a2b_ord4 import AGrid2BGridFourthOrder

@@ -1,7 +1,5 @@
 from typing import Tuple
 
-from ndsl.dsl.gt4py import function, BACKWARD, FORWARD, PARALLEL, computation, interval
-
 import ndsl.constants as constants
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import (
@@ -12,6 +10,7 @@ from ndsl.constants import (
     Z_DIM,
     Z_INTERFACE_DIM,
 )
+from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, function, interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients, GridData
 from pyFV3.stencils.delnflux import DelnFluxNoSG

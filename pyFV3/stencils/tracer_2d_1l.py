@@ -1,8 +1,6 @@
 import math
 from typing import Dict
 
-from ndsl.dsl.gt4py import function, PARALLEL, computation, horizontal, interval, region
-
 from ndsl import (
     Quantity,
     QuantityFactory,
@@ -18,6 +16,7 @@ from ndsl.constants import (
     Y_INTERFACE_DIM,
     Z_DIM,
 )
+from ndsl.dsl.gt4py import PARALLEL, computation, function, horizontal, interval, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.typing import Communicator
 from pyFV3.stencils.fvtp2d import FiniteVolumeTransport

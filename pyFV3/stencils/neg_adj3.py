@@ -1,8 +1,7 @@
-from ndsl.dsl.gt4py import function, BACKWARD, FORWARD, PARALLEL, computation, interval
-
 import ndsl.constants as constants
 from ndsl import QuantityFactory, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM
+from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, function, interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 
 

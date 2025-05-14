@@ -1,24 +1,25 @@
 import numpy as np
-from ndsl.dsl.gt4py import (
-    PARALLEL,
-    function,
-    computation,
-    horizontal,
-    interval,
-    region,
-    sqrt,
-)
 
 import ndsl.stencils.basic_operations as basic
 import ndsl.stencils.corners as corners
 from ndsl import Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
+from ndsl.dsl.gt4py import (
+    PARALLEL,
+    computation,
+    function,
+    horizontal,
+    interval,
+    region,
+    sqrt,
+)
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients, GridData
 from pyFV3.stencils.a2b_ord4 import AGrid2BGridFourthOrder, doubly_periodic_a2b_ord4
 from pyFV3.stencils.d2a2c_vect import contravariant
+
 
 from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
@@ -251,7 +252,7 @@ def smagorinsky_diffusion_approx(delpc: FloatField, vort: FloatField, absdt: Flo
         absdt (in): abs(dt)
     """
     with computation(PARALLEL), interval(...):
-        vort = absdt * (delpc**2.0 + vort**2.0) ** 0.5
+        vort = absdt * (delpc ** 2.0 + vort ** 2.0) ** 0.5
 
 
 def smag_corner(
@@ -295,7 +296,7 @@ def smag_corner(
         wk = rarea * (vt2 - vt2[0, 1, 0] + ut2 - ut2[1, 0, 0])
 
         shear = doubly_periodic_a2b_ord4(wk)
-        smag_c = dt * sqrt(shear**2 + smag_c_t**2)
+        smag_c = dt * sqrt(shear ** 2 + smag_c_t ** 2)
 
 
 class DivergenceDamping:

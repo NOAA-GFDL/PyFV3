@@ -1,10 +1,9 @@
 from typing import Optional
 
-from ndsl.dsl.gt4py import function, PARALLEL, computation, horizontal, interval, region
-
 import ndsl.stencils.corners as corners
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.dsl.gt4py import PARALLEL, computation, function, horizontal, interval, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import DampingCoefficients, GridData
 from pyFV3.stencils.delnflux import DelnFlux

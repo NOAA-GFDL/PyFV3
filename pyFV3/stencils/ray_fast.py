@@ -1,20 +1,20 @@
+import ndsl.constants as constants
+from ndsl import StencilFactory, orchestrate
+from ndsl.constants import X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.dsl.gt4py import (
-    function,
     BACKWARD,
     FORWARD,
     PARALLEL,
     computation,
+    function,
     horizontal,
     interval,
     log,
     region,
     sin,
 )
-
-import ndsl.constants as constants
-from ndsl import StencilFactory, orchestrate
-from ndsl.constants import X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.dsl.typing import Float, FloatField, FloatFieldK
+
 
 from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
