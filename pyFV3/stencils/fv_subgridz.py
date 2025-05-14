@@ -1,14 +1,6 @@
 # mypy: ignore-errors
 import collections
 
-from ndsl.dsl.gt4py import (
-    function,
-    BACKWARD,
-    PARALLEL,
-    computation,
-    interval,
-)
-
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import (
@@ -25,9 +17,11 @@ from ndsl.constants import (
     Z_DIM,
     ZVIR,
 )
+from ndsl.dsl.gt4py import BACKWARD, PARALLEL, computation, function, interval
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.stencils.basic_operations import dim
 from pyFV3.dycore_state import DycoreState
+
 
 from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
@@ -63,7 +57,7 @@ def standard_cm(cpm, cvm, q0_vapor, q0_liquid, q0_rain, q0_ice, q0_snow, q0_grau
 
 @function
 def tvol(gz, u0, v0, w0):
-    return gz + 0.5 * (u0**2 + v0**2 + w0**2)
+    return gz + 0.5 * (u0 ** 2 + v0 ** 2 + w0 ** 2)
 
 
 def init(

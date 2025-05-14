@@ -1,16 +1,8 @@
 from typing import Dict, Mapping
 
-from ndsl.dsl.gt4py import (
-    PARALLEL,
-    function,
-    computation,
-    horizontal,
-    interval,
-    region,
-)
-
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.dsl.gt4py import PARALLEL, computation, function, horizontal, interval, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients, GridData
 from pyFV3._config import DGridShallowWaterLagrangianDynamicsConfig
@@ -23,6 +15,7 @@ from pyFV3.stencils.fxadv import FiniteVolumeFluxPrep
 from pyFV3.stencils.xtp_u import advect_u_along_x
 from pyFV3.stencils.ytp_v import advect_v_along_y
 from pyFV3.version import IS_GEOS
+
 
 from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 

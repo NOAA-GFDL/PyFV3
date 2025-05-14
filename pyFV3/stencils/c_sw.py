@@ -1,17 +1,11 @@
-from ndsl.dsl.gt4py import (  # noqa
-    PARALLEL,
-    computation,
-    horizontal,
-    interval,
-    region,
-)
-
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.dsl.gt4py import PARALLEL, computation, horizontal, interval, region  # noqa
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from ndsl.stencils import corners
 from pyFV3.stencils.d2a2c_vect import DGrid2AGrid2CGridVectors
+
 
 from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 

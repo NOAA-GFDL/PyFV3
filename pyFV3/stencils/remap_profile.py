@@ -1,18 +1,10 @@
 from typing import Sequence
 
-import gt4py.cartesian.gtscript as gtscript
-from ndsl.dsl.gt4py import (
-    function,
-    BACKWARD,
-    FORWARD,
-    PARALLEL,
-    computation,
-    interval,
-)
-
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, function, interval
 from ndsl.dsl.typing import BoolField, Float, FloatField, FloatFieldIJ
+
 
 from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
@@ -43,7 +35,9 @@ def constrain_interior(q, gam, a4):
     return (
         limit_both(q, a4)
         if (gam[0, 0, -1] * gam[0, 0, 1] > 0.0)
-        else limit_maxmin(q, a4) if (gam[0, 0, -1] > 0.0) else limit_minmax(q, a4)
+        else limit_maxmin(q, a4)
+        if (gam[0, 0, -1] > 0.0)
+        else limit_minmax(q, a4)
     )
 
 
@@ -406,13 +400,17 @@ def set_interpolation_coefficients(
             tmp_min = (
                 a4_1
                 if (a4_1 < pmp_1) and (a4_1 < lac_1)
-                else pmp_1 if pmp_1 < lac_1 else lac_1
+                else pmp_1
+                if pmp_1 < lac_1
+                else lac_1
             )
             tmp_max0 = a4_2 if a4_2 > tmp_min else tmp_min
             tmp_max = (
                 a4_1
                 if (a4_1 > pmp_1) and (a4_1 > lac_1)
-                else pmp_1 if pmp_1 > lac_1 else lac_1
+                else pmp_1
+                if pmp_1 > lac_1
+                else lac_1
             )
             a4_2 = tmp_max0 if tmp_max0 < tmp_max else tmp_max
             # right edges?
@@ -421,13 +419,17 @@ def set_interpolation_coefficients(
             tmp_min = (
                 a4_1
                 if (a4_1 < pmp_2) and (a4_1 < lac_2)
-                else pmp_2 if pmp_2 < lac_2 else lac_2
+                else pmp_2
+                if pmp_2 < lac_2
+                else lac_2
             )
             tmp_max0 = a4_3 if a4_3 > tmp_min else tmp_min
             tmp_max = (
                 a4_1
                 if (a4_1 > pmp_2) and (a4_1 > lac_2)
-                else pmp_2 if pmp_2 > lac_2 else lac_2
+                else pmp_2
+                if pmp_2 > lac_2
+                else lac_2
             )
             a4_3 = tmp_max0 if tmp_max0 < tmp_max else tmp_max
             a4_4 = 3.0 * (2.0 * a4_1 - (a4_2 + a4_3))
@@ -454,25 +456,33 @@ def set_interpolation_coefficients(
                     tmp_min = (
                         a4_1
                         if (a4_1 < pmp_1) and (a4_1 < lac_1)
-                        else pmp_1 if pmp_1 < lac_1 else lac_1
+                        else pmp_1
+                        if pmp_1 < lac_1
+                        else lac_1
                     )
                     tmp_max0 = a4_2 if a4_2 > tmp_min else tmp_min
                     tmp_max = (
                         a4_1
                         if (a4_1 > pmp_1) and (a4_1 > lac_1)
-                        else pmp_1 if pmp_1 > lac_1 else lac_1
+                        else pmp_1
+                        if pmp_1 > lac_1
+                        else lac_1
                     )
                     a4_2 = tmp_max0 if tmp_max0 < tmp_max else tmp_max
                     tmp_min = (
                         a4_1
                         if (a4_1 < pmp_2) and (a4_1 < lac_2)
-                        else pmp_2 if pmp_2 < lac_2 else lac_2
+                        else pmp_2
+                        if pmp_2 < lac_2
+                        else lac_2
                     )
                     tmp_max0 = a4_3 if a4_3 > tmp_min else tmp_min
                     tmp_max = (
                         a4_1
                         if (a4_1 > pmp_2) and (a4_1 > lac_2)
-                        else pmp_2 if pmp_2 > lac_2 else lac_2
+                        else pmp_2
+                        if pmp_2 > lac_2
+                        else lac_2
                     )
                     a4_3 = tmp_max0 if tmp_max0 < tmp_max else tmp_max
                     a4_4 = 6.0 * a4_1 - 3.0 * (a4_2 + a4_3)
@@ -487,12 +497,16 @@ def set_interpolation_coefficients(
             tmp_min2 = (
                 a4_1
                 if (a4_1 < pmp_1) and (a4_1 < lac_1)
-                else pmp_1 if pmp_1 < lac_1 else lac_1
+                else pmp_1
+                if pmp_1 < lac_1
+                else lac_1
             )
             tmp_max2 = (
                 a4_1
                 if (a4_1 > pmp_1) and (a4_1 > lac_1)
-                else pmp_1 if pmp_1 > lac_1 else lac_1
+                else pmp_1
+                if pmp_1 > lac_1
+                else lac_1
             )
             tmp2 = a4_2 if a4_2 > tmp_min2 else tmp_min2
             tmp_min3 = a4_1 if a4_1 < pmp_2 else pmp_2

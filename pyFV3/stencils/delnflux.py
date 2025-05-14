@@ -1,10 +1,8 @@
 from typing import Optional
 
-
-from ndsl.dsl.gt4py import PARALLEL, function, computation, horizontal, interval, region
-
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.dsl.gt4py import PARALLEL, computation, function, horizontal, interval, region
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients

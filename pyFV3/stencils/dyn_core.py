@@ -2,15 +2,6 @@ from typing import Dict, Mapping, Optional
 
 import numpy as np
 from dace.frontend.python.interface import nounroll as dace_nounroll
-from ndsl.dsl.gt4py import (
-    BACKWARD,
-    FORWARD,
-    PARALLEL,
-    computation,
-    horizontal,
-    interval,
-    region,
-)
 
 import ndsl.constants as constants
 import ndsl.stencils.basic_operations as basic
@@ -39,6 +30,15 @@ from ndsl.constants import (
     Z_INTERFACE_DIM,
 )
 from ndsl.dsl.dace.orchestration import dace_inhibitor
+from ndsl.dsl.gt4py import (
+    BACKWARD,
+    FORWARD,
+    PARALLEL,
+    computation,
+    horizontal,
+    interval,
+    region,
+)
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.typing import Checkpointer, Communicator
@@ -49,6 +49,7 @@ from pyFV3.stencils.del2cubed import HyperdiffusionDamping
 from pyFV3.stencils.pk3_halo import PK3Halo
 from pyFV3.stencils.riem_solver3 import NonhydrostaticVerticalSolver
 from pyFV3.stencils.riem_solver_c import NonhydrostaticVerticalSolverCGrid
+
 
 from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 

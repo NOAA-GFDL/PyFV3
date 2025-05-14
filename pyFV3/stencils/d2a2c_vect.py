@@ -1,7 +1,6 @@
-from ndsl.dsl.gt4py import PARALLEL, function, computation, horizontal, interval, region
-
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.dsl.gt4py import PARALLEL, computation, function, horizontal, interval, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from ndsl.stencils import corners
