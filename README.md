@@ -37,14 +37,15 @@ Branches:
 - ⚙️ `fix/GEOSv11_4_2/RiemanSolver`@Florian: Fix for 32-bit RiemanSolver
 - ⚙️ `fix/GEOSv11_4_2/C_SW`@Florian: Fix for C_SW for 32-bit
 - ⚙️ `fix/GEOSv11_4_2/Dyncore`@Florian: Fix for Acoustics and DycoreState for 32-bit and `dpx` calculation
-  - MERGE ORDER: after `fix/GEOS/D_SW`
-  - MERGE ORDER: after `fix/GEOSv11_4_2/HyperDiffusionDamping`
+    - MERGE ORDER: after `fix/GEOS/D_SW`
+    - MERGE ORDER: after `fix/GEOSv11_4_2/HyperDiffusionDamping`
 - ⚙️ `feature/tracer_rework_part1` @Florian: Allow for update of N Tracers
 - ⚙️ `fix/GEOS/TracerAdvection` @Florian: Allow for non-update of mass fluxes and courant number, f32 fixes, correct computation of `cmax` and `nsplit`, overcomputation into the algorithm
-  - BASED ON `tracer_rework_part1`
-  - REQUIRES: `ndsl` with tracer rework
+    - BASED ON `tracer_rework_part1`
+    - REQUIRES: `ndsl` with tracer rework
 - ⚙️ `feature/fv_mapz/GEOS` @ Chris K: Remapping for GEOS
+    - REQUIRES: `ndsl` with tracer rework
 - ⚙️ `fix/GEOSv11_4_2/Dynamics`@Florian: Fix for the f32 & GEOS version of dynamics
-  - REQUIRES: `ndsl` with tracer rework
-  - REQUIRES: `tracer_rework_part1`, `fix/GEOSv11_4_2/Dyncore`, `fix/GEOS/TracerAdvection`
-  - MERGE ORDER: after `fix/GEOSv11_4_2/HyperDiffusionDamping`
+    - REQUIRES: `ndsl` with tracer rework
+    - REQUIRES: `tracer_rework_part1`, `fix/GEOSv11_4_2/Dyncore`, `fix/GEOS/TracerAdvection`
+    - MERGE ORDER: after `fix/GEOSv11_4_2/HyperDiffusionDamping`
