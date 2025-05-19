@@ -13,7 +13,6 @@ from .fvtp2d import FiniteVolumeTransport
 from .fxadv import FiniteVolumeFluxPrep
 from .map_single import MapSingle
 from .mapn_tracer import MapNTracer
-from .mpp_global_sum import mpp_global_sum
 from .neg_adj3 import AdjustNegativeTracerMixingRatio
 from .nh_p_grad import NonHydrostaticPressureGradient
 from .pk3_halo import PK3Halo
