@@ -2,7 +2,6 @@ import typing
 
 from gt4py.cartesian.gtscript import BACKWARD, FORWARD, PARALLEL, computation, interval
 
-import ndsl.dsl.gt4py_utils as utils
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Float, Int, FloatField, FloatFieldIJ, IntFieldIJ
@@ -124,7 +123,6 @@ class FillNegativeTracerValues:
             config=stencil_factory.config.dace_config,
             dace_compiletime_args=["tracers"],
         )
-        self._nq = int(nq)
         self._fix_tracer_stencil = stencil_factory.from_dims_halo(
             fix_tracer,
             compute_dims=[X_DIM, Y_DIM, Z_DIM],
@@ -143,10 +141,6 @@ class FillNegativeTracerValues:
             units="unknown",
             dtype=Float,
         )
-
-        self._filtered_tracer_dict = {
-            name: tracers[name] for name in utils.tracer_variables[0 : self._nq]
-        }
 
     def __call__(
         self,
