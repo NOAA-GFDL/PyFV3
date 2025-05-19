@@ -110,7 +110,6 @@ class TranslateMap1_PPM_delz(TranslateFortranData2Py):
             inputs["pe1_"],
             inputs["pe2_"],
             qs=inputs["gz_"],
-            interp=False,
         )
 
         self._rescale_delz_2(

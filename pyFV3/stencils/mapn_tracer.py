@@ -1,11 +1,10 @@
-from typing import List
-
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Float, FloatField
 from pyFV3.stencils.fillz import FillNegativeTracerValues
 from pyFV3.stencils.map_single import MapSingle
-from pyFV3.tracers import Tracers
+from pyFV3.tracers import TracersType
+from dace import nounroll
 
 
 class MapNTracer:
@@ -19,51 +18,51 @@ class MapNTracer:
         quantity_factory: QuantityFactory,
         kord: int,
         fill: bool,
-        tracers: Tracers,
-        exclude_tracers: List[str],
+        tracers: TracersType,
     ):
         orchestrate(
             obj=self,
             config=stencil_factory.config.dace_config,
             dace_compiletime_args=["tracers"],
         )
-        self._exclude_tracers = exclude_tracers
         self._qs = quantity_factory.zeros(
             [X_DIM, Y_DIM, Z_DIM],
             units="unknown",
             dtype=Float,
         )
 
-        self._map_single = {}
-        for name in tracers.names():
-            if name == "cloud":
-                this_kord = 9
-            else:
-                this_kord = kord
-            self._map_single[name] = MapSingle(
-                stencil_factory,
-                quantity_factory,
-                this_kord,
-                0,
-                dims=[X_DIM, Y_DIM, Z_DIM],
-            )
+        self._map_single = MapSingle(
+            stencil_factory,
+            quantity_factory,
+            kord,
+            0,
+            dims=[X_DIM, Y_DIM, Z_DIM],
+        )
+        self._map_single_kord9 = MapSingle(
+            stencil_factory,
+            quantity_factory,
+            9,
+            0,
+            dims=[X_DIM, Y_DIM, Z_DIM],
+        )
 
         if fill:
             self._fill_negative_tracers = True
             self._fillz = FillNegativeTracerValues(
                 stencil_factory,
                 quantity_factory,
-                exclude_tracers=self._exclude_tracers,
             )
         else:
             self._fill_negative_tracers = False
+
+        self._index_cloud = tracers.index("cloud")
 
     def __call__(
         self,
         pe1: FloatField,
         pe2: FloatField,
         dp2: FloatField,
-        tracers: Tracers,
+        tracers: TracersType,
     ):
         """
         Remaps the tracer species onto the Eulerian grid
@@ -76,9 +75,12 @@ class MapNTracer:
             dp2 (in): Difference in pressure between Eulerian levels
             tracers (inout): tracers to be remapped
         """
-        for name in tracers.names():
-            if name not in self._exclude_tracers:
-                self._map_single[name](tracers[name], pe1, pe2, self._qs)
+        for i_tracer in nounroll(range(tracers.shape[3])):
+            if i_tracer != self._index_cloud:
+                self._map_single(
+                    tracers.quantity.data[:, :, :, i_tracer], pe1, pe2, self._qs
+                )
+        self._map_single_kord9(tracers.cloud, pe1, pe2, self._qs)
 
         if self._fill_negative_tracers is True:
             self._fillz(dp2, tracers)

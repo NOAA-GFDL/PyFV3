@@ -145,19 +145,16 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
             inputs["u_"],
             inputs["pe0_"],
             inputs["pe3_"],
-            interp=False,
         )
         self._map1_ppm_u(
             inputs["mfy_"],
             inputs["pe0_"],
             inputs["pe3_"],
-            interp=False,
         )
 
         self._map1_ppm_u(
             inputs["cy_"],
             inputs["pe0_"],
             inputs["pe3_"],
-            interp=False,
         )
         return inputs

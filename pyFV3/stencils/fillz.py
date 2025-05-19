@@ -1,11 +1,12 @@
-from typing import List, no_type_check
+from typing import no_type_check
 
 from gt4py.cartesian.gtscript import BACKWARD, FORWARD, PARALLEL, computation, interval
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Float, Int, FloatField, FloatFieldIJ, IntFieldIJ
-from pyFV3.tracers import Tracers
+from pyFV3.tracers import TracersType
+import dace
 
 
 @no_type_check
@@ -116,7 +117,6 @@ class FillNegativeTracerValues:
         self,
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
-        exclude_tracers: List[str],
     ):
         orchestrate(
             obj=self,
@@ -146,19 +146,18 @@ class FillNegativeTracerValues:
     def __call__(
         self,
         dp2: FloatField,
-        tracers: Tracers,
+        tracers: TracersType,
     ):
         """
         Args:
             dp2 (in): pressure thickness of atmospheric layer
             tracers (inout): tracers to fix negative masses in
         """
-        for name, tracer in tracers.items():
-            if name not in self._exclude_tracers:
-                self._fix_tracer_stencil(
-                    tracer,
-                    dp2,
-                    self._zfix,
-                    self._sum0,
-                    self._sum1,
-                )
+        for i_tracer in dace.nounroll(range(tracers.shape[3])):
+            self._fix_tracer_stencil(
+                tracers.quantity.data[:, :, :, i_tracer],
+                dp2,
+                self._zfix,
+                self._sum0,
+                self._sum1,
+            )

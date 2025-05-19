@@ -2,6 +2,7 @@ from ndsl import Namelist, StencilFactory
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
 from pyFV3.stencils.mapn_tracer import MapNTracer
+from pyFV3.tracers import setup_tracers
 
 
 class TranslateMapN_Tracer_2d(TranslateFortranData2Py):
@@ -12,48 +13,22 @@ class TranslateMapN_Tracer_2d(TranslateFortranData2Py):
         self.quantity_factory = grid.quantity_factory
 
         self.in_vars["data_vars"] = {
-            "qvapor": {
-                "kend": grid.npz - 1,
-            },
-            "qliquid": {
-                "kend": grid.npz - 1,
-            },
-            "qice": {
-                "kend": grid.npz - 1,
-            },
-            "qrain": {
-                "kend": grid.npz - 1,
-            },
-            "qsnow": {
-                "kend": grid.npz - 1,
-            },
-            "qgraupel": {
-                "kend": grid.npz - 1,
-            },
-            "qcld": {
-                "kend": grid.npz - 1,
-            },
-            "qo3mr": {
-                "kend": grid.npz - 1,
-            },
-            "qsgs_tke": {
-                "kend": grid.npz - 1,
-            },
-            "pe1_": {
+            "qtracers": {},
+            "pe1": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
                 "kend": grid.npz,
             },
-            "pe2_": {
+            "pe2": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
                 "kend": grid.npz,
             },
-            "dp2_": {
+            "dp2": {
                 "istart": grid.is_,
                 "iend": grid.ie,
                 "jstart": grid.js,
@@ -63,33 +38,7 @@ class TranslateMapN_Tracer_2d(TranslateFortranData2Py):
         }
 
         self.out_vars = {
-            "qvapor": {
-                "kend": grid.npz - 1,
-            },
-            "qliquid": {
-                "kend": grid.npz - 1,
-            },
-            "qice": {
-                "kend": grid.npz - 1,
-            },
-            "qrain": {
-                "kend": grid.npz - 1,
-            },
-            "qsnow": {
-                "kend": grid.npz - 1,
-            },
-            "qgraupel": {
-                "kend": grid.npz - 1,
-            },
-            "qcld": {
-                "kend": grid.npz - 1,
-            },
-            "qo3mr": {
-                "kend": grid.npz - 1,
-            },
-            "qsgs_tke": {
-                "kend": grid.npz - 1,
-            },
+            "qtracers": {},
         }
 
         # Value from GEOS
@@ -103,32 +52,25 @@ class TranslateMapN_Tracer_2d(TranslateFortranData2Py):
         self.fill = True
 
     def compute_from_storage(self, inputs):
-
-        tracers = {
-            "qvapor": inputs["qvapor"],
-            "qliquid": inputs["qliquid"],
-            "qice": inputs["qice"],
-            "qrain": inputs["qrain"],
-            "qsnow": inputs["qsnow"],
-            "qgraupel": inputs["qgraupel"],
-            "qcld": inputs["qcld"],
-            "qo3mr": inputs["qo3mr"],
-            "qsgs_tke": inputs["qsgs_tke"],
-        }
+        tracers = setup_tracers(
+            number_of_tracers=inputs["qtracers"].shape[3],
+            quantity_factory=self.quantity_factory,
+            mappings={"cloud": 6},
+        )
+        tracers.quantity.data[:-1, :-1, :-1, :] = inputs["qtracers"]
 
         self._compute_func = MapNTracer(
             self.stencil_factory,
             self.quantity_factory,
             abs(self.kord),
-            self.nq,
             fill=self.fill,
             tracers=tracers,
         )
 
         self._compute_func(
-            inputs["pe1_"],
-            inputs["pe2_"],
-            inputs["dp2_"],
+            inputs["pe1"],
+            inputs["pe2"],
+            inputs["dp2"],
             tracers,
         )
 

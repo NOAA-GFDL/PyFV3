@@ -87,6 +87,40 @@ def lagrangian_contributions(
         lev = lev - 1
 
 
+class LagrangianContribution:
+    """Lagrangian contribution as it appears in FV3GFS/SHiELD"""
+
+    def __init__(self, stencil_factory: StencilFactory, dims: Sequence[str]) -> None:
+        self._lagrangian_contributions = stencil_factory.from_dims_halo(
+            lagrangian_contributions,
+            compute_dims=dims,
+        )
+
+    def __call__(
+        self,
+        q: FloatField,  # type: ignore
+        pe1: FloatField,  # type: ignore
+        pe2: FloatField,  # type: ignore
+        q4_1: FloatField,  # type: ignore
+        q4_2: FloatField,  # type: ignore
+        q4_3: FloatField,  # type: ignore
+        q4_4: FloatField,  # type: ignore
+        dp1: FloatField,  # type: ignore
+        lev: IntFieldIJ,  # type: ignore
+    ):
+        self._lagrangian_contributions(
+            q,
+            pe1,
+            pe2,
+            q4_1,
+            q4_2,
+            q4_3,
+            q4_4,
+            dp1,
+            lev,
+        )
+
+
 def lagrangian_contributions_interp(
     km: int,
     not_exit_loop: BoolFieldIJ,
@@ -220,6 +254,66 @@ def lagrangian_contributions_interp(
         q = q_temp
 
 
+class LagrangianContributionInterpolated:
+    """Lagrangian contribution as it appears in GEOS, modified from original
+    FV3GFS version"""
+
+    def __init__(
+        self,
+        stencil_factory: StencilFactory,
+        quantity_factory: QuantityFactory,
+        dims: Sequence[str],
+    ) -> None:
+        self._lagrangian_contributions_interp = stencil_factory.from_dims_halo(
+            lagrangian_contributions_interp,
+            compute_dims=dims,
+        )
+
+        self._INDEX_LM1 = quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_DIM],
+            units="",
+            dtype=Int,
+        )
+
+        self._INDEX_LP0 = quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_DIM],
+            units="",
+            dtype=Int,
+        )
+        self._km = stencil_factory.grid_indexing.domain[2]
+        self._not_exit_loop = quantity_factory.zeros(
+            [X_DIM, Y_DIM], units="", dtype=bool
+        )
+
+    def __call__(
+        self,
+        q: FloatField,  # type: ignore
+        pe1: FloatField,  # type: ignore
+        pe2: FloatField,  # type: ignore
+        q4_1: FloatField,  # type: ignore
+        q4_2: FloatField,  # type: ignore
+        q4_3: FloatField,  # type: ignore
+        q4_4: FloatField,  # type: ignore
+        dp1: FloatField,  # type: ignore
+        lev: IntFieldIJ,  # type: ignore
+    ):
+        self._lagrangian_contributions_interp(
+            km=self._km,
+            not_exit_loop=self._not_exit_loop,
+            INDEX_LM1=self._INDEX_LM1,
+            INDEX_LP0=self._INDEX_LP0,
+            q=q,
+            pe1=pe1,
+            pe2=pe2,
+            q4_1=q4_1,
+            q4_2=q4_2,
+            q4_3=q4_3,
+            q4_4=q4_4,
+            dp1=dp1,
+            lev=lev,
+        )
+
+
 class MapSingle:
     """
     Fortran name is map_single, test classes are Map1_PPM_2d, Map_Scalar_2d
@@ -232,6 +326,7 @@ class MapSingle:
         kord: int,
         mode: int,
         dims: Sequence[str],
+        interpolate_contribution: bool = False,
     ):
         orchestrate(
             obj=self,
@@ -278,31 +373,14 @@ class MapSingle:
             dims=dims,
         )
 
-        self._lagrangian_contributions = stencil_factory.from_dims_halo(
-            lagrangian_contributions,
-            compute_dims=dims,
-        )
-
-        self._lagrangian_contributions_interp = stencil_factory.from_dims_halo(
-            lagrangian_contributions_interp,
-            compute_dims=dims,
-        )
-
-        self._INDEX_LM1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
-            units="",
-            dtype=Int,
-        )
-
-        self._INDEX_LP0 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
-            units="",
-            dtype=Int,
-        )
-        self._km = grid_indexing.domain[2]
-        self._not_exit_loop = quantity_factory.zeros(
-            [X_DIM, Y_DIM], units="", dtype=bool
-        )
+        if interpolate_contribution:
+            self._lagrangian_contributions = LagrangianContributionInterpolated(
+                stencil_factory, quantity_factory, dims
+            )
+        else:
+            self._lagrangian_contributions = LagrangianContribution(
+                stencil_factory, dims
+            )
 
     @property
     def i_extent(self):
@@ -319,7 +397,6 @@ class MapSingle:
         pe2: FloatField,
         qs: Optional["FloatFieldIJ"] = None,
         qmin: Float = 0.0,
-        interp: bool = False,
     ):
         """
         Compute x-flux using the PPM method.
@@ -356,31 +433,14 @@ class MapSingle:
                 Float(qmin),
             )
 
-        if interp is False:
-            self._lagrangian_contributions(
-                q1,
-                pe1,
-                pe2,
-                self._q4_1,
-                self._q4_2,
-                self._q4_3,
-                self._q4_4,
-                self._dp1,
-                self._lev,
-            )
-        else:
-            self._lagrangian_contributions_interp(
-                km=self._km,
-                not_exit_loop=self._not_exit_loop,
-                INDEX_LM1=self._INDEX_LM1,
-                INDEX_LP0=self._INDEX_LP0,
-                q=q1,
-                pe1=pe1,
-                pe2=pe2,
-                q4_1=self._q4_1,
-                q4_2=self._q4_2,
-                q4_3=self._q4_3,
-                q4_4=self._q4_4,
-                dp1=self._dp1,
-                lev=self._lev,
-            )
+        self._lagrangian_contributions(
+            q=q1,
+            pe1=pe1,
+            pe2=pe2,
+            q4_1=self._q4_1,
+            q4_2=self._q4_2,
+            q4_3=self._q4_3,
+            q4_4=self._q4_4,
+            dp1=self._dp1,
+            lev=self._lev,
+        )
