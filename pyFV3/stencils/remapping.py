@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import List, Optional, no_type_check
 
 from gt4py.cartesian.gtscript import (
     BACKWARD,
@@ -30,6 +30,7 @@ from pyFV3.stencils.map_single import MapSingle
 from pyFV3.stencils.mapn_tracer import MapNTracer
 from pyFV3.stencils.moist_cv import moist_pt_func, moist_pt_last_step
 from pyFV3.stencils.saturation_adjustment import SatAdjust3d
+from pyFV3.tracers import TracersType
 
 
 # from pyFV3.tracers import Tracers
@@ -318,7 +319,6 @@ def pe_pk_delp_peln(
     akap: Float,
     ptop: Float,
 ):
-
     with computation(BACKWARD):
         with interval(-1, None):
             pe_bottom = pe
@@ -364,8 +364,8 @@ class LagrangianToEulerian:
         area_64,
         nq,
         pfull,
-        # tracers: Tracers,
-        tracers,
+        tracers: TracersType,
+        exclude_tracers: List[str],
         checkpointer: Optional[Checkpointer] = None,
     ):
         orchestrate(
@@ -595,9 +595,10 @@ class LagrangianToEulerian:
             domain=grid_indexing.domain_compute(),
         )
 
+    @no_type_check
     def __call__(
         self,
-        tracers: Dict[str, Quantity],
+        tracers: TracersType,
         pt: FloatField,
         delp: FloatField,
         delz: FloatField,

@@ -18,7 +18,7 @@ from pyFV3.stencils import moist_cv
 from pyFV3.stencils.map_single import MapSingle
 from pyFV3.stencils.mapn_tracer import MapNTracer
 from pyFV3.stencils.moist_cv import moist_pt_last_step
-from pyFV3.stencils.mpp_global_sum import GlobalSum
+from pyFV3.mpi.sum import GlobalSum
 from pyFV3.stencils.remapping import (
     CONSV_MIN,
     init_pe,
@@ -187,7 +187,7 @@ class LagrangianToEulerian_GEOS:
 
         self._global_sum = GlobalSum(
             communicator=comm,
-            backend=stencil_factory.backend,
+            quantity_factory=quantity_factory,
         )
 
         self._init_pe = stencil_factory.from_origin_domain(
@@ -565,12 +565,8 @@ class LagrangianToEulerian_GEOS:
                 # they are properly reset in the above stencils
                 self._normalize_to_grid(self._te_2d, self._zsum1, self._area_64)
 
-                tesum: Float = self._global_sum.all_reduce(
-                    array_to_sum=self._te_2d,
-                )
-                zsum: Float = self._global_sum.all_reduce(
-                    array_to_sum=self._zsum1,
-                )
+                tesum: Float = self._global_sum(self._te_2d)
+                zsum: Float = self._global_sum(self._zsum1)
                 dtmp = tesum / (CV_AIR * zsum)
 
             elif consv_te < -CONSV_MIN:
