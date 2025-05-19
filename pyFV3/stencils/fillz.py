@@ -127,7 +127,6 @@ class FillNegativeTracerValues:
             fix_tracer,
             compute_dims=[X_DIM, Y_DIM, Z_DIM],
         )
-        self._exclude_tracers = exclude_tracers
 
         # Setting initial value of upper_fix to zero is only needed for validation.
         # The values in the compute domain are set to zero in the stencil.

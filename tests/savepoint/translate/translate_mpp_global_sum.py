@@ -2,7 +2,7 @@ from ndsl import Namelist, StencilFactory
 from ndsl.stencils.testing import ParallelTranslate
 from ndsl.stencils.testing.grid import Grid
 from ndsl.typing import Communicator
-from pyFV3.stencils.mpp_global_sum import mpp_global_sum
+from pyFV3.mpi.mpp_sum import MPPGlobalSum
 
 
 class TranslateMpp_global_sum(ParallelTranslate):
@@ -29,11 +29,7 @@ class TranslateMpp_global_sum(ParallelTranslate):
         self._base.out_vars = {"tesum": {}}
 
     def compute_parallel(self, inputs, communicator: Communicator):
-
-        inputs["tesum"] = mpp_global_sum(
-            inputs["inputArray"],
-            communicator,
-            self.stencil_factory,
-        )
+        mpp_sum = MPPGlobalSum(self.stencil_factory, communicator)
+        inputs["tesum"] = mpp_sum(inputs["inputArray"])
 
         return inputs
