@@ -136,20 +136,17 @@ class TranslatePressures_mapV(TranslateFortranData2Py):
             inputs["v_"],
             inputs["pe0_"],
             inputs["pe3_"],
-            interp=False,
         )
 
         self._map1_ppm_v(
             inputs["mfx_"],
             inputs["pe0_"],
             inputs["pe3_"],
-            interp=False,
         )
 
         self._map1_ppm_v(
             inputs["cx_"],
             inputs["pe0_"],
             inputs["pe3_"],
-            interp=False,
         )
         return inputs

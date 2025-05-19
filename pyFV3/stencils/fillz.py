@@ -6,7 +6,8 @@ import ndsl.dsl.gt4py_utils as utils
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Float, Int, FloatField, FloatFieldIJ, IntFieldIJ
-from pyFV3.tracers import Tracers
+from pyFV3.tracers import TracersType
+import dace
 
 
 @typing.no_type_check
@@ -117,8 +118,6 @@ class FillNegativeTracerValues:
         self,
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
-        nq: int,
-        tracers: Tracers,
     ):
         orchestrate(
             obj=self,
@@ -152,16 +151,16 @@ class FillNegativeTracerValues:
     def __call__(
         self,
         dp2: FloatField,
-        tracers: Tracers,
+        tracers: TracersType,
     ):
         """
         Args:
             dp2 (in): pressure thickness of atmospheric layer
             tracers (inout): tracers to fix negative masses in
         """
-        for tracer_name in self._filtered_tracer_dict.keys():
+        for i_tracer in dace.nounroll(range(tracers.shape[3])):
             self._fix_tracer_stencil(
-                tracers[tracer_name],
+                tracers.quantity.data[:, :, :, i_tracer],
                 dp2,
                 self._zfix,
                 self._sum0,

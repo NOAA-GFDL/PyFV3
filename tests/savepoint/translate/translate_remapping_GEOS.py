@@ -13,7 +13,7 @@ from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
 from pyFV3 import DynamicalCoreConfig
 from pyFV3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
-from pyFV3.tracers import Tracers
+from pyFV3.tracers import TracersType, setup_tracers
 
 
 class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
@@ -372,7 +372,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
     def compute_sequential(self, inputs_list, communicator_list):
         print("No serial test available")
 
-    def state_from_inputs(self, inputs: dict, tracers: Tracers) -> SimpleNamespace:
+    def state_from_inputs(self, inputs: dict, tracers: TracersType) -> SimpleNamespace:
         input_storages = super().state_from_inputs(inputs)
         # Rename fluxes and courant numbers
         input_storages["mfx"] = input_storages.pop("mfx_R4")
@@ -398,24 +398,39 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             else:
                 outputs[name] = state[name]  # scalar
         # Put tracers
-        storages["tracers"] = state["tracers"].as_4D_array()
+        storages["tracers"] = state["tracers"].quantity.data[:-1, :-1, :-1, :]
         outputs.update(self._base.slice_output(storages))
         return outputs
 
     def compute_parallel(self, inputs, communicator):
-        tracers_mapping = Tracers.blind_mapping_from_data(inputs["tracers"])
-        tracers_mapping[0] = "vapor"
-        tracers_mapping[1] = "liquid"
-        tracers_mapping[2] = "rain"
-        tracers_mapping[3] = "snow"
-        tracers_mapping[4] = "ice"
-        tracers_mapping[5] = "graupel"
-        tracers_mapping[6] = "cloud"
-        tracers = Tracers.make_from_4D_array(
-            self.quantity_factory,
-            tracers_mapping,
-            inputs["tracers"],
+        # tracers_mapping = Tracers.blind_mapping_from_data(inputs["tracers"])
+        # tracers_mapping[0] = "vapor"
+        # tracers_mapping[1] = "liquid"
+        # tracers_mapping[2] = "rain"
+        # tracers_mapping[3] = "snow"
+        # tracers_mapping[4] = "ice"
+        # tracers_mapping[5] = "graupel"
+        # tracers_mapping[6] = "cloud"
+        # tracers = Tracers.make_from_4D_array(
+        #     self.quantity_factory,
+        #     tracers_mapping[0:7],
+        #     inputs["tracers"],
+        # )
+
+        tracers = setup_tracers(
+            number_of_tracers=inputs["tracers"].shape[3],
+            quantity_factory=self.quantity_factory,
+            mappings={
+                "vapor": 0,
+                "liquid": 1,
+                "rain": 2,
+                "snow": 3,
+                "ice": 4,
+                "graupel": 5,
+                "cloud": 6,
+            },
         )
+        tracers.quantity.data[:-1, :-1, :-1, :] = inputs["tracers"]
 
         inputs["te_2d"] = inputs["te_2d"].astype(Float)
         state = self.state_from_inputs(inputs, tracers)

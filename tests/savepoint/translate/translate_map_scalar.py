@@ -55,6 +55,7 @@ class TranslateMap_Scalar(TranslateFortranData2Py):
             self._kord_tm,
             self.mode,
             dims=[X_DIM, Y_DIM, Z_DIM],
+            interpolate_contribution=True,
         )
 
     def compute_from_storage(self, inputs):
@@ -63,6 +64,5 @@ class TranslateMap_Scalar(TranslateFortranData2Py):
             inputs["pe1_"],
             inputs["pe2_"],
             qmin=inputs["q_min"],
-            interp=True,
         )
         return inputs

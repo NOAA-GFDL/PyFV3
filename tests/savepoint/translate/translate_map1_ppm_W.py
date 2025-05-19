@@ -66,6 +66,5 @@ class TranslateMap1_PPM_W(TranslateFortranData2Py):
             inputs["pe1_"],
             inputs["pe2_"],
             qs=inputs["ws_"],
-            interp=False,
         )
         return inputs
