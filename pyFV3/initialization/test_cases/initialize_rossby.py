@@ -115,15 +115,20 @@ def _init_for_rossby(numpy_state: DycoreState, grid_data: GridData, shape):
         numpy_state: DycoreState, modified to update the phis, delp, u, v
         grid_Data: GridData
     """
-    nx, ny, _ = init_utils.local_compute_size(shape)
-    _, _, slice_3d_buffer, slice_2d_buffer = init_utils.compute_slices(nx + 1, ny + 1)
-    slice_3d_buffer_orig = slice_3d_buffer
-    slice_3d_buffer = (slice_3d_buffer[0], slice_3d_buffer[1], 0)
     numpy_state.phis[:] = 0.0
 
+    # Calculate helper slices for delp, u+v winds
+    # similar to init_utils.compute_slices(nx, ny)
+    nx, ny, _ = init_utils.local_compute_size(shape)
+    islice = slice(NHALO, NHALO + nx)
+    islice_xtra = slice(NHALO, NHALO + nx + 1)
+    jslice = slice(NHALO, NHALO + ny)
+    jslice_xtra = slice(NHALO, NHALO + ny + 1)
+
     # Initialize delp
-    numpy_state.delp[slice_3d_buffer] = _calc_rossby_delp(grid_data)[slice_2d_buffer]
-    numpy_state.delp[slice_3d_buffer] = numpy_state.delp[slice_3d_buffer] - numpy_state.phis[slice_2d_buffer]
+    delp_2d_buffer = (islice_xtra, jslice_xtra)
+    delp_buffer_0 = (islice_xtra, jslice_xtra, 0)
+    numpy_state.delp[delp_buffer_0] = _calc_rossby_delp(grid_data)[delp_2d_buffer]
 
     grid = np.transpose(
         np.stack(  # TODO: Refactor to non-protected _horizontal_data
@@ -135,30 +140,16 @@ def _init_for_rossby(numpy_state: DycoreState, grid_data: GridData, shape):
     # Initialize u winds
     p1 = grid[:-1, :, :]
     p2 = grid[1:, :, :]
-    u_buffer = (
-        slice(slice_2d_buffer[0].start, slice_2d_buffer[0].stop - 1, None),
-        slice_2d_buffer[1]
-    )
-    u_buffer_0 = (
-        slice(slice_2d_buffer[0].start, slice_2d_buffer[0].stop - 1, None),
-        slice_2d_buffer[1],
-        0
-    )
-    numpy_state.u[u_buffer_0] = _calc_rossby_winds(p1, p2)[u_buffer]
+    u_2d_buffer = (islice, jslice_xtra)
+    u_buffer_0 = (islice, jslice_xtra, 0)
+    numpy_state.u[u_buffer_0] = _calc_rossby_winds(p1, p2)[u_2d_buffer]
 
     # Initialize v winds
     p1 = grid[:, :-1, :]
     p2 = grid[:, 1:, :]
-    v_buffer = (
-        slice_2d_buffer[0],
-        slice(slice_2d_buffer[1].start, slice_2d_buffer[1].stop - 1, None)
-    )
-    v_buffer_0 = (
-        slice_2d_buffer[0],
-        slice(slice_2d_buffer[1].start, slice_2d_buffer[1].stop - 1, None),
-        0
-    )
-    numpy_state.v[v_buffer_0] = _calc_rossby_winds(p1, p2)[v_buffer]
+    v_2d_buffer = (islice_xtra, jslice)
+    v_buffer_0 = (islice_xtra, jslice, 0)
+    numpy_state.v[v_buffer_0] = _calc_rossby_winds(p1, p2)[v_2d_buffer]
 
     # NOTE: test_cases.F90 has dtoa and atoc calls, but not implemented here.
 
