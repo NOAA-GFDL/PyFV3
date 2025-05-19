@@ -14,5 +14,6 @@ class GlobalSum:
 
     @dace_inhibitor
     def __call__(self, qty_to_sum: Quantity) -> Float:
+        assert qty_to_sum.field.shape == 2  # Code handle only 2D quantity
         self._comm.all_reduce(qty_to_sum, ReductionOperator.SUM, self._tmp_reduce)
-        return qty_to_sum.field.sum(axis=0).sum(axis=1)
+        return qty_to_sum.field.sum(axis=0).sum(axis=0)

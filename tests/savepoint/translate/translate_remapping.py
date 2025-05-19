@@ -4,6 +4,7 @@ from ndsl.constants import Z_DIM
 from pyFV3 import DynamicalCoreConfig
 from pyFV3.stencils import LagrangianToEulerian
 from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyFV3.tracers import TracersType
 
 
 class TranslateRemapping(TranslateDycoreFortranData2Py):
