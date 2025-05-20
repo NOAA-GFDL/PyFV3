@@ -1,3 +1,4 @@
+from typing import TypeAlias
 from ndsl import QuantityFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.quantity.field_bundle import FieldBundle, FieldBundleType
@@ -25,7 +26,7 @@ _default_mapping_PACE = {
 }
 
 
-TracersType = FieldBundleType.T("Tracers")
+TracersType: TypeAlias = FieldBundleType.T("Tracers")  # type: ignore
 
 
 def setup_tracers(
