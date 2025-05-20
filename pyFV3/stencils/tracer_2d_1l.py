@@ -1,4 +1,5 @@
-from typing import List
+import dace
+from typing import no_type_check
 import numpy as np
 
 import gt4py.cartesian.gtscript as gtscript
@@ -27,11 +28,11 @@ from ndsl.constants import (
     Y_INTERFACE_DIM,
     Z_DIM,
 )
+from ndsl.dsl.dace.orchestration import dace_inhibitor
 from ndsl.dsl.typing import FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.comm.communicator import Communicator, ReductionOperator
 from pyFV3.stencils.fvtp2d import FiniteVolumeTransport
-from pyFV3.tracers import Tracers
-from ndsl.dsl.gt4py_utils import asarray
+from pyFV3.tracers import TracersType
 from ndsl.utils import safe_assign_array
 
 
@@ -57,6 +58,7 @@ def flux_y(cy, dya, dx, sin_sg4, sin_sg2, yfx):
     return yfx
 
 
+@no_type_check
 def flux_compute(
     cx: FloatField,
     cy: FloatField,
@@ -91,6 +93,7 @@ def flux_compute(
         yfx = flux_y(cy, dya, dx, sin_sg4, sin_sg2, yfx)
 
 
+@no_type_check
 def divide_fluxes_by_n_substeps(
     cxd: FloatField,
     xfx: FloatField,
@@ -124,6 +127,7 @@ def divide_fluxes_by_n_substeps(
             mfyd = mfyd * frac
 
 
+@no_type_check
 def apply_mass_flux(
     dp1: FloatField,
     x_mass_flux: FloatField,
@@ -150,6 +154,7 @@ def apply_mass_flux(
         )
 
 
+@no_type_check
 def apply_tracer_flux(
     q: FloatField,
     dp1: FloatField,
@@ -179,6 +184,7 @@ def apply_tracer_flux(
 #   dp1[:] = dp2
 #   dp2[:] = self._tmp_dp2
 # Because dpX can be a quantity or an array
+@no_type_check
 def swap_dp(dp1: FloatField, dp2: FloatField):
     with computation(PARALLEL), interval(...):
         tmp = dp1
@@ -210,8 +216,7 @@ class TracerAdvection:
         transport: FiniteVolumeTransport,
         grid_data: GridData,
         comm: Communicator,
-        tracers: Tracers,
-        exclude_tracers: List[str],
+        tracers: TracersType,
         update_mass_courant: bool = True,
     ):
         orchestrate(
@@ -222,7 +227,6 @@ class TracerAdvection:
         grid_indexing = stencil_factory.grid_indexing
         self.grid_indexing = grid_indexing  # needed for selective validation
         self.grid_data = grid_data
-        self._exclude_tracers = exclude_tracers
         self._update_mass_courant = update_mass_courant
 
         if not self._update_mass_courant:
@@ -313,23 +317,11 @@ class TracerAdvection:
         )
         self.finite_volume_transport: FiniteVolumeTransport = transport
 
-        # Setup halo updater for tracers
-        tracer_halo_spec = quantity_factory.get_quantity_halo_spec(
-            dims=[X_DIM, Y_DIM, Z_DIM],
-            n_halo=N_HALO_DEFAULT,
-        )
-
-        # We can exclude tracers from advecting and therefore also
-        # halo exchanging
-        advected_tracers = {}
-        for name, tracer in tracers.items():
-            if name in exclude_tracers:
-                continue
-            advected_tracers[name] = tracer
+        # Halo exchange of all tracers
         self._tracers_halo_updater = WrappedHaloUpdater(
-            comm.get_scalar_halo_updater([tracer_halo_spec] * len(advected_tracers)),
-            advected_tracers,
-            [t for t in advected_tracers.keys()],
+            comm.get_scalar_halo_updater([tracers.quantity.halo_spec(N_HALO_DEFAULT)]),
+            {"tracers": tracers.quantity},
+            ["tracers"],
         )
 
         # Setup tracer courant max reduction calculation
@@ -342,7 +334,7 @@ class TracerAdvection:
 
     def __call__(
         self,
-        tracers: Tracers,
+        tracers: TracersType,
         dp1,
         x_mass_flux,
         y_mass_flux,
@@ -425,10 +417,8 @@ class TracerAdvection:
         # a loop on the highest number of nsplit, but restraining
         # actual update in `apply_tracer_flux` to only the valid
         # K level for each tracers
-        cmax_on_host = asarray(self._cmax.view[:], to_type=np.ndarray)
-        max_n_split = i32(1.0 + cmax_on_host.max())
-
-        for current_nsplit in range(int(max_n_split)):
+        max_n_split = int(1.0 + self._compute_cmax.max_over_column)
+        for current_nsplit in range(max_n_split):
             last_call = current_nsplit == max_n_split - 1
             # tracer substep
             self._apply_mass_flux(
@@ -438,31 +428,29 @@ class TracerAdvection:
                 self.grid_data.rarea,
                 dp2,
             )
-            for name, q in tracers.items():
-                if name in self._exclude_tracers:
-                    pass
-                else:
-                    self.finite_volume_transport(
-                        q,
-                        working_x_courant,
-                        working_y_courant,
-                        self._x_area_flux,
-                        self._y_area_flux,
-                        self._x_flux,
-                        self._y_flux,
-                        x_mass_flux=x_mass_flux,
-                        y_mass_flux=y_mass_flux,
-                    )
-                    self._apply_tracer_flux(
-                        q,
-                        dp1,
-                        self._x_flux,
-                        self._y_flux,
-                        self.grid_data.rarea,
-                        dp2,
-                        cmax=self._cmax,
-                        current_nsplit=current_nsplit,
-                    )
+            for i_tracer in dace.nounroll(range(tracers.shape[3])):
+                q = tracers.quantity.data[:, :, :, i_tracer]
+                self.finite_volume_transport(
+                    q,
+                    working_x_courant,
+                    working_y_courant,
+                    self._x_area_flux,
+                    self._y_area_flux,
+                    self._x_flux,
+                    self._y_flux,
+                    x_mass_flux=x_mass_flux,
+                    y_mass_flux=y_mass_flux,
+                )
+                self._apply_tracer_flux(
+                    q,
+                    dp1,
+                    self._x_flux,
+                    self._y_flux,
+                    self.grid_data.rarea,
+                    dp2,
+                    cmax=self._cmax,
+                    current_nsplit=current_nsplit,
+                )
             if not last_call:
                 self._tracers_halo_updater.update()
                 # we can't use variable assignment to avoid a data copy
@@ -470,6 +458,7 @@ class TracerAdvection:
                 self._swap_dp(dp1, dp2)
 
 
+@no_type_check
 def cmax_stencil_low_k(
     cx: FloatField,
     cy: FloatField,
@@ -479,6 +468,7 @@ def cmax_stencil_low_k(
         cmax = max(abs(cx), abs(cy))
 
 
+@no_type_check
 def cmax_stencil_high_k(
     cx: FloatField,
     cy: FloatField,
@@ -501,6 +491,7 @@ class TracerCMax:
 
         The maximum courant number for every atmospheric level on the entire grid.
         """
+        orchestrate(obj=self, config=stencil_factory.config.dace_config)
         self._grid_data = grid_data
         self._comm = comm
         grid_indexing = stencil_factory.grid_indexing
@@ -535,8 +526,15 @@ class TracerCMax:
             [Z_DIM],
             units="unknown",
         )
+        self.max_over_column = 0
 
-    def __call__(self, cx: Quantity, cy: Quantity, cmax: Quantity):
+    @dace_inhibitor
+    def _reduce(self, cmax: Quantity):
+        cmax.data[:] = self._tmp_cmax.data.max(axis=0).max(axis=0)[:]
+        self._comm.all_reduce_per_element_in_place(cmax, ReductionOperator.MAX)
+        self.max_over_column = cmax.field.max()
+
+    def __call__(self, cx, cy, cmax: Quantity):
         if __debug__:
             if not isinstance(cmax, Quantity):
                 raise TypeError(
@@ -553,5 +551,4 @@ class TracerCMax:
             sin_sg5=self._grid_data.sin_sg5,
             cmax=self._tmp_cmax,
         )
-        cmax.data[:] = self._tmp_cmax.data.max(axis=0).max(axis=0)[:]
-        self._comm.all_reduce_per_element_in_place(cmax, ReductionOperator.MAX)
+        self._reduce(cmax)

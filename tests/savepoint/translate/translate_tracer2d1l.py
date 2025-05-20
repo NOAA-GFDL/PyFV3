@@ -4,7 +4,7 @@ from ndsl import Namelist, QuantityFactory, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.stencils.testing import ParallelTranslate
 from pyFV3.stencils import FiniteVolumeTransport, TracerAdvection
-from pyFV3.tracers import Tracers
+from pyFV3.tracers import TracersType, setup_tracers
 from pyFV3.utils.functional_validation import get_subset_func
 
 
@@ -45,17 +45,13 @@ class TranslateTracer2D1L(ParallelTranslate):
             n_halo=((0, 0), (0, 0)),
         )
 
-    def collect_input_data(self, serializer, savepoint):
-        input_data = self._base.collect_input_data(serializer, savepoint)
-        return input_data
-
     def compute_parallel(self, inputs, communicator):
-        tracers = Tracers.make_from_4D_array(
-            quantity_factory=self._quantity_factory,
-            tracer_mapping=Tracers.blind_mapping_from_data(inputs["tracers"]),
-            tracer_data=inputs["tracers"],
-        )
         self._base.make_storage_data_input_vars(inputs, dict_4d=False)
+        tracers = setup_tracers(
+            number_of_tracers=inputs["tracers"].shape[3],
+            quantity_factory=self._quantity_factory,
+        )
+        tracers.quantity.data[:] = inputs["tracers"][:]
         inputs.pop("tracers")
         inputs.pop("nq")  # Fortran NQ is intrinsic to Tracers (e.g Tracers.count)
         transport = FiniteVolumeTransport(
@@ -74,7 +70,6 @@ class TranslateTracer2D1L(ParallelTranslate):
             self.grid.grid_data,
             communicator,
             tracers,
-            exclude_tracers=["cloud"],
             update_mass_courant=False,
         )
         inputs["x_mass_flux"] = inputs.pop("mfxd_R4")
@@ -86,9 +81,10 @@ class TranslateTracer2D1L(ParallelTranslate):
         inputs["mfyd_R4"] = inputs.pop("y_mass_flux")
         inputs["cxd_R4"] = inputs.pop("x_courant")
         inputs["cyd_R4"] = inputs.pop("y_courant")
-        inputs["tracers"] = tracers.as_4D_array()
+        inputs["tracers"] = tracers.quantity.field
         outputs = self._base.slice_output(inputs)
-        outputs["tracers"] = self.subset_output("tracers", outputs["tracers"])
+        # outputs["tracers"] = self.subset_output("tracers", outputs["tracers"])
+        # outputs["tracers"] = tracers.quantity.field[:]
         return outputs
 
     def compute_sequential(self, a, b):
