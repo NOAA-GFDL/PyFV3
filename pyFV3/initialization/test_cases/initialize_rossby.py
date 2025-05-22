@@ -186,6 +186,10 @@ def init_rossby_state(
     Returns:
         DycoreState
     """
+
+    # TODO: Check sw_dunamics is True (https://github.com/NOAA-GFDL/PyFV3/pull/50)
+    #       May require a change to pass a config here in order to check.
+
     sample_quantity = grid_data.lat
     shape = (*sample_quantity.data.shape[0:2], grid_data.ak.data.shape[0])
     numpy_state = init_utils.empty_numpy_dycore_state(shape)
