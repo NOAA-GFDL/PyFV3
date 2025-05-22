@@ -274,6 +274,7 @@ class DynamicalCoreConfig:
     nf_omega: int = NamelistDefaults.nf_omega
     fv_sg_adj: int = NamelistDefaults.fv_sg_adj
     n_sponge: int = NamelistDefaults.n_sponge
+    sw_dynamics: bool = False  # TODO: Change to NamelistDefaults.sw_dynamics
     namelist_override: Optional[str] = None
 
     def __post_init__(self):
