@@ -11,7 +11,7 @@ dependencies = [
     "xarray",
 ]
 requires-python = ">=3.11,<3.12"
-authors = [{name = "NOAA - Geophysical Fluid Dynamics Laboratory". email = "oliver.elbert@noaa.gov"}]
+authors = [{name = "NOAA - Geophysical Fluid Dynamics Laboratory", email = "oliver.elbert@noaa.gov"}]
 description = "PyFV3 is a NDSL-based FV3 dynamical core for atmospheric models."
 readme = "README.md"
 license = {file = "LICENSE.md"}
