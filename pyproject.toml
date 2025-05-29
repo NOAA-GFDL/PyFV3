@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools >= 64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyFV3"
+version = "0.2.0"
+dependencies = [
+    "f90nml>=1.1.0",
+    "numpy==1.26.4",
+    "xarray",
+]
+requires-python = ">=3.11,<3.12"
+authors = [{name = "NOAA - Geophysical Fluid Dynamics Laboratory". email = "oliver.elbert@noaa.gov"}]
+description = "PyFV3 is a NDSL-based FV3 dynamical core for atmospheric models."
+readme = "README.md"
+license = {file = "LICENSE.md"}
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+]
+
+[project.optional-dependencies]
+test = [
+    "coverage",
+    "pytest",
+    "pytest-subtests",
+    "serialbox",
+]
+ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@develop"]
+dev = [
+    "pyFV3[test]",
+    "pyFV3[ndsl]",
+    "pre-commit",
+]
+extras = [
+    "pyFV3[test]",
+    "pyFV3[ndsl]",
+    "pyFV3[dev]",
+]
+
+[project.urls]
+Repository = "https://github.com/NOAA-GFDL/pyFV3"
+
+[tool.setuptools.packages.find]
+include = ["pyFV3", "pyFV3.*"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.black]
+line-length = 88
+target_version = ['py38']
