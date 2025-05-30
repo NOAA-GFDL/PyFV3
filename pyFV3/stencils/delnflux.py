@@ -1,10 +1,10 @@
 from typing import Optional
 
-import gt4py.cartesian.gtscript as gtscript
-from gt4py.cartesian.gtscript import PARALLEL, computation, horizontal, interval, region
-
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.dsl.gt4py import PARALLEL, computation
+from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients
@@ -90,22 +90,22 @@ def fy_calc_stencil_column(
             fy = fy_calculation_neg(q, del6_u)
 
 
-@gtscript.function
+@gtfunction
 def fx_calculation(q: FloatField, del6_v: FloatField):
     return del6_v * (q[-1, 0, 0] - q)
 
 
-@gtscript.function
+@gtfunction
 def fx_calculation_neg(q: FloatField, del6_v: FloatField):
     return -del6_v * (q[-1, 0, 0] - q)
 
 
-@gtscript.function
+@gtfunction
 def fy_calculation(q: FloatField, del6_u: FloatField):
     return del6_u * (q[0, -1, 0] - q)
 
 
-@gtscript.function
+@gtfunction
 def fy_calculation_neg(q: FloatField, del6_u: FloatField):
     return -del6_u * (q[0, -1, 0] - q)
 

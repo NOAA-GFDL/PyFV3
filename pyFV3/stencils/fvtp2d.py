@@ -1,11 +1,11 @@
 from typing import Optional
 
-import gt4py.cartesian.gtscript as gtscript
-from gt4py.cartesian.gtscript import PARALLEL, computation, horizontal, interval, region
-
 import ndsl.stencils.corners as corners
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.dsl.gt4py import PARALLEL, computation
+from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import DampingCoefficients, GridData
 from pyFV3.stencils.delnflux import DelnFlux
@@ -13,7 +13,7 @@ from pyFV3.stencils.xppm import XPiecewiseParabolic
 from pyFV3.stencils.yppm import YPiecewiseParabolic
 
 
-@gtscript.function
+@gtfunction
 def apply_x_flux_divergence(q: FloatField, q_x_flux: FloatField) -> FloatField:
     """
     Update a scalar q according to its flux in the x direction.
@@ -21,7 +21,7 @@ def apply_x_flux_divergence(q: FloatField, q_x_flux: FloatField) -> FloatField:
     return q + q_x_flux - q_x_flux[1, 0, 0]
 
 
-@gtscript.function
+@gtfunction
 def apply_y_flux_divergence(q: FloatField, q_y_flux: FloatField) -> FloatField:
     """
     Update a scalar q according to its flux in the x direction.

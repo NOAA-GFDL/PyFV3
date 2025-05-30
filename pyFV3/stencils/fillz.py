@@ -1,11 +1,10 @@
 import typing
 from typing import Dict
 
-from gt4py.cartesian.gtscript import BACKWARD, FORWARD, PARALLEL, computation, interval
-
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntFieldIJ
 
 

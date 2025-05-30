@@ -1,42 +1,38 @@
 from typing import Sequence
 
-import gt4py.cartesian.gtscript as gtscript
-from gt4py.cartesian.gtscript import (
-    __INLINED,
-    BACKWARD,
-    FORWARD,
-    PARALLEL,
-    computation,
-    interval,
-)
-
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
+from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import interval
 from ndsl.dsl.typing import BoolField, Float, FloatField, FloatFieldIJ
 
 
-@gtscript.function
+from gt4py.cartesian.gtscript import __INLINED  # isort:skip
+
+
+@gtfunction
 def limit_minmax(q, a4):
     tmp = a4[0, 0, -1] if a4[0, 0, -1] > a4 else a4
     ret = q if q < tmp else tmp
     return ret
 
 
-@gtscript.function
+@gtfunction
 def limit_maxmin(q, a4):
     tmp2 = a4[0, 0, -1] if a4[0, 0, -1] < a4 else a4
     ret = q if q > tmp2 else tmp2
     return ret
 
 
-@gtscript.function
+@gtfunction
 def limit_both(q, a4):
     ret = limit_minmax(q, a4)
     ret = limit_maxmin(ret, a4)
     return ret
 
 
-@gtscript.function
+@gtfunction
 def constrain_interior(q, gam, a4):
     return (
         limit_both(q, a4)
@@ -47,7 +43,7 @@ def constrain_interior(q, gam, a4):
     )
 
 
-@gtscript.function
+@gtfunction
 def posdef_constraint_iv0(
     a4_1: FloatField,
     a4_2: FloatField,
@@ -83,7 +79,7 @@ def posdef_constraint_iv0(
     return a4_1, a4_2, a4_3, a4_4
 
 
-@gtscript.function
+@gtfunction
 def posdef_constraint_iv1(
     a4_1: FloatField,
     a4_2: FloatField,
@@ -113,7 +109,7 @@ def posdef_constraint_iv1(
     return a4_1, a4_2, a4_3, a4_4
 
 
-@gtscript.function
+@gtfunction
 def remap_constraint(
     a4_1: FloatField,
     a4_2: FloatField,
