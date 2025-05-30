@@ -105,7 +105,6 @@ jobs:
           cd ${GITHUB_WORKSPACE}/pyFV3
           export FV3_DACEMODE=BuildAndRun
           export PACE_FLOAT_PRECISION=64
-          export PACE_TEST_N_THRESHOLD_SAMPLES=0
           export OMP_NUM_THREADS=1
           export PACE_LOGLEVEL=Debug
           mpiexec -mca orte_abort_on_non_zero_status 1 -np 6 --oversubscribe coverage run --rcfile=setup.cfg -m mpi4py -m pytest \
