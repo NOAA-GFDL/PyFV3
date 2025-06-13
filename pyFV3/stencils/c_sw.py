@@ -479,7 +479,7 @@ def update_y_velocity(
     with computation(PARALLEL), interval(...):
         # assume: not __INLINED(spec.grid.nested)
 
-        # first-order upwind voriticity flux
+        # first-order upwind vorticity flux
         tmp_flux = dt2 * (velocity - velocity_c * cosa) / sina
         if __INLINED(grid_type < 3):
             with horizontal(region[:, j_start], region[:, j_end + 1]):
