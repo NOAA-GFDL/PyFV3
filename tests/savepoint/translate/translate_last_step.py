@@ -1,6 +1,6 @@
 from ndsl import Namelist, StencilFactory
-from pyFV3.stencils import moist_cv
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.stencils import moist_cv
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateLastStep(TranslateDycoreFortranData2Py):

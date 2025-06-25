@@ -1,10 +1,10 @@
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
-import pyFV3
-import pyFV3.stencils.d_sw as d_sw
+import pyfv3
+import pyfv3.stencils.d_sw as d_sw
 from ndsl import Namelist, StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateD_SW(TranslateDycoreFortranData2Py):
@@ -17,7 +17,7 @@ class TranslateD_SW(TranslateDycoreFortranData2Py):
         super().__init__(grid, namelist, stencil_factory)
         self.max_error = 3.2e-10
         self.stencil_factory = stencil_factory
-        dycore_config = pyFV3.DynamicalCoreConfig.from_namelist(namelist)
+        dycore_config = pyfv3.DynamicalCoreConfig.from_namelist(namelist)
         column_namelist = d_sw.get_column_namelist(
             config=dycore_config.acoustic_dynamics.d_grid_shallow_water,
             quantity_factory=self.grid.quantity_factory,

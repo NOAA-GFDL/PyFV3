@@ -3,7 +3,7 @@ requires = ["setuptools >= 64"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pyFV3"
+name = "pyfv3"
 version = "0.2.0"
 dependencies = [
     "f90nml>=1.1.0",
@@ -32,22 +32,22 @@ test = [
     "serialbox",
 ]
 ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@develop"]
-dev = [
-    "pyFV3[test]",
-    "pyFV3[ndsl]",
+develop = [
+    "pyfv3[test]",
+    "pyfv3[ndsl]",
     "pre-commit",
 ]
 extras = [
-    "pyFV3[test]",
-    "pyFV3[ndsl]",
-    "pyFV3[dev]",
+    "pyfv3[test]",
+    "pyfv3[ndsl]",
+    "pyfv3[dev]",
 ]
 
 [project.urls]
 Repository = "https://github.com/NOAA-GFDL/pyFV3"
 
 [tool.setuptools.packages.find]
-include = ["pyFV3", "pyFV3.*"]
+include = ["pyfv3", "pyfv3.*"]
 
 [tool.setuptools]
 include-package-data = true

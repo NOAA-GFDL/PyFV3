@@ -9,7 +9,7 @@ import f90nml
 import gt4py.cartesian.config
 
 from ndsl import NullComm
-from pyFV3 import DynamicalCoreConfig
+from pyfv3 import DynamicalCoreConfig
 
 
 try:

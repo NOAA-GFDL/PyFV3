@@ -2,8 +2,8 @@ from typing import Any, Dict
 
 from ndsl import Namelist, StencilFactory, orchestrate
 from ndsl.constants import Z_DIM
-from pyFV3.stencils import DivergenceDamping
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.stencils import DivergenceDamping
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class A2B_Ord4Compute:

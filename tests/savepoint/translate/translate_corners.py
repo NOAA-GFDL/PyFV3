@@ -3,7 +3,7 @@ from typing import Any, Dict
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Namelist, StencilFactory
 from ndsl.stencils import corners
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateFill4Corners(TranslateDycoreFortranData2Py):

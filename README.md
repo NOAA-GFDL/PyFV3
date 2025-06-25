@@ -1,15 +1,38 @@
 > DISCLAIMER: Work in progress
 
-# FV3core
+# pyFV3
 
-FV3core is a Python version, using GridTools GT4Py with CPU and GPU backend options, of the FV3 dynamical core (fv3gfs-fortran repo).
+pyFV3 is a Python version, using GridTools GT4Py with CPU and GPU backend options, of the FV3 dynamical core (fv3gfs-fortran repo).
 The code here includes regression test data of computation units coming from serialized output from the Fortran model generated using the `GridTools/serialbox` framework.
-
-As of January 10, 2021 this documentation is outdated in that it was written when we had fv3core as its own single repository. Some functionality, such as linting, has been moved to the top level but may still be described in this document as occuring inside the fv3core folder.
 
 **WARNING** This repo is under active development and relies on code and data that is not publicly available at this point.
 
-## QuickStart
+## Quickstart - bare metal
+
+## Build
+
+We recommend creating a python `venv` or `conda` environment specifically for pyFV3.
+
+```shell
+python -m venv .venv
+source .venv/bin/activate
+```
+
+Inside of your pyFV3 `venv` or `conda` environment, install pyFV3 and its dependencies. For developers, we recommend an editable install with the `[develop]` extra:
+
+```shell
+pip install -e .[develop]
+```
+
+For running tests, we recommend to install pyFV3 with the `[test]` extra (avoid pulling other dev dependencies):
+
+```shell
+pip install .[test]
+```
+
+## Quickstart - Docker
+
+While it is possible to install and build pyFV3 bare-metal, we can ensure all system libraries are installed with the correct versions by using a Docker container to test and develop pyFV3.
 
 1. Ensure you have docker installed and available for building and running and has access to the VCM cloud
 
@@ -18,14 +41,18 @@ Be sure to complete any required post-installation instructions (e.g. [for linux
 2.  You can build the image, download the data, and run the tests using:
 
 ```shell
-$ make tests savepoint_tests savepoint_tests_mpi
+make build
+```
+
+```shell
+$ make test_all
 ```
 
 If you want to develop code, you should also install the linting requirements and git hooks locally
 
 ```shell
-$ pip install -c constraints.txt -r requirements/requirements_lint.txt
 $ pre-commit install
+```
 
 ## Getting started, in more detail
 If you want to build the main fv3core docker image, run

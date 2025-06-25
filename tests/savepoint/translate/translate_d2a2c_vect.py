@@ -1,6 +1,6 @@
 from ndsl import Namelist, StencilFactory
-from pyFV3.stencils import DGrid2AGrid2CGridVectors
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.stencils import DGrid2AGrid2CGridVectors
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateD2A2C_Vect(TranslateDycoreFortranData2Py):

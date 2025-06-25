@@ -30,9 +30,9 @@ from ndsl import (
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
 from ndsl.performance import Timer
 from ndsl.stencils.testing import Grid, dataset_to_dict
-from pyFV3 import DycoreState, DynamicalCore, DynamicalCoreConfig
-from pyFV3.initialization.test_cases import init_baroclinic_state
-from pyFV3.testing import TranslateFVDynamics
+from pyfv3 import DycoreState, DynamicalCore, DynamicalCoreConfig
+from pyfv3.initialization.test_cases import init_baroclinic_state
+from pyfv3.testing import TranslateFVDynamics
 
 
 def parse_args() -> Namespace:

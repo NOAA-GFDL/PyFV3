@@ -4,8 +4,8 @@ import ndsl.dsl.gt4py_utils as utils
 from ndsl import Namelist, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.stencils.testing import ParallelTranslate
-from pyFV3.stencils import FiniteVolumeTransport, TracerAdvection
-from pyFV3.utils.functional_validation import get_subset_func
+from pyfv3.stencils import FiniteVolumeTransport, TracerAdvection
+from pyfv3.utils.functional_validation import get_subset_func
 
 
 class TranslateTracer2D1L(ParallelTranslate):
