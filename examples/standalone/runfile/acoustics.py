@@ -21,9 +21,9 @@ from ndsl import (
 )
 from ndsl.performance import Timer
 from ndsl.stencils.testing import Grid
-from pyFV3 import DynamicalCoreConfig
-from pyFV3.stencils import AcousticDynamics
-from pyFV3.testing import TranslateDynCore
+from pyfv3 import DynamicalCoreConfig
+from pyfv3.stencils import AcousticDynamics
+from pyfv3.testing import TranslateDynCore
 
 
 try:

@@ -10,11 +10,11 @@
 set -e
 
 # Copy XPPM codes into YPPM files
-cp pyFV3/stencils/xppm.py pyFV3/stencils/yppm.py
-cp pyFV3/stencils/xtp_u.py pyFV3/stencils/ytp_v.py
+cp pyfv3/stencils/xppm.py pyfv3/stencils/yppm.py
+cp pyfv3/stencils/xtp_u.py pyfv3/stencils/ytp_v.py
 
 # Fixup YPPM code
-for fname in pyFV3/stencils/yppm.py pyFV3/stencils/ytp_v.py
+for fname in pyfv3/stencils/yppm.py pyfv3/stencils/ytp_v.py
 do
     sed -i 's/ub/vb/g' $fname
     sed -i 's/dx/dy/g' $fname
@@ -47,18 +47,18 @@ do
     sed -i 's/\[j_end + 2, :/\[:, j_end + 2/g' $fname
 done
 
-sed -i 's/i_start/j_start/g' pyFV3/stencils/yppm.py
-sed -i 's/i_end/j_end/g' pyFV3/stencils/yppm.py
-sed -i 's/XPiecewise/YPiecewise/g' pyFV3/stencils/yppm.py
-sed -i 's/X Piecewise/Y Piecewise/g' pyFV3/stencils/yppm.py
-sed -i 's/xppm/yppm/g' pyFV3/stencils/yppm.py
-sed -i 's/u\*/v\*/g' pyFV3/stencils/yppm.py
+sed -i 's/i_start/j_start/g' pyfv3/stencils/yppm.py
+sed -i 's/i_end/j_end/g' pyfv3/stencils/yppm.py
+sed -i 's/XPiecewise/YPiecewise/g' pyfv3/stencils/yppm.py
+sed -i 's/X Piecewise/Y Piecewise/g' pyfv3/stencils/yppm.py
+sed -i 's/xppm/yppm/g' pyfv3/stencils/yppm.py
+sed -i 's/u\*/v\*/g' pyfv3/stencils/yppm.py
 
-sed -i 's/j_start - 1 : j_start + 1, j_start/i_start, j_start - 1 : j_start + 1/g' pyFV3/stencils/ytp_v.py
-sed -i 's/j_start - 1 : j_start + 1, j_end + 1/i_end + 1, j_start - 1 : j_start + 1/g' pyFV3/stencils/ytp_v.py
-sed -i 's/j_end : j_end + 2, j_start/i_start, j_end : j_end + 2/g' pyFV3/stencils/ytp_v.py
-sed -i 's/j_end : j_end + 2, j_end + 1/i_end + 1, j_end : j_end + 2/g' pyFV3/stencils/ytp_v.py
-sed -i 's/j_end, j_start, jord, j_end, j_start/i_end, i_start, j_end, j_start, jord/g' pyFV3/stencils/ytp_v.py
-sed -i 's/xppm/yppm/g' pyFV3/stencils/ytp_v.py
+sed -i 's/j_start - 1 : j_start + 1, j_start/i_start, j_start - 1 : j_start + 1/g' pyfv3/stencils/ytp_v.py
+sed -i 's/j_start - 1 : j_start + 1, j_end + 1/i_end + 1, j_start - 1 : j_start + 1/g' pyfv3/stencils/ytp_v.py
+sed -i 's/j_end : j_end + 2, j_start/i_start, j_end : j_end + 2/g' pyfv3/stencils/ytp_v.py
+sed -i 's/j_end : j_end + 2, j_end + 1/i_end + 1, j_end : j_end + 2/g' pyfv3/stencils/ytp_v.py
+sed -i 's/j_end, j_start, jord, j_end, j_start/i_end, i_start, j_end, j_start, jord/g' pyfv3/stencils/ytp_v.py
+sed -i 's/xppm/yppm/g' pyfv3/stencils/ytp_v.py
 
-sed -i 's/region\[j_start - 1 : j_start + 2, :\], region\[j_end - 1 : j_end + 2, :\]/region\[:, j_start - 1 : j_start + 2\], region\[:, j_end - 1 : j_end + 2\]/g' pyFV3/stencils/yppm.py
+sed -i 's/region\[j_start - 1 : j_start + 2, :\], region\[j_end - 1 : j_end + 2, :\]/region\[:, j_start - 1 : j_start + 2\], region\[:, j_end - 1 : j_end + 2\]/g' pyfv3/stencils/yppm.py

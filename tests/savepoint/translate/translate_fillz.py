@@ -4,8 +4,8 @@ import ndsl.dsl.gt4py_utils as utils
 from ndsl import Namelist, StencilFactory
 from ndsl.stencils.testing import pad_field_in_j
 from ndsl.utils import safe_assign_array
-from pyFV3.stencils import fillz
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.stencils import fillz
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateFillz(TranslateDycoreFortranData2Py):

@@ -2,9 +2,9 @@ import numpy as np
 
 from ndsl import Namelist, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from pyFV3.stencils import UpdateGeopotentialHeightOnCGrid
-from pyFV3.testing import TranslateDycoreFortranData2Py
-from pyFV3.utils.functional_validation import get_subset_func
+from pyfv3.stencils import UpdateGeopotentialHeightOnCGrid
+from pyfv3.testing import TranslateDycoreFortranData2Py
+from pyfv3.utils.functional_validation import get_subset_func
 
 
 class TranslateUpdateDzC(TranslateDycoreFortranData2Py):

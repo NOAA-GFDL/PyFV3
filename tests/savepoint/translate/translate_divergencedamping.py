@@ -2,8 +2,8 @@ from typing import Optional
 
 from ndsl import Namelist, StencilFactory
 from ndsl.constants import Z_DIM
-from pyFV3.stencils import DivergenceDamping
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.stencils import DivergenceDamping
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateDivergenceDamping(TranslateDycoreFortranData2Py):

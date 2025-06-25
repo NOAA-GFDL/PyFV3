@@ -1,6 +1,6 @@
 from ndsl import Namelist, QuantityFactory, StencilFactory
-from pyFV3.stencils import CGridShallowWaterDynamics
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.stencils import CGridShallowWaterDynamics
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 def get_c_sw_instance(

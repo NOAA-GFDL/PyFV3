@@ -4,7 +4,7 @@ import ndsl.dsl.gt4py_utils as utils
 from ndsl import Namelist, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
-from pyFV3 import DryConvectiveAdjustment
+from pyfv3 import DryConvectiveAdjustment
 
 
 # NOTE, does no halo updates, does not need to be a Parallel test,
