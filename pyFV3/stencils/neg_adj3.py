@@ -1,16 +1,16 @@
-import gt4py.cartesian.gtscript as gtscript
-from gt4py.cartesian.gtscript import BACKWARD, FORWARD, PARALLEL, computation, interval
-
 import ndsl.constants as constants
 from ndsl import QuantityFactory, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM
+from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
+from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 
 
 ZVIR = constants.RVGAS / constants.RDGAS - 1.0
 
 
-@gtscript.function
+@gtfunction
 def fix_negative_ice(qvapor, qice, qsnow, qgraupel, qrain, qliquid, pt, lcpk, icpk, dq):
     qsum = qice + qsnow
     if qsum > 0.0:
@@ -53,7 +53,7 @@ def fix_negative_ice(qvapor, qice, qsnow, qgraupel, qrain, qliquid, pt, lcpk, ic
     return qvapor, qice, qsnow, qgraupel, qrain, qliquid, pt
 
 
-@gtscript.function
+@gtfunction
 def fix_negative_liq(qvapor, qice, qsnow, qgraupel, qrain, qliquid, pt, lcpk, icpk, dq):
     qsum = qliquid + qrain
     pos_qgraupel = 0.0 if 0.0 > qgraupel else qgraupel

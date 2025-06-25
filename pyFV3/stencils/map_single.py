@@ -1,9 +1,8 @@
 from typing import Optional, Sequence
 
-from gt4py.cartesian.gtscript import FORWARD, PARALLEL, computation, interval
-
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntFieldIJ  # noqa: F401
 from ndsl.stencils.basic_operations import copy_defn
 from pyFV3.stencils.remap_profile import RemapProfile

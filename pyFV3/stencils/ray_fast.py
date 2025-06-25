@@ -1,22 +1,13 @@
-import gt4py.cartesian.gtscript as gtscript
-from gt4py.cartesian.gtscript import (
-    __INLINED,
-    BACKWARD,
-    FORWARD,
-    PARALLEL,
-    computation,
-    horizontal,
-    interval,
-    log,
-    region,
-    sin,
-)
-
 import ndsl.constants as constants
 from ndsl import StencilFactory, orchestrate
 from ndsl.constants import X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
+from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import horizontal, interval, log, region, sin
 from ndsl.dsl.typing import Float, FloatField, FloatFieldK
 
+
+from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 SDAY = 86400.0
 
@@ -24,7 +15,7 @@ SDAY = 86400.0
 # NOTE: The fortran version of this computes rf in the first timestep only. Then
 # rf_initialized let's you know you can skip it. Here we calculate it every
 # time.
-@gtscript.function
+@gtfunction
 def compute_rf_vals(pfull, bdt, rf_cutoff, tau0, ptop):
     return (
         bdt
@@ -33,14 +24,14 @@ def compute_rf_vals(pfull, bdt, rf_cutoff, tau0, ptop):
     )
 
 
-@gtscript.function
+@gtfunction
 def compute_rff_vals(pfull, dt, rf_cutoff, tau0, ptop):
     rffvals = compute_rf_vals(pfull, dt, rf_cutoff, tau0, ptop)
     rffvals = 1.0 / (1.0 + rffvals)
     return rffvals
 
 
-@gtscript.function
+@gtfunction
 def dm_layer(rf, dp, wind):
     return (1.0 - rf) * dp * wind
 

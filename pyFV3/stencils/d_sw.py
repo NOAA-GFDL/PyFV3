@@ -1,17 +1,10 @@
 from typing import Dict, Mapping
 
-import gt4py.cartesian.gtscript as gtscript
-from gt4py.cartesian.gtscript import (
-    __INLINED,
-    PARALLEL,
-    computation,
-    horizontal,
-    interval,
-    region,
-)
-
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.dsl.gt4py import PARALLEL, computation
+from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients, GridData
 from pyFV3._config import DGridShallowWaterLagrangianDynamicsConfig
@@ -25,6 +18,8 @@ from pyFV3.stencils.xtp_u import advect_u_along_x
 from pyFV3.stencils.ytp_v import advect_v_along_y
 from pyFV3.version import IS_GEOS
 
+
+from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 dcon_threshold = 1e-5
 
@@ -102,7 +97,7 @@ def heat_diss(
             diss_est = heat_source
 
 
-@gtscript.function
+@gtfunction
 def flux_increment(gx, gy, rarea):
     """
     Args:
@@ -144,7 +139,7 @@ def apply_fluxes(
         q = q * delp + flux_increment(gx, gy, rarea)
 
 
-@gtscript.function
+@gtfunction
 def apply_pt_delp_fluxes(
     pt_x_flux: FloatField,
     pt_y_flux: FloatField,
@@ -261,7 +256,7 @@ def compute_kinetic_energy(
         )
 
 
-@gtscript.function
+@gtfunction
 def corner_ke(
     u,
     v,
@@ -286,7 +281,7 @@ def corner_ke(
     )
 
 
-@gtscript.function
+@gtfunction
 def all_corners_ke(ke, u, v, ut, vt, dt):
     from __externals__ import i_end, i_start, j_end, j_start
 
@@ -386,7 +381,7 @@ def vort_differencing(
 
 
 # TODO: This is untested and the radius may be incorrect
-@gtscript.function
+@gtfunction
 def coriolis_force_correction(zh, radius):
     return 1.0 + (zh + zh[0, 0, 1]) / radius
 
@@ -407,7 +402,7 @@ def rel_vorticity_to_abs(
         absolute_vorticity = relative_vorticity + f0
 
 
-@gtscript.function
+@gtfunction
 def u_from_ke(ke, u, dx, fy):
     """
     Described in section 5.2 eq 5.3d and 5.3e of FV3 docs.
@@ -435,7 +430,7 @@ def u_from_ke(ke, u, dx, fy):
     return u * dx + ke - ke[1, 0, 0] + fy
 
 
-@gtscript.function
+@gtfunction
 def v_from_ke(ke, v, dy, fx):
     # see docstring for u_from_ke
     return v * dy + ke - ke[0, 1, 0] - fx
@@ -482,7 +477,7 @@ def u_and_v_from_ke(
             v = v_from_ke(ke, v, dy, fx)
 
 
-@gtscript.function
+@gtfunction
 def heat_damping_term(ub, vb, gx, gy, rsin2, cosa_s, u2, v2, du2, dv2):
     return (
         rsin2
@@ -739,7 +734,7 @@ def get_column_namelist(
     return col
 
 
-@gtscript.function
+@gtfunction
 def interpolate_uc_vc_to_cell_corners(
     uc_cov, vc_cov, cosa, rsina, uc_contra, vc_contra
 ):

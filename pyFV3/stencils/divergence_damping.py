@@ -1,20 +1,13 @@
-import gt4py.cartesian.gtscript as gtscript
 import numpy as np
-from gt4py.cartesian.gtscript import (
-    __INLINED,
-    PARALLEL,
-    computation,
-    horizontal,
-    interval,
-    region,
-    sqrt,
-)
 
 import ndsl.stencils.basic_operations as basic
 import ndsl.stencils.corners as corners
 from ndsl import Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
+from ndsl.dsl.gt4py import PARALLEL, computation
+from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import horizontal, interval, region, sqrt
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients, GridData
@@ -22,7 +15,10 @@ from pyFV3.stencils.a2b_ord4 import AGrid2BGridFourthOrder, doubly_periodic_a2b_
 from pyFV3.stencils.d2a2c_vect import contravariant
 
 
-@gtscript.function
+from gt4py.cartesian.gtscript import __INLINED  # isort:skip
+
+
+@gtfunction
 def damp_tmp(q, da_min_c, d2_bg, dddmp):
     mintmp = min(0.2, dddmp * abs(q))
     damp = da_min_c * max(d2_bg, mintmp)
@@ -323,7 +319,7 @@ class DivergenceDamping:
         )
         self.grid_indexing = stencil_factory.grid_indexing
         if nested:
-            raise NotImplementedError("Divergence Dampoing: nested not implemented.")
+            raise NotImplementedError("Divergence Damping: nested not implemented.")
         # TODO: make dddmp a compile-time external, instead of runtime scalar
         self._dddmp = Float(dddmp)
         # TODO: make da_min_c a compile-time external, instead of runtime scalar

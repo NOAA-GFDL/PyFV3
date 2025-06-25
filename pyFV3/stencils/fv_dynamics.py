@@ -2,7 +2,6 @@ from datetime import timedelta
 from typing import Mapping, Optional
 
 from dace.frontend.python.interface import nounroll as dace_no_unroll
-from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 import ndsl.dsl.gt4py_utils as utils
 import pyFV3.stencils.moist_cv as moist_cv
@@ -11,6 +10,7 @@ from ndsl.checkpointer import NullCheckpointer
 from ndsl.comm.mpi import MPI
 from ndsl.constants import KAPPA, NQ, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM, ZVIR
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
+from ndsl.dsl.gt4py import PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log

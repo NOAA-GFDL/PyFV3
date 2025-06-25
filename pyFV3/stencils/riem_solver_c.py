@@ -1,17 +1,9 @@
 import typing
 
-from gt4py.cartesian.gtscript import (
-    BACKWARD,
-    FORWARD,
-    PARALLEL,
-    computation,
-    interval,
-    log,
-)
-
 import ndsl.constants as constants
 from ndsl import QuantityFactory, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval, log
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from pyFV3.stencils.sim1_solver import Sim1Solver
 

@@ -1,9 +1,9 @@
-import gt4py.cartesian.gtscript as gtscript
-from gt4py.cartesian.gtscript import BACKWARD, FORWARD, PARALLEL, computation, interval
-
 import ndsl.constants as constants
 from ndsl import Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
+from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.stencils import corners
 
@@ -11,26 +11,26 @@ from ndsl.stencils import corners
 DZ_MIN = constants.DZ_MIN
 
 
-@gtscript.function
+@gtfunction
 def p_weighted_average_top(vel, dp0):
     # TODO: ratio is a constant, where should this be placed?
     ratio = dp0 / (dp0 + dp0[1])
     return vel + (vel - vel[0, 0, 1]) * ratio
 
 
-@gtscript.function
+@gtfunction
 def p_weighted_average_bottom(vel, dp0):
     ratio = dp0[-1] / (dp0[-2] + dp0[-1])
     return vel[0, 0, -1] + (vel[0, 0, -1] - vel[0, 0, -2]) * ratio
 
 
-@gtscript.function
+@gtfunction
 def p_weighted_average_domain(vel, dp0):
     int_ratio = 1.0 / (dp0[-1] + dp0)
     return (dp0 * vel[0, 0, -1] + dp0[-1] * vel) * int_ratio
 
 
-@gtscript.function
+@gtfunction
 def xy_flux(gz_x, gz_y, xfx, yfx):
     """
     Compute first-order upwind fluxes of gz in x and y directions.

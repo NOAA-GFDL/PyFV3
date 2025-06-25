@@ -1,24 +1,20 @@
-import gt4py.cartesian.gtscript as gtscript
-from gt4py.cartesian.gtscript import (
-    __INLINED,
-    PARALLEL,
-    computation,
-    exp,
-    interval,
-    log,
-)
-
 import ndsl.constants as constants
+from ndsl.dsl.gt4py import PARALLEL, computation, exp
+from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import interval, log
 from ndsl.dsl.typing import Float, FloatField
 
 
-@gtscript.function
+from gt4py.cartesian.gtscript import __INLINED  # isort:skip
+
+
+@gtfunction
 def set_cappa(qvapor, cvm, r_vir):
     cappa = constants.RDGAS / (constants.RDGAS + cvm / (1.0 + r_vir * qvapor))
     return cappa
 
 
-@gtscript.function
+@gtfunction
 def moist_cvm(qvapor, gz, ql, qs):
     cvm = (
         (1.0 - (qvapor + gz)) * constants.CV_AIR
@@ -29,7 +25,7 @@ def moist_cvm(qvapor, gz, ql, qs):
     return cvm
 
 
-@gtscript.function
+@gtfunction
 def moist_cv_nwat6_fn(
     qvapor: FloatField,
     qliquid: FloatField,
@@ -45,7 +41,7 @@ def moist_cv_nwat6_fn(
     return cvm, gz
 
 
-@gtscript.function
+@gtfunction
 def moist_pt_func(
     qvapor: FloatField,
     qliquid: FloatField,
@@ -69,7 +65,7 @@ def moist_pt_func(
     return cvm, gz, q_con, cappa, pt
 
 
-@gtscript.function
+@gtfunction
 def last_pt(
     pt: FloatField,
     dtmp: Float,
@@ -121,7 +117,7 @@ def moist_pt_last_step(
         #    pt = last_pt(pt, dtmp, pkz, gz, qvapor, zvir)
 
 
-@gtscript.function
+@gtfunction
 def compute_pkz_func(delp, delz, pt, cappa):
     # TODO use the exponential form for closer answer matching
     return exp(cappa * log(constants.RDG * delp / delz * pt))
