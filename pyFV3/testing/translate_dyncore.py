@@ -149,6 +149,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
         state = DycoreState.init_zeros(
             quantity_factory=self.grid.quantity_factory,
             dtype_dict=inputs_dtypes,
+            tracer_count=1,  # No tracers used in acoustics
             allow_mismatch_float_precision=True,
         )
         wsd = self.grid.quantity_factory.zeros(
