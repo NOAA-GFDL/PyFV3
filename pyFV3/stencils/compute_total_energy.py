@@ -2,7 +2,7 @@ from ndsl import StencilFactory, QuantityFactory
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM, GRAV
 from pyFV3._config import DynamicalCoreConfig
-from pyFV3.tracers import Tracers
+from pyFV3.tracers import TracersType
 from pyFV3.stencils.moist_cv import moist_cv_nwat6_fn
 from gt4py.cartesian.gtscript import (
     BACKWARD,
@@ -135,7 +135,7 @@ class ComputeTotalEnergy:
         u: FloatField,  # type: ignore
         v: FloatField,  # type: ignore
         w: FloatField,  # type: ignore
-        tracers: Tracers,
+        tracers: TracersType,
         te_2d: FloatFieldIJ,  # type: ignore
     ) -> None:
         self._compute_total_energy(
