@@ -363,10 +363,10 @@ class TracerAdvection:
             working_x_courant = x_courant
             working_y_courant = y_courant
         else:
-            safe_assign_array(self._tmp_mfx.data, x_mass_flux)
-            safe_assign_array(self._tmp_mfy.data, y_mass_flux)
-            safe_assign_array(self._tmp_cx.data, x_courant)
-            safe_assign_array(self._tmp_cy.data, y_courant)
+            self._tmp_mfx.data = x_mass_flux
+            self._tmp_mfy.data = y_mass_flux
+            self._tmp_cx.data = x_courant
+            self._tmp_cy.data = y_courant
             working_x_mass_flux = self._tmp_mfx
             working_y_mass_flux = self._tmp_mfy
             working_x_courant = self._tmp_cx
@@ -530,16 +530,16 @@ class TracerCMax:
 
     @dace_inhibitor
     def _reduce(self, cmax: Quantity):
-        cmax.data[:] = self._tmp_cmax.data.max(axis=0).max(axis=0)[:]
-        self._comm.all_reduce_per_element_in_place(cmax, ReductionOperator.MAX)
-        self.max_over_column = cmax.field.max()
-
-    def __call__(self, cx, cy, cmax: Quantity):
         if __debug__:
             if not isinstance(cmax, Quantity):
                 raise TypeError(
                     f"[pyFV3][Tracer]: cmax must be a quantity, got {type(cmax)}"
                 )
+        cmax.data[:] = self._tmp_cmax.data.max(axis=0).max(axis=0)[:]
+        self._comm.all_reduce_per_element_in_place(cmax, ReductionOperator.MAX)
+        self.max_over_column = cmax.field.max()
+
+    def __call__(self, cx, cy, cmax):
         self._cmax_low_k(
             cx=cx,
             cy=cy,
