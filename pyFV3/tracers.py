@@ -8,9 +8,9 @@ from pyFV3.version import IS_GEOS
 _default_mapping_GEOS = {
     "vapor": 0,
     "liquid": 1,
-    "rain": 2,
-    "snow": 3,
-    "ice": 4,
+    "ice": 2,
+    "rain": 3,
+    "snow": 4,
     "graupel": 5,
     "cloud": 6,
 }
