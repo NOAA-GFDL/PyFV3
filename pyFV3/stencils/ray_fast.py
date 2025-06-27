@@ -25,6 +25,7 @@ from ndsl.constants import (
     Y_DIM,
 )
 from ndsl.dsl.typing import Float, FloatField, FloatFieldK
+import numpy as np
 
 
 # NOTE: The fortran version of this computes rf in the first timestep only. Then
@@ -211,14 +212,14 @@ class RayleighDamping:
 
         # We compute the damping increment once using a trick to write a
         # FloatFieldK as a (1, 1, K) 3D writable Field
-        K_stencil_factory, K_quantity_factory = get_factories_single_tile(
+        _K_stencil_factory, K_quantity_factory = get_factories_single_tile(
             1,
             1,
             domain[2],
             0,
             stencil_factory.backend,
         )
-        self._ray_fast_damping_increment = K_stencil_factory.from_origin_domain(
+        self._ray_fast_damping_increment = stencil_factory.from_origin_domain(
             ray_fast_damping_increment,
             origin=(0, 0, origin[2]),
             domain=(1, 1, domain[2]),
@@ -230,7 +231,7 @@ class RayleighDamping:
         self._damping_increment = K_quantity_factory.ones(
             [X_DIM, Y_DIM, Z_DIM], units="n/a"
         )
-        self._initialize_damping_increment = False
+        self._initialize_damping_increment = np.ones((1,), dtype=int)
 
     def __call__(
         self,
@@ -254,17 +255,19 @@ class RayleighDamping:
         """
         rf_cutoff_nudge = self._rf_cutoff + min(Float(100.0), Float(10.0) * ptop)
 
-        if not self._initialize_damping_increment:
+        # TODO: this is a bad fix to go around an orchestration issue
+        #       on compile-time values. Do better.
+        if self._initialize_damping_increment[0] == 1:
             self._ray_fast_damping_increment(
                 pfull=pfull, dt=dt, ptop=ptop, rf=self._damping_increment
             )
-            self._initialize_damping_increment = True
+            self._initialize_damping_increment[0] = 0
         self._ray_fast_wind_compute(
             u=u,
             v=v,
             w=w,
             delta_p_ref=dp,
             pfull=pfull,
-            rf=self._damping_increment.view[0, 0, :],
+            rf=self._damping_increment.field[0, 0, :],
             rf_cutoff_nudge=rf_cutoff_nudge,
         )
