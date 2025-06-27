@@ -1,4 +1,4 @@
-from ndsl import StencilFactory, QuantityFactory
+from ndsl import StencilFactory, QuantityFactory, orchestrate
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM, GRAV
 from pyFV3._config import DynamicalCoreConfig
@@ -100,6 +100,11 @@ class ComputeTotalEnergy:
         quantity_factory: QuantityFactory,
         grid_data: GridData,
     ) -> None:
+        orchestrate(
+            obj=self,
+            config=stencil_factory.config.dace_config,
+            dace_compiletime_args=["tracers"],
+        )
         if config.hydrostatic:
             raise NotImplementedError(
                 "Dynamics (Compute Total Energy): "
@@ -147,12 +152,12 @@ class ComputeTotalEnergy:
             u=u,
             v=v,
             w=w,
-            qvapor=tracers["vapor"],
-            qliquid=tracers["liquid"],
-            qrain=tracers["rain"],
-            qsnow=tracers["snow"],
-            qice=tracers["ice"],
-            qgraupel=tracers["graupel"],
+            qvapor=tracers.vapor,
+            qliquid=tracers.liquid,
+            qrain=tracers.rain,
+            qsnow=tracers.snow,
+            qice=tracers.ice,
+            qgraupel=tracers.graupel,
             rsin2=self._rsin2,
             cosa_s=self._cosa_s,
             phyz=self._phyz,
