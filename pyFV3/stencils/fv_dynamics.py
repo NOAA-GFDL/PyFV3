@@ -312,13 +312,13 @@ class DynamicalCore:
             "graupel",
             "cloud",
         ]
-        if not all(n in state.tracers.names() for n in required_tracers):
+        if not all(n in state.tracers._indexer.keys() for n in required_tracers):
             raise NotImplementedError(
                 "Dynamical core (fv_dynamics):"
                 " missing required tracers. Dynamics requires:\n"
                 f" {required_tracers}\n"
                 "but only the following where given:\n"
-                f" {state.tracers.names()}"
+                f" {state.tracers._indexer.keys()}"
             )
 
         self._comm = comm
@@ -359,7 +359,6 @@ class DynamicalCore:
             self.grid_data,
             comm,
             state.tracers,
-            exclude_tracers=exclude_tracers,
         )
         self._ak = grid_data.ak
         self._bk = grid_data.bk
@@ -541,11 +540,6 @@ class DynamicalCore:
             domain=grid_indexing.domain_compute(add=(1, 1, 0)),
         )
 
-    # See divergence_damping.py, _get_da_min for explanation of this function
-    @dace_inhibitor
-    def _get_da_min(self) -> NDSL_64BIT_FLOAT_TYPE:  # type: ignore
-        return self._da_min
-
     def step_dynamics(
         self,
         state: DycoreState,
@@ -573,12 +567,12 @@ class DynamicalCore:
         self._set_value(state.cyd, Float(0.0))
 
         self._fv_setup_stencil(
-            state.tracers["vapor"],
-            state.tracers["liquid"],
-            state.tracers["rain"],
-            state.tracers["snow"],
-            state.tracers["ice"],
-            state.tracers["graupel"],
+            state.tracers.vapor,
+            state.tracers.liquid,
+            state.tracers.rain,
+            state.tracers.snow,
+            state.tracers.ice,
+            state.tracers.graupel,
             state.q_con,
             self._cvm,
             state.pkz,
@@ -782,7 +776,6 @@ class DynamicalCore:
                 self._increment(state.cyd, self._cy_local)
 
                 if last_step:
-                    da_min = self._get_da_min()
                     if not self.config.hydrostatic:
                         if __debug__:
                             log_on_rank_0("Omega")
@@ -798,18 +791,18 @@ class DynamicalCore:
                         if __debug__:
                             log_on_rank_0("Del2Cubed")
                         self._omega_halo_updater.update()
-                        self._hyperdiffusion(state.omga, Float(0.18) * da_min)
+                        self._hyperdiffusion(state.omga, Float(0.18) * self._da_min)
 
         if __debug__:
             log_on_rank_0("Neg Adj 3")
         self._adjust_tracer_mixing_ratio(
-            state.tracers["vapor"],
-            state.tracers["liquid"],
-            state.tracers["rain"],
-            state.tracers["snow"],
-            state.tracers["ice"],
-            state.tracers["graupel"],
-            state.tracers["cloud"],
+            state.tracers.vapor,
+            state.tracers.liquid,
+            state.tracers.rain,
+            state.tracers.snow,
+            state.tracers.ice,
+            state.tracers.graupel,
+            state.tracers.cloud,
             state.pt,
             state.delp,
         )
