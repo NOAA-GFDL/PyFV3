@@ -40,7 +40,7 @@ develop = [
 extras = [
     "pyfv3[test]",
     "pyfv3[ndsl]",
-    "pyfv3[dev]",
+    "pyfv3[develop]",
 ]
 
 [project.urls]
