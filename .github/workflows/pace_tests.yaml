@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # NOTE: Temporarily removing tests due to dependent changes in
 #       Pace#129, PyFV3#64 PRs; tests should be reverted back after
 #       these PRs are merged.
@@ -15,6 +16,9 @@
 #      component_name: pyFV3
 =======
 # TODO: Re-activate after PR
+=======
+# TODO: Re-activate after PR 60
+>>>>>>> 08b059f (Updating README)
 # name: "pace main tests"
 # on:
 #   pull_request:
