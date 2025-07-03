@@ -2,7 +2,7 @@
 
 # pyFV3
 
-pyFV3 is a Python version, using GridTools GT4Py with CPU and GPU backend options, of the FV3 dynamical core (fv3gfs-fortran repo).
+pyFV3 is a Python version, using GridTools GT4Py with CPU and GPU backend options, of the FV3 dynamical core.
 The code here includes regression test data of computation units coming from serialized output from the Fortran model generated using the `GridTools/serialbox` framework.
 
 **WARNING** This repo is under active development and relies on code and data that is not publicly available at this point.
