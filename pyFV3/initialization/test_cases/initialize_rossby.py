@@ -2,7 +2,17 @@
 
 Corresponds to Fortran shallow-water test #6 found in tools/test_cases.F90 of
 https://github.com/NOAA-GFDL/GFDL_atmos_cubed_sphere.git
+
 """
+
+# mypy: ignore-errors
+#
+# Until we can investigate more, we are ignoring the mypy errors:
+#     "Unsupported target for indexed assignment ("Quantity")  [index]"
+# from lines like:
+#     numpy_state.pe[:] = 0.0
+# This error is triggered when running mypy from projects that use
+# PyFV3 as a submodule, like Pace, but not from PyFV3 directly.
 
 import numpy as np
 
