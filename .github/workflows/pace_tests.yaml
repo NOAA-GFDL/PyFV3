@@ -1,3 +1,7 @@
+# NOTE: Temporarily removing tests due to dependent changes in
+#       Pace#129, PyFV3#64 PRs; tests should be reverted back after
+#       these PRs are merged.
+#
 #name: "pace main tests"
 #on:
 #  pull_request:
