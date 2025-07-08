@@ -6,7 +6,7 @@ from typing import List
 import pytest
 import yaml
 
-from pyFV3 import DynamicalCoreConfig
+from pyfv3 import DynamicalCoreConfig
 
 
 TESTED_CONFIGS: List[str] = [

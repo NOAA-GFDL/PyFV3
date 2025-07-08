@@ -29,10 +29,10 @@ RUN which python
 RUN pip --version
 RUN which pip
 
-COPY ./ /pyFV3/
+COPY . /pyfv3
 
 # Install pyFV3 and the full dependencies
-RUN pip install -e pyFV3[develop]
+RUN cd /pyfv3 && pip install -e .[develop]
 
 RUN pip install \
     matplotlib \

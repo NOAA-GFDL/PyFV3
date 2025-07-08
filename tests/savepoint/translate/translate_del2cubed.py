@@ -1,8 +1,8 @@
 from typing import Any, Dict
 
 from ndsl import Namelist, StencilFactory
-from pyFV3.stencils import HyperdiffusionDamping
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.stencils import HyperdiffusionDamping
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateDel2Cubed(TranslateDycoreFortranData2Py):
