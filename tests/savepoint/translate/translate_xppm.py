@@ -1,8 +1,8 @@
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Namelist, StencilFactory
 from ndsl.stencils.testing import TranslateGrid
-from pyFV3.stencils import XPiecewiseParabolic
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.stencils import XPiecewiseParabolic
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateXPPM(TranslateDycoreFortranData2Py):

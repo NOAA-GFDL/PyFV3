@@ -2,8 +2,8 @@ import ndsl.dsl.gt4py_utils as utils
 from ndsl import Namelist, StencilFactory
 from ndsl.constants import Z_DIM
 from ndsl.dsl.typing import Float
-from pyFV3.stencils import FiniteVolumeTransport
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.stencils import FiniteVolumeTransport
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateFvTp2d(TranslateDycoreFortranData2Py):

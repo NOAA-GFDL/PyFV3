@@ -1,6 +1,6 @@
 from ndsl import Namelist, StencilFactory
-from pyFV3.stencils import PK3Halo
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.stencils import PK3Halo
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslatePK3_Halo(TranslateDycoreFortranData2Py):

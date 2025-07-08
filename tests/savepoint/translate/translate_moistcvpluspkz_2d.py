@@ -1,8 +1,8 @@
 from ndsl import Namelist, StencilFactory
 from ndsl.dsl.typing import FloatField
 from ndsl.stencils.testing import pad_field_in_j
-from pyFV3.stencils import moist_cv
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.stencils import moist_cv
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class MoistPKZ:

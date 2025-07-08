@@ -5,9 +5,9 @@ import pytest
 
 import ndsl.constants as constants
 import ndsl.dsl.gt4py_utils as utils
-import pyFV3.initialization.analytic_init as analytic_init
-import pyFV3.initialization.init_utils as init_utils
-import pyFV3.initialization.test_cases.initialize_baroclinic as baroclinic_init
+import pyfv3.initialization.analytic_init as analytic_init
+import pyfv3.initialization.init_utils as init_utils
+import pyfv3.initialization.test_cases.initialize_baroclinic as baroclinic_init
 from ndsl import Namelist, Quantity, QuantityFactory, StencilFactory, SubtileGridSizer
 from ndsl.constants import (
     N_HALO_DEFAULT,
@@ -21,7 +21,7 @@ from ndsl.constants import (
 from ndsl.grid import GridData, MetricTerms
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
 from ndsl.stencils.testing.grid import TRACER_DIM  # type: ignore
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateInitCase(ParallelTranslateBaseSlicing):
