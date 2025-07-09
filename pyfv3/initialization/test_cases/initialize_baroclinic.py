@@ -1,10 +1,9 @@
-import math
-
 import numpy as np
 
 import ndsl.constants as constants
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import CubedSphereCommunicator, QuantityFactory
+from ndsl.dsl.typing import Float
 from ndsl.grid import GridData
 from ndsl.grid.gnomonic import great_circle_distance_lon_lat, lon_lat_midpoint
 from pyfv3.dycore_state import DycoreState
@@ -13,22 +12,27 @@ from pyfv3.initialization import init_utils
 
 # maximum windspeed amplitude - close to windspeed of zonal-mean time-mean
 # jet stream in troposphere
-U0 = 35.0  # From Table VI of DCMIP2016
+U0 = Float(35.0)  # From Table VI of DCMIP2016
 # [lon, lat] of zonal wind perturbation centerpoint at 20E, 40N
-PCEN = [math.pi / 9.0, 2.0 * math.pi / 9.0]  # From Table VI of DCMIP2016
-U1 = 1.0
-SURFACE_PRESSURE = 1.0e5  # units of (Pa), from Table VI of DCMIP2016
-# NOTE RADIUS = 6.3712e6 in FV3 vs Jabowski paper 6.371229e6
-R = constants.RADIUS / 10.0  # Perturbation radiusfor test case 13
+PCEN = [
+    constants.PI / Float(9.0),
+    Float(2.0) * constants.PI / Float(9.0),
+]  # From Table VI of DCMIP2016
+SURFACE_PRESSURE = Float(1.0e5)  # units of (Pa), from Table VI of DCMIP2016
 NHALO = constants.N_HALO_DEFAULT
 
 
-def apply_perturbation(u_component, up, lon, lat):
+def apply_perturbation(u_component, up, lon, lat, is_steady: bool = False):
     """
     Apply a Gaussian perturbation to intiate a baroclinic wave in JRMS2006
     up is the maximum amplitude of the perturbation
     modifies u_component to include the perturbation of radius R
     """
+    if is_steady:
+        R = Float(1.0)  # Steady State radius for test case 12
+    else:
+        # NOTE RADIUS = 6.3712e6 in FV3 vs Jabowski paper 6.371229e6
+        R = constants.RADIUS / Float(10.0)  # Perturbation radius for test case 13
     r = np.zeros((u_component.shape[0], u_component.shape[1], 1))
     # Equation (11), distance from perturbation at 20E, 40N in JRMS2006
     r = great_circle_distance_lon_lat(PCEN[0], lon, PCEN[1], lat, constants.RADIUS, np)[
@@ -43,9 +47,21 @@ def apply_perturbation(u_component, up, lon, lat):
     )
 
 
-def baroclinic_perturbed_zonal_wind(eta_v, lon, lat):
+def baroclinic_perturbed_zonal_wind(
+    eta_v,
+    lon,
+    lat,
+    is_steady: bool = False,
+):
     u = zonal_wind(eta_v, lat)
-    apply_perturbation(u, U1, lon, lat)
+
+    if is_steady:
+        u1 = Float(0.0)  # Steady State for test case 12
+        # TODO: Check if Fortran side is actually 0 (not initialized)
+    else:
+        u1 = Float(1.0)  # Perturbation case for test case 13
+
+    apply_perturbation(u, u1, lon, lat, is_steady=is_steady)
     return u
 
 
@@ -59,12 +75,16 @@ def wind_component_calc(
     islice_grid,
     jslice,
     jslice_grid,
+    is_steady: bool = False,
 ):
     slice_grid = (islice_grid, jslice_grid)
     slice_3d = (islice, jslice, slice(None))
     u_component = np.zeros(shape)
     u_component[slice_3d] = baroclinic_perturbed_zonal_wind(
-        eta_v, lon[slice_grid], lat[slice_grid]
+        eta_v,
+        lon[slice_grid],
+        lat[slice_grid],
+        is_steady=is_steady,
     )
     u_component[slice_3d] = init_utils.local_coordinate_transformation(
         u_component[slice_3d],
@@ -95,6 +115,7 @@ def initialize_zonal_wind(
     jslice,
     jslice_grid,
     axis,
+    is_steady: bool = False,
 ):
     shape = u.shape
     uu1 = wind_component_calc(
@@ -107,6 +128,7 @@ def initialize_zonal_wind(
         islice,
         jslice,
         jslice_grid,
+        is_steady=is_steady,
     )
     uu3 = wind_component_calc(
         shape,
@@ -118,6 +140,7 @@ def initialize_zonal_wind(
         islice_grid,
         jslice,
         jslice,
+        is_steady=is_steady,
     )
     upper = (slice(None),) * axis + (slice(0, -1),)
     lower = (slice(None),) * axis + (slice(1, None),)
@@ -132,6 +155,7 @@ def initialize_zonal_wind(
         islice,
         jslice,
         jslice,
+        is_steady=is_steady,
     )
     u[islice, jslice, :] = 0.25 * (uu1 + 2.0 * uu2 + uu3)[islice, jslice, :]
 
@@ -161,6 +185,7 @@ def baroclinic_initialization(
     hydrostatic,
     nx,
     ny,
+    is_steady: bool = False,
 ):
     """
     Calls methods that compute initial state via the Jablonowski perturbation test case
@@ -191,6 +216,7 @@ def baroclinic_initialization(
         jslice=slice(0, ny),
         jslice_grid=slice(1, ny + 1),
         axis=1,
+        is_steady=is_steady,
     )
 
     initialize_zonal_wind(
@@ -206,6 +232,7 @@ def baroclinic_initialization(
         jslice=slice(0, ny + 1),
         jslice_grid=slice(0, ny + 1),
         axis=0,
+        is_steady=is_steady,
     )
 
     slice_3d = (slice(0, nx), slice(0, ny), slice(None))
@@ -251,6 +278,7 @@ def init_baroclinic_state(
     hydrostatic: bool,
     moist_phys: bool,
     comm: CubedSphereCommunicator,
+    is_steady: bool = False,
 ) -> DycoreState:
     """
     Create a DycoreState object with quantities initialized to the Jablonowski &
@@ -322,6 +350,7 @@ def init_baroclinic_state(
         hydrostatic=hydrostatic,
         nx=nx,
         ny=ny,
+        is_steady=is_steady,
     )
 
     init_utils.p_var(
