@@ -1,18 +1,10 @@
-""" Test case initialization for Rossby-Haurwitz wave 4
+"""Test case initialization for Rossby-Haurwitz wave 4
 
 Corresponds to Fortran shallow-water test #6 found in tools/test_cases.F90 of
 https://github.com/NOAA-GFDL/GFDL_atmos_cubed_sphere.git
-
 """
 
-# mypy: ignore-errors
-#
-# Until we can investigate more, we are ignoring the mypy errors:
-#     "Unsupported target for indexed assignment ("Quantity")  [index]"
-# from lines like:
-#     numpy_state.pe[:] = 0.0
-# This error is triggered when running mypy from projects that use
-# PyFV3 as a submodule, like Pace, but not from PyFV3 directly.
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -30,11 +22,11 @@ R = Float(4.0)  # Wave Number (likely)
 GH0 = Float(8.0e3) * constants.GRAV
 
 
-def _preinit_for_all_sw(numpy_state: DycoreState, shape):
+def _preinit_for_all_sw(numpy_state: SimpleNamespace, shape):
     """Pre-initialization for all shallow water tests
 
     Args:
-        numpy_state: DycoreState modified to update pe, pt, delp
+        numpy_state: SimpleNamespace modified to update pe, pt, delp
         shape: tuple
     """
     numpy_state.pe[:] = 0.0
@@ -118,11 +110,11 @@ def _calc_rossby_delp(grid_data: GridData):
     )
 
 
-def _init_for_rossby(numpy_state: DycoreState, grid_data: GridData, shape):
+def _init_for_rossby(numpy_state: SimpleNamespace, grid_data: GridData, shape):
     """Initialization specific to Rossby-Haurwitz wave test
 
     Args
-        numpy_state: DycoreState, modified to update the phis, delp, u, v
+        numpy_state: SimpleNamespace, modified to update the phis, delp, u, v
         grid_Data: GridData
     """
     numpy_state.phis[:] = 0.0
@@ -164,11 +156,11 @@ def _init_for_rossby(numpy_state: DycoreState, grid_data: GridData, shape):
     # NOTE: test_cases.F90 has dtoa and atoc calls, but not implemented here.
 
 
-def _postinit_for_all_sw(numpy_state: DycoreState):
+def _postinit_for_all_sw(numpy_state: SimpleNamespace):
     """Post-initialization from test_cases.F90 that applies to all shallow water tests
 
     Args
-        numpy_state: DycoreState - modified
+        numpy_state: SimpleNamespace - modified
     """
 
     # NOTE: The cl/cl2 tracers from the original test_cases.F90 aren't brought over.
@@ -186,7 +178,7 @@ def init_rossby_state(
     comm: CubedSphereCommunicator,
 ) -> DycoreState:
     """
-    Create a DycoreState TODO: explain more
+    Create an initial DycoreState for Rossby
 
     Args:
         grid_data:              current selected grid data values
