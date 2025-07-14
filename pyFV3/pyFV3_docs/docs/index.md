@@ -1,17 +1,7 @@
-# Welcome to PyFV3 Documentation
+# Welcome to the PyFV3 Documentation
 
 The PyFV3 repository can be found [here](https://github.com/NOAA-GFDL/PyFV3).
 
-## Commands
+## Documentation Status
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
-
-## Project layout
-
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+Currently, we have auto-generated documentation based on the docstrings of the Python file within the stencils directory.

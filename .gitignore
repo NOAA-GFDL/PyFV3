@@ -167,3 +167,6 @@ _dacegraphs
 
 # VSCode
 .devcontainer/
+
+# MkDocs
+./pyFV3/pyFV3_docs/docs/stencils/*.py

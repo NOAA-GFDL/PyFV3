@@ -1,6 +1,6 @@
 site_name: PyFV3 Documentation
 theme:
-  name: readthedocs
+  name: material
 
 plugins:
   - search
