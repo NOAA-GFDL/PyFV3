@@ -169,5 +169,4 @@ _dacegraphs
 .devcontainer/
 
 # MkDocs
-./pyFV3/pyFV3_docs/docs/stencils/*.py
-.github/workflows/gh-pages.yml
+pyFV3/pyFV3_docs/docs/stencils/get_and_create_md.py
