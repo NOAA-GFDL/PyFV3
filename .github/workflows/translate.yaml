@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
-          repository:  noaa-gfdl/pyFV3
+          repository: noaa-gfdl/pyFV3
           path: pyFV3
 
       - name: Checkout hash that triggered CI
@@ -43,14 +43,14 @@ jobs:
 
       - name: External trigger install NDSL packages
         if: ${{inputs.component_trigger}}
-        run:  |
+        run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
           cd NDSL && pip3 install .[test] && cd ../
           pip3 install .[test]
 
       - name: Install pyFV3 packages
         if: ${{ ! inputs.component_trigger }}
-        run : |
+        run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
           pip install .[ndsl,test]
 
@@ -82,13 +82,13 @@ jobs:
 
       - name: Numpy D_SW
         run: |
-         cd ${GITHUB_WORKSPACE}/pyFV3
-         coverage run --rcfile=setup.cfg -m pytest \
-              -v -s --data_path=${{ env.DATA_PATH }} \
-              --backend=numpy \
-              --which_modules=D_SW \
-              --threshold_overrides_file=./tests/savepoint/translate/overrides/standard.yaml \
-              ./tests/savepoint
+          cd ${GITHUB_WORKSPACE}/pyFV3
+          coverage run --rcfile=setup.cfg -m pytest \
+               -v -s --data_path=${{ env.DATA_PATH }} \
+               --backend=numpy \
+               --which_modules=D_SW \
+               --threshold_overrides_file=./tests/savepoint/translate/overrides/standard.yaml \
+               ./tests/savepoint
 
       - name: Numpy Remapping
         run: |

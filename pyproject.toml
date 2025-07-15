@@ -1,57 +1,98 @@
 [build-system]
-requires = ["setuptools >= 64"]
 build-backend = "setuptools.build_meta"
+requires = ["setuptools >= 77.0.3"]
 
 [project]
-name = "pyfv3"
-version = "0.2.0"
-dependencies = [
-    "f90nml>=1.1.0",
-    "numpy==1.26.4",
-    "xarray",
-]
-requires-python = ">=3.11,<3.12"
 authors = [{name = "NOAA - Geophysical Fluid Dynamics Laboratory", email = "oliver.elbert@noaa.gov"}]
-description = "PyFV3 is a NDSL-based FV3 dynamical core for atmospheric models."
-readme = "README.md"
-license = {file = "LICENSE.md"}
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
-    "Natural Language :: English",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11"
 ]
+dependencies = [
+  "f90nml>=1.1.0",
+  "numpy==1.26.4",
+  "xarray"
+]
+description = "PyFV3 is a NDSL-based FV3 dynamical core for atmospheric models."
+license = "Apache-2.0"
+license-files = ["LICENSE.md"]
+name = "pyfv3"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+version = "0.2.0"
 
 [project.optional-dependencies]
-test = [
-    "coverage",
-    "pytest",
-    "pytest-subtests",
-    "serialbox",
-]
-ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@develop"]
-develop = [
-    "pyfv3[test]",
-    "pyfv3[ndsl]",
-    "pre-commit",
+dev = [
+  "pyfv3[test]",
+  "pyfv3[ndsl]",
+  "pre-commit"
 ]
 extras = [
-    "pyfv3[test]",
-    "pyfv3[ndsl]",
-    "pyfv3[develop]",
+  "pyfv3[test]",
+  "pyfv3[ndsl]",
+  "pyfv3[develop]",
+  "flake8-pyproject"
+]
+ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@develop"]
+test = [
+  "coverage",
+  "pytest",
+  "pytest-subtests",
+  "serialbox"
 ]
 
 [project.urls]
 Repository = "https://github.com/NOAA-GFDL/pyFV3"
 
-[tool.setuptools.packages.find]
-include = ["pyfv3", "pyfv3.*"]
+[tool.aliases]
+
+[tool.black]
+line-length = 88
+target_version = ['py311']
+
+[tool.bumpversion]
+commit = "True"
+current_version = "0.2.0"
+
+[tool.coverage.run]
+branch = true
+omit = ["tests/*", "*gt_cache*", ".dacecache*", "external/*", "__init__.py"]
+parallel = true
+source_pkgs = ["pyfv3"]
+
+[tool.disutils.bdist_wheel]
+universal = 1
+
+[tool.flake8]
+exclude = ["docs"]
+extend-ignore = ["W503", "E302", "E203", "F841"]
+max-line-length = 88
+
+[tool.isort]
+default_section = "THIRDPARTY"
+force_grid_wrap = 0
+include_trailing_comma = true
+known_first_party = "pyfv3,ndsl,pyshield"
+known_third_party = "f90nml,pytest,xarray,numpy,mpi4py,gt4py"
+line_length = 88
+lines_after_imports = 2
+multi_line_output = 3
+sections = "FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
+use_parentheses = true
+
+[tool.mypy]
+explicit_package_bases = true
+follow_imports = "normal"
+ignore_missing_imports = true
+namespace_packages = true
+strict_optional = false
+warn_unreachable = true
 
 [tool.setuptools]
 include-package-data = true
 
-[tool.black]
-line-length = 88
-target_version = ['py38']
+[tool.setuptools.packages.find]
+include = ["pyfv3", "pyfv3.*"]
