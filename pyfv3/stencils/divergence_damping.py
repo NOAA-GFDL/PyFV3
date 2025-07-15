@@ -246,7 +246,7 @@ def smagorinsky_diffusion_approx(delpc: FloatField, vort: FloatField, absdt: Flo
         absdt (in): abs(dt)
     """
     with computation(PARALLEL), interval(...):
-        vort = absdt * (delpc ** 2.0 + vort ** 2.0) ** 0.5
+        vort = absdt * (delpc**2.0 + vort**2.0) ** 0.5
 
 
 def smag_corner(
@@ -290,7 +290,7 @@ def smag_corner(
         wk = rarea * (vt2 - vt2[0, 1, 0] + ut2 - ut2[1, 0, 0])
 
         shear = doubly_periodic_a2b_ord4(wk)
-        smag_c = dt * sqrt(shear ** 2 + smag_c_t ** 2)
+        smag_c = dt * sqrt(shear**2 + smag_c_t**2)
 
 
 class DivergenceDamping:
