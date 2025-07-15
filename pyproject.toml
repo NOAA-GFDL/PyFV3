@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 64"]
+requires = ["setuptools >= 77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -14,11 +14,11 @@ requires-python = ">=3.11,<3.12"
 authors = [{name = "NOAA - Geophysical Fluid Dynamics Laboratory", email = "oliver.elbert@noaa.gov"}]
 description = "PyFV3 is a NDSL-based FV3 dynamical core for atmospheric models."
 readme = "README.md"
-license = {file = "LICENSE.md"}
+license = "Apache-2.0"
+license-files = ["LICENSE.md"]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
@@ -54,4 +54,4 @@ include-package-data = true
 
 [tool.black]
 line-length = 88
-target_version = ['py38']
+target_version = ['py311']
