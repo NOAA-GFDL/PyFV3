@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - develop
+      - feature/documentation
 
 # security: restrict permissions for CI jobs.
 permissions:
