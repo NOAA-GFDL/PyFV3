@@ -33,7 +33,7 @@ dev = [
 extras = [
   "pyfv3[test]",
   "pyfv3[ndsl]",
-  "pyfv3[develop]",
+  "pyfv3[dev]",
   "flake8-pyproject"
 ]
 ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@develop"]
