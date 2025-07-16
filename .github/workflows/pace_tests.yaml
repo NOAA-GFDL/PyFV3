@@ -1,24 +1,8 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-# NOTE: Temporarily removing tests due to dependent changes in
+# TODO: Re-activate after PR 60
+# TODO: Temporarily removing tests due to dependent changes in
 #       Pace#129, PyFV3#64 PRs; tests should be reverted back after
 #       these PRs are merged.
-#
-#name: "pace main tests"
-#on:
-#  pull_request:
-#
-#jobs:
-#  pace_main_tests:
-#    uses: NOAA-GFDL/pace/.github/workflows/main_unit_tests.yaml@develop
-#    with:
-#      component_trigger: true
-#      component_name: pyFV3
-=======
-# TODO: Re-activate after PR
-=======
-# TODO: Re-activate after PR 60
->>>>>>> 08b059f (Updating README)
+
 # name: "pace main tests"
 # on:
 #   pull_request:
@@ -29,4 +13,3 @@
 #     with:
 #       component_trigger: true
 #       component_name: pyFV3
->>>>>>> e89b32b (Amending source package file directory name to match PEP 8 style)
