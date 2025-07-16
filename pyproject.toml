@@ -4,22 +4,21 @@ requires = ["setuptools >= 77.0.3"]
 
 [project]
 authors = [{name = "NOAA - Geophysical Fluid Dynamics Laboratory", email = "oliver.elbert@noaa.gov"}]
-description = "PyFV3 is a NDSL-based FV3 dynamical core for atmospheric models."
-readme = "README.md"
-license = "Apache-2.0"
-license-files = ["LICENSE.md"]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
-    "Intended Audience :: Developers",
-    "Natural Language :: English",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11"
 ]
 dependencies = [
   "f90nml>=1.1.0",
   "numpy==1.26.4",
   "xarray"
 ]
+description = "PyFV3 is a NDSL-based FV3 dynamical core for atmospheric models."
+license = "Apache-2.0"
+license-files = ["LICENSE.md"]
 name = "pyfv3"
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
@@ -29,13 +28,13 @@ version = "0.2.0"
 dev = [
   "pyfv3[test]",
   "pyfv3[ndsl]",
-  "pre-commit"
+  "pre-commit",
+  "flake8-pyproject"
 ]
 extras = [
   "pyfv3[test]",
   "pyfv3[ndsl]",
-  "pyfv3[dev]",
-  "flake8-pyproject"
+  "pyfv3[dev]"
 ]
 ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@develop"]
 test = [
@@ -69,7 +68,7 @@ universal = 1
 
 [tool.flake8]
 exclude = ["docs"]
-extend-ignore = ["W503", "E302", "E203", "F841"]
+extend-ignore = ["W503", "E302", "E203", "F841", "F401"]
 max-line-length = 88
 
 [tool.isort]
