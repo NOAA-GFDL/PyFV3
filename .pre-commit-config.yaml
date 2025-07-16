@@ -17,24 +17,24 @@ repos:
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.17.0
     hooks:
-      - id: mypy
-        name: mypy-fv3core
-        args: ["--config-file", "pyproject.toml"]
-        additional_dependencies: [types-PyYAML]
-        files: pyFV3
-        exclude: |
-          (?x)^(
-          pyFV3/stencils/fv_subgridz.py |
-          pyFV3/tests/conftest.py
-          )$
-  - repo: https://github.com/pre-commit/pre-commit-hooks
+    - id: mypy
+      name: mypy-fv3core
+      args: [--config-file, setup.cfg]
+      additional_dependencies: [types-PyYAML]
+      files: pyFV3
+      exclude: |
+        (?x)^(
+        pyFV3/stencils/fv_subgridz.py |
+        pyFV3/tests/conftest.py
+        )$
+-   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
-      - id: check-toml
-      - id: check-yaml
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
-  - repo: https://github.com/pycqa/flake8
+    - id: check-toml
+    - id: check-yaml
+    - id: end-of-file-fixer
+    - id: trailing-whitespace
+-   repo: https://github.com/pycqa/flake8
     rev: 7.3.0
     hooks:
       - id: flake8

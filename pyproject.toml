@@ -4,21 +4,22 @@ requires = ["setuptools >= 77.0.3"]
 
 [project]
 authors = [{name = "NOAA - Geophysical Fluid Dynamics Laboratory", email = "oliver.elbert@noaa.gov"}]
+description = "PyFV3 is a NDSL-based FV3 dynamical core for atmospheric models."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE.md"]
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
-  "Intended Audience :: Developers",
-  "Natural Language :: English",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.11"
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
   "f90nml>=1.1.0",
   "numpy==1.26.4",
   "xarray"
 ]
-description = "PyFV3 is a NDSL-based FV3 dynamical core for atmospheric models."
-license = "Apache-2.0"
-license-files = ["LICENSE.md"]
 name = "pyfv3"
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
