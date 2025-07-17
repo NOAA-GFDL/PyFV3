@@ -53,10 +53,6 @@ Repository = "https://github.com/NOAA-GFDL/pyFV3"
 line-length = 88
 target_version = ['py311']
 
-[tool.bumpversion]
-commit = "True"
-current_version = "0.2.0"
-
 [tool.coverage.run]
 branch = true
 omit = ["tests/*", "*gt_cache*", ".dacecache*", "external/*", "__init__.py"]
