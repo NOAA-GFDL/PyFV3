@@ -19,7 +19,7 @@ repos:
     hooks:
       - id: mypy
         name: mypy-fv3core
-        args: [--config-file, setup.cfg]
+        args: [--config-file, pyproject.toml]
         additional_dependencies: [types-PyYAML]
         files: pyFV3
         exclude: |
