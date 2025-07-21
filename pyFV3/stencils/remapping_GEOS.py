@@ -567,7 +567,7 @@ class LagrangianToEulerian_GEOS:
 
                 tesum: Float = self._global_sum(self._te_2d)
                 zsum: Float = self._global_sum(self._zsum1)
-                dtmp = tesum / (CV_AIR * zsum)
+                dtmp: Float = tesum / (CV_AIR * zsum)
 
             elif consv_te < -CONSV_MIN:
                 raise NotImplementedError(
@@ -618,7 +618,7 @@ class LagrangianToEulerian_GEOS:
                 qgraupel=tracers.graupel,
                 pt=pt,
                 pkz=pkz,
-                dtmp=Float(dtmp),
+                dtmp=dtmp,
                 r_vir=zvir,
             )
             self._fill_cond(
