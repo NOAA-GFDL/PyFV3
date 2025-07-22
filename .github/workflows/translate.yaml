@@ -113,7 +113,7 @@ jobs:
           export PACE_FLOAT_PRECISION=64
           export OMP_NUM_THREADS=1
           export PACE_LOGLEVEL=Debug
-          mpiexec -mca orte_abort_on_non_zero_status 1 -np 6 coverage run --rcfile=pyproject.toml -m mpi4py -m pytest \
+          mpiexec -np 6 coverage run --rcfile=pyproject.toml -m mpi4py -m pytest \
             -v -s --data_path=${{ env.DATA_PATH }} \
             --backend=dace:cpu \
             -m parallel \
