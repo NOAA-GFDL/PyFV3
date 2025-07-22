@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - develop
-      - fix/mkdocs # to be removed after testing
 
 # Security: Restrict permissions of this workflow to whats needed.
 permissions:
@@ -26,6 +25,8 @@ jobs:
 
       - name: Setup python
         uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
 
       - name: Install dependencies
         run: pip install mkdocs-material mkdocstrings[python]
