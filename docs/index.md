@@ -1,6 +1,11 @@
 # Welcome to the PyFV3 Documentation
 
-:warning: This documentation is a work in progress - questions should go to oliver.elbert@nasa.gov or florian.g.deconinck@nasa.gov
+!!! warning "Work in progress"
+
+    This documentation is a work in progress. If you have questions, please direct them to
+
+    - oliver.elbert@noaa.gov
+    - or florian.g.deconinck@nasa.gov
 
 The PyFV3 repository can be found [here](https://github.com/NOAA-GFDL/PyFV3).
 

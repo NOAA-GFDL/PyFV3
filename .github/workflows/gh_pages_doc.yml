@@ -1,38 +1,35 @@
-name: website
+name: "PyFV3 documentation"
 
-# build the documentation whenever there are new commits on main
+# Documentation automatically updates upon merge to develop
 on:
   push:
     branches:
       - develop
-      - feature/documentation
-    workflow_dispatch:
 
-# security: restrict permissions for CI jobs.
+# Security: Restrict permissions of this workflow to whats needed.
 permissions:
   contents: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./pyFV3/pyFV3_docs
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Configure Git Credentials
         run: |
           git config user.name github-actions[bot]
           git config user.email github-actions[bot]@users.noreply.github.com
-      - uses: actions/setup-python@v5
+
+      - name: Setup python
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.x
-      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
-      - uses: actions/cache@v4
-        with:
-          key: mkdocs-material-${{ env.cache_id }}
-          path: .cache
-          restore-keys: |
-            mkdocs-material-
-      - run: pip install mkdocs-material mkdocs-drawio
-      - run: mkdocs gh-deploy --force
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: pip install mkdocs-material mkdocstrings[python]
+
+      - name: Deploy to GitHub Pages
+        run: mkdocs gh-deploy --force
