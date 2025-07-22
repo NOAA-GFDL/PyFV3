@@ -1,13 +1,18 @@
 site_name: PyFV3 Documentation
+site_url: https://noaa-gfdl.github.io/PyFV3/
 theme:
   name: material
+  features:
+    - search.suggest
+    - search.highlight
+    - search.share
 
 plugins:
   - search
   - mkdocstrings:
       handlers:
         python:
-          paths: [./pyFV3]  # Adjust this path to where your Python modules are
+          paths: [./pyfv3]  # Adjust this path to where your Python modules are
           options:
             show_source: false
             show_root_heading: false
@@ -59,3 +64,24 @@ nav:
       - "functional_validation": utils/functional_validation.md
   - Wrappers:
       - "geos_wrapper": wrappers/geos_wrapper.md
+
+markdown_extensions:
+  # simple glossary file
+  - abbr
+  # support for colored notes / warnings / tips / examples
+  - admonition
+  # emoji support
+  - attr_list
+  # support for footnotes
+  - footnotes
+  # supercharges admonitions by making them collapsible
+  - pymdownx.details
+  # support for syntax highlighting
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  # support for task list of the form `- [ ] task name`
+  - pymdownx.tasklist:
+      custom_checkbox: false
