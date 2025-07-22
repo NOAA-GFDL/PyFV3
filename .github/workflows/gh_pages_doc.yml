@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - develop
+      - fix/mkdocs # to be removed after testing
 
 # Security: Restrict permissions of this workflow to whats needed.
 permissions:
