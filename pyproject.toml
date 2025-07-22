@@ -77,7 +77,7 @@ sections = "FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
 use_parentheses = true
 
 [tool.mypy]
-exclude = ["pyFV3/stencils/fv_subgridz.py", "pyFV3/tests/conftest.py"]
+exclude = ["pyfv3/stencils/fv_subgridz.py", "tests/conftest.py"]
 explicit_package_bases = true
 follow_imports = "normal"
 ignore_missing_imports = true
