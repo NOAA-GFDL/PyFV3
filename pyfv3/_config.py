@@ -7,15 +7,12 @@ import f90nml
 import yaml
 
 from ndsl import BaseConfig
-from ndsl.dsl.typing import Float
 from ndsl.namelist import Namelist
 
 
-DEFAULT_INT = (
-    0  # TODO: Should this be synced with the the defaults in ndsl/namelists.py ?
-)
+DEFAULT_INT = 0
 DEFAULT_STR = ""
-DEFAULT_FLOAT = Float(0.0)
+DEFAULT_FLOAT = 0.0
 DEFAULT_BOOL = False
 
 
@@ -160,17 +157,17 @@ class AcousticDynamicsConfig:
 class DynamicalCoreConfig(BaseConfig):
     dt_atmos: int = DEFAULT_INT
     n_steps: int = 1
-    a_imp: Float = DEFAULT_FLOAT
-    beta: Float = DEFAULT_FLOAT
-    consv_te: Float = DEFAULT_FLOAT
-    d2_bg: Float = DEFAULT_FLOAT
-    d2_bg_k1: Float = DEFAULT_FLOAT
-    d2_bg_k2: Float = DEFAULT_FLOAT
-    d4_bg: Float = DEFAULT_FLOAT
-    d_con: Float = DEFAULT_FLOAT
-    d_ext: Float = DEFAULT_FLOAT
-    dddmp: Float = DEFAULT_FLOAT
-    delt_max: Float = DEFAULT_FLOAT
+    a_imp: float = DEFAULT_FLOAT
+    beta: float = DEFAULT_FLOAT
+    consv_te: float = DEFAULT_FLOAT
+    d2_bg: float = DEFAULT_FLOAT
+    d2_bg_k1: float = DEFAULT_FLOAT
+    d2_bg_k2: float = DEFAULT_FLOAT
+    d4_bg: float = DEFAULT_FLOAT
+    d_con: float = DEFAULT_FLOAT
+    d_ext: float = DEFAULT_FLOAT
+    dddmp: float = DEFAULT_FLOAT
+    delt_max: float = DEFAULT_FLOAT
     do_sat_adj: bool = DEFAULT_BOOL
     do_vort_damp: bool = DEFAULT_BOOL
     fill: bool = DEFAULT_BOOL
@@ -181,7 +178,7 @@ class DynamicalCoreConfig(BaseConfig):
     hord_vt: int = DEFAULT_INT
     hydrostatic: bool = DEFAULT_BOOL
     k_split: int = DEFAULT_INT
-    ke_bg: Float = DEFAULT_FLOAT
+    ke_bg: float = DEFAULT_FLOAT
     kord_mt: int = DEFAULT_INT
     kord_tm: int = DEFAULT_INT
     kord_tr: int = DEFAULT_INT
@@ -193,15 +190,15 @@ class DynamicalCoreConfig(BaseConfig):
     npz: int = DEFAULT_INT
     ntiles: int = DEFAULT_INT
     nwat: int = DEFAULT_INT
-    p_fac: Float = DEFAULT_FLOAT
-    rf_cutoff: Float = DEFAULT_FLOAT
-    tau: Float = DEFAULT_FLOAT
-    vtdm4: Float = DEFAULT_FLOAT
+    p_fac: float = DEFAULT_FLOAT
+    rf_cutoff: float = DEFAULT_FLOAT
+    tau: float = DEFAULT_FLOAT
+    vtdm4: float = DEFAULT_FLOAT
     z_tracer: bool = DEFAULT_BOOL
     do_qa: bool = DEFAULT_BOOL
     layout: Tuple[int, int] = (1, 1)
     grid_type: int = 0
-    u_max: Float = Float(350.0)  # max windspeed for dp config
+    u_max: float = 350.0  # max windspeed for dp config
     do_f3d: bool = False
     inline_q: bool = False
     do_skeb: bool = False  # save dissipation estimate
@@ -209,44 +206,38 @@ class DynamicalCoreConfig(BaseConfig):
     moist_phys: bool = True
     check_negative: bool = False
     # gfdl_cloud_microphys.F90
-    tau_r2g: Float = Float(900.0)  # rain freezing during fast_sat
-    tau_smlt: Float = Float(900.0)  # snow melting
-    tau_g2r: Float = Float(600.0)  # graupel melting to rain
-    tau_imlt: Float = Float(600.0)  # cloud ice melting
-    tau_i2s: Float = Float(1000.0)  # cloud ice to snow auto - conversion
-    tau_l2r: Float = Float(900.0)  # cloud water to rain auto - conversion
-    tau_g2v: Float = Float(1200.0)  # graupel sublimation
-    tau_v2g: Float = Float(21600.0)  # graupel deposition -- make it a slow process
-    sat_adj0: Float = Float(
-        0.90
-    )  # adjustment factor (0: no 1: full) during fast_sat_adj
-    ql_gen: Float = Float(
-        1.0e-3
-    )  # max new cloud water during remapping step if fast_sat_adj = .t.
-    ql_mlt: Float = Float(
-        2.0e-3
-    )  # max value of cloud water allowed from melted cloud ice
-    qs_mlt: Float = Float(1.0e-6)  # max cloud water due to snow melt
-    ql0_max: Float = Float(2.0e-3)  # max cloud water value (auto converted to rain)
-    t_sub: Float = Float(184.0)  # min temp for sublimation of cloud ice
-    qi_gen: Float = Float(1.82e-6)  # max cloud ice generation during remapping step
-    qi_lim: Float = Float(1.0)  # cloud ice limiter to prevent large ice build up
-    qi0_max: Float = Float(1.0e-4)  # max cloud ice value (by other sources)
+    tau_r2g: float = 900.0  # rain freezing during fast_sat
+    tau_smlt: float = 900.0  # snow melting
+    tau_g2r: float = 600.0  # graupel melting to rain
+    tau_imlt: float = 600.0  # cloud ice melting
+    tau_i2s: float = 1000.0  # cloud ice to snow auto - conversion
+    tau_l2r: float = 900.0  # cloud water to rain auto - conversion
+    tau_g2v: float = 1200.0  # graupel sublimation
+    tau_v2g: float = 21600.0  # graupel deposition -- make it a slow process
+    sat_adj0: float = 0.90  # adjustment factor (0: no 1: full) during fast_sat_adj
+    ql_gen: float = (
+        1.0e-3  # max new cloud water during remapping step if fast_sat_adj = .t.
+    )
+    ql_mlt: float = 2.0e-3  # max value of cloud water allowed from melted cloud ice
+    qs_mlt: float = 1.0e-6  # max cloud water due to snow melt
+    ql0_max: float = 2.0e-3  # max cloud water value (auto converted to rain)
+    t_sub: float = 184.0  # min temp for sublimation of cloud ice
+    qi_gen: float = 1.82e-6  # max cloud ice generation during remapping step
+    qi_lim: float = 1.0  # cloud ice limiter to prevent large ice build up
+    qi0_max: float = 1.0e-4  # max cloud ice value (by other sources)
     rad_snow: bool = True  # consider snow in cloud fraction calculation
     rad_rain: bool = True  # consider rain in cloud fraction calculation
     rad_graupel: bool = True  # consider graupel in cloud fraction calculation
     tintqs: bool = False  # use temperature in the saturation mixing in PDF
-    dw_ocean: Float = Float(0.10)  # base value for ocean
-    dw_land: Float = Float(
-        0.15
-    )  # base value for subgrid deviation / variability over land
+    dw_ocean: float = 0.10  # base value for ocean
+    dw_land: float = 0.15  # base value for subgrid deviation / variability over land
     # cloud scheme 0 - ?
     # 1: old fvgfs gfdl) mp implementation
     # 2: binary cloud scheme (0 / 1)
     icloud_f: int = 0
-    cld_min: Float = Float(0.05)  # !< minimum cloud fraction
-    tau_l2v: Float = Float(300.0)  # cloud water to water vapor (evaporation)
-    tau_v2l: Float = Float(90.0)  # water vapor to cloud water (condensation)
+    cld_min: float = 0.05  # !< minimum cloud fraction
+    tau_l2v: float = 300.0  # cloud water to water vapor (evaporation)
+    tau_v2l: float = 90.0  # water vapor to cloud water (condensation)
     c2l_ord: int = 4
     regional: bool = False
     m_split: int = 0
@@ -274,14 +265,11 @@ class DynamicalCoreConfig(BaseConfig):
         # Single tile cartesian grids
         if self.grid_type > 3:
             self.nf_omega = 0
+        self.validate()
 
     @classmethod
     def from_f90nml(cls, f90_namelist: f90nml.Namelist) -> "DynamicalCoreConfig":
         namelist = Namelist.from_f90nml(f90_namelist)
-        return cls.from_namelist(namelist)
-
-    @classmethod
-    def from_namelist(cls, namelist: Namelist) -> "DynamicalCoreConfig":
         return cls(
             dt_atmos=namelist.dt_atmos,
             a_imp=namelist.a_imp,
@@ -515,3 +503,7 @@ class DynamicalCoreConfig(BaseConfig):
             do_sat_adj=self.do_sat_adj,
             sat_adjust=self.sat_adjust,
         )
+
+    def validate(self):
+        # TODO
+        pass
