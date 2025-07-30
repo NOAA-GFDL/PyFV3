@@ -7,7 +7,7 @@ import f90nml
 import yaml
 
 from ndsl import BaseConfig
-from ndsl.namelist import Namelist
+from ndsl.namelist import Namelist, namelist_to_flatish_dict
 
 
 DEFAULT_INT = 0
@@ -269,7 +269,17 @@ class DynamicalCoreConfig(BaseConfig):
 
     @classmethod
     def from_f90nml(cls, f90_namelist: f90nml.Namelist) -> "DynamicalCoreConfig":
-        namelist = Namelist.from_f90nml(f90_namelist)
+        namelist_dict = namelist_to_flatish_dict(f90_namelist.items())
+        namelist_dict = {
+            key: value
+            for key, value in namelist_dict.items()
+            if key in cls.__dataclass_fields__  # type: ignore
+        }
+        # TODO: make sure this works if not all dataclass fields are present?
+        return cls(**namelist_dict)
+
+    @classmethod
+    def from_namelist(cls, namelist: Namelist) -> "DynamicalCoreConfig":
         return cls(
             dt_atmos=namelist.dt_atmos,
             a_imp=namelist.a_imp,
@@ -505,5 +515,6 @@ class DynamicalCoreConfig(BaseConfig):
         )
 
     def validate(self):
-        # TODO
-        pass
+        # TODO: Decide if we want to keep this. Seems like a good thing. If keep, flesh out more.
+        if self.dt_atmos < 0:
+            raise ValueError("dt_atmos cannot be less than 0.")
