@@ -4,16 +4,8 @@ from math import floor
 from typing import Optional, Tuple
 
 import f90nml
-import yaml
 
-from ndsl import BaseConfig
-from ndsl.namelist import Namelist, namelist_to_flatish_dict
-
-
-DEFAULT_INT = 0
-DEFAULT_STR = ""
-DEFAULT_FLOAT = 0.0
-DEFAULT_BOOL = False
+from ndsl.config import DEFAULT_BOOL, DEFAULT_FLOAT, DEFAULT_INT, Config
 
 
 @dataclasses.dataclass(frozen=True)
@@ -154,7 +146,7 @@ class AcousticDynamicsConfig:
 
 
 @dataclasses.dataclass
-class DynamicalCoreConfig(BaseConfig):
+class DynamicalCoreConfig(Config):
     dt_atmos: int = DEFAULT_INT
     n_steps: int = 1
     a_imp: float = DEFAULT_FLOAT
@@ -269,151 +261,27 @@ class DynamicalCoreConfig(BaseConfig):
 
     @classmethod
     def from_f90nml(cls, f90_namelist: f90nml.Namelist) -> "DynamicalCoreConfig":
-        namelist_dict = namelist_to_flatish_dict(f90_namelist.items())
-        namelist_dict = {
-            key: value
-            for key, value in namelist_dict.items()
-            if key in cls.__dataclass_fields__  # type: ignore
-        }
-        # TODO: make sure this works if not all dataclass fields are present?
-        return cls(**namelist_dict)
-
-    @classmethod
-    def from_namelist(cls, namelist: Namelist) -> "DynamicalCoreConfig":
-        return cls(
-            dt_atmos=namelist.dt_atmos,
-            a_imp=namelist.a_imp,
-            beta=namelist.beta,
-            consv_te=namelist.consv_te,
-            d2_bg=namelist.d2_bg,
-            d2_bg_k1=namelist.d2_bg_k1,
-            d2_bg_k2=namelist.d2_bg_k2,
-            d4_bg=namelist.d4_bg,
-            d_con=namelist.d_con,
-            d_ext=namelist.d_ext,
-            dddmp=namelist.dddmp,
-            delt_max=namelist.delt_max,
-            do_sat_adj=namelist.do_sat_adj,
-            do_vort_damp=namelist.do_vort_damp,
-            fill=namelist.fill,
-            hord_dp=namelist.hord_dp,
-            hord_mt=namelist.hord_mt,
-            hord_tm=namelist.hord_tm,
-            hord_tr=namelist.hord_tr,
-            hord_vt=namelist.hord_vt,
-            hydrostatic=namelist.hydrostatic,
-            k_split=namelist.k_split,
-            ke_bg=namelist.ke_bg,
-            kord_mt=namelist.kord_mt,
-            kord_tm=namelist.kord_tm,
-            kord_tr=namelist.kord_tr,
-            kord_wz=namelist.kord_wz,
-            n_split=namelist.n_split,
-            nord=namelist.nord,
-            npx=namelist.npx,
-            npy=namelist.npy,
-            npz=namelist.npz,
-            ntiles=namelist.ntiles,
-            nwat=namelist.nwat,
-            p_fac=namelist.p_fac,
-            rf_cutoff=namelist.rf_cutoff,
-            tau=namelist.tau,
-            vtdm4=namelist.vtdm4,
-            z_tracer=namelist.z_tracer,
-            do_qa=namelist.do_qa,
-            layout=namelist.layout,
-            grid_type=namelist.grid_type,
-            u_max=namelist.u_max,
-            do_f3d=namelist.do_f3d,
-            inline_q=namelist.inline_q,
-            do_skeb=namelist.do_skeb,
-            check_negative=namelist.check_negative,
-            tau_r2g=namelist.tau_r2g,
-            tau_smlt=namelist.tau_smlt,
-            tau_g2r=namelist.tau_g2r,
-            tau_imlt=namelist.tau_imlt,
-            tau_i2s=namelist.tau_i2s,
-            tau_l2r=namelist.tau_l2r,
-            tau_g2v=namelist.tau_g2v,
-            tau_v2g=namelist.tau_v2g,
-            sat_adj0=namelist.sat_adj0,
-            ql_gen=namelist.ql_gen,
-            ql_mlt=namelist.ql_mlt,
-            qs_mlt=namelist.qs_mlt,
-            ql0_max=namelist.ql0_max,
-            t_sub=namelist.t_sub,
-            qi_gen=namelist.qi_gen,
-            qi_lim=namelist.qi_lim,
-            qi0_max=namelist.qi0_max,
-            rad_snow=namelist.rad_snow,
-            rad_rain=namelist.rad_rain,
-            rad_graupel=namelist.rad_graupel,
-            tintqs=namelist.tintqs,
-            dw_ocean=namelist.dw_ocean,
-            dw_land=namelist.dw_land,
-            icloud_f=namelist.icloud_f,
-            cld_min=namelist.cld_min,
-            tau_l2v=namelist.tau_l2v,
-            tau_v2l=namelist.tau_v2l,
-            c2l_ord=namelist.c2l_ord,
-            regional=namelist.regional,
-            m_split=namelist.m_split,
-            convert_ke=namelist.convert_ke,
-            breed_vortex_inline=namelist.breed_vortex_inline,
-            use_old_omega=namelist.use_old_omega,
-            rf_fast=namelist.rf_fast,
-            adiabatic=namelist.adiabatic,
-            nf_omega=namelist.nf_omega,
-            fv_sg_adj=namelist.fv_sg_adj,
-            n_sponge=namelist.n_sponge,
+        config = super().from_f90nml(f90_namelist)
+        timestep = timedelta(seconds=config.dt_atmos)
+        total_time = timedelta(
+            days=config.days,
+            hours=config.hours,
+            minutes=config.minutes,
+            seconds=config.seconds,
         )
+        config.n_steps = floor(total_time.total_seconds() / timestep.total_seconds())
+        return config
 
     @classmethod
     def from_yaml(cls, yaml_config: str) -> "DynamicalCoreConfig":
-        config = cls()
-        with open(yaml_config, "r") as f:
-            raw_config = yaml.safe_load(f)
-        flat_config: dict = {}
-        timestep = timedelta(seconds=raw_config["dt_atmos"])
-        runtime = {
-            "days": 0.0,
-            "hours": 0.0,
-            "minutes": 0.0,
-            "seconds": 0.0,
-        }
-        for key in runtime.keys():
-            if key in raw_config.keys():
-                runtime[key] = raw_config[key]
-
+        config = super().from_yaml(yaml_config)
+        timestep = timedelta(seconds=config.dt_atmos)
         total_time = timedelta(
-            days=runtime["days"],
-            hours=runtime["hours"],
-            minutes=runtime["minutes"],
-            seconds=runtime["seconds"],
+            days=config.days,
+            hours=config.hours,
+            minutes=config.minutes,
+            seconds=config.seconds,
         )
-        for key, value in raw_config.items():
-            if isinstance(value, dict):
-                for subkey, subvalue in value.items():
-                    if subkey in config.__annotations__.keys():
-                        if subkey in flat_config:
-                            if subvalue != flat_config[subkey]:
-                                raise ValueError(
-                                    "Cannot flatten this config ",
-                                    f"duplicate keys: {subkey}",
-                                )
-                        flat_config[subkey] = subvalue
-            else:
-                if key == "nx_tile":
-                    flat_config["npx"] = value + 1
-                    flat_config["npy"] = value + 1
-                elif key == "nz":
-                    flat_config["npz"] = value
-                else:
-                    if key in config.__annotations__.keys():
-                        flat_config[key] = value
-        for field in dataclasses.fields(config):
-            if field.name in flat_config.keys():
-                setattr(config, field.name, flat_config[field.name])
         config.n_steps = floor(total_time.total_seconds() / timestep.total_seconds())
         return config
 
@@ -513,8 +381,3 @@ class DynamicalCoreConfig(BaseConfig):
             do_sat_adj=self.do_sat_adj,
             sat_adjust=self.sat_adjust,
         )
-
-    def validate(self):
-        # TODO: Decide if we want to keep this. Seems like a good thing. If keep, flesh out more.
-        if self.dt_atmos < 0:
-            raise ValueError("dt_atmos cannot be less than 0.")
