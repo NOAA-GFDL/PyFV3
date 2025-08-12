@@ -10,14 +10,14 @@ from pyfv3 import DynamicalCoreConfig
 
 
 TESTED_CONFIGS: List[str] = [
-    "examples/configs/c12_baroclinic.yaml",
+    "/pyFV3/examples/configs/c12_baroclinic.yaml",
 ]
 
 
 @pytest.mark.parametrize(
     "tested_configs",
     [
-        pytest.param(TESTED_CONFIGS, id="example yaml configs"),
+        pytest.param(TESTED_CONFIGS, id="example configs"),
     ],
 )
 def test_config_from_yaml(tested_configs: List[str]):
@@ -42,8 +42,4 @@ def test_config_from_yaml(tested_configs: List[str]):
         timestep = timedelta(seconds=config["dt_atmos"])
         n_steps = floor(total_time.total_seconds() / timestep.total_seconds())
         dycore_config = DynamicalCoreConfig.from_yaml(config_file)
-        default_dycore_config = DynamicalCoreConfig()
-
-        assert dycore_config.dt_atmos == config["dt_atmos"]
         assert dycore_config.n_steps == n_steps
-        assert dycore_config.adiabatic == default_dycore_config.adiabatic

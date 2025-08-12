@@ -4,8 +4,15 @@ from math import floor
 from typing import Optional, Tuple
 
 import f90nml
+import yaml
 
-from ndsl.config import DEFAULT_BOOL, DEFAULT_FLOAT, DEFAULT_INT, Config
+from ndsl.namelist import namelist_to_flatish_dict
+
+
+DEFAULT_INT = 0
+DEFAULT_STR = ""
+DEFAULT_FLOAT = 0.0
+DEFAULT_BOOL = False
 
 
 @dataclasses.dataclass(frozen=True)
@@ -146,7 +153,7 @@ class AcousticDynamicsConfig:
 
 
 @dataclasses.dataclass
-class DynamicalCoreConfig(Config):
+class DynamicalCoreConfig:
     dt_atmos: int = DEFAULT_INT
     n_steps: int = 1
     a_imp: float = DEFAULT_FLOAT
@@ -257,31 +264,63 @@ class DynamicalCoreConfig(Config):
         # Single tile cartesian grids
         if self.grid_type > 3:
             self.nf_omega = 0
-        self.validate()
 
     @classmethod
     def from_f90nml(cls, f90_namelist: f90nml.Namelist) -> "DynamicalCoreConfig":
-        config = super().from_f90nml(f90_namelist)
-        timestep = timedelta(seconds=config.dt_atmos)
-        total_time = timedelta(
-            days=config.days,
-            hours=config.hours,
-            minutes=config.minutes,
-            seconds=config.seconds,
-        )
-        config.n_steps = floor(total_time.total_seconds() / timestep.total_seconds())
-        return config
+        namelist_dict = namelist_to_flatish_dict(f90_namelist.items())
+        namelist_dict = {
+            key: value
+            for key, value in namelist_dict.items()
+            if key in cls.__dataclass_fields__  # type: ignore
+        }
+        return cls(**namelist_dict)
 
     @classmethod
     def from_yaml(cls, yaml_config: str) -> "DynamicalCoreConfig":
-        config = super().from_yaml(yaml_config)
-        timestep = timedelta(seconds=config.dt_atmos)
+        config = cls()
+        with open(yaml_config, "r") as f:
+            raw_config = yaml.safe_load(f)
+        flat_config: dict = {}
+        timestep = timedelta(seconds=raw_config["dt_atmos"])
+        runtime = {
+            "days": 0.0,
+            "hours": 0.0,
+            "minutes": 0.0,
+            "seconds": 0.0,
+        }
+        for key in runtime.keys():
+            if key in raw_config.keys():
+                runtime[key] = raw_config[key]
+
         total_time = timedelta(
-            days=config.days,
-            hours=config.hours,
-            minutes=config.minutes,
-            seconds=config.seconds,
+            days=runtime["days"],
+            hours=runtime["hours"],
+            minutes=runtime["minutes"],
+            seconds=runtime["seconds"],
         )
+        for key, value in raw_config.items():
+            if isinstance(value, dict):
+                for subkey, subvalue in value.items():
+                    if subkey in config.__annotations__.keys():
+                        if subkey in flat_config:
+                            if subvalue != flat_config[subkey]:
+                                raise ValueError(
+                                    "Cannot flatten this config ",
+                                    f"duplicate keys: {subkey}",
+                                )
+                        flat_config[subkey] = subvalue
+            else:
+                if key == "nx_tile":
+                    flat_config["npx"] = value + 1
+                    flat_config["npy"] = value + 1
+                elif key == "nz":
+                    flat_config["npz"] = value
+                else:
+                    if key in config.__annotations__.keys():
+                        flat_config[key] = value
+        for field in dataclasses.fields(config):
+            if field.name in flat_config.keys():
+                setattr(config, field.name, flat_config[field.name])
         config.n_steps = floor(total_time.total_seconds() / timestep.total_seconds())
         return config
 
