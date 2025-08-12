@@ -1,10 +1,9 @@
-import os
 from datetime import timedelta
 from math import floor
 from typing import List
 
-import pytest
 import f90nml
+import pytest
 
 from pyfv3 import DynamicalCoreConfig
 
@@ -21,8 +20,7 @@ TESTED_CONFIGS: List[str] = [
     ],
 )
 def test_config_from_f90nml(tested_configs: List[str]):
-    """ TODO description
-    """    
+    """TODO description"""
     for config_file in tested_configs:
         config = f90nml.read(config_file)
         runtime = {
@@ -31,7 +29,7 @@ def test_config_from_f90nml(tested_configs: List[str]):
             "minutes": 0.0,
             "seconds": 0.0,
         }
-        
+
         for key in runtime.keys():
             if key in config["main_nml"].keys():
                 runtime[key] = config["main_nml"][key]
