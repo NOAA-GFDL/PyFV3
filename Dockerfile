@@ -32,7 +32,7 @@ RUN which pip
 COPY . /pyfv3
 
 # Install pyFV3 and the full dependencies
-RUN cd /pyfv3 && pip install -e .[develop]
+RUN cd /pyfv3 && pip install -e .[dev]
 
 RUN pip install \
     matplotlib \
