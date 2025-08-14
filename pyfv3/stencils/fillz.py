@@ -4,7 +4,7 @@ from typing import Dict
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval
+from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval, max, min
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntFieldIJ
 
 
@@ -25,11 +25,12 @@ def fix_tracer(
         sum1 (out):
     """
     # TODO: can we make everything except q and dp temporaries?
-    # reset fields
-    with computation(FORWARD), interval(...):
+    # Reset 2D fields
+    with computation(FORWARD), interval(0, 1):
         zfix = 0
         sum0 = 0.0
         sum1 = 0.0
+    # Reset 3D fields
     with computation(PARALLEL), interval(...):
         lower_fix = 0.0
         upper_fix = 0.0
@@ -53,20 +54,12 @@ def fix_tracer(
             zfix += 1
             if q[0, 0, -1] > 0.0:
                 # Borrow from the layer above
-                dq = (
-                    q[0, 0, -1] * dp[0, 0, -1]
-                    if q[0, 0, -1] * dp[0, 0, -1] < -(q * dp)
-                    else -(q * dp)
-                )
+                dq = min(q[0, 0, -1] * dp[0, 0, -1], -(q * dp))
                 q = q + dq / dp
                 upper_fix = dq
             if (q < 0.0) and (q[0, 0, 1] > 0.0):
                 # borrow from the layer below
-                dq = (
-                    q[0, 0, 1] * dp[0, 0, 1]
-                    if q[0, 0, 1] * dp[0, 0, 1] < -(q * dp)
-                    else -(q * dp)
-                )
+                dq = min(q[0, 0, 1] * dp[0, 0, 1], -(q * dp))
                 q = q + dq / dp
                 lower_fix = dq
     with computation(PARALLEL), interval(0, -1):
@@ -74,7 +67,7 @@ def fix_tracer(
             # If a lower layer borrowed from this one, account for that here
             q = q - upper_fix[0, 0, 1] / dp
         dm = q * dp
-        dm_pos = dm if dm > 0.0 else 0.0
+        dm_pos = max(dm, 0.0)
     # fix_bottom:
     with computation(FORWARD), interval(-1, None):
         # the 2nd-to-last layer borrowed from this one, account for that here
@@ -82,19 +75,19 @@ def fix_tracer(
             q = q - (lower_fix[0, 0, -1] / dp)
         qup = q[0, 0, -1] * dp[0, 0, -1]
         qly = -q * dp
-        dup = qup if qup < qly else qly
+        dup = min(qup, qly)
         if (q < 0.0) and (q[0, 0, -1] > 0.0):
             zfix += 1
             q = q + (dup / dp)
             upper_fix = dup
         dm = q * dp
-        dm_pos = dm if dm > 0.0 else 0.0
+        dm_pos = max(dm, 0.0)
     with computation(PARALLEL), interval(-2, -1):
         # if the bottom layer borrowed from this one, adjust
         if upper_fix[0, 0, 1] != 0.0:
             q = q - (upper_fix[0, 0, 1] / dp)
             dm = q * dp
-            dm_pos = dm if dm > 0.0 else 0.0  # now we gotta update these too
+            dm_pos = max(dm, 0.0)  # now we gotta update these too
     with computation(FORWARD), interval(1, None):
         sum0 += dm
         sum1 += dm_pos
@@ -102,7 +95,7 @@ def fix_tracer(
     with computation(PARALLEL), interval(1, None):
         fac = sum0 / sum1 if sum0 > 0.0 else 0.0
         if zfix > 0 and fac > 0.0:
-            q = fac * dm / dp if fac * dm / dp > 0.0 else 0.0
+            q = max(fac * dm / dp, 0.0)
 
 
 class FillNegativeTracerValues:
