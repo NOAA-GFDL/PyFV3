@@ -266,8 +266,11 @@ class DynamicalCoreConfig:
             self.nf_omega = 0
 
     @classmethod
-    def from_f90nml(cls, f90_namelist: f90nml.Namelist) -> "DynamicalCoreConfig":
-        namelist_dict = namelist_to_flatish_dict(f90_namelist.items())
+    def from_f90nml(cls, namelist: f90nml.Namelist) -> "DynamicalCoreConfig":
+        if "fv_core_nml" in namelist.keys():
+            namelist_dict = namelist["fv_core_nml"]
+        else:
+            namelist_dict = namelist_to_flatish_dict(namelist.items())
         namelist_dict = {
             key: value
             for key, value in namelist_dict.items()
