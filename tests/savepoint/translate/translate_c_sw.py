@@ -1,11 +1,15 @@
-from ndsl import Namelist, QuantityFactory, StencilFactory
+from ndsl import QuantityFactory, StencilFactory
+from ndsl import (
+    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
+)
 from pyfv3.stencils import CGridShallowWaterDynamics
 from pyfv3.testing import TranslateDycoreFortranData2Py
+from pyfv3 import DynamicalCoreConfig
 
 
 def get_c_sw_instance(
     grid,
-    namelist: Namelist,
+    namelist: DynamicalCoreConfig,
     stencil_factory: StencilFactory,
     quantity_factory: QuantityFactory,
 ):
@@ -75,7 +79,7 @@ class TranslateC_SW(TranslateDycoreFortranData2Py):
     ):
         super().__init__(grid, namelist, stencil_factory)
         cgrid_shallow_water_lagrangian_dynamics = get_c_sw_instance(
-            grid, namelist, stencil_factory, self.grid.quantity_factory
+            grid, self.namelist, stencil_factory, self.grid.quantity_factory
         )
         self.compute_func = cgrid_shallow_water_lagrangian_dynamics  # type: ignore
         self.in_vars["data_vars"] = {
