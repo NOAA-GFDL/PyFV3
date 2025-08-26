@@ -1,4 +1,7 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import (
+    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
+)
+from ndsl import StencilFactory
 from pyfv3.stencils import RayleighDamping
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
@@ -13,9 +16,9 @@ class TranslateRay_Fast(TranslateDycoreFortranData2Py):
         super().__init__(grid, namelist, stencil_factory)
         self.compute_func = RayleighDamping(  # type: ignore
             stencil_factory,
-            namelist.rf_cutoff,
-            namelist.tau,
-            namelist.hydrostatic,
+            self.config.rf_cutoff,
+            self.config.tau,
+            self.config.hydrostatic,
         )
         self.in_vars["data_vars"] = {
             "u": grid.y3d_domain_dict(),

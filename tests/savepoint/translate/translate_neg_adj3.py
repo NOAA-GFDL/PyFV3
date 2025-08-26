@@ -1,7 +1,10 @@
 from typing import Any, Dict
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Namelist, StencilFactory
+from ndsl import (
+    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
+)
+from ndsl import StencilFactory
 from pyfv3.stencils import AdjustNegativeTracerMixingRatio
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
@@ -41,15 +44,14 @@ class TranslateNeg_Adj3(TranslateDycoreFortranData2Py):
         for qvar in utils.tracer_variables:
             self.ignore_near_zero_errors[qvar] = True
         self.stencil_factory = stencil_factory
-        self.namelist = namelist  # type: ignore
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
         compute_fn = AdjustNegativeTracerMixingRatio(
             self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
-            check_negative=self.namelist.check_negative,
-            hydrostatic=self.namelist.hydrostatic,
+            check_negative=self.config.check_negative,
+            hydrostatic=self.config.hydrostatic,
         )
         compute_fn(
             inputs["qvapor"],

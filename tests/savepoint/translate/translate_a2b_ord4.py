@@ -1,9 +1,9 @@
 from typing import Any, Dict
 
-from ndsl import StencilFactory, orchestrate
 from ndsl import (
     GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
 )
+from ndsl import StencilFactory, orchestrate
 from ndsl.constants import Z_DIM
 from pyfv3.stencils import DivergenceDamping
 from pyfv3.testing import TranslateDycoreFortranData2Py
@@ -53,9 +53,9 @@ class TranslateA2B_Ord4(TranslateDycoreFortranData2Py):
         namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
-        # NOTE: self.namelist is set to DynamicalCoreConfig in super().__init__
         super().__init__(grid, namelist, stencil_factory)
-        assert self.namelist.grid_type < 3
+        # NOTE: self.config is set to DynamicalCoreConfig in super().__init__ using namelist
+        assert self.config.grid_type < 3
         self.in_vars["data_vars"] = {"wk": {}, "vort": {}, "delpc": {}, "nord_col": {}}
         self.in_vars["parameters"] = ["dt"]
         self.out_vars: Dict[str, Any] = {"wk": {}, "vort": {}}
@@ -72,10 +72,10 @@ class TranslateA2B_Ord4(TranslateDycoreFortranData2Py):
             self.grid.damping_coefficients,
             self.grid.nested,
             self.grid.stretched_grid,
-            self.namelist.dddmp,
-            self.namelist.d4_bg,
-            self.namelist.nord,
-            self.namelist.grid_type,
+            self.config.dddmp,
+            self.config.d4_bg,
+            self.config.nord,
+            self.config.grid_type,
             nord_col,
             nord_col,
         )

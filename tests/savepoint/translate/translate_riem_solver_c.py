@@ -1,4 +1,7 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import (
+    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
+)
+from ndsl import StencilFactory
 from pyfv3.stencils import NonhydrostaticVerticalSolverCGrid
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
@@ -14,7 +17,7 @@ class TranslateRiem_Solver_C(TranslateDycoreFortranData2Py):
         self.compute_func = NonhydrostaticVerticalSolverCGrid(  # type: ignore
             stencil_factory,
             quantity_factory=self.grid.quantity_factory,
-            p_fac=namelist.p_fac,
+            p_fac=self.config.p_fac,
         )
         self.in_vars["data_vars"] = {
             "cappa": {},

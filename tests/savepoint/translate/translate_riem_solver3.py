@@ -1,5 +1,7 @@
-from ndsl import Namelist, StencilFactory
-from pyfv3 import _config as spec
+from ndsl import (
+    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
+)
+from ndsl import StencilFactory
 from pyfv3.stencils import NonhydrostaticVerticalSolver
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
@@ -15,12 +17,7 @@ class TranslateRiem_Solver3(TranslateDycoreFortranData2Py):
         self.vertical_solver = NonhydrostaticVerticalSolver(
             stencil_factory,
             quantity_factory=self.grid.quantity_factory,
-            config=spec.RiemannConfig(
-                p_fac=namelist.p_fac,
-                a_imp=namelist.a_imp,
-                use_logp=namelist.use_logp,
-                beta=namelist.beta,
-            ),
+            config=self.config.riemann,
         )
 
         self.in_vars["data_vars"] = {
