@@ -1,4 +1,7 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import (
+    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
+)
+from ndsl import StencilFactory
 from ndsl.constants import (
     N_HALO_DEFAULT,
     X_DIM,

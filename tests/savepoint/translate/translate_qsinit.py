@@ -2,7 +2,10 @@ import numpy as np
 
 import ndsl.dsl.gt4py_utils as utils
 import pyfv3.stencils.saturation_adjustment as satadjust
-from ndsl import Namelist, StencilFactory
+from ndsl import (
+    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
+)
+from ndsl import StencilFactory
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
 

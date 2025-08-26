@@ -1,4 +1,7 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import (
+    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
+)
+from ndsl import StencilFactory
 from ndsl.dsl.typing import FloatField
 from ndsl.stencils.testing import pad_field_in_j
 from pyfv3.stencils import moist_cv

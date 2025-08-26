@@ -155,6 +155,9 @@ class AcousticDynamicsConfig:
 @dataclasses.dataclass
 class DynamicalCoreConfig:
     dt_atmos: int = DEFAULT_INT
+    dx_const = 1000.0
+    dy_const = 1000.0
+    deglat = 15.0
     n_steps: int = 1
     a_imp: float = DEFAULT_FLOAT
     beta: float = DEFAULT_FLOAT

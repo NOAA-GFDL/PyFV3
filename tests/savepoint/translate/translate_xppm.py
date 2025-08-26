@@ -1,5 +1,8 @@
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Namelist, StencilFactory
+from ndsl import (
+    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
+)
+from ndsl import StencilFactory
 from ndsl.stencils.testing import TranslateGrid
 from pyfv3.stencils import XPiecewiseParabolic
 from pyfv3.testing import TranslateDycoreFortranData2Py

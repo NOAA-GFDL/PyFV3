@@ -1,4 +1,7 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import (
+    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
+)
+from ndsl import StencilFactory
 from pyfv3.stencils import moist_cv
 from pyfv3.testing import TranslateDycoreFortranData2Py
 

@@ -4,7 +4,10 @@ import numpy as np
 import pytest
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Namelist, StencilFactory
+from ndsl import (
+    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
+)
+from ndsl import StencilFactory
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,
@@ -16,6 +19,7 @@ from ndsl.grid import MetricTerms
 from ndsl.grid.eta import set_hybrid_pressure_coefficients
 from ndsl.grid.global_setup import global_mirror_grid, gnomonic_grid
 from ndsl.stencils.testing import ParallelTranslateGrid
+from pyfv3 import DynamicalCoreConfig
 
 
 class TranslateGnomonicGrids(ParallelTranslateGrid):
@@ -135,7 +139,7 @@ class TranslateGridAreas(ParallelTranslateGrid):
         self.near_zero = 3e-14
         self.ignore_near_zero_errors = {"agrid": True, "dxc": True, "dyc": True}
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs = {
         "grid": {
@@ -217,10 +221,9 @@ class TranslateGridAreas(ParallelTranslateGrid):
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -272,13 +275,12 @@ class TranslateGridGrid(ParallelTranslateGrid):
         self.near_zero = 1e-14
         self.ignore_near_zero_errors = {"grid": True}
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -300,7 +302,7 @@ class TranslateDxDy(ParallelTranslateGrid):
         super().__init__(rank_grids, namelist, stencil_factory)
         self.max_error = 3e-14
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs = {
         "grid": {
@@ -327,10 +329,9 @@ class TranslateDxDy(ParallelTranslateGrid):
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -353,7 +354,7 @@ class TranslateAGrid(ParallelTranslateGrid):
     ):
         super().__init__(rank_grids, namelist, stencil_factory)
         self.max_error = 1e-13
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
         self.stencil_factory = stencil_factory
 
     inputs = {
@@ -390,10 +391,9 @@ class TranslateAGrid(ParallelTranslateGrid):
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -504,20 +504,19 @@ class TranslateInitGrid(ParallelTranslateGrid):
         self.near_zero = 3e-14
         self.ignore_near_zero_errors = {"gridvar": True, "agrid": True}
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
-            grid_type=namelist.grid_type,
-            dx_const=namelist.dx_const,
-            dy_const=namelist.dy_const,
-            deglat=namelist.deglat,
+            grid_type=self.config.grid_type,
+            dx_const=self.config.dx_const,
+            dy_const=self.config.dy_const,
+            deglat=self.config.deglat,
         )
         state = {}
         for metric_term, metadata in self.outputs.items():
@@ -634,7 +633,7 @@ class TranslateUtilVectors(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
@@ -748,10 +747,9 @@ class TranslateUtilVectors(ParallelTranslateGrid):
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -802,7 +800,7 @@ class TranslateTrigSg(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
@@ -1014,10 +1012,9 @@ class TranslateTrigSg(ParallelTranslateGrid):
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -1050,7 +1047,7 @@ class TranslateAAMCorrection(ParallelTranslateGrid):
         self.near_zero = 1e-14
         self.ignore_near_zero_errors = {"l2c_v": True, "l2c_u": True}
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
@@ -1091,10 +1088,9 @@ class TranslateAAMCorrection(ParallelTranslateGrid):
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -1130,7 +1126,7 @@ class TranslateDerivedTrig(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
@@ -1385,10 +1381,9 @@ class TranslateDerivedTrig(ParallelTranslateGrid):
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -1431,7 +1426,7 @@ class TranslateDivgDel6(ParallelTranslateGrid):
         super().__init__(rank_grids, namelist, stencil_factory)
         self.max_error = 4e-14
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "sin_sg1": {
@@ -1529,10 +1524,9 @@ class TranslateDivgDel6(ParallelTranslateGrid):
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -1576,7 +1570,7 @@ class TranslateInitCubedtoLatLon(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "agrid": {
@@ -1664,10 +1658,9 @@ class TranslateInitCubedtoLatLon(ParallelTranslateGrid):
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -1694,7 +1687,7 @@ class TranslateEdgeFactors(ParallelTranslateGrid):
         super().__init__(rank_grids, namelist, stencil_factory)
         self.max_error = 3e-13
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
@@ -1804,10 +1797,9 @@ class TranslateEdgeFactors(ParallelTranslateGrid):
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -1886,7 +1878,7 @@ class TranslateInitGridUtils(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "gridvar": {
@@ -2315,17 +2307,16 @@ class TranslateInitGridUtils(ParallelTranslateGrid):
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=int(inputs["npz"]),
             communicator=communicator,
             backend=self.stencil_factory.backend,
-            grid_type=namelist.grid_type,
-            dx_const=namelist.dx_const,
-            dy_const=namelist.dy_const,
-            deglat=namelist.deglat,
+            grid_type=self.config.grid_type,
+            dx_const=self.config.dx_const,
+            dy_const=self.config.dy_const,
+            deglat=self.config.deglat,
         )
         input_state = self.state_from_inputs(inputs)
         grid_generator._grid = input_state["grid"]
