@@ -120,7 +120,7 @@ def d2_highorder_stencil(
 ):
     with computation(PARALLEL), interval(...):
         if nord > current_nord:
-            d2 = ((fx - fx[1, 0, 0]) + (fy - fy[0, 1, 0])) * rarea
+            d2 = (fx - fx[1, 0, 0] + fy - fy[0, 1, 0]) * rarea
 
 
 def d2_damp_interval(
