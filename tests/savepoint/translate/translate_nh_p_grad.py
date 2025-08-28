@@ -1,8 +1,5 @@
 import pyfv3.stencils.nh_p_grad as NH_P_Grad
-from ndsl import (
-    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
-)
-from ndsl import StencilFactory
+from ndsl import Namelist, StencilFactory
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
 

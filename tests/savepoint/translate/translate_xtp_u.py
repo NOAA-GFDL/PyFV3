@@ -1,9 +1,6 @@
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
-from ndsl import (
-    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
-)
-from ndsl import StencilFactory
+from ndsl import Namelist, StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from pyfv3.stencils import xtp_u

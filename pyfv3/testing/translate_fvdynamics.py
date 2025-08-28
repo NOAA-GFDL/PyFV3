@@ -5,10 +5,7 @@ from typing import Any, Dict, Optional, Tuple
 import pytest
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import (
-    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
-)
-from ndsl import Quantity, StencilFactory
+from ndsl import Namelist, Quantity, StencilFactory
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,
@@ -33,7 +30,6 @@ class TranslateDycoreFortranData2Py(TranslateFortranData2Py):
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, stencil_factory)
-        # TODO: rename self.namelist to self.config
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
 

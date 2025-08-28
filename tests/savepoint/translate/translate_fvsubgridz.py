@@ -1,10 +1,7 @@
 from types import SimpleNamespace
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import (
-    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
-)
-from ndsl import StencilFactory
+from ndsl import Namelist, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
 from pyfv3 import DryConvectiveAdjustment, DynamicalCoreConfig

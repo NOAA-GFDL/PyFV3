@@ -1,7 +1,4 @@
-from ndsl import (
-    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
-)
-from ndsl import QuantityFactory, StencilFactory
+from ndsl import Namelist, QuantityFactory, StencilFactory
 from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils import CGridShallowWaterDynamics
 from pyfv3.testing import TranslateDycoreFortranData2Py

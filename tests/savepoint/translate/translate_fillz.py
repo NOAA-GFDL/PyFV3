@@ -1,10 +1,7 @@
 import numpy as np
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import (
-    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
-)
-from ndsl import StencilFactory
+from ndsl import Namelist, StencilFactory
 from ndsl.stencils.testing import pad_field_in_j
 from ndsl.utils import safe_assign_array
 from pyfv3.stencils import fillz

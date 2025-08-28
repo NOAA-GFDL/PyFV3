@@ -1,10 +1,7 @@
 import pytest
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import (
-    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
-)
-from ndsl import StencilFactory
+from ndsl import Namelist, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.stencils.testing import ParallelTranslate
 from pyfv3 import DynamicalCoreConfig
@@ -61,7 +58,7 @@ class TranslateTracer2D1L(ParallelTranslate):
             grid_data=self.grid.grid_data,
             damping_coefficients=self.grid.damping_coefficients,
             grid_type=self.grid.grid_type,
-            hord=self.namelist.hord_tr,
+            hord=self.config.hord_tr,
         )
 
         self.tracer_advection = TracerAdvection(

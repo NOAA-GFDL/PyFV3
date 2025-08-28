@@ -1,9 +1,6 @@
 from typing import Any, Dict
 
-from ndsl import (
-    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
-)
-from ndsl import StencilFactory
+from ndsl import Namelist, StencilFactory
 from pyfv3.stencils import temperature_adjust
 from pyfv3.stencils.dyn_core import get_nk_heat_dissipation
 from pyfv3.testing import TranslateDycoreFortranData2Py

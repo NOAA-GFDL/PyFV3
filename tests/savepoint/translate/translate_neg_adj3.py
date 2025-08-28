@@ -1,10 +1,7 @@
 from typing import Any, Dict
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import (
-    GfdlNamelist as Namelist,  # JK TODO: Replace GfdlNamelist with Namelist eventually
-)
-from ndsl import StencilFactory
+from ndsl import Namelist, StencilFactory
 from pyfv3.stencils import AdjustNegativeTracerMixingRatio
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
