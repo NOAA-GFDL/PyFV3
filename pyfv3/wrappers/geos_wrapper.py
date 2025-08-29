@@ -115,8 +115,18 @@ class GeosDycoreWrapper:
         self.perf_collector = PerformanceCollector("GEOS wrapper", comm)
 
         self.backend = backend
+
+        # TODO: The namelist argument is expected to contain a hierarchy
+        # consistent with what pyFV3 expects from a yaml configuration file.
+        # The test_geos_wrapper in test_init_from_geos.py takes that yaml
+        # hierarchy and uses it to initialize a f90nml.Namelist.
+        # This seems a bit confusing. Because of this, the dycore_config
+        # is being initialized using "from_yaml_dict", even though it's
+        # it uses a "namelist". This should eventually be cleared up, but I'm
+        # leaving it as is because I'm not sure if it's important elsewhere.
         self.namelist = namelist
-        self.dycore_config = pyfv3.DynamicalCoreConfig.from_f90nml(self.namelist)
+        self.dycore_config = pyfv3.DynamicalCoreConfig.from_yaml_dict(self.namelist)
+
         self.dycore_config.dt_atmos = bdt
         assert self.dycore_config.dt_atmos != 0
 

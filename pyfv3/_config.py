@@ -265,6 +265,8 @@ class DynamicalCoreConfig:
         if self.grid_type > 3:
             self.nf_omega = 0
 
+    # TODO: Consider swapping from_namelist and from_f90nml implementations?
+    # They somehow don't seem right.
     @classmethod
     def from_namelist(cls, namelist: Namelist) -> "DynamicalCoreConfig":
         return cls.from_f90nml(namelist)
