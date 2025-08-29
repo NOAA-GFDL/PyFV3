@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 import f90nml
 import yaml
 
-from ndsl.namelist import namelist_to_flatish_dict
+from ndsl import Namelist
 
 
 DEFAULT_INT = 0
@@ -155,9 +155,6 @@ class AcousticDynamicsConfig:
 @dataclasses.dataclass
 class DynamicalCoreConfig:
     dt_atmos: int = DEFAULT_INT
-    dx_const = 1000.0
-    dy_const = 1000.0
-    deglat = 15.0
     n_steps: int = 1
     a_imp: float = DEFAULT_FLOAT
     beta: float = DEFAULT_FLOAT
@@ -269,11 +266,18 @@ class DynamicalCoreConfig:
             self.nf_omega = 0
 
     @classmethod
+    def from_namelist(cls, namelist: Namelist) -> "DynamicalCoreConfig":
+        return cls.from_f90nml(namelist)
+
+    @classmethod
     def from_f90nml(cls, namelist: f90nml.Namelist) -> "DynamicalCoreConfig":
-        if "fv_core_nml" in namelist.keys():
-            namelist_dict = namelist["fv_core_nml"]
-        else:
-            namelist_dict = namelist_to_flatish_dict(namelist.items())
+        """TODO"""
+
+        # TODO Double-check for any additional groups
+        # TODO Make target_groups constant above?
+        namelist = Namelist(namelist)
+        target_groups = ["main_nml", "coupler_nml", "fv_core_nml"]
+        namelist_dict = namelist.namelist_groups_to_flatish_dict(target_groups)
         namelist_dict = {
             key: value
             for key, value in namelist_dict.items()
@@ -282,12 +286,14 @@ class DynamicalCoreConfig:
         return cls(**namelist_dict)
 
     @classmethod
-    def from_yaml(cls, yaml_config: str) -> "DynamicalCoreConfig":
+    def from_yaml_dict(cls, yaml_dict: dict) -> "DynamicalCoreConfig":
+        """TOODO
+        Args:
+            yaml_dict: dict, as if read from yaml safe_load
+        """
         config = cls()
-        with open(yaml_config, "r") as f:
-            raw_config = yaml.safe_load(f)
         flat_config: dict = {}
-        timestep = timedelta(seconds=raw_config["dt_atmos"])
+        timestep = timedelta(seconds=yaml_dict["dt_atmos"])
         runtime = {
             "days": 0.0,
             "hours": 0.0,
@@ -295,8 +301,8 @@ class DynamicalCoreConfig:
             "seconds": 0.0,
         }
         for key in runtime.keys():
-            if key in raw_config.keys():
-                runtime[key] = raw_config[key]
+            if key in yaml_dict.keys():
+                runtime[key] = yaml_dict[key]
 
         total_time = timedelta(
             days=runtime["days"],
@@ -304,7 +310,7 @@ class DynamicalCoreConfig:
             minutes=runtime["minutes"],
             seconds=runtime["seconds"],
         )
-        for key, value in raw_config.items():
+        for key, value in yaml_dict.items():
             if isinstance(value, dict):
                 for subkey, subvalue in value.items():
                     if subkey in config.__annotations__.keys():
@@ -329,6 +335,12 @@ class DynamicalCoreConfig:
                 setattr(config, field.name, flat_config[field.name])
         config.n_steps = floor(total_time.total_seconds() / timestep.total_seconds())
         return config
+
+    @classmethod
+    def from_yaml(cls, yaml_config: str) -> "DynamicalCoreConfig":
+        with open(yaml_config, "r") as f:
+            raw_config = yaml.safe_load(f)
+        return cls.from_yaml_dict(raw_config)
 
     @property
     def do_dry_convective_adjustment(self) -> bool:
