@@ -194,77 +194,43 @@ def copy_corners_y_nord(
 
     with computation(PARALLEL), interval(...):
         if nord > current_nord:
-            with horizontal(
-                region[i_start - 3, j_start - 3], region[i_start - 3, j_end + 3]
-            ):
-                q_out = q_in[5, 0, 0]
-            with horizontal(
-                region[i_start - 2, j_start - 3], region[i_start - 3, j_end + 2]
-            ):
-                q_out = q_in[4, 1, 0]
-            with horizontal(
-                region[i_start - 1, j_start - 3], region[i_start - 3, j_end + 1]
-            ):
-                q_out = q_in[3, 2, 0]
-            with horizontal(
-                region[i_start - 3, j_start - 2], region[i_start - 2, j_end + 3]
-            ):
-                q_out = q_in[4, -1, 0]
-            with horizontal(
-                region[i_start - 2, j_start - 2], region[i_start - 2, j_end + 2]
-            ):
-                q_out = q_in[3, 0, 0]
-            with horizontal(
-                region[i_start - 1, j_start - 2], region[i_start - 2, j_end + 1]
-            ):
-                q_out = q_in[2, 1, 0]
-            with horizontal(
-                region[i_start - 3, j_start - 1], region[i_start - 1, j_end + 3]
-            ):
-                q_out = q_in[3, -2, 0]
-            with horizontal(
-                region[i_start - 2, j_start - 1], region[i_start - 1, j_end + 2]
-            ):
-                q_out = q_in[2, -1, 0]
-            with horizontal(
-                region[i_start - 1, j_start - 1], region[i_start - 1, j_end + 1]
-            ):
-                q_out = q_in[1, 0, 0]
-            with horizontal(
-                region[i_end + 1, j_start - 3], region[i_end + 3, j_end + 1]
-            ):
-                q_out = q_in[-3, 2, 0]
-            with horizontal(
-                region[i_end + 2, j_start - 3], region[i_end + 3, j_end + 2]
-            ):
-                q_out = q_in[-4, 1, 0]
-            with horizontal(
-                region[i_end + 3, j_start - 3], region[i_end + 3, j_end + 3]
-            ):
-                q_out = q_in[-5, 0, 0]
-            with horizontal(
-                region[i_end + 1, j_start - 2], region[i_end + 2, j_end + 1]
-            ):
-                q_out = q_in[-2, 1, 0]
-            with horizontal(
-                region[i_end + 2, j_start - 2], region[i_end + 2, j_end + 2]
-            ):
-                q_out = q_in[-3, 0, 0]
-            with horizontal(
-                region[i_end + 3, j_start - 2], region[i_end + 2, j_end + 3]
-            ):
-                q_out = q_in[-4, -1, 0]
-            with horizontal(
-                region[i_end + 1, j_start - 1], region[i_end + 1, j_end + 1]
-            ):
+            # with horizontal(region[i_start - 3, j_end + 3]):
+            #     q_out = q_in[5, 0, 0]
+            # with horizontal(region[i_start - 3, j_end + 2]):
+            #     q_out = q_in[4, 1, 0]
+            # with horizontal(region[i_start - 3, j_end + 1]):
+            #     q_out = q_in[3, 2, 0]
+            # with horizontal(region[i_start - 2, j_end + 3]):
+            #     q_out = q_in[4, -1, 0]
+            # with horizontal(region[i_start - 2, j_end + 2]):
+            #     q_out = q_in[3, 0, 0]
+            # with horizontal(region[i_start - 2, j_end + 1]):
+            #     q_out = q_in[2, 1, 0]
+            # with horizontal(region[i_start - 1, j_end + 3]):
+            #     q_out = q_in[3, -2, 0]
+            # with horizontal(region[i_start - 1, j_end + 2]):
+            #     q_out = q_in[2, -1, 0]
+            # with horizontal(region[i_start - 1, j_end + 1]):
+            #     q_out = q_in[1, 0, 0]
+            # with horizontal(region[i_end + 3, j_end + 1]):
+            #     q_out = q_in[-3, 2, 0]
+            # with horizontal(region[i_end + 3, j_end + 2]):
+            #     q_out = q_in[-4, 1, 0]
+            # with horizontal(region[i_end + 3, j_end + 3]):
+            #     q_out = q_in[-5, 0, 0]
+
+            # with horizontal(region[i_end + 2, j_end + 1]):
+            #     q_out = q_in[-2, 1, 0]
+            # with horizontal(region[i_end + 2, j_end + 2]):
+            #     q_out = q_in[-3, 0, 0]
+            # with horizontal(region[i_end + 2, j_end + 3]):
+            #     q_out = q_in[-4, -1, 0]
+
+            with horizontal(region[i_end + 1, j_end + 1]):
                 q_out = q_in[-1, 0, 0]
-            with horizontal(
-                region[i_end + 2, j_start - 1], region[i_end + 1, j_end + 2]
-            ):
+            with horizontal(region[i_end + 1, j_end + 2]):
                 q_out = q_in[-2, -1, 0]
-            with horizontal(
-                region[i_end + 3, j_start - 1], region[i_end + 1, j_end + 3]
-            ):
+            with horizontal(region[i_end + 1, j_end + 3]):
                 q_out = q_in[-3, -2, 0]
 
 
@@ -621,6 +587,108 @@ class DelnFluxNoSG:
             skip_passes=("UnreachableStmtPruning",),
         )
 
+    def numpy_corner_y(self, d2, nord_data: Quantity):
+        for k in range(nord_data.shape[0]):
+            if nord_data.data[k] > 0:
+                d2[0, 0, k] = d2[5, 0, k]
+                d2[1, 0, k] = d2[5, 1, k]
+                d2[2, 0, k] = d2[5, 2, k]
+
+                d2[0, 1, k] = d2[4, 0, k]
+                d2[1, 1, k] = d2[4, 1, k]
+                d2[2, 1, k] = d2[4, 2, k]
+
+                d2[0, 2, k] = d2[3, 0, k]
+                d2[1, 2, k] = d2[3, 1, k]
+                d2[2, 2, k] = d2[3, 2, k]
+
+                d2[-4, 0, k] = d2[-7, 2, k]
+                d2[-3, 0, k] = d2[-7, 1, k]
+                d2[-2, 0, k] = d2[-7, 0, k]
+
+                d2[-4, 1, k] = d2[-6, 2, k]
+                d2[-3, 1, k] = d2[-6, 1, k]
+                d2[-2, 1, k] = d2[-6, 0, k]
+
+                d2[-4, 2, k] = d2[-5, 2, k]
+                d2[-3, 2, k] = d2[-5, 1, k]
+                d2[-2, 2, k] = d2[-5, 0, k]
+
+                d2[0, -2, k] = d2[5, -2, k]
+                d2[0, -3, k] = d2[4, -2, k]
+                d2[0, -4, k] = d2[3, -2, k]
+
+                d2[1, -2, k] = d2[5, -3, k]
+                d2[1, -3, k] = d2[4, -3, k]
+                d2[1, -4, k] = d2[3, -3, k]
+
+                d2[2, -2, k] = d2[5, -4, k]
+                d2[2, -3, k] = d2[4, -4, k]
+                d2[2, -4, k] = d2[3, -4, k]
+
+                d2[-2, -4, k] = d2[-5, -2, k]
+                d2[-2, -3, k] = d2[-6, -2, k]
+                d2[-2, -2, k] = d2[-7, -2, k]
+
+                d2[-3, -4, k] = d2[-5, -3, k]
+                d2[-3, -3, k] = d2[-6, -3, k]
+                d2[-3, -2, k] = d2[-7, -3, k]
+
+                d2[-4, -4, k] = d2[-5, -4, k]
+                d2[-4, -3, k] = d2[-6, -4, k]
+                d2[-4, -2, k] = d2[-7, -4, k]
+
+    def numpy_corner_x(self, d2, nord_data: Quantity):
+        for k in range(nord_data.shape[0]):
+            if nord_data.data[k] > 0:
+                d2[0, 0, k] = d2[0, 5, k]
+                d2[1, 0, k] = d2[0, 4, k]
+                d2[2, 0, k] = d2[0, 3, k]
+
+                d2[0, 1, k] = d2[1, 5, k]
+                d2[1, 1, k] = d2[1, 4, k]
+                d2[2, 1, k] = d2[1, 3, k]
+
+                d2[0, 2, k] = d2[2, 5, k]
+                d2[1, 2, k] = d2[2, 4, k]
+                d2[2, 2, k] = d2[2, 3, k]
+
+                d2[0, -4, k] = d2[2, -7, k]
+                d2[1, -4, k] = d2[2, -6, k]
+                d2[2, -4, k] = d2[2, -5, k]
+
+                d2[0, -3, k] = d2[1, -7, k]
+                d2[1, -3, k] = d2[1, -6, k]
+                d2[2, -3, k] = d2[1, -5, k]
+
+                d2[0, -2, k] = d2[0, -7, k]
+                d2[1, -2, k] = d2[0, -6, k]
+                d2[2, -2, k] = d2[0, -5, k]
+
+                d2[-2, 0, k] = d2[-2, 5, k]
+                d2[-2, 1, k] = d2[-3, 5, k]
+                d2[-2, 2, k] = d2[-4, 5, k]
+
+                d2[-3, 0, k] = d2[-2, 4, k]
+                d2[-3, 1, k] = d2[-3, 4, k]
+                d2[-3, 2, k] = d2[-4, 4, k]
+
+                d2[-4, 0, k] = d2[-2, 3, k]
+                d2[-4, 1, k] = d2[-3, 3, k]
+                d2[-4, 2, k] = d2[-4, 3, k]
+
+                d2[-4, -2, k] = d2[-2, -5, k]
+                d2[-4, -3, k] = d2[-3, -5, k]
+                d2[-4, -4, k] = d2[-4, -5, k]
+
+                d2[-3, -2, k] = d2[-2, -6, k]
+                d2[-3, -3, k] = d2[-3, -6, k]
+                d2[-3, -4, k] = d2[-4, -6, k]
+
+                d2[-2, -2, k] = d2[-2, -7, k]
+                d2[-2, -3, k] = d2[-3, -7, k]
+                d2[-2, -4, k] = d2[-4, -7, k]
+
     def __call__(self, q, fx2, fy2, damp_c, d2, mass=None):
         """
         Computes flux fields which would apply del-n damping to q,
@@ -643,11 +711,13 @@ class DelnFluxNoSG:
         else:
             self._copy_stencil_interval(q_in=q, q_out=d2, nord=self._nord)
 
-        self._copy_corners_x_nord(q_in=d2, q_out=d2, nord=self._nord, current_nord=0)
+        # self._copy_corners_x_nord(q_in=d2, q_out=d2, nord=self._nord, current_nord=0)
+        self.numpy_corner_x(d2, self._nord)
 
         self._fx_calc_stencil(q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord)
 
-        self._copy_corners_y_nord(q_in=d2, q_out=d2, nord=self._nord, current_nord=0)
+        # self._copy_corners_y_nord(q_in=d2, q_out=d2, nord=self._nord, current_nord=0)
+        self.numpy_corner_y(d2, self._nord)
 
         self._fy_calc_stencil(q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord)
 
@@ -661,17 +731,19 @@ class DelnFluxNoSG:
                 current_nord=n,
             )
 
-            self._copy_corners_x_nord(
-                q_in=d2, q_out=d2, nord=self._nord, current_nord=n
-            )
+            # self._copy_corners_x_nord(
+            #     q_in=d2, q_out=d2, nord=self._nord, current_nord=n
+            # )
+            self.numpy_corner_x(d2, self._nord)
 
             self._column_conditional_fx_calculation[n](
                 q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord, current_nord=n
             )
 
-            self._copy_corners_y_nord(
-                q_in=d2, q_out=d2, nord=self._nord, current_nord=n
-            )
+            # self._copy_corners_y_nord(
+            #     q_in=d2, q_out=d2, nord=self._nord, current_nord=n
+            # )
+            self.numpy_corner_y(d2, self._nord)
 
             self._column_conditional_fy_calculation[n](
                 q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord, current_nord=n
