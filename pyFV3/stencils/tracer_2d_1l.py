@@ -9,7 +9,7 @@ from gt4py.cartesian.gtscript import (
     horizontal,
     interval,
     region,
-    i32,
+    int32,
 )
 
 from ndsl import (
@@ -116,7 +116,7 @@ def divide_fluxes_by_n_substeps(
         mfyd (inout):
     """
     with computation(PARALLEL), interval(...):
-        n_split = i32(1.0 + cmax)
+        n_split = int32(1.0 + cmax)
         if n_split > 1:
             frac = 1.0 / n_split
             cxd = cxd * frac
@@ -175,7 +175,7 @@ def apply_tracer_flux(
         dp2 (in):
     """
     with computation(PARALLEL), interval(...):
-        if current_nsplit < i32(1.0 + cmax):
+        if current_nsplit < int32(1.0 + cmax):
             q = (q * dp1 + ((fx - fx[1, 0, 0]) + (fy - fy[0, 1, 0])) * rarea) / dp2
 
 

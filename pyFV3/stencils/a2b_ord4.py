@@ -10,7 +10,6 @@ from gt4py.cartesian.gtscript import (
     region,
     sin,
     sqrt,
-    f64,
 )
 
 from ndsl import GridIndexing, QuantityFactory, StencilFactory, orchestrate

@@ -5,7 +5,7 @@ from gt4py.cartesian.gtscript import (
     FORWARD,
     PARALLEL,
     computation,
-    f64,
+    float64,
     horizontal,
     interval,
     log,
@@ -43,7 +43,7 @@ def compute_rf_vals(pfull, bdt, rf_cutoff, tau0, ptop):
 @gtscript.function
 def compute_rff_vals(pfull, dt, rf_cutoff, tau0, ptop):
     rffvals = compute_rf_vals(pfull, dt, rf_cutoff, tau0, ptop)
-    rffvals = f64(1.0) / (f64(1.0) + rffvals)
+    rffvals = float64(1.0) / (float64(1.0) + rffvals)
     return rffvals
 
 

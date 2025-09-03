@@ -4,7 +4,7 @@ from gt4py.cartesian.gtscript import (
     __INLINED,
     PARALLEL,
     computation,
-    f32,
+    float32,
     horizontal,
     interval,
     region,
@@ -25,13 +25,13 @@ from pyFV3.stencils.d2a2c_vect import contravariant
 
 @gtscript.function
 def damp_tmp(q, da_min_c, d2_bg, dddmp):
-    damp: f32 = da_min_c * max(d2_bg, min(0.2, dddmp * abs(q)))
+    damp: float32 = da_min_c * max(d2_bg, min(0.2, dddmp * abs(q)))
     return damp
 
 
 @gtscript.function
 def damp_tmp2(q, da_min_c, d2_bg, dddmp):
-    damp: f32 = da_min_c * max(d2_bg, min(0.2, dddmp * q))
+    damp: float32 = da_min_c * max(d2_bg, min(0.2, dddmp * q))
     return damp
 
 
