@@ -2,7 +2,7 @@ SHELL=/bin/bash
 CWD=$(shell pwd)
 CMD ?= bash
 DEV ?=y
-ROOT_DIR ?= /pyFV3
+ROOT_DIR ?= /pyfv3
 IMAGE_NAME ?= noaa-gfdl/pyfv3
 
 NUM_RANKS ?=6
