@@ -8,6 +8,8 @@ from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients
+from dace.frontend.python.interface import nounroll as dace_nounroll
+import dace
 
 
 def calc_damp(damp_c: Quantity, da_min: Float, nord: Quantity) -> Quantity:
@@ -282,9 +284,9 @@ class DelnFlux:
         # fx2 and fy2 are local variables containing the diffusive flux, which
         # gets added to the base flux below
         if d2 is None:
-            self.delnflux_nosg(q, self._fx2, self._fy2, self._damp, self._d2, mass)
+            self.delnflux_nosg(q, self._fx2, self._fy2, self._damp, self._d2.data, mass)
         else:
-            self.delnflux_nosg(q, self._fx2, self._fy2, self._damp, d2, mass)
+            self.delnflux_nosg(q, self._fx2, self._fy2, self._damp, self._d2.data, mass)
 
         if mass is None:
             self._add_diffusive_stencil(fx, self._fx2, fy, self._fy2)
@@ -297,6 +299,110 @@ class DelnFlux:
             self._diffusive_damp_stencil(fx, self._fx2, fy, self._fy2, mass, self._damp)
 
         return fx, fy
+
+
+def copy_corner_x(nord, d2):
+    for k in dace.map[nord.data.shape[0]]:
+        if nord.data[k] > 0:
+            d2[0, 0, k] = d2[0, 5, k]
+            d2[1, 0, k] = d2[0, 4, k]
+            d2[2, 0, k] = d2[0, 3, k]
+
+            d2[0, 1, k] = d2[1, 5, k]
+            d2[1, 1, k] = d2[1, 4, k]
+            d2[2, 1, k] = d2[1, 3, k]
+
+            d2[0, 2, k] = d2[2, 5, k]
+            d2[1, 2, k] = d2[2, 4, k]
+            d2[2, 2, k] = d2[2, 3, k]
+
+            d2[0, -4, k] = d2[2, -7, k]
+            d2[1, -4, k] = d2[2, -6, k]
+            d2[2, -4, k] = d2[2, -5, k]
+
+            d2[0, -3, k] = d2[1, -7, k]
+            d2[1, -3, k] = d2[1, -6, k]
+            d2[2, -3, k] = d2[1, -5, k]
+
+            d2[0, -2, k] = d2[0, -7, k]
+            d2[1, -2, k] = d2[0, -6, k]
+            d2[2, -2, k] = d2[0, -5, k]
+
+            d2[-2, 0, k] = d2[-2, 5, k]
+            d2[-2, 1, k] = d2[-3, 5, k]
+            d2[-2, 2, k] = d2[-4, 5, k]
+
+            d2[-3, 0, k] = d2[-2, 4, k]
+            d2[-3, 1, k] = d2[-3, 4, k]
+            d2[-3, 2, k] = d2[-4, 4, k]
+
+            d2[-4, 0, k] = d2[-2, 3, k]
+            d2[-4, 1, k] = d2[-3, 3, k]
+            d2[-4, 2, k] = d2[-4, 3, k]
+
+            d2[-4, -2, k] = d2[-2, -5, k]
+            d2[-4, -3, k] = d2[-3, -5, k]
+            d2[-4, -4, k] = d2[-4, -5, k]
+
+            d2[-3, -2, k] = d2[-2, -6, k]
+            d2[-3, -3, k] = d2[-3, -6, k]
+            d2[-3, -4, k] = d2[-4, -6, k]
+
+            d2[-2, -2, k] = d2[-2, -7, k]
+            d2[-2, -3, k] = d2[-3, -7, k]
+            d2[-2, -4, k] = d2[-4, -7, k]
+
+
+def copy_corner_y(nord, d2):
+    for k in dace.map[nord.data.shape[0]]:
+        if nord.data[k] > 0:
+            d2[0, 0, k] = d2[5, 0, k]
+            d2[1, 0, k] = d2[5, 1, k]
+            d2[2, 0, k] = d2[5, 2, k]
+
+            d2[0, 1, k] = d2[4, 0, k]
+            d2[1, 1, k] = d2[4, 1, k]
+            d2[2, 1, k] = d2[4, 2, k]
+
+            d2[0, 2, k] = d2[3, 0, k]
+            d2[1, 2, k] = d2[3, 1, k]
+            d2[2, 2, k] = d2[3, 2, k]
+
+            d2[-4, 0, k] = d2[-7, 2, k]
+            d2[-3, 0, k] = d2[-7, 1, k]
+            d2[-2, 0, k] = d2[-7, 0, k]
+
+            d2[-4, 1, k] = d2[-6, 2, k]
+            d2[-3, 1, k] = d2[-6, 1, k]
+            d2[-2, 1, k] = d2[-6, 0, k]
+
+            d2[-4, 2, k] = d2[-5, 2, k]
+            d2[-3, 2, k] = d2[-5, 1, k]
+            d2[-2, 2, k] = d2[-5, 0, k]
+
+            d2[0, -2, k] = d2[5, -2, k]
+            d2[0, -3, k] = d2[4, -2, k]
+            d2[0, -4, k] = d2[3, -2, k]
+
+            d2[1, -2, k] = d2[5, -3, k]
+            d2[1, -3, k] = d2[4, -3, k]
+            d2[1, -4, k] = d2[3, -3, k]
+
+            d2[2, -2, k] = d2[5, -4, k]
+            d2[2, -3, k] = d2[4, -4, k]
+            d2[2, -4, k] = d2[3, -4, k]
+
+            d2[-2, -4, k] = d2[-5, -2, k]
+            d2[-2, -3, k] = d2[-6, -2, k]
+            d2[-2, -2, k] = d2[-7, -2, k]
+
+            d2[-3, -4, k] = d2[-5, -3, k]
+            d2[-3, -3, k] = d2[-6, -3, k]
+            d2[-3, -2, k] = d2[-7, -3, k]
+
+            d2[-4, -4, k] = d2[-5, -4, k]
+            d2[-4, -3, k] = d2[-6, -4, k]
+            d2[-4, -2, k] = d2[-7, -4, k]
 
 
 class DelnFluxNoSG:
@@ -428,108 +534,6 @@ class DelnFluxNoSG:
             domain=(f1_nx - 1, f1_ny + 1, nk),
         )
 
-    def numpy_corner_y(self, d2, nord_data: Quantity):
-        for k in range(nord_data.shape[0]):
-            if nord_data.data[k] > 0:
-                d2[0, 0, k] = d2[5, 0, k]
-                d2[1, 0, k] = d2[5, 1, k]
-                d2[2, 0, k] = d2[5, 2, k]
-
-                d2[0, 1, k] = d2[4, 0, k]
-                d2[1, 1, k] = d2[4, 1, k]
-                d2[2, 1, k] = d2[4, 2, k]
-
-                d2[0, 2, k] = d2[3, 0, k]
-                d2[1, 2, k] = d2[3, 1, k]
-                d2[2, 2, k] = d2[3, 2, k]
-
-                d2[-4, 0, k] = d2[-7, 2, k]
-                d2[-3, 0, k] = d2[-7, 1, k]
-                d2[-2, 0, k] = d2[-7, 0, k]
-
-                d2[-4, 1, k] = d2[-6, 2, k]
-                d2[-3, 1, k] = d2[-6, 1, k]
-                d2[-2, 1, k] = d2[-6, 0, k]
-
-                d2[-4, 2, k] = d2[-5, 2, k]
-                d2[-3, 2, k] = d2[-5, 1, k]
-                d2[-2, 2, k] = d2[-5, 0, k]
-
-                d2[0, -2, k] = d2[5, -2, k]
-                d2[0, -3, k] = d2[4, -2, k]
-                d2[0, -4, k] = d2[3, -2, k]
-
-                d2[1, -2, k] = d2[5, -3, k]
-                d2[1, -3, k] = d2[4, -3, k]
-                d2[1, -4, k] = d2[3, -3, k]
-
-                d2[2, -2, k] = d2[5, -4, k]
-                d2[2, -3, k] = d2[4, -4, k]
-                d2[2, -4, k] = d2[3, -4, k]
-
-                d2[-2, -4, k] = d2[-5, -2, k]
-                d2[-2, -3, k] = d2[-6, -2, k]
-                d2[-2, -2, k] = d2[-7, -2, k]
-
-                d2[-3, -4, k] = d2[-5, -3, k]
-                d2[-3, -3, k] = d2[-6, -3, k]
-                d2[-3, -2, k] = d2[-7, -3, k]
-
-                d2[-4, -4, k] = d2[-5, -4, k]
-                d2[-4, -3, k] = d2[-6, -4, k]
-                d2[-4, -2, k] = d2[-7, -4, k]
-
-    def numpy_corner_x(self, d2, nord_data: Quantity):
-        for k in range(nord_data.shape[0]):
-            if nord_data.data[k] > 0:
-                d2[0, 0, k] = d2[0, 5, k]
-                d2[1, 0, k] = d2[0, 4, k]
-                d2[2, 0, k] = d2[0, 3, k]
-
-                d2[0, 1, k] = d2[1, 5, k]
-                d2[1, 1, k] = d2[1, 4, k]
-                d2[2, 1, k] = d2[1, 3, k]
-
-                d2[0, 2, k] = d2[2, 5, k]
-                d2[1, 2, k] = d2[2, 4, k]
-                d2[2, 2, k] = d2[2, 3, k]
-
-                d2[0, -4, k] = d2[2, -7, k]
-                d2[1, -4, k] = d2[2, -6, k]
-                d2[2, -4, k] = d2[2, -5, k]
-
-                d2[0, -3, k] = d2[1, -7, k]
-                d2[1, -3, k] = d2[1, -6, k]
-                d2[2, -3, k] = d2[1, -5, k]
-
-                d2[0, -2, k] = d2[0, -7, k]
-                d2[1, -2, k] = d2[0, -6, k]
-                d2[2, -2, k] = d2[0, -5, k]
-
-                d2[-2, 0, k] = d2[-2, 5, k]
-                d2[-2, 1, k] = d2[-3, 5, k]
-                d2[-2, 2, k] = d2[-4, 5, k]
-
-                d2[-3, 0, k] = d2[-2, 4, k]
-                d2[-3, 1, k] = d2[-3, 4, k]
-                d2[-3, 2, k] = d2[-4, 4, k]
-
-                d2[-4, 0, k] = d2[-2, 3, k]
-                d2[-4, 1, k] = d2[-3, 3, k]
-                d2[-4, 2, k] = d2[-4, 3, k]
-
-                d2[-4, -2, k] = d2[-2, -5, k]
-                d2[-4, -3, k] = d2[-3, -5, k]
-                d2[-4, -4, k] = d2[-4, -5, k]
-
-                d2[-3, -2, k] = d2[-2, -6, k]
-                d2[-3, -3, k] = d2[-3, -6, k]
-                d2[-3, -4, k] = d2[-4, -6, k]
-
-                d2[-2, -2, k] = d2[-2, -7, k]
-                d2[-2, -3, k] = d2[-3, -7, k]
-                d2[-2, -4, k] = d2[-4, -7, k]
-
     def __call__(self, q, fx2, fy2, damp_c, d2, mass=None):
         """
         Computes flux fields which would apply del-n damping to q,
@@ -552,11 +556,11 @@ class DelnFluxNoSG:
         else:
             self._copy_stencil_interval(q_in=q, q_out=d2, nord=self._nord)
 
-        self.numpy_corner_x(d2, self._nord)
+        # copy_corner_x(self._nord, d2)
 
         self._fx_calc_stencil(q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord)
 
-        self.numpy_corner_y(d2, self._nord)
+        # copy_corner_y(self._nord, d2)
 
         self._fy_calc_stencil(q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord)
 
@@ -570,13 +574,13 @@ class DelnFluxNoSG:
                 current_nord=n,
             )
 
-            self.numpy_corner_x(d2, self._nord)
+            # copy_corner_x(self._nord, d2)
 
             self._column_conditional_fx_calculation[n](
                 q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord, current_nord=n
             )
 
-            self.numpy_corner_y(d2, self._nord)
+            # copy_corner_y(self._nord, d2)
 
             self._column_conditional_fy_calculation[n](
                 q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord, current_nord=n
