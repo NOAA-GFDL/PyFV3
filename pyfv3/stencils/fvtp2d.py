@@ -179,9 +179,7 @@ class FiniteVolumeTransport:
             # self.delnflux = None
             self._do_delnflux = False
 
-        self._copy_corners_y: corners.CopyCorners = corners.CopyCorners(
-            "y", stencil_factory
-        )
+        self._copy_corners_y: corners.CopyCorners = corners.CopyCorners("y")
         self.y_piecewise_parabolic_inner = YPiecewiseParabolic(
             stencil_factory=stencil_factory,
             dya=grid_data.dya,
@@ -204,9 +202,7 @@ class FiniteVolumeTransport:
             domain=idx.domain_compute(add=(1, 1, 1)),
         )
 
-        self._copy_corners_x: corners.CopyCorners = corners.CopyCorners(
-            "x", stencil_factory
-        )
+        self._copy_corners_x: corners.CopyCorners = corners.CopyCorners("x")
         self.x_piecewise_parabolic_inner = XPiecewiseParabolic(
             stencil_factory=stencil_factory,
             dxa=grid_data.dxa,
