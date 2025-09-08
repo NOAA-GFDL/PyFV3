@@ -66,6 +66,8 @@ jobs:
           cd ${GITHUB_WORKSPACE}/pyFV3
           pip install .[ndsl,test]
 
+      # Only restore (don't save) caches on PRs. New caches created from PRs won't be
+      # accessible from other PRs, see workflows/create_cache.yaml.
       - name: Restore test_data (if cached)
         id: cache-restore
         uses: actions/cache/restore@v4
@@ -76,11 +78,9 @@ jobs:
       - name: Download test_data (if not cached)
         if: steps.cache-restore.outputs.cache-hit != 'true'
         run: |
-          cd ${GITHUB_WORKSPACE}/pyFV3
-          mkdir -p test_data  && cd test_data
+          mkdir -p pyFV3/test_data  && cd pyFV3/test_data
           wget ${{ env.DATA_URL }}
-          tar -xzvf 8.1.3_c12_6ranks_standard.tar.gz --no-same-owner
-          cd ..
+          tar -xzvf 8.1.3_c12_6ranks_standard.tar.gz
 
       - name: NumPy FvTp2d
         run: |
@@ -127,10 +127,3 @@ jobs:
             --which_modules=DynCore \
             --threshold_overrides_file=./tests/savepoint/translate/overrides/standard.yaml \
             ./tests/savepoint
-
-      - name: Cache test_data
-        if: steps.cache-restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: pyFV3/test_data
-          key: ${{ steps.cache-restore.outputs.cache-primary-key }}
