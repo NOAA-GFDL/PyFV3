@@ -67,7 +67,7 @@ jobs:
           lookup-only: true  # don't actually download the cache
 
       - name: Download test_data (if not already cached)
-        if: steps.cache-restore.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p pyFV3/test_data  && cd pyFV3/test_data
           wget ${{ env.TEST_DATA_URL }}
