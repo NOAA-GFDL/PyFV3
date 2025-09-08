@@ -73,10 +73,3 @@ jobs:
           wget ${{ env.TEST_DATA_URL }}
           tar -xzvf 8.1.3_c12_6ranks_standard.tar.gz
           rm 8.1.3_c12_6ranks_standard.tar.gz
-
-      - name: Cache test_data (if not already cached)
-        if: steps.cache-restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: pyFV3/test_data
-          key: ${{ steps.cache-restore.outputs.cache-primary-key }}
