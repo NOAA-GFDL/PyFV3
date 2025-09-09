@@ -1,3 +1,4 @@
+# TODO: Revert tests back to GFDL (not jjuyeonkim) after merging https://github.com/NOAA-GFDL/NDSL/issues/64
 name: "pyFV3 translate tests (subset)"
 
 # Run these these whenever ...
@@ -40,12 +41,12 @@ jobs:
         run: pip3 install mpich
 
       - name: External trigger Checkout pyFV3
-        if: ${{inputs.component_trigger}}
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
           # TODO: Revert tests back to GFDL (not jjuyeonkim) after merging https://github.com/NOAA-GFDL/NDSL/issues/64
           repository: jjuyeonkim/pyFV3
+          ref: 20250908_namelist_2
           path: pyFV3
 
       - name: Checkout hash that triggered CI
@@ -54,12 +55,20 @@ jobs:
           submodules: 'recursive'
           path: pyFV3/${{inputs.component_name}}
 
+      - name: External trigger Checkout NDSL
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+          # TODO: Revert tests back to GFDL (not jjuyeonkim) after merging https://github.com/NOAA-GFDL/NDSL/issues/64
+          repository: jjuyeonkim/NDSL
+          ref: 20250908_namelist_2
+          path: NDSL
+
       - name: External trigger install NDSL packages
         if: ${{inputs.component_trigger}}
         run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
-          # TODO: Remove checkout step after merging Namelist issue https://github.com/NOAA-GFDL/NDSL/issues/64
-          cd NDSL && git checkout 20250908_namelist_2 && pip3 install .[test] && cd ../
+          cd NDSL && pip3 install .[test] && cd ../
           pip3 install .[test]
 
       - name: Install pyFV3 packages
@@ -67,7 +76,6 @@ jobs:
         run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
           # TODO: Remove checkout step after merging https://github.com/NOAA-GFDL/NDSL/issues/64
-          git checkout 20250908_namelist_2
           pip install .[ndsl,test]
 
       - name: Restore test_data (if cached)
