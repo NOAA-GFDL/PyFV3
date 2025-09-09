@@ -40,7 +40,8 @@ extras = [
   "pyfv3[ndsl]",
   "pyfv3[test]"
 ]
-ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@develop"]
+# TODO: Revert ndsl back to GFDL develop (not jjuyeonkim) after merging https://github.com/NOAA-GFDL/NDSL/issues/64
+ndsl = ["ndsl @ git+https://github.com/jjuyeonkim/NDSL.git@20250908_namelist_2"]
 test = [
   "coverage",
   "pytest",

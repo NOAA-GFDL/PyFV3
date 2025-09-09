@@ -1,4 +1,3 @@
-# TODO: Revert tests back to GFDL (not jjuyeonkim) after merging https://github.com/NOAA-GFDL/NDSL/issues/64
 name: "pyFV3 translate tests (subset)"
 
 # Run these these whenever ...
@@ -55,15 +54,6 @@ jobs:
           submodules: 'recursive'
           path: pyFV3/${{inputs.component_name}}
 
-      - name: External trigger Checkout NDSL
-        uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
-          # TODO: Revert tests back to GFDL (not jjuyeonkim) after merging https://github.com/NOAA-GFDL/NDSL/issues/64
-          repository: jjuyeonkim/NDSL
-          ref: 20250908_namelist_2
-          path: NDSL
-
       - name: External trigger install NDSL packages
         if: ${{inputs.component_trigger}}
         run: |
@@ -75,7 +65,6 @@ jobs:
         if: ${{ ! inputs.component_trigger }}
         run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
-          # TODO: Remove checkout step after merging https://github.com/NOAA-GFDL/NDSL/issues/64
           pip install .[ndsl,test]
 
       # Only restore (don't save) caches on PRs. New caches created from PRs won't be
