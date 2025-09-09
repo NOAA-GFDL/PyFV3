@@ -4,7 +4,7 @@ import ndsl.dsl.gt4py_utils as utils
 from ndsl import Namelist, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
-from pyfv3 import DryConvectiveAdjustment
+from pyfv3 import DryConvectiveAdjustment, DynamicalCoreConfig
 
 
 # NOTE, does no halo updates, does not need to be a Parallel test,
@@ -176,17 +176,17 @@ class TranslateFVSubgridZ(ParallelTranslateBaseSlicing):
         for qvar in utils.tracer_variables:
             self.ignore_near_zero_errors[qvar] = True
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def compute_parallel(self, inputs, communicator):
         state = self.state_from_inputs(inputs)
         fvsubgridz = DryConvectiveAdjustment(
             self.stencil_factory,
             self.grid.quantity_factory,
-            self.namelist.nwat,
-            self.namelist.fv_sg_adj,
-            self.namelist.n_sponge,
-            self.namelist.hydrostatic,
+            self.config.nwat,
+            self.config.fv_sg_adj,
+            self.config.n_sponge,
+            self.config.hydrostatic,
         )
         state_namespace = SimpleNamespace(**state)
         fvsubgridz(
@@ -203,10 +203,10 @@ class TranslateFVSubgridZ(ParallelTranslateBaseSlicing):
             fvsubgridz = DryConvectiveAdjustment(
                 self.stencil_factory,
                 self.grid.quantity_factory,
-                self.namelist.nwat,
-                self.namelist.fv_sg_adj,
-                self.namelist.n_sponge,
-                self.namelist.hydrostatic,
+                self.config.nwat,
+                self.config.fv_sg_adj,
+                self.config.n_sponge,
+                self.config.hydrostatic,
             )
             state_namespace = SimpleNamespace(**state)
             fvsubgridz(

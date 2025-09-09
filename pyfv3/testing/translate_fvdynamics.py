@@ -30,7 +30,7 @@ class TranslateDycoreFortranData2Py(TranslateFortranData2Py):
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, stencil_factory)
-        self.namelist = DynamicalCoreConfig.from_namelist(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
 
 class TranslateFVDynamics(ParallelTranslateBaseSlicing):

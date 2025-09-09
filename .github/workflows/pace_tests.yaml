@@ -9,8 +9,10 @@ on:
       - main # ... when merging into the main branch
 
 jobs:
-  pace_main_tests:
-    uses: NOAA-GFDL/pace/.github/workflows/main_unit_tests.yaml@develop
+  pace_unit_tests:
+    # TODO: Revert tests back to GFDL (not jjuyeonkim) after merging
+    # https://github.com/NOAA-GFDL/NDSL/issues/64
+    uses: jjuyeonkim/pace/.github/workflows/main_unit_tests.yaml@20250908_namelist_2
     with:
       component_trigger: true
       component_name: pyFV3

@@ -4,6 +4,7 @@ import ndsl.dsl.gt4py_utils as utils
 from ndsl import Namelist, StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.stencils.testing import ParallelTranslate
+from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils import FiniteVolumeTransport, TracerAdvection
 from pyfv3.utils.functional_validation import get_subset_func
 
@@ -34,7 +35,7 @@ class TranslateTracer2D1L(ParallelTranslate):
         self._base.in_vars["parameters"] = ["nq"]
         self._base.out_vars = self._base.in_vars["data_vars"]
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
         self._subset = get_subset_func(
             self.grid.grid_indexing,
             dims=[X_DIM, Y_DIM, Z_DIM],
@@ -57,7 +58,7 @@ class TranslateTracer2D1L(ParallelTranslate):
             grid_data=self.grid.grid_data,
             damping_coefficients=self.grid.damping_coefficients,
             grid_type=self.grid.grid_type,
-            hord=self.namelist.hord_tr,
+            hord=self.config.hord_tr,
         )
 
         self.tracer_advection = TracerAdvection(

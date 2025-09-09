@@ -84,14 +84,13 @@ class TranslateXTP_U(TranslateYTP_V):
         self.in_vars["data_vars"]["c"]["serialname"] = "ub"
         self.in_vars["data_vars"]["flux"]["serialname"] = "vb"
         self.stencil_factory = stencil_factory
-        self.namelist = namelist  # type: ignore
 
     def compute_from_storage(self, inputs):
         xtp_obj = XTP_U(
             stencil_factory=self.stencil_factory,
             grid_data=self.grid.grid_data,
-            grid_type=self.namelist.grid_type,
-            iord=self.namelist.hord_mt,
+            grid_type=self.config.grid_type,
+            iord=self.config.hord_mt,
         )
         xtp_obj(inputs["c"], inputs["u"], inputs["flux"])
         return inputs

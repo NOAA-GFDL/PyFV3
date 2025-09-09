@@ -1,6 +1,5 @@
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
-import pyfv3
 import pyfv3.stencils.d_sw as d_sw
 from ndsl import Namelist, StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
@@ -17,9 +16,8 @@ class TranslateD_SW(TranslateDycoreFortranData2Py):
         super().__init__(grid, namelist, stencil_factory)
         self.max_error = 3.2e-10
         self.stencil_factory = stencil_factory
-        dycore_config = pyfv3.DynamicalCoreConfig.from_namelist(namelist)
         column_namelist = d_sw.get_column_namelist(
-            config=dycore_config.acoustic_dynamics.d_grid_shallow_water,
+            config=self.config.d_grid_shallow_water,
             quantity_factory=self.grid.quantity_factory,
         )
         self.compute_func = d_sw.DGridShallowWaterLagrangianDynamics(  # type: ignore
@@ -30,7 +28,7 @@ class TranslateD_SW(TranslateDycoreFortranData2Py):
             column_namelist=column_namelist,
             nested=self.grid.nested,
             stretched_grid=self.grid.stretched_grid,
-            config=dycore_config.d_grid_shallow_water,
+            config=self.config.d_grid_shallow_water,
         )
         self.in_vars["data_vars"] = {
             "uc": grid.x3d_domain_dict(),
@@ -208,19 +206,17 @@ class TranslateHeatDiss(TranslateDycoreFortranData2Py):
             "diss_est": grid.compute_dict(),
             "dw": grid.compute_dict(),
         }
-        self.namelist = namelist  # type: ignore
         self.stencil_factory = stencil_factory
 
     def compute_from_storage(self, inputs):
         column_namelist = d_sw.get_column_namelist(
-            config=self.namelist, quantity_factory=self.grid.quantity_factory
+            config=self.config.d_grid_shallow_water,
+            quantity_factory=self.grid.quantity_factory,
         )
         # TODO add these to the serialized data or remove the test
         inputs["damp_w"] = column_namelist["damp_w"]
         inputs["ke_bg"] = column_namelist["ke_bg"]
-        inputs["dt"] = (
-            self.namelist.dt_atmos / self.namelist.k_split / self.namelist.n_split
-        )
+        inputs["dt"] = self.config.dt_atmos / self.config.k_split / self.config.n_split
         inputs["rarea"] = self.grid.rarea
         heat_diss_stencil = self.stencil_factory.from_origin_domain(
             d_sw.heat_diss,

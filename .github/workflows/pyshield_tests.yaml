@@ -10,7 +10,9 @@ on:
 
 jobs:
   pyshield_translate_tests:
-    uses: NOAA-GFDL/PySHiELD/.github/workflows/translate.yaml@develop
+    # TODO: Revert tests back to GFDL (not jjuyeonkim) after merging
+    # https://github.com/NOAA-GFDL/NDSL/issues/64
+    uses: jjuyeonkim/PySHiELD/.github/workflows/translate.yaml@20250908_namelist_2
     with:
       component_trigger: true
       component_name: pyFV3

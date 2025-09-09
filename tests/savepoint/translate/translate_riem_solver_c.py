@@ -14,7 +14,7 @@ class TranslateRiem_Solver_C(TranslateDycoreFortranData2Py):
         self.compute_func = NonhydrostaticVerticalSolverCGrid(  # type: ignore
             stencil_factory,
             quantity_factory=self.grid.quantity_factory,
-            p_fac=namelist.p_fac,
+            p_fac=self.config.p_fac,
         )
         self.in_vars["data_vars"] = {
             "cappa": {},

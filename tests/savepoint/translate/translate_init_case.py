@@ -21,6 +21,7 @@ from ndsl.constants import (
 from ndsl.grid import GridData, MetricTerms
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
 from ndsl.stencils.testing.grid import TRACER_DIM  # type: ignore
+from pyfv3 import DynamicalCoreConfig
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
@@ -164,7 +165,7 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
         self.ignore_near_zero_errors = {}
         for var in ["u", "v"]:
             self.ignore_near_zero_errors[var] = {"near_zero": 2e-13}
-        self.namelist = namelist  # type: ignore
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
         self.stencil_factory = stencil_factory
 
     def compute_sequential(self, *args, **kwargs):
@@ -206,20 +207,20 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
             )
 
         metric_terms = MetricTerms.from_tile_sizing(
-            npx=self.namelist.npx,
-            npy=self.namelist.npy,
-            npz=self.namelist.npz,
+            npx=self.config.npx,
+            npy=self.config.npy,
+            npz=self.config.npz,
             communicator=communicator,
             backend=self.stencil_factory.backend,
         )
 
         sizer = SubtileGridSizer.from_tile_params(
-            nx_tile=self.namelist.nx_tile,
-            ny_tile=self.namelist.nx_tile,
-            nz=self.namelist.nz,
+            nx_tile=self.config.npx - 1,
+            ny_tile=self.config.npy - 1,
+            nz=self.config.nz,
             n_halo=N_HALO_DEFAULT,
             extra_dim_lengths={},
-            layout=self.namelist.layout,
+            layout=self.config.layout,
             tile_partitioner=communicator.partitioner.tile,
             tile_rank=communicator.tile.rank,
         )
@@ -232,12 +233,12 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
         quantity_factory = QuantityFactory()
 
         state = analytic_init.init_analytic_state(
-            analytic_init_case="baroclinic",
+            analytic_init_case="baroclinic_instability",
             grid_data=grid_data,
             quantity_factory=quantity_factory,
-            adiabatic=self.namelist.adiabatic,
-            hydrostatic=self.namelist.hydrostatic,
-            moist_phys=self.namelist.moist_phys,
+            adiabatic=self.config.adiabatic,
+            hydrostatic=self.config.hydrostatic,
+            moist_phys=self.config.moist_phys,
             comm=communicator,
         )
 
@@ -295,7 +296,6 @@ class TranslateInitPreJab(TranslateDycoreFortranData2Py):
             "eta": {"istart": 0, "iend": 0, "jstart": 0, "jend": 0},
             "eta_v": {"istart": 0, "iend": 0, "jstart": 0, "jend": 0},
         }
-        self.namelist = namelist  # type: ignore
         self.stencil_factory = stencil_factory
 
     def compute(self, inputs):
@@ -357,7 +357,6 @@ class TranslateJablonowskiBaroclinic(TranslateDycoreFortranData2Py):
             self.ignore_near_zero_errors[var] = {"near_zero": 2e-13}
 
         self.max_error = 1e-13
-        self.namelist = namelist  # type: ignore
         self.stencil_factory = stencil_factory
 
     def compute(self, inputs):
@@ -394,8 +393,8 @@ class TranslateJablonowskiBaroclinic(TranslateDycoreFortranData2Py):
         baroclinic_init.baroclinic_initialization(
             **sliced_inputs,
             **grid_vars,
-            adiabatic=self.namelist.adiabatic,
-            hydrostatic=self.namelist.hydrostatic,
+            adiabatic=self.config.adiabatic,
+            hydrostatic=self.config.hydrostatic,
             nx=self.grid.nic,
             ny=self.grid.njc,
         )
@@ -439,7 +438,6 @@ class TranslatePVarAuxiliaryPressureVars(TranslateDycoreFortranData2Py):
         self.out_vars = {}
         for var in ["delz", "delp", "ps", "peln"]:
             self.out_vars[var] = self.in_vars["data_vars"][var]
-        self.namelist = namelist  # type: ignore
         self.stencil_factory = stencil_factory
 
     def compute(self, inputs):
@@ -449,14 +447,13 @@ class TranslatePVarAuxiliaryPressureVars(TranslateDycoreFortranData2Py):
             if k != "ptop":
                 inputs[k] = v.data
 
-        namelist = self.namelist
         inputs["delz"][:] = 1.0e25
         sliced_inputs = make_sliced_inputs_dict(
             inputs, self.grid.compute_interface()[0:2]
         )
         init_utils.p_var(
             **sliced_inputs,
-            moist_phys=namelist.moist_phys,
-            make_nh=(not namelist.hydrostatic),
+            moist_phys=self.config.moist_phys,
+            make_nh=(not self.config.hydrostatic),
         )
         return self.slice_output(inputs)

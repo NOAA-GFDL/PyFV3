@@ -1,7 +1,6 @@
 from typing import Any, Dict
 
 from ndsl import Namelist, StencilFactory
-from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils import temperature_adjust
 from pyfv3.stencils.dyn_core import get_nk_heat_dissipation
 from pyfv3.testing import TranslateDycoreFortranData2Py
@@ -17,10 +16,8 @@ class TranslatePressureAdjustedTemperature_NonHydrostatic(
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
-        dycore_config = DynamicalCoreConfig.from_namelist(namelist)
-        self.namelist = dycore_config
         n_adj = get_nk_heat_dissipation(
-            config=dycore_config.d_grid_shallow_water,
+            config=self.config.d_grid_shallow_water,
             npz=grid.grid_indexing.domain[2],
         )
         self.compute_func = stencil_factory.from_origin_domain(  # type: ignore
@@ -42,7 +39,7 @@ class TranslatePressureAdjustedTemperature_NonHydrostatic(
         self.stencil_factory = stencil_factory
 
     def compute_from_storage(self, inputs):
-        inputs["delt_time_factor"] = abs(inputs["bdt"] * self.namelist.delt_max)
+        inputs["delt_time_factor"] = abs(inputs["bdt"] * self.config.delt_max)
         del inputs["bdt"]
         self.compute_func(**inputs)
         return inputs
