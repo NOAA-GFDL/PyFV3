@@ -44,7 +44,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
-          repository: noaa-gfdl/pyFV3
+	  # TODO: Revert tests back to GFDL (not jjuyeonkim) after merging
+          # https://github.com/NOAA-GFDL/NDSL/issues/64
+          repository: jjuyeonkim/pyFV3
           path: pyFV3
 
       - name: Checkout hash that triggered CI
@@ -57,13 +59,20 @@ jobs:
         if: ${{inputs.component_trigger}}
         run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
-          cd NDSL && pip3 install .[test] && cd ../
+	  # TODO: Remove checkout step after merging Namelist issue
+          # https://github.com/NOAA-GFDL/NDSL/issues/64
+          cd NDSL && git checkout 20250908_namelist_2 && pip3 install .[test] && cd ../
+          # When ready, revert the above line with the following:
+          #cd NDSL && pip3 install .[test] && cd ../
           pip3 install .[test]
 
       - name: Install pyFV3 packages
         if: ${{ ! inputs.component_trigger }}
         run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
+	  # TODO: Remove checkout step after merging
+          # https://github.com/NOAA-GFDL/NDSL/issues/64
+	  git checkout 20250908_namelist_2
           pip install .[ndsl,test]
 
       - name: Restore test_data (if cached)
