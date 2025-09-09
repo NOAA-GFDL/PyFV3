@@ -275,7 +275,7 @@ class DynamicalCoreConfig:
     def from_namelist(
         cls, namelist: Namelist, target_groups=None
     ) -> "DynamicalCoreConfig":
-        """This creates a DynamicalCoreConfig using the input namelist. 
+        """This creates a DynamicalCoreConfig using the input namelist.
         Duplicate of from_f90nml.
         """
         return cls.from_f90nml(namelist, target_groups=target_groups)
