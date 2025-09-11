@@ -40,6 +40,7 @@ jobs:
         run: pip3 install mpich
 
       - name: External trigger Checkout pyFV3
+        if: ${{inputs.component_trigger}}
         uses: actions/checkout@v5
         with:
           submodules: 'recursive'
