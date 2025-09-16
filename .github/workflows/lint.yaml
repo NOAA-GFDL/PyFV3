@@ -23,6 +23,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
+          repository: jjuyeonkim/pyfv3
           submodules: 'recursive'
           ref: 20250908_namelist_2
 

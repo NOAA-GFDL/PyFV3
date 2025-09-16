@@ -47,35 +47,32 @@ jobs:
       - name: Install mpi (MPICH flavor)
         run: pip3 install mpich
 
-      - name: External trigger Checkout pyFV3
-        if: ${{inputs.component_trigger}}
+      - name: Checkout pyFV3
         uses: actions/checkout@v5
         with:
           submodules: 'recursive'
-          # TODO: Revert tests back to GFDL (not jjuyeonkim) after merging https://github.com/NOAA-GFDL/NDSL/issues/64
-          repository: jjuyeonkim/pyFV3
-          ref: 20250908_namelist_2
+          repository: jjuyeonkim/pyfv3
           path: pyFV3
+          ref: 20250908_namelist_2
 
-      - name: Checkout hash that triggered CI
+      - name: Checkout NDSL
         uses: actions/checkout@v5
         with:
           submodules: 'recursive'
-          path: pyFV3/${{inputs.component_name}}
+          repository: jjuyeonkim/ndsl
+          path: pyFV3/NDSL
           ref: 20250908_namelist_2
 
-      - name: External trigger install NDSL packages
-        if: ${{inputs.component_trigger}}
+      - name: Install NDSL packages
         run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
           cd NDSL && pip3 install .[test] && cd ../
-          pip3 install .[test]
 
       - name: Install pyFV3 packages
-        if: ${{ ! inputs.component_trigger }}
         run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
           pip install .[ndsl,test]
+
 
       # Only restore (don't save) caches on PRs. New caches created from PRs won't be
       # accessible from other PRs, see workflows/create_cache.yaml.
