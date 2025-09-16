@@ -17,7 +17,7 @@ on:
       - 20250908_namelist_2
 
 jobs:
-  pace_unit_tests:
+  pace_main_tests:
     uses: jjuyeonkim/pace/.github/workflows/main_unit_tests.yaml@20250908_namelist_2
     with:
       component_trigger: true
