@@ -1,3 +1,10 @@
+# TODO: Revert tests back to NOAA-GFDL version (not jjuyeonkim) after
+# NDSL/issues#64's PRs close and are all merged. These PRs include:
+# https://github.com/NOAA-GFDL/NDSL/pull/218
+# https://github.com/NOAA-GFDL/PyFV3/pull/83
+# https://github.com/NOAA-GFDL/PySHiELD/pull/58
+# https://github.com/NOAA-GFDL/pace/pull/145
+#
 name: "Lint"
 
 # Run these these whenever ...
@@ -7,6 +14,7 @@ on:
   push:
     branches:
       - main # ... when merging into the main branch
+      - 20250908_namelist_2
 
 jobs:
   lint:
@@ -14,6 +22,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+          ref: 20250908_namelist_2
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
