@@ -30,7 +30,6 @@ $ pre-commit install
 ## Getting started, in more detail
 If you want to build the main fv3core docker image, run
 
-```shell
 $ make build
 ```
 
