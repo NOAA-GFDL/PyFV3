@@ -197,46 +197,73 @@ class DynamicalCoreConfig:
     do_qa: bool = DEFAULT_BOOL
     layout: Tuple[int, int] = (1, 1)
     grid_type: int = 0
-    u_max: float = 350.0  # max windspeed for dp config
+    u_max: float = 350.0
+    """max windspeed for dp config"""
     do_f3d: bool = False
     inline_q: bool = False
-    do_skeb: bool = False  # save dissipation estimate
+    do_skeb: bool = False
+    """save dissipation estimate"""
     use_logp: bool = False
     moist_phys: bool = True
     check_negative: bool = False
     # gfdl_cloud_microphys.F90
-    tau_r2g: float = 900.0  # rain freezing during fast_sat
-    tau_smlt: float = 900.0  # snow melting
-    tau_g2r: float = 600.0  # graupel melting to rain
-    tau_imlt: float = 600.0  # cloud ice melting
-    tau_i2s: float = 1000.0  # cloud ice to snow auto - conversion
-    tau_l2r: float = 900.0  # cloud water to rain auto - conversion
-    tau_g2v: float = 1200.0  # graupel sublimation
-    tau_v2g: float = 21600.0  # graupel deposition -- make it a slow process
-    sat_adj0: float = 0.90  # adjustment factor (0: no 1: full) during fast_sat_adj
+    tau_r2g: float = 900.0
+    """rain freezing during fast_sat"""
+    tau_smlt: float = 900.0
+    """snow melting"""
+    tau_g2r: float = 600.0
+    """graupel melting to rain"""
+    tau_imlt: float = 600.0
+    """cloud ice melting"""
+    tau_i2s: float = 1000.0
+    """cloud ice to snow auto - conversion"""
+    tau_l2r: float = 900.0
+    """cloud water to rain auto - conversion"""
+    tau_g2v: float = 1200.0
+    """graupel sublimation"""
+    tau_v2g: float = 21600.0
+    """graupel deposition -- make it a slow process"""
+    sat_adj0: float = 0.90
+    """adjustment factor (0: no 1: full) during fast_sat_adj"""
     ql_gen: float = (
         1.0e-3  # max new cloud water during remapping step if fast_sat_adj = .t.
     )
-    ql_mlt: float = 2.0e-3  # max value of cloud water allowed from melted cloud ice
-    qs_mlt: float = 1.0e-6  # max cloud water due to snow melt
-    ql0_max: float = 2.0e-3  # max cloud water value (auto converted to rain)
-    t_sub: float = 184.0  # min temp for sublimation of cloud ice
-    qi_gen: float = 1.82e-6  # max cloud ice generation during remapping step
-    qi_lim: float = 1.0  # cloud ice limiter to prevent large ice build up
-    qi0_max: float = 1.0e-4  # max cloud ice value (by other sources)
-    rad_snow: bool = True  # consider snow in cloud fraction calculation
-    rad_rain: bool = True  # consider rain in cloud fraction calculation
-    rad_graupel: bool = True  # consider graupel in cloud fraction calculation
-    tintqs: bool = False  # use temperature in the saturation mixing in PDF
-    dw_ocean: float = 0.10  # base value for ocean
-    dw_land: float = 0.15  # base value for subgrid deviation / variability over land
+    ql_mlt: float = 2.0e-3
+    """max value of cloud water allowed from melted cloud ice"""
+    qs_mlt: float = 1.0e-6
+    """max cloud water due to snow melt"""
+    ql0_max: float = 2.0e-3
+    """max cloud water value (auto converted to rain)"""
+    t_sub: float = 184.0
+    """min temp for sublimation of cloud ice"""
+    qi_gen: float = 1.82e-6
+    """max cloud ice generation during remapping step"""
+    qi_lim: float = 1.0
+    """cloud ice limiter to prevent large ice build up"""
+    qi0_max: float = 1.0e-4
+    """max cloud ice value (by other sources)"""
+    rad_snow: bool = True
+    """consider snow in cloud fraction calculation"""
+    rad_rain: bool = True
+    """consider rain in cloud fraction calculation"""
+    rad_graupel: bool = True
+    """consider graupel in cloud fraction calculation"""
+    tintqs: bool = False
+    """use temperature in the saturation mixing in PDF"""
+    dw_ocean: float = 0.10
+    """base value for ocean"""
+    dw_land: float = 0.15
+    """base value for subgrid deviation / variability over land"""
     # cloud scheme 0 - ?
     # 1: old fvgfs gfdl) mp implementation
     # 2: binary cloud scheme (0 / 1)
     icloud_f: int = 0
-    cld_min: float = 0.05  # !< minimum cloud fraction
-    tau_l2v: float = 300.0  # cloud water to water vapor (evaporation)
-    tau_v2l: float = 90.0  # water vapor to cloud water (condensation)
+    cld_min: float = 0.05
+    """!< minimum cloud fraction"""
+    tau_l2v: float = 300.0
+    """cloud water to water vapor (evaporation)"""
+    tau_v2l: float = 90.0
+    """water vapor to cloud water (condensation)"""
     c2l_ord: int = 4
     regional: bool = False
     m_split: int = 0
@@ -248,7 +275,8 @@ class DynamicalCoreConfig:
     nf_omega: int = 1
     fv_sg_adj: int = -1
     n_sponge: int = 1
-    sw_dynamics: bool = False  # shallow water conditions
+    sw_dynamics: bool = False
+    """shallow water conditions"""
     namelist_override: Optional[str] = None
 
     def __post_init__(self):
