@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 import f90nml
 import yaml
 
-from ndsl.namelist import Namelist, NamelistDefaults
+from ndsl.namelist import Namelist
 
 
 DEFAULT_INT = 0
@@ -195,86 +195,88 @@ class DynamicalCoreConfig:
     vtdm4: float = DEFAULT_FLOAT
     z_tracer: bool = DEFAULT_BOOL
     do_qa: bool = DEFAULT_BOOL
-    layout: Tuple[int, int] = NamelistDefaults.layout
-    grid_type: int = NamelistDefaults.grid_type
-    u_max: float = NamelistDefaults.u_max  # max windspeed for dp config
-    do_f3d: bool = NamelistDefaults.do_f3d
-    inline_q: bool = NamelistDefaults.inline_q
-    do_skeb: bool = NamelistDefaults.do_skeb  # save dissipation estimate
-    use_logp: bool = NamelistDefaults.use_logp
-    moist_phys: bool = NamelistDefaults.moist_phys
-    check_negative: bool = NamelistDefaults.check_negative
+    layout: Tuple[int, int] = (1, 1)
+    grid_type: int = 0
+    u_max: float = 350.0
+    """max windspeed for dp config"""
+    do_f3d: bool = False
+    inline_q: bool = False
+    do_skeb: bool = False
+    """save dissipation estimate"""
+    use_logp: bool = False
+    moist_phys: bool = True
+    check_negative: bool = False
     # gfdl_cloud_microphys.F90
-    tau_r2g: float = NamelistDefaults.tau_r2g  # rain freezing during fast_sat
-    tau_smlt: float = NamelistDefaults.tau_smlt  # snow melting
-    tau_g2r: float = NamelistDefaults.tau_g2r  # graupel melting to rain
-    tau_imlt: float = NamelistDefaults.tau_imlt  # cloud ice melting
-    tau_i2s: float = NamelistDefaults.tau_i2s  # cloud ice to snow auto - conversion
-    tau_l2r: float = NamelistDefaults.tau_l2r  # cloud water to rain auto - conversion
-    tau_g2v: float = NamelistDefaults.tau_g2v  # graupel sublimation
-    tau_v2g: float = (
-        NamelistDefaults.tau_v2g
-    )  # graupel deposition -- make it a slow process
-    sat_adj0: float = (
-        NamelistDefaults.sat_adj0
-    )  # adjustment factor (0: no 1: full) during fast_sat_adj
+    tau_r2g: float = 900.0
+    """rain freezing during fast_sat"""
+    tau_smlt: float = 900.0
+    """snow melting"""
+    tau_g2r: float = 600.0
+    """graupel melting to rain"""
+    tau_imlt: float = 600.0
+    """cloud ice melting"""
+    tau_i2s: float = 1000.0
+    """cloud ice to snow auto - conversion"""
+    tau_l2r: float = 900.0
+    """cloud water to rain auto - conversion"""
+    tau_g2v: float = 1200.0
+    """graupel sublimation"""
+    tau_v2g: float = 21600.0
+    """graupel deposition -- make it a slow process"""
+    sat_adj0: float = 0.90
+    """adjustment factor (0: no 1: full) during fast_sat_adj"""
     ql_gen: float = (
         1.0e-3  # max new cloud water during remapping step if fast_sat_adj = .t.
     )
-    ql_mlt: float = (
-        NamelistDefaults.ql_mlt
-    )  # max value of cloud water allowed from melted cloud ice
-    qs_mlt: float = NamelistDefaults.qs_mlt  # max cloud water due to snow melt
-    ql0_max: float = (
-        NamelistDefaults.ql0_max
-    )  # max cloud water value (auto converted to rain)
-    t_sub: float = NamelistDefaults.t_sub  # min temp for sublimation of cloud ice
-    qi_gen: float = (
-        NamelistDefaults.qi_gen
-    )  # max cloud ice generation during remapping step
-    qi_lim: float = (
-        NamelistDefaults.qi_lim
-    )  # cloud ice limiter to prevent large ice build up
-    qi0_max: float = NamelistDefaults.qi0_max  # max cloud ice value (by other sources)
-    rad_snow: bool = (
-        NamelistDefaults.rad_snow
-    )  # consider snow in cloud fraction calculation
-    rad_rain: bool = (
-        NamelistDefaults.rad_rain
-    )  # consider rain in cloud fraction calculation
-    rad_graupel: bool = (
-        NamelistDefaults.rad_graupel
-    )  # consider graupel in cloud fraction calculation
-    tintqs: bool = (
-        NamelistDefaults.tintqs
-    )  # use temperature in the saturation mixing in PDF
-    dw_ocean: float = NamelistDefaults.dw_ocean  # base value for ocean
-    dw_land: float = (
-        NamelistDefaults.dw_land
-    )  # base value for subgrid deviation / variability over land
+    ql_mlt: float = 2.0e-3
+    """max value of cloud water allowed from melted cloud ice"""
+    qs_mlt: float = 1.0e-6
+    """max cloud water due to snow melt"""
+    ql0_max: float = 2.0e-3
+    """max cloud water value (auto converted to rain)"""
+    t_sub: float = 184.0
+    """min temp for sublimation of cloud ice"""
+    qi_gen: float = 1.82e-6
+    """max cloud ice generation during remapping step"""
+    qi_lim: float = 1.0
+    """cloud ice limiter to prevent large ice build up"""
+    qi0_max: float = 1.0e-4
+    """max cloud ice value (by other sources)"""
+    rad_snow: bool = True
+    """consider snow in cloud fraction calculation"""
+    rad_rain: bool = True
+    """consider rain in cloud fraction calculation"""
+    rad_graupel: bool = True
+    """consider graupel in cloud fraction calculation"""
+    tintqs: bool = False
+    """use temperature in the saturation mixing in PDF"""
+    dw_ocean: float = 0.10
+    """base value for ocean"""
+    dw_land: float = 0.15
+    """base value for subgrid deviation / variability over land"""
     # cloud scheme 0 - ?
     # 1: old fvgfs gfdl) mp implementation
     # 2: binary cloud scheme (0 / 1)
-    icloud_f: int = NamelistDefaults.icloud_f
-    cld_min: float = NamelistDefaults.cld_min  # !< minimum cloud fraction
-    tau_l2v: float = (
-        NamelistDefaults.tau_l2v
-    )  # cloud water to water vapor (evaporation)
-    tau_v2l: float = (
-        NamelistDefaults.tau_v2l
-    )  # water vapor to cloud water (condensation)
-    c2l_ord: int = NamelistDefaults.c2l_ord
-    regional: bool = NamelistDefaults.regional
-    m_split: int = NamelistDefaults.m_split
-    convert_ke: bool = NamelistDefaults.convert_ke
-    breed_vortex_inline: bool = NamelistDefaults.breed_vortex_inline
-    use_old_omega: bool = NamelistDefaults.use_old_omega
-    rf_fast: bool = NamelistDefaults.rf_fast
-    adiabatic: bool = NamelistDefaults.adiabatic
-    nf_omega: int = NamelistDefaults.nf_omega
-    fv_sg_adj: int = NamelistDefaults.fv_sg_adj
-    n_sponge: int = NamelistDefaults.n_sponge
-    sw_dynamics: bool = False  # TODO: Change to NamelistDefaults.sw_dynamics
+    icloud_f: int = 0
+    cld_min: float = 0.05
+    """!< minimum cloud fraction"""
+    tau_l2v: float = 300.0
+    """cloud water to water vapor (evaporation)"""
+    tau_v2l: float = 90.0
+    """water vapor to cloud water (condensation)"""
+    c2l_ord: int = 4
+    regional: bool = False
+    m_split: int = 0
+    convert_ke: bool = False
+    breed_vortex_inline: bool = False
+    use_old_omega: bool = True
+    rf_fast: bool = False
+    adiabatic: bool = False
+    nf_omega: int = 1
+    fv_sg_adj: int = -1
+    n_sponge: int = 1
+    sw_dynamics: bool = False
+    """shallow water conditions"""
     namelist_override: Optional[str] = None
 
     def __post_init__(self):
