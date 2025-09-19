@@ -116,7 +116,7 @@ class GeosDycoreWrapper:
 
         self.backend = backend
         self.namelist = namelist
-        self.dycore_config = pyfv3.DynamicalCoreConfig.from_f90nml(self.namelist)
+        self.dycore_config = pyfv3.DynamicalCoreConfig.from_yaml_dict(self.namelist)
         self.dycore_config.dt_atmos = bdt
         assert self.dycore_config.dt_atmos != 0
 
