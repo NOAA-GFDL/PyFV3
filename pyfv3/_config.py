@@ -387,56 +387,6 @@ class DynamicalCoreConfig:
         )
 
     @classmethod
-    def from_yaml_dict(cls, yaml_dict: dict) -> "DynamicalCoreConfig":
-        """Creates a DynamicalCoreConfig from a dict that was loaded
-        from a YAML file (for example, safe_load)
-        """
-        config = cls()
-        flat_config: dict = {}
-        timestep = timedelta(seconds=yaml_dict["dt_atmos"])
-        runtime = {
-            "days": 0.0,
-            "hours": 0.0,
-            "minutes": 0.0,
-            "seconds": 0.0,
-        }
-        for key in runtime.keys():
-            if key in yaml_dict.keys():
-                runtime[key] = yaml_dict[key]
-
-        total_time = timedelta(
-            days=runtime["days"],
-            hours=runtime["hours"],
-            minutes=runtime["minutes"],
-            seconds=runtime["seconds"],
-        )
-        for key, value in yaml_dict.items():
-            if isinstance(value, dict):
-                for subkey, subvalue in value.items():
-                    if subkey in config.__annotations__.keys():
-                        if subkey in flat_config:
-                            if subvalue != flat_config[subkey]:
-                                raise ValueError(
-                                    "Cannot flatten this config ",
-                                    f"duplicate keys: {subkey}",
-                                )
-                        flat_config[subkey] = subvalue
-            else:
-                if key == "nx_tile":
-                    flat_config["npx"] = value + 1
-                    flat_config["npy"] = value + 1
-                elif key == "nz":
-                    flat_config["npz"] = value
-                else:
-                    if key in config.__annotations__.keys():
-                        flat_config[key] = value
-        for field in dataclasses.fields(config):
-            if field.name in flat_config.keys():
-                setattr(config, field.name, flat_config[field.name])
-        config.n_steps = floor(total_time.total_seconds() / timestep.total_seconds())
-        return config
-
-    @classmethod
     def from_yaml(cls, yaml_config: str) -> "DynamicalCoreConfig":
         with open(yaml_config, "r") as f:
             yaml_dict = yaml.safe_load(f)
