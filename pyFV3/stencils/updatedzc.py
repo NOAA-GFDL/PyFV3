@@ -31,10 +31,16 @@ def compute_weighted_average(
     vel: FloatField,
     avg: FloatField,
 ):
+    """
+    Perform a cubic spline interpolation of wind velocity from grid center to grid edge
 
+    Args:
+        dp_ref(in): layer thickness in Pa
+        vel(in): grid center wind speed
+        avg(out: interpolated (grid edge) wind speed
+    """
     # there's some complexity due to gz being defined on interfaces
     # have to interpolate winds to layer interfaces first, using higher-order
-    # cubic spline interpolation
     with computation(PARALLEL):
         with interval(0, 1):
             top_ratio = dp_ref / (dp_ref + dp_ref[1])
@@ -55,6 +61,19 @@ def compute_fx_fy(
     fx: FloatField,
     fy: FloatField,
 ):
+    """
+    Compute first-order upwind fluxes of gz in x and y directions.
+
+    Args:
+        gz_x(in): gz with corners copied to perform derivatives in x-direction
+        gz_y(in): gz with corners copied to perform derivatives in y-direction
+        xfx(in): contravariant c-grid u-wind interpolated to layer interfaces,
+            including metric terms to make it a "volume flux"
+        yfx(in): contravariant c-grid v-wind interpolated to layer interfaces
+        fx(out): first-order upwind x-flux of gz
+        fy(out): first-order upwind y-flux of gz
+    """
+
     with computation(PARALLEL), interval(...):
         if xfx > 0.0:
             fx = gz_x[-1, 0, 0]
@@ -82,6 +101,26 @@ def compute_gz_ws(
     ws: FloatFieldIJ,
     gz: FloatField,
 ):
+    """
+        Compute gz and wd, eusures gz is monotonically increasing in z at the end
+
+    Args
+        gz_y(in): gz with corners copied to perform derivatives in y-direction
+        area(in):
+        fx(in): first-order upwind x-flux of gz
+        fy(in): first-order upwind y-flux of gz
+        xfx(in): contravariant c-grid u-wind interpolated to layer interfaces,
+            including metric terms to make it a "volume flux"
+        yfx(in): contravariant c-grid v-wind interpolated to layer interfaces
+        dz_min(in): Controls minimum thickness in NH solver
+        dt(in): timestep over which to evolve the geopotential height, in seconds
+        zs(in): surface height in m
+        ws(out): lagrangian (parcel-following) surface vertical wind implied by
+            lowest-level gz change note that a parcel moving horizontally
+            across terrain will be moving in the vertical (eqn 5.5 in documentation)
+        gz(out): geopotential height on model interfaces
+    """
+
     with computation(PARALLEL), interval(...):
         gz = (gz_y * area + (fx - fx[1, 0, 0]) + (fy - fy[0, 1, 0])) / (
             area + (xfx - xfx[1, 0, 0]) + (yfx - yfx[0, 1, 0])
@@ -219,6 +258,8 @@ class UpdateGeopotentialHeightOnCGrid:
         dt: Float,
     ):
         """
+        Step dz forward on c-grid
+
         Args:
             dp_ref: layer thickness in Pa
             zs: surface height in m
