@@ -100,8 +100,8 @@ class TranslateCopyCorners(TranslateDycoreFortranData2Py):
         self.in_vars["data_vars"] = {"q": {}}
         self.in_vars["parameters"] = ["dir"]
         self.out_vars: Dict[str, Any] = {"q": {}}
-        self._copy_corners_x = corners.CopyCorners("x", stencil_factory=stencil_factory)
-        self._copy_corners_y = corners.CopyCorners("y", stencil_factory=stencil_factory)
+        self._copy_corners_x = corners.CopyCornersX(stencil_factory)
+        self._copy_corners_y = corners.CopyCornersY(stencil_factory)
         self.stencil_factory = stencil_factory
 
     def compute_from_storage(self, inputs):
