@@ -1,5 +1,6 @@
 from typing import Optional
 
+import dace
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation
@@ -8,6 +9,7 @@ from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients
+from ndsl.stencils.corners import corner_copy_y, corner_copy_x
 
 
 def calc_damp(damp_c: Quantity, da_min: Float, nord: Quantity) -> Quantity:
@@ -182,176 +184,16 @@ def diffusive_damp(
         fy = fy + 0.5 * damp * (mass[0, -1, 0] + mass) * fy2
 
 
-def copy_corners_y_nord(
-    q_in: FloatField, q_out: FloatField, nord: FloatFieldK, current_nord: int
-):
-    """
-    Args:
-        q_in (in):
-        q_out (out):
-    """
-    from __externals__ import i_end, i_start, j_end, j_start
-
-    with computation(PARALLEL), interval(...):
-        if nord > current_nord:
-            with horizontal(
-                region[i_start - 3, j_start - 3], region[i_start - 3, j_end + 3]
-            ):
-                q_out = q_in[5, 0, 0]
-            with horizontal(
-                region[i_start - 2, j_start - 3], region[i_start - 3, j_end + 2]
-            ):
-                q_out = q_in[4, 1, 0]
-            with horizontal(
-                region[i_start - 1, j_start - 3], region[i_start - 3, j_end + 1]
-            ):
-                q_out = q_in[3, 2, 0]
-            with horizontal(
-                region[i_start - 3, j_start - 2], region[i_start - 2, j_end + 3]
-            ):
-                q_out = q_in[4, -1, 0]
-            with horizontal(
-                region[i_start - 2, j_start - 2], region[i_start - 2, j_end + 2]
-            ):
-                q_out = q_in[3, 0, 0]
-            with horizontal(
-                region[i_start - 1, j_start - 2], region[i_start - 2, j_end + 1]
-            ):
-                q_out = q_in[2, 1, 0]
-            with horizontal(
-                region[i_start - 3, j_start - 1], region[i_start - 1, j_end + 3]
-            ):
-                q_out = q_in[3, -2, 0]
-            with horizontal(
-                region[i_start - 2, j_start - 1], region[i_start - 1, j_end + 2]
-            ):
-                q_out = q_in[2, -1, 0]
-            with horizontal(
-                region[i_start - 1, j_start - 1], region[i_start - 1, j_end + 1]
-            ):
-                q_out = q_in[1, 0, 0]
-            with horizontal(
-                region[i_end + 1, j_start - 3], region[i_end + 3, j_end + 1]
-            ):
-                q_out = q_in[-3, 2, 0]
-            with horizontal(
-                region[i_end + 2, j_start - 3], region[i_end + 3, j_end + 2]
-            ):
-                q_out = q_in[-4, 1, 0]
-            with horizontal(
-                region[i_end + 3, j_start - 3], region[i_end + 3, j_end + 3]
-            ):
-                q_out = q_in[-5, 0, 0]
-            with horizontal(
-                region[i_end + 1, j_start - 2], region[i_end + 2, j_end + 1]
-            ):
-                q_out = q_in[-2, 1, 0]
-            with horizontal(
-                region[i_end + 2, j_start - 2], region[i_end + 2, j_end + 2]
-            ):
-                q_out = q_in[-3, 0, 0]
-            with horizontal(
-                region[i_end + 3, j_start - 2], region[i_end + 2, j_end + 3]
-            ):
-                q_out = q_in[-4, -1, 0]
-            with horizontal(
-                region[i_end + 1, j_start - 1], region[i_end + 1, j_end + 1]
-            ):
-                q_out = q_in[-1, 0, 0]
-            with horizontal(
-                region[i_end + 2, j_start - 1], region[i_end + 1, j_end + 2]
-            ):
-                q_out = q_in[-2, -1, 0]
-            with horizontal(
-                region[i_end + 3, j_start - 1], region[i_end + 1, j_end + 3]
-            ):
-                q_out = q_in[-3, -2, 0]
+def copy_corners_y_nord(field_to_copy, nord):
+    for k in dace.map[0 : nord.data.shape[0]]:
+        if nord.data[k] > 0:
+            corner_copy_y(field_to_copy[:, :, k])
 
 
-def copy_corners_x_nord(
-    q_in: FloatField, q_out: FloatField, nord: FloatFieldK, current_nord: int
-):
-    """
-    Args:
-        q_in (in):
-        q_out (out):
-    """
-    from __externals__ import i_end, i_start, j_end, j_start
-
-    with computation(PARALLEL), interval(...):
-        if nord > current_nord:
-            with horizontal(
-                region[i_start - 3, j_start - 3], region[i_end + 3, j_start - 3]
-            ):
-                q_out = q_in[0, 5, 0]
-            with horizontal(
-                region[i_start - 2, j_start - 3], region[i_end + 3, j_start - 2]
-            ):
-                q_out = q_in[-1, 4, 0]
-            with horizontal(
-                region[i_start - 1, j_start - 3], region[i_end + 3, j_start - 1]
-            ):
-                q_out = q_in[-2, 3, 0]
-            with horizontal(
-                region[i_start - 3, j_start - 2], region[i_end + 2, j_start - 3]
-            ):
-                q_out = q_in[1, 4, 0]
-            with horizontal(
-                region[i_start - 2, j_start - 2], region[i_end + 2, j_start - 2]
-            ):
-                q_out = q_in[0, 3, 0]
-            with horizontal(
-                region[i_start - 1, j_start - 2], region[i_end + 2, j_start - 1]
-            ):
-                q_out = q_in[-1, 2, 0]
-            with horizontal(
-                region[i_start - 3, j_start - 1], region[i_end + 1, j_start - 3]
-            ):
-                q_out = q_in[2, 3, 0]
-            with horizontal(
-                region[i_start - 2, j_start - 1], region[i_end + 1, j_start - 2]
-            ):
-                q_out = q_in[1, 2, 0]
-            with horizontal(
-                region[i_start - 1, j_start - 1], region[i_end + 1, j_start - 1]
-            ):
-                q_out = q_in[0, 1, 0]
-            with horizontal(
-                region[i_start - 3, j_end + 1], region[i_end + 1, j_end + 3]
-            ):
-                q_out = q_in[2, -3, 0]
-            with horizontal(
-                region[i_start - 2, j_end + 1], region[i_end + 1, j_end + 2]
-            ):
-                q_out = q_in[1, -2, 0]
-            with horizontal(
-                region[i_start - 1, j_end + 1], region[i_end + 1, j_end + 1]
-            ):
-                q_out = q_in[0, -1, 0]
-            with horizontal(
-                region[i_start - 3, j_end + 2], region[i_end + 2, j_end + 3]
-            ):
-                q_out = q_in[1, -4, 0]
-            with horizontal(
-                region[i_start - 2, j_end + 2], region[i_end + 2, j_end + 2]
-            ):
-                q_out = q_in[0, -3, 0]
-            with horizontal(
-                region[i_start - 1, j_end + 2], region[i_end + 2, j_end + 1]
-            ):
-                q_out = q_in[-1, -2, 0]
-            with horizontal(
-                region[i_start - 3, j_end + 3], region[i_end + 3, j_end + 3]
-            ):
-                q_out = q_in[0, -5, 0]
-            with horizontal(
-                region[i_start - 2, j_end + 3], region[i_end + 3, j_end + 2]
-            ):
-                q_out = q_in[-1, -4, 0]
-            with horizontal(
-                region[i_start - 1, j_end + 3], region[i_end + 3, j_end + 1]
-            ):
-                q_out = q_in[-2, -3, 0]
+def copy_corners_x_nord(field_to_copy, nord):
+    for k in dace.map[0 : nord.data.shape[0]]:
+        if nord.data[k] > 0:
+            corner_copy_x(field_to_copy[:, :, k])
 
 
 class DelnFlux:
@@ -599,27 +441,6 @@ class DelnFluxNoSG:
             origin=fx_origin,
             domain=(f1_nx - 1, f1_ny + 1, nk),
         )
-        corner_origin, corner_domain = grid_indexing.get_origin_domain(
-            dims=[X_DIM, Y_DIM, Z_DIM],
-            halos=(grid_indexing.n_halo, grid_indexing.n_halo),
-        )
-        corner_domain = corner_domain[:2] + (nk,)
-        corner_axis_offsets = grid_indexing.axis_offsets(corner_origin, corner_domain)
-
-        self._copy_corners_x_nord = stencil_factory.from_origin_domain(
-            copy_corners_x_nord,
-            externals={**corner_axis_offsets},
-            origin=corner_origin,
-            domain=corner_domain,
-            skip_passes=("UnreachableStmtPruning",),
-        )
-        self._copy_corners_y_nord = stencil_factory.from_origin_domain(
-            copy_corners_y_nord,
-            externals={**corner_axis_offsets},
-            origin=corner_origin,
-            domain=corner_domain,
-            skip_passes=("UnreachableStmtPruning",),
-        )
 
     def __call__(self, q, fx2, fy2, damp_c, d2, mass=None):
         """
@@ -643,11 +464,11 @@ class DelnFluxNoSG:
         else:
             self._copy_stencil_interval(q_in=q, q_out=d2, nord=self._nord)
 
-        self._copy_corners_x_nord(q_in=d2, q_out=d2, nord=self._nord, current_nord=0)
+        copy_corners_x_nord(d2, self._nord)
 
         self._fx_calc_stencil(q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord)
 
-        self._copy_corners_y_nord(q_in=d2, q_out=d2, nord=self._nord, current_nord=0)
+        copy_corners_y_nord(d2, self._nord)
 
         self._fy_calc_stencil(q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord)
 
@@ -661,17 +482,13 @@ class DelnFluxNoSG:
                 current_nord=n,
             )
 
-            self._copy_corners_x_nord(
-                q_in=d2, q_out=d2, nord=self._nord, current_nord=n
-            )
+            copy_corners_x_nord(d2, self._nord)
 
             self._column_conditional_fx_calculation[n](
                 q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord, current_nord=n
             )
 
-            self._copy_corners_y_nord(
-                q_in=d2, q_out=d2, nord=self._nord, current_nord=n
-            )
+            copy_corners_y_nord(d2, self._nord)
 
             self._column_conditional_fy_calculation[n](
                 q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord, current_nord=n
