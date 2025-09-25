@@ -1,6 +1,7 @@
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 from ndsl import StencilFactory
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.stencils.testing import TranslateFortranData2Py, pad_field_in_j
 from pyFV3.stencils import moist_cv
@@ -53,6 +54,12 @@ class MoistPT:
             domain=(grid.nic, 1, grid.npz),
         )
 
+        self._q_con = grid.quantity_factory.zeros(
+            [X_DIM, Y_DIM, Z_DIM],
+            units="unknown",
+            dtype=Float,
+        )
+
     def __call__(
         self,
         qvapor: FloatField,
@@ -61,7 +68,7 @@ class MoistPT:
         qsnow: FloatField,
         qice: FloatField,
         qgraupel: FloatField,
-        q_con: FloatField,
+        # q_con: FloatField,
         pt: FloatField,
         cappa: FloatField,
         delp: FloatField,
@@ -75,7 +82,8 @@ class MoistPT:
             qsnow,
             qice,
             qgraupel,
-            q_con,
+            # q_con,
+            self._q_con,
             pt,
             cappa,
             delp,
@@ -98,7 +106,7 @@ class TranslateMoistCVPlusPt_2d(TranslateFortranData2Py):
             "qgraupel": {"serialname": "qgraupel_js"},
             "delp": {},
             "delz": {},
-            "q_con": {},
+            # "q_con": {},
             "pt": {},
             "cappa": {},
         }
@@ -111,7 +119,7 @@ class TranslateMoistCVPlusPt_2d(TranslateFortranData2Py):
         self.out_vars = {
             "pt": {},
             "cappa": {},
-            "q_con": {},
+            # "q_con": {},
         }
 
     def compute_from_storage(self, inputs):

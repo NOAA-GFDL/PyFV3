@@ -1,3 +1,5 @@
+from gt4py.cartesian.gtscript import FORWARD, computation, interval
+
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.comm.communicator import Communicator
 from ndsl.constants import (
@@ -14,11 +16,11 @@ from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldIJ64, Flo
 from ndsl.grid import GridData
 from ndsl.stencils.basic_operations import adjust_divide_stencil
 from pyFV3._config import RemappingConfig
+from pyFV3.mpi.sum import GlobalSum
 from pyFV3.stencils import moist_cv
 from pyFV3.stencils.map_single import MapSingle
 from pyFV3.stencils.mapn_tracer import MapNTracer
 from pyFV3.stencils.moist_cv import moist_pt_last_step
-from pyFV3.mpi.sum import GlobalSum
 from pyFV3.stencils.remapping import (
     CONSV_MIN,
     init_pe,
@@ -188,6 +190,7 @@ class LagrangianToEulerian_GEOS:
         self._global_sum = GlobalSum(
             communicator=comm,
             quantity_factory=quantity_factory,
+            grid_indexing=stencil_factory.grid_indexing,
         )
 
         self._init_pe = stencil_factory.from_origin_domain(
@@ -567,7 +570,7 @@ class LagrangianToEulerian_GEOS:
 
                 tesum: Float = self._global_sum(self._te_2d)
                 zsum: Float = self._global_sum(self._zsum1)
-                dtmp: Float = tesum / (CV_AIR * zsum)
+                dtmp = tesum / (CV_AIR * zsum)
 
             elif consv_te < -CONSV_MIN:
                 raise NotImplementedError(

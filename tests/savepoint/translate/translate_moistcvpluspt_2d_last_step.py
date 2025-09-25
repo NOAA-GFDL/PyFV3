@@ -27,7 +27,7 @@ class TranslateMoistCVPlusPt_2d_last_step(TranslateFortranData2Py):
                 "kend": grid.npz - 1,
             },
             "pt": {},
-            "pkz": {},
+            "pkz": {"istart": grid.is_, "jstart": grid.js},
         }
 
         self.in_vars["parameters"] = ["r_vir", "dtmp"]
@@ -61,10 +61,10 @@ class TranslateMoistCVPlusPt_2d_last_step(TranslateFortranData2Py):
             inputs["qsnow"],
             inputs["qice"],
             inputs["qgraupel"],
-            self._gz,
+            # self._gz,
             inputs["pt"],
             inputs["pkz"],
-            inputs["dtmp"],
+            Float(inputs["dtmp"]),
             inputs["r_vir"],
         )
         return inputs

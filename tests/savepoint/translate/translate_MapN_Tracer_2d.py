@@ -51,27 +51,34 @@ class TranslateMapN_Tracer_2d(TranslateFortranData2Py):
 
         self.fill = True
 
+        self._are_tracers_setup = False
+
+        self._tracers = None
+
     def compute_from_storage(self, inputs):
-        tracers = setup_tracers(
-            number_of_tracers=inputs["qtracers"].shape[3],
-            quantity_factory=self.quantity_factory,
-            mappings={"cloud": 6},
-        )
-        tracers.quantity.data[:-1, :-1, :-1, :] = inputs["qtracers"]
+        if not self._are_tracers_setup:
+            self._are_tracers_setup = True
+            self._tracers = setup_tracers(
+                number_of_tracers=inputs["qtracers"].shape[3],
+                quantity_factory=self.quantity_factory,
+                # mappings={"cloud": 6},
+            )
+            # tracers.quantity.data[:-1, :-1, :-1, :] = inputs["qtracers"]
+        self._tracers.quantity.data = inputs["qtracers"]
 
         self._compute_func = MapNTracer(
             self.stencil_factory,
             self.quantity_factory,
             abs(self.kord),
             fill=self.fill,
-            tracers=tracers,
+            tracers=self._tracers,
         )
 
         self._compute_func(
             inputs["pe1"],
             inputs["pe2"],
             inputs["dp2"],
-            tracers,
+            self._tracers,
         )
 
         return inputs

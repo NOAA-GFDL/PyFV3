@@ -369,6 +369,10 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         self.namelist = DynamicalCoreConfig.from_namelist(namelist)
         self.grid = grid
 
+        self._are_tracers_setup = False
+
+        self._tracers = None
+
     def compute_sequential(self, inputs_list, communicator_list):
         print("No serial test available")
 
@@ -417,23 +421,26 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         #     inputs["tracers"],
         # )
 
-        tracers = setup_tracers(
-            number_of_tracers=inputs["tracers"].shape[3],
-            quantity_factory=self.quantity_factory,
-            mappings={
-                "vapor": 0,
-                "liquid": 1,
-                "rain": 2,
-                "snow": 3,
-                "ice": 4,
-                "graupel": 5,
-                "cloud": 6,
-            },
-        )
-        tracers.quantity.data[:-1, :-1, :-1, :] = inputs["tracers"]
+        if not self._are_tracers_setup:
+            self._are_tracers_setup = True
+            self._tracers = setup_tracers(
+                number_of_tracers=inputs["tracers"].shape[3],
+                quantity_factory=self.quantity_factory,
+                mappings={
+                    "vapor": 0,
+                    "liquid": 1,
+                    "rain": 3,
+                    "snow": 4,
+                    "ice": 2,
+                    "graupel": 5,
+                    "cloud": 6,
+                },
+            )
+
+        self._tracers.quantity.data[:-1, :-1, :-1, :] = inputs["tracers"]
 
         inputs["te_2d"] = inputs["te_2d"].astype(Float)
-        state = self.state_from_inputs(inputs, tracers)
+        state = self.state_from_inputs(inputs, self._tracers)
 
         l_to_e = LagrangianToEulerian_GEOS(
             self.stencil_factory,
