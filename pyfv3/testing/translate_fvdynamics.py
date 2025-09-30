@@ -1,9 +1,10 @@
-from dacite import from_dict, Config
 from dataclasses import fields
 from datetime import timedelta
 from typing import Any, Dict, Optional, Tuple
 
 import pytest
+from dacite import Config, from_dict
+from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, StencilFactory
@@ -21,18 +22,19 @@ from ndsl.stencils.testing import ParallelTranslateBaseSlicing, TranslateFortran
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import fv_dynamics
+from pyfv3.utils.namelist import dycore_config_from_f90nml
 
 
 class TranslateDycoreFortranData2Py(TranslateFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: dict,
+        namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, stencil_factory)
-        dacite_config = Config(type_hooks={tuple[int, int]: tuple[int, int]})
-        self.config = from_dict(data_class=DynamicalCoreConfig, data=namelist, config=dacite_config)
+        self.config = dycore_config_from_f90nml(namelist)
+
 
 class TranslateFVDynamics(ParallelTranslateBaseSlicing):
     compute_grid_option = True
@@ -297,7 +299,9 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         self.dycore: Optional[fv_dynamics.DynamicalCore] = None
         self.stencil_factory = stencil_factory
         dacite_config = Config(type_hooks={tuple[int, int]: tuple[int, int]})
-        self.namelist: DynamicalCoreConfig = from_dict(data_class=DynamicalCoreConfig, data=namelist, config=dacite_config)
+        self.namelist: DynamicalCoreConfig = from_dict(
+            data_class=DynamicalCoreConfig, data=namelist, config=dacite_config
+        )
 
     def state_from_inputs(self, inputs):
         input_storages = super().state_from_inputs(inputs)
@@ -340,7 +344,9 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
             stencil_factory=self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             damping_coefficients=self.grid.damping_coefficients,
-            config=from_dict(data_class=DynamicalCoreConfig, data=self.namelist, config=dacite_config),
+            config=from_dict(
+                data_class=DynamicalCoreConfig, data=self.namelist, config=dacite_config
+            ),
             phis=state.phis,
             state=state,
             timestep=timedelta(seconds=inputs["bdt"]),

@@ -1,6 +1,6 @@
+from f90nml import Namelist
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
-import pyfv3
 import pyfv3.stencils.d_sw as d_sw
 from ndsl import StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
@@ -11,7 +11,7 @@ class TranslateD_SW(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: dict,
+        namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
@@ -216,9 +216,7 @@ class TranslateHeatDiss(TranslateDycoreFortranData2Py):
         # TODO add these to the serialized data or remove the test
         inputs["damp_w"] = column_namelist["damp_w"]
         inputs["ke_bg"] = column_namelist["ke_bg"]
-        inputs["dt"] = (
-            self.config.dt_atmos / self.config.k_split / self.config.n_split
-        )
+        inputs["dt"] = self.config.dt_atmos / self.config.k_split / self.config.n_split
         inputs["rarea"] = self.grid.rarea
         heat_diss_stencil = self.stencil_factory.from_origin_domain(
             d_sw.heat_diss,

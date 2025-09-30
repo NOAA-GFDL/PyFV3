@@ -1,7 +1,7 @@
 from ndsl import QuantityFactory, StencilFactory
+from pyfv3._config import DynamicalCoreConfig
 from pyfv3.stencils import CGridShallowWaterDynamics
 from pyfv3.testing import TranslateDycoreFortranData2Py
-from pyfv3._config import DynamicalCoreConfig
 
 
 def get_c_sw_instance(

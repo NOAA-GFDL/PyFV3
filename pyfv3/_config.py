@@ -1,7 +1,7 @@
 import dataclasses
 from datetime import timedelta
 from math import floor
-from typing import Optional, Tuple
+from typing import Optional
 
 import f90nml
 import yaml
