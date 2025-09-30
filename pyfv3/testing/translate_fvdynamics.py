@@ -1,3 +1,4 @@
+from dacite import from_dict, Config
 from dataclasses import fields
 from datetime import timedelta
 from typing import Any, Dict, Optional, Tuple
@@ -5,7 +6,7 @@ from typing import Any, Dict, Optional, Tuple
 import pytest
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Namelist, Quantity, StencilFactory
+from ndsl import Quantity, StencilFactory
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,
@@ -26,12 +27,12 @@ class TranslateDycoreFortranData2Py(TranslateFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist: dict,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, stencil_factory)
-        self.namelist = DynamicalCoreConfig.from_namelist(namelist)
-
+        dacite_config = Config(type_hooks={tuple[int, int]: tuple[int, int]})
+        self.config = from_dict(data_class=DynamicalCoreConfig, data=namelist, config=dacite_config)
 
 class TranslateFVDynamics(ParallelTranslateBaseSlicing):
     compute_grid_option = True
@@ -226,7 +227,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist: dict,
         stencil_factory: StencilFactory,
         *args,
         **kwargs,
@@ -295,7 +296,8 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         self.ignore_near_zero_errors["q_con"] = True
         self.dycore: Optional[fv_dynamics.DynamicalCore] = None
         self.stencil_factory = stencil_factory
-        self.namelist: DynamicalCoreConfig = DynamicalCoreConfig.from_namelist(namelist)
+        dacite_config = Config(type_hooks={tuple[int, int]: tuple[int, int]})
+        self.namelist: DynamicalCoreConfig = from_dict(data_class=DynamicalCoreConfig, data=namelist, config=dacite_config)
 
     def state_from_inputs(self, inputs):
         input_storages = super().state_from_inputs(inputs)
@@ -331,13 +333,14 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
 
     def compute_parallel(self, inputs, communicator):
         state, grid_data = self.prepare_data(inputs)
+        dacite_config = Config(type_hooks={tuple[int, int]: tuple[int, int]})
         self.dycore = fv_dynamics.DynamicalCore(
             comm=communicator,
             grid_data=grid_data,
             stencil_factory=self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             damping_coefficients=self.grid.damping_coefficients,
-            config=DynamicalCoreConfig.from_namelist(self.namelist),
+            config=from_dict(data_class=DynamicalCoreConfig, data=self.namelist, config=dacite_config),
             phis=state.phis,
             state=state,
             timestep=timedelta(seconds=inputs["bdt"]),

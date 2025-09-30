@@ -1,4 +1,4 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
 from pyfv3.stencils import DGrid2AGrid2CGridVectors
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
@@ -7,19 +7,18 @@ class TranslateD2A2C_Vect(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist: dict,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
         dord4 = True
         self.stencil_factory = stencil_factory
-        self.namelist = namelist  # type: ignore
         self.compute_func = DGrid2AGrid2CGridVectors(  # type: ignore
             self.stencil_factory,
             self.grid.quantity_factory,
             self.grid.grid_data,
             self.grid.nested,
-            self.namelist.grid_type,
+            self.config.grid_type,
             dord4,
         )
         self.in_vars["data_vars"] = {

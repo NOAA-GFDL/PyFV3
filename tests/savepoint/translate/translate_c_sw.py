@@ -1,11 +1,12 @@
-from ndsl import Namelist, QuantityFactory, StencilFactory
+from ndsl import QuantityFactory, StencilFactory
 from pyfv3.stencils import CGridShallowWaterDynamics
 from pyfv3.testing import TranslateDycoreFortranData2Py
+from pyfv3._config import DynamicalCoreConfig
 
 
 def get_c_sw_instance(
     grid,
-    namelist: Namelist,
+    config: DynamicalCoreConfig,
     stencil_factory: StencilFactory,
     quantity_factory: QuantityFactory,
 ):
@@ -14,8 +15,8 @@ def get_c_sw_instance(
         quantity_factory=quantity_factory,
         grid_data=grid.grid_data,
         nested=grid.nested,
-        grid_type=namelist.grid_type,
-        nord=namelist.nord,
+        grid_type=config.grid_type,
+        nord=config.nord,
     )
 
 
@@ -70,12 +71,12 @@ class TranslateC_SW(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist: dict,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
         cgrid_shallow_water_lagrangian_dynamics = get_c_sw_instance(
-            grid, namelist, stencil_factory, self.grid.quantity_factory
+            grid, self.config, stencil_factory, self.grid.quantity_factory
         )
         self.compute_func = cgrid_shallow_water_lagrangian_dynamics  # type: ignore
         self.in_vars["data_vars"] = {
@@ -116,13 +117,13 @@ class TranslateDivergenceCorner(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist: dict,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
         self.max_error = 9e-10
         self.cgrid_sw_lagrangian_dynamics = get_c_sw_instance(
-            grid, namelist, stencil_factory, self.grid.quantity_factory
+            grid, self.config, stencil_factory, self.grid.quantity_factory
         )
         self.in_vars["data_vars"] = {
             "u": {
@@ -174,13 +175,13 @@ class TranslateCirculation_Cgrid(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist: dict,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
         self.max_error = 5e-9
         self.cgrid_sw_lagrangian_dynamics = get_c_sw_instance(
-            grid, namelist, stencil_factory, self.grid.quantity_factory
+            grid, self.config, stencil_factory, self.grid.quantity_factory
         )
         self.in_vars["data_vars"] = {
             "uc": {},
@@ -216,12 +217,12 @@ class TranslateVorticityTransport_Cgrid(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: Namelist,
+        namelist: dict,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
         cgrid_sw_lagrangian_dynamics = get_c_sw_instance(
-            grid, namelist, stencil_factory, self.grid.quantity_factory
+            grid, self.config, stencil_factory, self.grid.quantity_factory
         )
 
         def compute_func(*args, **kwargs):
