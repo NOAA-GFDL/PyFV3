@@ -1,5 +1,6 @@
+from f90nml import Namelist
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
 from ndsl.stencils.testing import TranslateGrid
 from pyfv3.stencils import XPiecewiseParabolic
 from pyfv3.testing import TranslateDycoreFortranData2Py

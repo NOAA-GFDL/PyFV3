@@ -1,5 +1,6 @@
+from f90nml import Namelist
 import pyfv3.stencils.nh_p_grad as NH_P_Grad
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
@@ -31,15 +32,14 @@ class TranslateNH_P_Grad(TranslateDycoreFortranData2Py):
             "delp": {},
         }
         self.stencil_factory = stencil_factory
-        self.namelist = namelist  # type: ignore
 
     def compute(self, inputs):
         self.compute_func = NH_P_Grad.NonHydrostaticPressureGradient(  # type: ignore
             self.stencil_factory,
             self.grid.quantity_factory,
             grid_data=self.grid.grid_data,
-            grid_type=self.namelist.grid_type,
-            use_logp=self.namelist.use_logp,
+            grid_type=self.config.grid_type,
+            use_logp=self.config.use_logp,
         )
         self.make_storage_data_input_vars(inputs)
         self.compute_func(**inputs)

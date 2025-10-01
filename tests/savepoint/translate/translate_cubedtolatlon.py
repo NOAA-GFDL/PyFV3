@@ -1,4 +1,5 @@
-from ndsl import Namelist, Quantity, StencilFactory
+from f90nml import Namelist
+from ndsl import Quantity, StencilFactory
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.stencils.c2l_ord import CubedToLatLon
 from ndsl.stencils.testing import ParallelTranslate2Py
@@ -31,7 +32,7 @@ class TranslateCubedToLatLon(ParallelTranslate2Py):
             "v": self.grid.x3d_domain_dict(),
         }
         self.stencil_factory = stencil_factory
-        self.grid_type = namelist.grid_type
+        self.grid_type = self.config.grid_type
 
     def compute_parallel(self, inputs, communicator):
         self._base.make_storage_data_input_vars(inputs)
@@ -52,7 +53,7 @@ class TranslateCubedToLatLon(ParallelTranslate2Py):
             stencil_factory=self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             grid_data=self.grid.grid_data,
-            order=self.namelist.c2l_ord,
+            order=self.config.c2l_ord,
             comm=communicator,
             grid_type=self.grid_type,
         )

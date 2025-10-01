@@ -1,6 +1,7 @@
 import numpy as np
 
-from ndsl import Namelist, StencilFactory
+from f90nml import Namelist
+from ndsl import StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from pyfv3.stencils import UpdateGeopotentialHeightOnCGrid
 from pyfv3.testing import TranslateDycoreFortranData2Py
@@ -21,7 +22,7 @@ class TranslateUpdateDzC(TranslateDycoreFortranData2Py):
             quantity_factory=self.grid.quantity_factory,
             area=grid.grid_data.area,
             dp_ref=grid.grid_data.dp_ref,
-            grid_type=namelist.grid_type,
+            grid_type=self.config.grid_type,
         )
 
         def compute(**kwargs):

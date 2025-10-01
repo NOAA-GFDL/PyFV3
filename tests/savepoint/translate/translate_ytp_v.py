@@ -1,6 +1,7 @@
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
-from ndsl import Namelist, StencilFactory
+from f90nml import Namelist
+from ndsl import StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from pyfv3 import DynamicalCoreConfig
@@ -84,14 +85,13 @@ class TranslateYTP_V(TranslateDycoreFortranData2Py):
         self.in_vars["parameters"] = []
         self.out_vars = {"flux": flux_info}
         self.stencil_factory = stencil_factory
-        self.namelist = DynamicalCoreConfig.from_namelist(namelist)
 
     def compute_from_storage(self, inputs):
         ytp_obj = YTP_V(
             stencil_factory=self.stencil_factory,
             grid_data=self.grid.grid_data,
-            grid_type=self.namelist.grid_type,
-            jord=self.namelist.hord_mt,
+            grid_type=self.config.grid_type,
+            jord=self.config.hord_mt,
         )
         ytp_obj(inputs["c"], inputs["v"], inputs["flux"])
         return inputs
