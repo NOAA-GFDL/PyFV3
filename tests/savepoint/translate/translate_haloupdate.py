@@ -1,4 +1,5 @@
 from f90nml import Namelist
+
 from ndsl import StencilFactory
 from ndsl.constants import (
     N_HALO_DEFAULT,

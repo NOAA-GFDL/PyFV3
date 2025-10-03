@@ -1,8 +1,8 @@
-from f90nml import Namelist
 from typing import Any, Dict
 
 import numpy as np
 import pytest
+from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
@@ -138,7 +138,7 @@ class TranslateGridAreas(ParallelTranslateGrid):
         self.ignore_near_zero_errors = {"agrid": True, "dxc": True, "dyc": True}
         self.stencil_factory = stencil_factory
         self.config = dycore_config_from_f90nml(namelist)
-        
+
     inputs = {
         "grid": {
             "name": "grid",
@@ -277,8 +277,8 @@ class TranslateGridGrid(ParallelTranslateGrid):
 
     def compute_parallel(self, inputs, communicator):
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=config.npx,
-            npy=config.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -800,7 +800,6 @@ class TranslateTrigSg(ParallelTranslateGrid):
         self.stencil_factory = stencil_factory
         self.config = dycore_config_from_f90nml(namelist)
 
-
     inputs: Dict[str, Any] = {
         "grid": {
             "name": "grid",
@@ -1047,7 +1046,6 @@ class TranslateAAMCorrection(ParallelTranslateGrid):
         self.ignore_near_zero_errors = {"l2c_v": True, "l2c_u": True}
         self.stencil_factory = stencil_factory
         self.config = dycore_config_from_f90nml(namelist)
-
 
     inputs: Dict[str, Any] = {
         "grid": {
@@ -1427,7 +1425,6 @@ class TranslateDivgDel6(ParallelTranslateGrid):
         self.max_error = 4e-14
         self.stencil_factory = stencil_factory
         self.config = dycore_config_from_f90nml(namelist)
-
 
     inputs: Dict[str, Any] = {
         "sin_sg1": {

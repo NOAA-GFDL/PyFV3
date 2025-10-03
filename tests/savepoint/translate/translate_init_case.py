@@ -2,8 +2,8 @@ from typing import Any, Dict
 
 import numpy as np
 import pytest
-
 from f90nml import Namelist
+
 import ndsl.constants as constants
 import ndsl.dsl.gt4py_utils as utils
 import pyfv3.initialization.analytic_init as analytic_init

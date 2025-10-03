@@ -1,5 +1,6 @@
-from f90nml import Namelist
 from typing import Any, Dict
+
+from f90nml import Namelist
 
 from ndsl import StencilFactory
 from pyfv3.stencils import HyperdiffusionDamping

@@ -1,6 +1,6 @@
 from f90nml import Namelist
+
 from ndsl import StencilFactory
-from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils import SatAdjust3d
 from pyfv3.testing import TranslateDycoreFortranData2Py
 

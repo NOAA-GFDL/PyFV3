@@ -1,6 +1,7 @@
 from typing import Optional
 
 from f90nml import Namelist
+
 from ndsl import StencilFactory
 from ndsl.constants import Z_DIM
 from pyfv3.stencils import DivergenceDamping

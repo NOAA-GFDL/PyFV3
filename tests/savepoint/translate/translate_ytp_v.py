@@ -1,10 +1,9 @@
+from f90nml import Namelist
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
-from f90nml import Namelist
 from ndsl import StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.grid import GridData
-from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils import ytp_v
 from pyfv3.testing import TranslateDycoreFortranData2Py
 

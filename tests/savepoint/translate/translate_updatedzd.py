@@ -1,9 +1,8 @@
 import numpy as np
-
 from f90nml import Namelist
+
 from ndsl import StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils import UpdateHeightOnDGrid, d_sw
 from pyfv3.testing import TranslateDycoreFortranData2Py
 from pyfv3.utils.functional_validation import get_subset_func
