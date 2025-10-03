@@ -117,8 +117,9 @@ class GeosDycoreWrapper:
 
         self.backend = backend
         self.namelist = namelist
-        # TODO: After NDSL Issue#64 is resolved, create dycore_config using
-        # default groups. This is a temporary work-around for now.
+        # TODO: After pace unit tests have been updated, create
+        # dycore_config using default groups or creation from yaml.
+        # This is a temporary work-around for now.
         self.dycore_config = dycore_config_from_f90nml(
             namelist, use_default_groups=False
         )
