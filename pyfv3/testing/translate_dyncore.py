@@ -1,10 +1,12 @@
+from f90nml import Namelist
+
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Namelist, Quantity, StencilFactory
+from ndsl import Quantity, StencilFactory
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.stencils.testing import ParallelTranslate2PyState
-from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import dyn_core
+from pyfv3.utils.namelist import dycore_config_from_f90nml
 
 
 class TranslateDynCore(ParallelTranslate2PyState):
@@ -121,7 +123,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
         self.max_error = 2e-6
         self.ignore_near_zero_errors["wsd"] = 1e-18
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = dycore_config_from_f90nml(namelist)
 
     def compute_parallel(self, inputs, communicator):
         # ak, bk, and phis are numpy arrays at this point and
@@ -167,7 +169,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
             grid_type=self.grid.grid_type,
             nested=self.grid.nested,
             stretched_grid=self.grid.stretched_grid,
-            config=DynamicalCoreConfig.from_namelist(self.namelist).acoustic_dynamics,
+            config=self.config.acoustic_dynamics,
             phis=phis,
             wsd=wsd.data,
             state=state,
