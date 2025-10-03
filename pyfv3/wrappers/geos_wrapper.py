@@ -34,6 +34,7 @@ from ndsl.grid import DampingCoefficients, GridData, MetricTerms
 from ndsl.logging import ndsl_log
 from ndsl.optional_imports import cupy as cp
 from ndsl.utils import safe_assign_array
+from pyfv3.utils.namelist import dycore_config_from_f90nml
 
 
 class StencilBackendCompilerOverride:
@@ -116,7 +117,11 @@ class GeosDycoreWrapper:
 
         self.backend = backend
         self.namelist = namelist
-        self.dycore_config = pyfv3.DynamicalCoreConfig.from_f90nml(self.namelist)
+        # TODO: After NDSL Issue#64 is resolved, create dycore_config using
+        # default groups. This is a temporary work-around for now.
+        self.dycore_config = dycore_config_from_f90nml(
+            namelist, use_default_groups=False
+        )
         self.dycore_config.dt_atmos = bdt
         assert self.dycore_config.dt_atmos != 0
 
