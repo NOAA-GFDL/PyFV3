@@ -1,3 +1,5 @@
+from f90nml import Namelist
+
 from ndsl import StencilFactory
 from pyfv3.stencils import DGrid2AGrid2CGridVectors
 from pyfv3.testing import TranslateDycoreFortranData2Py
@@ -7,7 +9,7 @@ class TranslateD2A2C_Vect(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: dict,
+        namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)

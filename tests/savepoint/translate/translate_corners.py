@@ -1,5 +1,7 @@
 from typing import Any, Dict
 
+from f90nml import Namelist
+
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
 from ndsl.stencils import corners
@@ -10,7 +12,7 @@ class TranslateFill4Corners(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: dict,
+        namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
@@ -46,7 +48,7 @@ class TranslateFillCorners(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: dict,
+        namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
@@ -93,7 +95,7 @@ class TranslateCopyCorners(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: dict,
+        namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
@@ -138,7 +140,7 @@ class TranslateFillCornersVector(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: dict,
+        namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)

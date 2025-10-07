@@ -1,4 +1,5 @@
 import numpy as np
+from f90nml import Namelist
 
 from ndsl import StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
@@ -11,7 +12,7 @@ class TranslateFxAdv(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: dict,
+        namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)

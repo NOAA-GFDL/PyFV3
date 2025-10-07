@@ -1,5 +1,7 @@
 from typing import Any, Dict
 
+from f90nml import Namelist
+
 from ndsl import StencilFactory, orchestrate
 from ndsl.constants import Z_DIM
 from pyfv3.stencils import DivergenceDamping
@@ -47,7 +49,7 @@ class TranslateA2B_Ord4(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: dict,
+        namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)

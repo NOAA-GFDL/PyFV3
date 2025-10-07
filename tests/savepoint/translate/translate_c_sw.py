@@ -1,3 +1,5 @@
+from f90nml import Namelist
+
 from ndsl import QuantityFactory, StencilFactory
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.stencils import CGridShallowWaterDynamics
@@ -71,7 +73,7 @@ class TranslateC_SW(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: dict,
+        namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
@@ -117,7 +119,7 @@ class TranslateDivergenceCorner(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: dict,
+        namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
@@ -175,7 +177,7 @@ class TranslateCirculation_Cgrid(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: dict,
+        namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
@@ -217,7 +219,7 @@ class TranslateVorticityTransport_Cgrid(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
-        namelist: dict,
+        namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
