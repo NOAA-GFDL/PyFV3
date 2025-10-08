@@ -10,7 +10,6 @@ from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients
-
 from pyfv3.stencils.copy_corners import corner_copy_x, corner_copy_y
 
 
