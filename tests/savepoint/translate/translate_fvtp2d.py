@@ -1,6 +1,6 @@
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Namelist, StencilFactory
-from ndsl.constants import Z_DIM
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Float
 from pyfv3.stencils import FiniteVolumeTransport
 from pyfv3.testing import TranslateDycoreFortranData2Py
@@ -59,6 +59,12 @@ class TranslateFvTp2d(TranslateDycoreFortranData2Py):
             dims=[Z_DIM], units="unknown", dtype=Float
         )
         damp_c.data[:] = damp_c.np.asarray(inputs.pop("damp_c"))
+
+        q = self.grid.quantity_factory.zeros(
+            dims=[X_DIM, Y_DIM, Z_DIM], units="unknown", dtype=Float
+        )
+        q.data[:] = q.np.asarray(inputs.pop("q"))
+        inputs["q"] = q
         for optional_arg in ["mass"]:
             if optional_arg not in inputs:
                 inputs[optional_arg] = None

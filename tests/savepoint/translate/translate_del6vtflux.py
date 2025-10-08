@@ -1,6 +1,7 @@
 import pyfv3.stencils.delnflux as delnflux
 from ndsl import Namelist, StencilFactory
-from ndsl.constants import Z_DIM
+from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.dsl.typing import Float
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
@@ -44,5 +45,12 @@ class TranslateDel6VtFlux(TranslateDycoreFortranData2Py):
             self.grid.rarea,
             nord_col,
         )
+
+        # Convert relevant inputs to quantities:
+        d2 = self.grid.quantity_factory.zeros(
+            dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM], units="unknown", dtype=Float
+        )
+        d2.data[:] = d2.np.asarray(inputs.pop("d2"))
+        inputs["d2"] = d2
         self.compute_func(**inputs)
         return self.slice_output(inputs)

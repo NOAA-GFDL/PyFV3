@@ -465,11 +465,11 @@ class DelnFluxNoSG:
         else:
             self._copy_stencil_interval(q_in=q, q_out=d2, nord=self._nord)
 
-        copy_corners_x_nord(d2, self._nord)
+        copy_corners_x_nord(d2.data, self._nord)
 
         self._fx_calc_stencil(q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord)
 
-        copy_corners_y_nord(d2, self._nord)
+        copy_corners_y_nord(d2.data, self._nord)
 
         self._fy_calc_stencil(q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord)
 
@@ -483,13 +483,13 @@ class DelnFluxNoSG:
                 current_nord=n,
             )
 
-            copy_corners_x_nord(d2, self._nord)
+            copy_corners_x_nord(d2.data, self._nord)
 
             self._column_conditional_fx_calculation[n](
                 q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord, current_nord=n
             )
 
-            copy_corners_y_nord(d2, self._nord)
+            copy_corners_y_nord(d2.data, self._nord)
 
             self._column_conditional_fy_calculation[n](
                 q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord, current_nord=n
