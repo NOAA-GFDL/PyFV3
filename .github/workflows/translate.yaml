@@ -116,9 +116,9 @@ jobs:
         run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
           export FV3_DACEMODE=BuildAndRun
-          export PACE_FLOAT_PRECISION=64
+          export NDSL_LITERAL_PRECISION=64
           export OMP_NUM_THREADS=1
-          export PACE_LOGLEVEL=Debug
+          export NDSL_LOGLEVEL=Debug
           mpiexec -np 6 coverage run --rcfile=pyproject.toml -m mpi4py -m pytest \
             -v -s --data_path=${{ env.DATA_PATH }} \
             --backend=dace:cpu \
