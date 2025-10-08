@@ -139,6 +139,11 @@ class CopyCornersX:
             config=stencil_factory.config.dace_config,
         )
 
+        if stencil_factory.grid_indexing.n_halo != 3:
+            raise NotImplementedError(
+                "Corner-Copy only implemented for exactly 3 Halo-Points"
+            )
+
     def __call__(self, field: FloatField):
         corner_copy_x(field)
 
@@ -154,6 +159,11 @@ class CopyCornersY:
             obj=self,
             config=stencil_factory.config.dace_config,
         )
+
+        if stencil_factory.grid_indexing.n_halo != 3:
+            raise NotImplementedError(
+                "Corner-Copy only implemented for exactly 3 Halo-Points"
+            )
 
     def __call__(self, field: FloatField):
         corner_copy_y(field)
