@@ -52,5 +52,6 @@ class TranslateDel6VtFlux(TranslateDycoreFortranData2Py):
         )
         d2.data[:] = d2.np.asarray(inputs.pop("d2"))
         inputs["d2"] = d2
+
         self.compute_func(**inputs)
         return self.slice_output(inputs)
