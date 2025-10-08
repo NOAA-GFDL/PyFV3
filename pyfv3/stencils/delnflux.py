@@ -1,6 +1,7 @@
 from typing import Optional
 
 import dace
+
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation
@@ -9,7 +10,8 @@ from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients
-from ndsl.stencils.corners import corner_copy_y, corner_copy_x
+
+from pyfv3.stencils.copy_corners import corner_copy_x, corner_copy_y
 
 
 def calc_damp(damp_c: Quantity, da_min: Float, nord: Quantity) -> Quantity:
