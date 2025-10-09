@@ -44,10 +44,12 @@ def dycore_config_from_f90nml(
         data_class=DynamicalCoreConfig, data=nml_dict, config=dacite_config
     )
 
-    # Patch if a namelist_override exists
-    # NOTE: We're doing the patching of the dycore based on the override_nml
+    # Override parameters if a namelist_override exists.
+    # NOTE: We're doing the patching of the dycore based on the namelist_override
     # here, rather than DynamicalCoreConfig.__post_init__ as one way to avoid
-    # circular dependencies.
+    # circular dependencies. At this point, I don't know which group might
+    # have the namelist_override defined, so I'm loading it and patching
+    # directly rather than using f90nml.Namelist.patch()
     if dycore_config.namelist_override is not None:
         override_dict = load_f90nml_as_dict(
             dycore_config.namelist_override, flatten=True, target_groups=target_groups
