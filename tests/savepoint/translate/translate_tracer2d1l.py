@@ -5,9 +5,9 @@ import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.stencils.testing import ParallelTranslate
+from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils import FiniteVolumeTransport, TracerAdvection
 from pyfv3.utils.functional_validation import get_subset_func
-from pyfv3.utils.namelist import dycore_config_from_f90nml
 
 
 class TranslateTracer2D1L(ParallelTranslate):
@@ -41,7 +41,7 @@ class TranslateTracer2D1L(ParallelTranslate):
             dims=[X_DIM, Y_DIM, Z_DIM],
             n_halo=((0, 0), (0, 0)),
         )
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def collect_input_data(self, serializer, savepoint):
         input_data = self._base.collect_input_data(serializer, savepoint)

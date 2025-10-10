@@ -3,13 +3,22 @@ from datetime import timedelta
 from math import floor
 from typing import Optional
 
+import f90nml
 import yaml
+from dacite import Config, from_dict
+
+from ndsl.utils import f90nml_as_dict
 
 
 DEFAULT_INT = 0
 DEFAULT_STR = ""
 DEFAULT_FLOAT = 0.0
 DEFAULT_BOOL = False
+DEFAULT_DYCORE_NML_GROUPS = (
+    "main_nml",
+    "coupler_nml",
+    "fv_core_nml",
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -277,9 +286,53 @@ class DynamicalCoreConfig:
     namelist_override: Optional[str] = None
 
     def __post_init__(self):
+        if self.namelist_override is not None:
+            try:
+                f90_nml = f90nml.read(self.namelist_override)
+            except FileNotFoundError:
+                print(f"{self.namelist_override} does not exist")
+                raise
+            dycore_config = self.from_f90nml(f90_nml)
+            for var in dycore_config.__dict__.keys():
+                setattr(self, var, dycore_config.__dict__[var])
         # Single tile cartesian grids
         if self.grid_type > 3:
             self.nf_omega = 0
+
+    @classmethod
+    def from_f90nml(
+        cls,
+        nml: f90nml.Namelist,
+        use_default_groups: bool = True,
+        target_groups: list[str] | None = None,
+    ) -> "DynamicalCoreConfig":
+        """Uses the nml to create a DynamicalCoreConfig.
+        Only the DEFAULT_DYCORE_NML_GROUPS from the nml are considered
+        when initializing the DynamicalCoreConfig. If the nml
+        has a 'namelist_override' key, then that will be used to
+        load an additional namelist file to override the
+        DynamicalCoreConfig values.
+
+        Args:
+            nml: f90nml.Namelist
+            use_default_groups: bool. If True, the DEFAULT_DYCORE_NML_GROUPS
+                will be used for initializing the config. Otherwise,
+                parameters from the target_groups will be used to initialize
+                the DynaicalCoreConfig instead. (Default: True)
+            target_groups: list[str] | None. If use_default_groups is False,
+                this list will be used to specify which groups in the nml to
+                use when initializing the DynamicalCoreConfig. If None, all
+                groups will be used. (Default: None)
+                If use_default_groups is True, this parameter is ignored.
+        """
+        if use_default_groups:
+            target_groups = DEFAULT_DYCORE_NML_GROUPS
+        nml_dict = f90nml_as_dict(nml, flatten=True, target_groups=target_groups)
+        dacite_config = Config(type_hooks={tuple[int, int]: tuple[int, int]})
+        dycore_config = from_dict(
+            data_class=DynamicalCoreConfig, data=nml_dict, config=dacite_config
+        )
+        return dycore_config
 
     @classmethod
     def from_yaml(cls, yaml_config: str) -> "DynamicalCoreConfig":

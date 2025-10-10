@@ -18,9 +18,9 @@ from ndsl.constants import (
 from ndsl.grid import GridData
 from ndsl.performance import NullTimer
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing, TranslateFortranData2Py
+from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import fv_dynamics
-from pyfv3.utils.namelist import dycore_config_from_f90nml
 
 
 class TranslateDycoreFortranData2Py(TranslateFortranData2Py):
@@ -31,7 +31,7 @@ class TranslateDycoreFortranData2Py(TranslateFortranData2Py):
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, stencil_factory)
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
 
 class TranslateFVDynamics(ParallelTranslateBaseSlicing):
@@ -296,7 +296,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         self.ignore_near_zero_errors["q_con"] = True
         self.dycore: Optional[fv_dynamics.DynamicalCore] = None
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def state_from_inputs(self, inputs):
         input_storages = super().state_from_inputs(inputs)

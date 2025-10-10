@@ -22,8 +22,8 @@ from ndsl.constants import (
 from ndsl.grid import GridData, MetricTerms
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
 from ndsl.stencils.testing.grid import TRACER_DIM  # type: ignore
+from pyfv3 import DynamicalCoreConfig
 from pyfv3.testing import TranslateDycoreFortranData2Py
-from pyfv3.utils.namelist import dycore_config_from_f90nml
 
 
 class TranslateInitCase(ParallelTranslateBaseSlicing):
@@ -167,7 +167,7 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
         for var in ["u", "v"]:
             self.ignore_near_zero_errors[var] = {"near_zero": 2e-13}
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def compute_sequential(self, *args, **kwargs):
         pytest.skip(

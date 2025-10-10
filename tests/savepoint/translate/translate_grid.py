@@ -17,7 +17,7 @@ from ndsl.grid import MetricTerms
 from ndsl.grid.eta import set_hybrid_pressure_coefficients
 from ndsl.grid.global_setup import global_mirror_grid, gnomonic_grid
 from ndsl.stencils.testing import ParallelTranslateGrid
-from pyfv3.utils.namelist import dycore_config_from_f90nml
+from pyfv3 import DynamicalCoreConfig
 
 
 class TranslateGnomonicGrids(ParallelTranslateGrid):
@@ -137,7 +137,7 @@ class TranslateGridAreas(ParallelTranslateGrid):
         self.near_zero = 3e-14
         self.ignore_near_zero_errors = {"agrid": True, "dxc": True, "dyc": True}
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs = {
         "grid": {
@@ -273,7 +273,7 @@ class TranslateGridGrid(ParallelTranslateGrid):
         self.near_zero = 1e-14
         self.ignore_near_zero_errors = {"grid": True}
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def compute_parallel(self, inputs, communicator):
         grid_generator = MetricTerms.from_tile_sizing(
@@ -300,7 +300,7 @@ class TranslateDxDy(ParallelTranslateGrid):
         super().__init__(rank_grids, namelist, stencil_factory)
         self.max_error = 3e-14
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs = {
         "grid": {
@@ -353,7 +353,7 @@ class TranslateAGrid(ParallelTranslateGrid):
         super().__init__(rank_grids, namelist, stencil_factory)
         self.max_error = 1e-13
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs = {
         "agrid": {
@@ -502,7 +502,7 @@ class TranslateInitGrid(ParallelTranslateGrid):
         self.near_zero = 3e-14
         self.ignore_near_zero_errors = {"gridvar": True, "agrid": True}
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def compute_parallel(self, inputs, communicator):
         grid_generator = MetricTerms.from_tile_sizing(
@@ -631,7 +631,7 @@ class TranslateUtilVectors(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
@@ -798,7 +798,7 @@ class TranslateTrigSg(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
@@ -1045,7 +1045,7 @@ class TranslateAAMCorrection(ParallelTranslateGrid):
         self.near_zero = 1e-14
         self.ignore_near_zero_errors = {"l2c_v": True, "l2c_u": True}
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
@@ -1124,7 +1124,7 @@ class TranslateDerivedTrig(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
@@ -1424,7 +1424,7 @@ class TranslateDivgDel6(ParallelTranslateGrid):
         super().__init__(rank_grids, namelist, stencil_factory)
         self.max_error = 4e-14
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "sin_sg1": {
@@ -1568,7 +1568,7 @@ class TranslateInitCubedtoLatLon(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "agrid": {
@@ -1685,7 +1685,7 @@ class TranslateEdgeFactors(ParallelTranslateGrid):
         super().__init__(rank_grids, namelist, stencil_factory)
         self.max_error = 3e-13
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
@@ -1876,7 +1876,7 @@ class TranslateInitGridUtils(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.config = dycore_config_from_f90nml(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "gridvar": {
