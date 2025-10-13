@@ -57,7 +57,7 @@ jobs:
         if: ${{inputs.component_trigger}}
         run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
-          cd NDSL && pip3 install .[test] && cd ../
+          cd NDSL && pip3 install . && cd ../
           pip3 install .[test]
 
       - name: Install pyFV3 packages
