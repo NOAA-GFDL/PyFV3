@@ -122,7 +122,6 @@ class GeosDycoreWrapper:
         # This is a temporary work-around for now.
         self.dycore_config = pyfv3.DynamicalCoreConfig.from_f90nml(
             self.namelist,
-            use_default_groups=False,
             target_groups=None,
         )
         self.dycore_config.dt_atmos = bdt

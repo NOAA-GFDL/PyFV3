@@ -1,7 +1,7 @@
 import dataclasses
 from datetime import timedelta
 from math import floor
-from typing import Optional
+from typing import Optional, Tuple
 
 import f90nml
 import yaml
@@ -201,7 +201,7 @@ class DynamicalCoreConfig:
     vtdm4: float = DEFAULT_FLOAT
     z_tracer: bool = DEFAULT_BOOL
     do_qa: bool = DEFAULT_BOOL
-    layout: tuple[int, int] = (1, 1)
+    layout: Tuple[int, int] = (1, 1)
     grid_type: int = 0
     u_max: float = 350.0
     """max windspeed for dp config"""
@@ -284,6 +284,7 @@ class DynamicalCoreConfig:
     sw_dynamics: bool = False
     """shallow water conditions"""
     namelist_override: Optional[str] = None
+    target_nml_groups: Optional[Tuple[str, ...]] = DEFAULT_DYCORE_NML_GROUPS
 
     def __post_init__(self):
         if self.namelist_override is not None:
@@ -292,7 +293,7 @@ class DynamicalCoreConfig:
             except FileNotFoundError:
                 print(f"{self.namelist_override} does not exist")
                 raise
-            dycore_config = self.from_f90nml(f90_nml)
+            dycore_config = self.from_f90nml(f90_nml, self.target_nml_groups)
             for var in dycore_config.__dict__.keys():
                 setattr(self, var, dycore_config.__dict__[var])
         # Single tile cartesian grids
@@ -303,34 +304,46 @@ class DynamicalCoreConfig:
     def from_f90nml(
         cls,
         nml: f90nml.Namelist,
-        use_default_groups: bool = True,
-        target_groups: list[str] | None = None,
+        target_groups: Tuple[str, ...] | None = DEFAULT_DYCORE_NML_GROUPS,
     ) -> "DynamicalCoreConfig":
         """Uses the nml to create a DynamicalCoreConfig.
         Only the DEFAULT_DYCORE_NML_GROUPS from the nml are considered
-        when initializing the DynamicalCoreConfig. If the nml
-        has a 'namelist_override' key, then that will be used to
-        load an additional namelist file to override the
-        DynamicalCoreConfig values.
+        when initializing the DynamicalCoreConfig.
 
         Args:
             nml: f90nml.Namelist
-            use_default_groups: bool. If True, the DEFAULT_DYCORE_NML_GROUPS
-                will be used for initializing the config. Otherwise,
-                parameters from the target_groups will be used to initialize
-                the DynaicalCoreConfig instead. (Default: True)
-            target_groups: list[str] | None. If use_default_groups is False,
-                this list will be used to specify which groups in the nml to
+            target_groups: Tuple[str,...] | None
+                This list will be used to specify which groups in the nml to
                 use when initializing the DynamicalCoreConfig. If None, all
-                groups will be used. (Default: None)
-                If use_default_groups is True, this parameter is ignored.
+                groups will be used. (Default: DEFAULT_DYCORE_NML_GROUPS)
         """
-        if use_default_groups:
-            target_groups = DEFAULT_DYCORE_NML_GROUPS
         nml_dict = f90nml_as_dict(nml, flatten=True, target_groups=target_groups)
-        dacite_config = Config(type_hooks={tuple[int, int]: tuple[int, int]})
+        nml_dict["target_nml_groups"] = target_groups
+        return cls.from_dict(nml_dict)
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict,
+    ) -> "DynamicalCoreConfig":
+        """Uses the nml to create a DynamicalCoreConfig, using the data
+        dictionary.
+
+        Args:
+            data: "flattened" dictionary where the keys match the class member variables
+        """
+        # NOTE: We're setting strict to False so that extra keys in the data are
+        # ignored. Eventually, we'd like to turn this to True once we move away from
+        # expecting dicts that are basically flattened yamls and f90nml files.
+        dacite_config = Config(
+            strict=False,
+            type_hooks={
+                Tuple[int, int]: lambda x: tuple(x),
+                Tuple[str, ...]: lambda x: tuple(x) if x is not None else None,
+            },
+        )
         dycore_config = from_dict(
-            data_class=DynamicalCoreConfig, data=nml_dict, config=dacite_config
+            data_class=DynamicalCoreConfig, data=data, config=dacite_config
         )
         return dycore_config
 
