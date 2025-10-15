@@ -7,7 +7,7 @@ from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import DampingCoefficients, GridData
-from ndsl.stencils import corners
+from pyfv3.stencils.copy_corners import CopyCornersX, CopyCornersY
 from pyfv3.stencils.delnflux import DelnFlux
 from pyfv3.stencils.xppm import XPiecewiseParabolic
 from pyfv3.stencils.yppm import YPiecewiseParabolic
@@ -178,7 +178,7 @@ class FiniteVolumeTransport:
             # self.delnflux = None
             self._do_delnflux = False
 
-        self._copy_corners_y = corners.CopyCorners("y", stencil_factory)
+        self._copy_corners_y = CopyCornersY(stencil_factory)
         self.y_piecewise_parabolic_inner = YPiecewiseParabolic(
             stencil_factory=stencil_factory,
             dya=grid_data.dya,
@@ -201,7 +201,7 @@ class FiniteVolumeTransport:
             domain=idx.domain_compute(add=(1, 1, 1)),
         )
 
-        self._copy_corners_x = corners.CopyCorners("x", stencil_factory)
+        self._copy_corners_x = CopyCornersX(stencil_factory)
         self.x_piecewise_parabolic_inner = XPiecewiseParabolic(
             stencil_factory=stencil_factory,
             dxa=grid_data.dxa,
@@ -313,7 +313,7 @@ class FiniteVolumeTransport:
         # y_area_flux as an input (flux = area_flux * advected_mean), since a flux is
         # easier to understand than the current output. This would be like merging
         # yppm with q_i_stencil and xppm with q_j_stencil.
-        self._copy_corners_y(q)
+        self._copy_corners_y(q.data)
         self.y_piecewise_parabolic_inner(q, cry, self._q_y_advected_mean)
         # q_y_advected_mean is 1/Delta_area * curly-F, where curly-F is defined in
         # equation 4.3 of the FV3 documentation and Delta_area is the advected area
@@ -330,7 +330,7 @@ class FiniteVolumeTransport:
         )
         # q_advected_y_x_advected_mean is now rho^n + F(rho^y) in PL07 eq 16
 
-        self._copy_corners_x(q)
+        self._copy_corners_x(q.data)
         # similarly below for x<->y
         self.x_piecewise_parabolic_inner(q, crx, self._q_x_advected_mean)
         self.q_j_stencil(

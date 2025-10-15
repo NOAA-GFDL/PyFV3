@@ -5,6 +5,7 @@ from f90nml import Namelist
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
 from ndsl.stencils import corners
+from pyfv3.stencils.copy_corners import CopyCornersX, CopyCornersY
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
@@ -102,8 +103,8 @@ class TranslateCopyCorners(TranslateDycoreFortranData2Py):
         self.in_vars["data_vars"] = {"q": {}}
         self.in_vars["parameters"] = ["dir"]
         self.out_vars: Dict[str, Any] = {"q": {}}
-        self._copy_corners_x = corners.CopyCorners("x", stencil_factory=stencil_factory)
-        self._copy_corners_y = corners.CopyCorners("y", stencil_factory=stencil_factory)
+        self._copy_corners_x = CopyCornersX(stencil_factory)
+        self._copy_corners_y = CopyCornersY(stencil_factory)
         self.stencil_factory = stencil_factory
 
     def compute_from_storage(self, inputs):
