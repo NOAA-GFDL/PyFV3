@@ -307,8 +307,6 @@ class DynamicalCoreConfig:
         target_groups: Tuple[str, ...] | None = DEFAULT_DYCORE_NML_GROUPS,
     ) -> "DynamicalCoreConfig":
         """Uses the nml to create a DynamicalCoreConfig.
-        Only the DEFAULT_DYCORE_NML_GROUPS from the nml are considered
-        when initializing the DynamicalCoreConfig.
 
         Args:
             nml: f90nml.Namelist
