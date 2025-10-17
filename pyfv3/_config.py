@@ -295,6 +295,8 @@ class DynamicalCoreConfig:
             except FileNotFoundError:
                 print(f"{self.namelist_override} does not exist")
                 raise
+            # TODO: Find a better way to do below. Passing self.* as an argument
+            # to a class function of the same class is always a bit fishy.
             dycore_config = self.from_f90nml(f90_nml, self.target_nml_groups)
             for var in dycore_config.__dict__.keys():
                 setattr(self, var, dycore_config.__dict__[var])
