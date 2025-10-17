@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 from datetime import timedelta
 from math import floor
@@ -305,7 +307,7 @@ class DynamicalCoreConfig:
         cls,
         nml: f90nml.Namelist,
         target_groups: Tuple[str, ...] | None = DEFAULT_DYCORE_NML_GROUPS,
-    ) -> "DynamicalCoreConfig":
+    ) -> DynamicalCoreConfig:
         """Uses the nml to create a DynamicalCoreConfig.
 
         Args:
@@ -323,7 +325,7 @@ class DynamicalCoreConfig:
     def from_dict(
         cls,
         data: dict,
-    ) -> "DynamicalCoreConfig":
+    ) -> DynamicalCoreConfig:
         """Create a DynamicalCoreConfig from the given data.
 
         Args:
@@ -345,7 +347,7 @@ class DynamicalCoreConfig:
         return dycore_config
 
     @classmethod
-    def from_yaml(cls, yaml_config: str) -> "DynamicalCoreConfig":
+    def from_yaml(cls, yaml_config: str) -> DynamicalCoreConfig:
         config = cls()
         with open(yaml_config, "r") as f:
             raw_config = yaml.safe_load(f)
