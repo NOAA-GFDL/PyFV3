@@ -326,8 +326,7 @@ class DynamicalCoreConfig:
         cls,
         data: dict,
     ) -> "DynamicalCoreConfig":
-        """Uses the nml to create a DynamicalCoreConfig, using the data
-        dictionary.
+        """Create a DynamicalCoreConfig from the given data.
 
         Args:
             data: "flattened" dictionary where the keys match the class member variables
