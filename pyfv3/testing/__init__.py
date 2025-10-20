@@ -1,5 +1,6 @@
+from .translate_data import TranslateDycoreFortranData2Py
 from .translate_dyncore import TranslateDynCore
-from .translate_fvdynamics import TranslateDycoreFortranData2Py, TranslateFVDynamics
+from .translate_fvdynamics import TranslateFVDynamics
 from .validation import enable_selective_validation
 
 

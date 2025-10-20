@@ -7,6 +7,7 @@ from ndsl import StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
 from pyfv3 import DryConvectiveAdjustment
+from pyfv3._config import DynamicalCoreConfig
 
 
 # NOTE, does no halo updates, does not need to be a Parallel test,
@@ -178,6 +179,7 @@ class TranslateFVSubgridZ(ParallelTranslateBaseSlicing):
         for qvar in utils.tracer_variables:
             self.ignore_near_zero_errors[qvar] = True
         self.stencil_factory = stencil_factory
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def compute_parallel(self, inputs, communicator):
         state = self.state_from_inputs(inputs)

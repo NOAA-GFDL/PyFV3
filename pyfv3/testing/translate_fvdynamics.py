@@ -17,21 +17,10 @@ from ndsl.constants import (
 )
 from ndsl.grid import GridData
 from ndsl.performance import NullTimer
-from ndsl.stencils.testing import ParallelTranslateBaseSlicing, TranslateFortranData2Py
+from ndsl.stencils.testing import ParallelTranslateBaseSlicing
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import fv_dynamics
-
-
-class TranslateDycoreFortranData2Py(TranslateFortranData2Py):
-    def __init__(
-        self,
-        grid,
-        namelist: Namelist,
-        stencil_factory: StencilFactory,
-    ):
-        super().__init__(grid, stencil_factory)
-        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
 
 class TranslateFVDynamics(ParallelTranslateBaseSlicing):
