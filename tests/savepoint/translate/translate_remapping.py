@@ -1,7 +1,8 @@
+from f90nml import Namelist
+
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
 from ndsl.constants import Z_DIM
-from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils import LagrangianToEulerian
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
@@ -96,7 +97,6 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
         self.near_zero = 3e-18
         self.ignore_near_zero_errors = {"q_con": True, "tracers": True}
         self.stencil_factory = stencil_factory
-        self.namelist = DynamicalCoreConfig.from_namelist(namelist)
 
     def compute_from_storage(self, inputs):
         wsd_2d = utils.make_storage_from_shape(
@@ -111,7 +111,7 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
         l_to_e_obj = LagrangianToEulerian(
             self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
-            config=DynamicalCoreConfig.from_namelist(self.namelist).remapping,
+            config=self.config.remapping,
             area_64=self.grid.area_64,
             nq=inputs.pop("nq"),
             pfull=pfull,

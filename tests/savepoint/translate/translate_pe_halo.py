@@ -1,4 +1,6 @@
-from ndsl import Namelist, StencilFactory
+from f90nml import Namelist
+
+from ndsl import StencilFactory
 from pyfv3.stencils import pe_halo
 from pyfv3.testing import TranslateDycoreFortranData2Py
 

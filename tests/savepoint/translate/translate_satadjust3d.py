@@ -1,5 +1,6 @@
-from ndsl import Namelist, StencilFactory
-from pyfv3 import DynamicalCoreConfig
+from f90nml import Namelist
+
+from ndsl import StencilFactory
 from pyfv3.stencils import SatAdjust3d
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
@@ -59,7 +60,6 @@ class TranslateSatAdjust3d(TranslateDycoreFortranData2Py):
             },
             "cappa": {},
         }
-        self.namelist = DynamicalCoreConfig.from_namelist(namelist)
         self.stencil_factory = stencil_factory
 
     def compute_from_storage(self, inputs):
@@ -68,7 +68,7 @@ class TranslateSatAdjust3d(TranslateDycoreFortranData2Py):
         inputs["fast_mp_consv"] = bool(inputs["fast_mp_consv"])
         satadjust3d_obj = SatAdjust3d(
             self.stencil_factory,
-            DynamicalCoreConfig.from_namelist(self.namelist).sat_adjust,
+            self.config.sat_adjust,
             self.grid.area_64,
             int(inputs["kmp"]),
         )

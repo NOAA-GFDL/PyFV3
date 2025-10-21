@@ -1,8 +1,9 @@
 import numpy as np
+from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 import pyfv3.stencils.saturation_adjustment as satadjust
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
 

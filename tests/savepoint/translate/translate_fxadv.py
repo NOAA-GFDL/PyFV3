@@ -1,6 +1,7 @@
 import numpy as np
+from f90nml import Namelist
 
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from pyfv3.stencils import FiniteVolumeFluxPrep
 from pyfv3.testing import TranslateDycoreFortranData2Py
@@ -23,7 +24,7 @@ class TranslateFxAdv(TranslateDycoreFortranData2Py):
         self.compute_func = FiniteVolumeFluxPrep(  # type: ignore
             self.stencil_factory,
             self.grid.grid_data,
-            namelist.grid_type,
+            self.config.grid_type,
         )
         self.in_vars["data_vars"] = {
             "uc": {},

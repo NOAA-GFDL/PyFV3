@@ -116,7 +116,14 @@ class GeosDycoreWrapper:
 
         self.backend = backend
         self.namelist = namelist
-        self.dycore_config = pyfv3.DynamicalCoreConfig.from_f90nml(self.namelist)
+        # TODO: After pace unit tests have been updated, or universal
+        # loader from namelist/yaml has been implemented, create a
+        # dycore_config using default groups or creation from yaml.
+        # This is a temporary work-around for now.
+        self.dycore_config = pyfv3.DynamicalCoreConfig.from_f90nml(
+            self.namelist,
+            target_groups=None,
+        )
         self.dycore_config.dt_atmos = bdt
         assert self.dycore_config.dt_atmos != 0
 

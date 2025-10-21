@@ -3,9 +3,10 @@ from datetime import timedelta
 from typing import Any, Dict, Optional, Tuple
 
 import pytest
+from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Namelist, Quantity, StencilFactory
+from ndsl import Quantity, StencilFactory
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,
@@ -16,21 +17,10 @@ from ndsl.constants import (
 )
 from ndsl.grid import GridData
 from ndsl.performance import NullTimer
-from ndsl.stencils.testing import ParallelTranslateBaseSlicing, TranslateFortranData2Py
+from ndsl.stencils.testing import ParallelTranslateBaseSlicing
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import fv_dynamics
-
-
-class TranslateDycoreFortranData2Py(TranslateFortranData2Py):
-    def __init__(
-        self,
-        grid,
-        namelist: Namelist,
-        stencil_factory: StencilFactory,
-    ):
-        super().__init__(grid, stencil_factory)
-        self.namelist = DynamicalCoreConfig.from_namelist(namelist)
 
 
 class TranslateFVDynamics(ParallelTranslateBaseSlicing):
@@ -295,7 +285,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         self.ignore_near_zero_errors["q_con"] = True
         self.dycore: Optional[fv_dynamics.DynamicalCore] = None
         self.stencil_factory = stencil_factory
-        self.namelist: DynamicalCoreConfig = DynamicalCoreConfig.from_namelist(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def state_from_inputs(self, inputs):
         input_storages = super().state_from_inputs(inputs)
@@ -337,7 +327,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
             stencil_factory=self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             damping_coefficients=self.grid.damping_coefficients,
-            config=DynamicalCoreConfig.from_namelist(self.namelist),
+            config=self.config,
             phis=state.phis,
             state=state,
             timestep=timedelta(seconds=inputs["bdt"]),

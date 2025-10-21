@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 from datetime import timedelta
 from math import floor
@@ -5,14 +7,20 @@ from typing import Optional, Tuple
 
 import f90nml
 import yaml
+from dacite import Config, from_dict
 
-from ndsl.namelist import Namelist
+from ndsl.utils import f90nml_as_dict
 
 
 DEFAULT_INT = 0
 DEFAULT_STR = ""
 DEFAULT_FLOAT = 0.0
 DEFAULT_BOOL = False
+DEFAULT_DYCORE_NML_GROUPS = (
+    "main_nml",
+    "coupler_nml",
+    "fv_core_nml",
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -278,6 +286,7 @@ class DynamicalCoreConfig:
     sw_dynamics: bool = False
     """shallow water conditions"""
     namelist_override: Optional[str] = None
+    target_nml_groups: Optional[Tuple[str, ...]] = DEFAULT_DYCORE_NML_GROUPS
 
     def __post_init__(self):
         if self.namelist_override is not None:
@@ -286,7 +295,9 @@ class DynamicalCoreConfig:
             except FileNotFoundError:
                 print(f"{self.namelist_override} does not exist")
                 raise
-            dycore_config = self.from_f90nml(f90_nml)
+            # TODO: Find a better way to do below. Passing self.* as an argument
+            # to a class function of the same class is always a bit fishy.
+            dycore_config = self.from_f90nml(f90_nml, self.target_nml_groups)
             for var in dycore_config.__dict__.keys():
                 setattr(self, var, dycore_config.__dict__[var])
         # Single tile cartesian grids
@@ -294,102 +305,51 @@ class DynamicalCoreConfig:
             self.nf_omega = 0
 
     @classmethod
-    def from_f90nml(cls, f90_namelist: f90nml.Namelist) -> "DynamicalCoreConfig":
-        namelist = Namelist.from_f90nml(f90_namelist)
-        return cls.from_namelist(namelist)
+    def from_f90nml(
+        cls,
+        nml: f90nml.Namelist,
+        target_groups: Tuple[str, ...] | None = DEFAULT_DYCORE_NML_GROUPS,
+    ) -> DynamicalCoreConfig:
+        """Uses the nml to create a DynamicalCoreConfig.
+
+        Args:
+            nml: f90nml.Namelist
+            target_groups: Tuple[str,...] | None
+                This list will be used to specify which groups in the nml to
+                use when initializing the DynamicalCoreConfig. If None, all
+                groups will be used. (Default: DEFAULT_DYCORE_NML_GROUPS)
+        """
+        nml_dict = f90nml_as_dict(nml, flatten=True, target_groups=target_groups)
+        nml_dict["target_nml_groups"] = target_groups
+        return cls.from_dict(nml_dict)
 
     @classmethod
-    def from_namelist(cls, namelist: Namelist) -> "DynamicalCoreConfig":
-        return cls(
-            dt_atmos=namelist.dt_atmos,
-            a_imp=namelist.a_imp,
-            beta=namelist.beta,
-            consv_te=namelist.consv_te,
-            d2_bg=namelist.d2_bg,
-            d2_bg_k1=namelist.d2_bg_k1,
-            d2_bg_k2=namelist.d2_bg_k2,
-            d4_bg=namelist.d4_bg,
-            d_con=namelist.d_con,
-            d_ext=namelist.d_ext,
-            dddmp=namelist.dddmp,
-            delt_max=namelist.delt_max,
-            do_sat_adj=namelist.do_sat_adj,
-            do_vort_damp=namelist.do_vort_damp,
-            fill=namelist.fill,
-            hord_dp=namelist.hord_dp,
-            hord_mt=namelist.hord_mt,
-            hord_tm=namelist.hord_tm,
-            hord_tr=namelist.hord_tr,
-            hord_vt=namelist.hord_vt,
-            hydrostatic=namelist.hydrostatic,
-            k_split=namelist.k_split,
-            ke_bg=namelist.ke_bg,
-            kord_mt=namelist.kord_mt,
-            kord_tm=namelist.kord_tm,
-            kord_tr=namelist.kord_tr,
-            kord_wz=namelist.kord_wz,
-            n_split=namelist.n_split,
-            nord=namelist.nord,
-            npx=namelist.npx,
-            npy=namelist.npy,
-            npz=namelist.npz,
-            ntiles=namelist.ntiles,
-            nwat=namelist.nwat,
-            p_fac=namelist.p_fac,
-            rf_cutoff=namelist.rf_cutoff,
-            tau=namelist.tau,
-            vtdm4=namelist.vtdm4,
-            z_tracer=namelist.z_tracer,
-            do_qa=namelist.do_qa,
-            layout=namelist.layout,
-            grid_type=namelist.grid_type,
-            u_max=namelist.u_max,
-            do_f3d=namelist.do_f3d,
-            inline_q=namelist.inline_q,
-            do_skeb=namelist.do_skeb,
-            check_negative=namelist.check_negative,
-            tau_r2g=namelist.tau_r2g,
-            tau_smlt=namelist.tau_smlt,
-            tau_g2r=namelist.tau_g2r,
-            tau_imlt=namelist.tau_imlt,
-            tau_i2s=namelist.tau_i2s,
-            tau_l2r=namelist.tau_l2r,
-            tau_g2v=namelist.tau_g2v,
-            tau_v2g=namelist.tau_v2g,
-            sat_adj0=namelist.sat_adj0,
-            ql_gen=namelist.ql_gen,
-            ql_mlt=namelist.ql_mlt,
-            qs_mlt=namelist.qs_mlt,
-            ql0_max=namelist.ql0_max,
-            t_sub=namelist.t_sub,
-            qi_gen=namelist.qi_gen,
-            qi_lim=namelist.qi_lim,
-            qi0_max=namelist.qi0_max,
-            rad_snow=namelist.rad_snow,
-            rad_rain=namelist.rad_rain,
-            rad_graupel=namelist.rad_graupel,
-            tintqs=namelist.tintqs,
-            dw_ocean=namelist.dw_ocean,
-            dw_land=namelist.dw_land,
-            icloud_f=namelist.icloud_f,
-            cld_min=namelist.cld_min,
-            tau_l2v=namelist.tau_l2v,
-            tau_v2l=namelist.tau_v2l,
-            c2l_ord=namelist.c2l_ord,
-            regional=namelist.regional,
-            m_split=namelist.m_split,
-            convert_ke=namelist.convert_ke,
-            breed_vortex_inline=namelist.breed_vortex_inline,
-            use_old_omega=namelist.use_old_omega,
-            rf_fast=namelist.rf_fast,
-            adiabatic=namelist.adiabatic,
-            nf_omega=namelist.nf_omega,
-            fv_sg_adj=namelist.fv_sg_adj,
-            n_sponge=namelist.n_sponge,
+    def from_dict(
+        cls,
+        data: dict,
+    ) -> DynamicalCoreConfig:
+        """Create a DynamicalCoreConfig from the given data.
+
+        Args:
+            data: "flattened" dictionary where the keys match the class member variables
+        """
+        # NOTE: We're setting strict to False so that extra keys in the data are
+        # ignored. Eventually, we'd like to turn this to True once we move away from
+        # expecting dicts that are basically flattened yamls and f90nml files.
+        dacite_config = Config(
+            strict=False,
+            type_hooks={
+                Tuple[int, int]: lambda x: tuple(x),
+                Tuple[str, ...]: lambda x: tuple(x) if x is not None else None,
+            },
         )
+        dycore_config = from_dict(
+            data_class=DynamicalCoreConfig, data=data, config=dacite_config
+        )
+        return dycore_config
 
     @classmethod
-    def from_yaml(cls, yaml_config: str) -> "DynamicalCoreConfig":
+    def from_yaml(cls, yaml_config: str) -> DynamicalCoreConfig:
         config = cls()
         with open(yaml_config, "r") as f:
             raw_config = yaml.safe_load(f)

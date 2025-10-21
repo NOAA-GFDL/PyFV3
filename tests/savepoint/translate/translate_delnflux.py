@@ -1,4 +1,6 @@
-from ndsl import Namelist, StencilFactory
+from f90nml import Namelist
+
+from ndsl import StencilFactory
 from ndsl.constants import Z_DIM
 from pyfv3.stencils import delnflux
 from pyfv3.testing import TranslateDycoreFortranData2Py
