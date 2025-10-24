@@ -89,4 +89,4 @@ jobs:
   pySHiELD-test-data:
     # Downstream calls may not need this. If so, they should fetch it explicitly.
     if: ${{!inputs.external-call}}
-    uses: romanc/pySHiELD/.github/workflows/create_cache.yml@develop
+    uses: NOAA-GFDL/pySHiELD/.github/workflows/create_cache.yml@develop
