@@ -319,7 +319,8 @@ class DynamicalCoreConfig:
                 use when initializing the DynamicalCoreConfig. If None, all
                 groups will be used. (Default: DEFAULT_DYCORE_NML_GROUPS)
         """
-        nml_dict = f90nml_as_dict(nml, flatten=True, target_groups=target_groups)
+        groups = list(target_groups) if target_groups is not None else None
+        nml_dict = f90nml_as_dict(nml, flatten=True, target_groups=groups)
         nml_dict["target_nml_groups"] = target_groups
         return cls.from_dict(nml_dict)
 
