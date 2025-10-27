@@ -181,12 +181,12 @@ class HyperdiffusionDamping:
             self._corner_fill(qdel, self._q)
 
             if nt > 0:
-                self._copy_corners_x(self._q)
+                self._copy_corners_x(self._q.data)
 
             self._compute_zonal_flux[n](self._fx, self._q, self._del6_v)
 
             if nt > 0:
-                self._copy_corners_y(self._q)
+                self._copy_corners_y(self._q.data)
 
             self._compute_meridional_flux[n](self._fy, self._q, self._del6_u)
 
