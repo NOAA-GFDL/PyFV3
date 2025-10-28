@@ -1,4 +1,3 @@
-import ndsl.stencils.corners as corners
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation, horizontal, interval, region
@@ -6,6 +5,7 @@ from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, cast_to_index3d
 from ndsl.grid import DampingCoefficients
 from ndsl.stencils.basic_operations import copy_defn
+from pyfv3.stencils.copy_corners import CopyCornersX, CopyCornersY
 
 
 #
@@ -120,9 +120,7 @@ class HyperdiffusionDamping:
             compute_halos=(3, 3),
         )
 
-        self._copy_corners_x: corners.CopyCorners = corners.CopyCorners(
-            direction="x", stencil_factory=stencil_factory
-        )
+        self._copy_corners_x = CopyCornersX(stencil_factory)
 
         self._ntimes = int(min(3, nmax))
         origins = []
@@ -148,9 +146,7 @@ class HyperdiffusionDamping:
             compute_zonal_flux, origins, domains_x, stencil_factory=stencil_factory
         )
 
-        self._copy_corners_y: corners.CopyCorners = corners.CopyCorners(
-            direction="y", stencil_factory=stencil_factory
-        )
+        self._copy_corners_y = CopyCornersY(stencil_factory)
         """Stencil responsible for doing corners updates in y-direction."""
 
         self._compute_meridional_flux = get_stencils_with_varied_bounds(
@@ -185,12 +181,12 @@ class HyperdiffusionDamping:
             self._corner_fill(qdel, self._q)
 
             if nt > 0:
-                self._copy_corners_x(self._q)
+                self._copy_corners_x(self._q.data)
 
             self._compute_zonal_flux[n](self._fx, self._q, self._del6_v)
 
             if nt > 0:
-                self._copy_corners_y(self._q)
+                self._copy_corners_y(self._q.data)
 
             self._compute_meridional_flux[n](self._fy, self._q, self._del6_u)
 
