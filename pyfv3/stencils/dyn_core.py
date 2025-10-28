@@ -360,7 +360,11 @@ class AcousticDynamics:
                     ["pkc"],
                 )
             else:
-                self.pkc = comm.get_scalar_halo_updater([full_size_xyzi_halo_spec])
+                self.pkc = WrappedHaloUpdater(
+                    comm.get_scalar_halo_updater([full_size_xyzi_halo_spec]),
+                    {"pkc": pkc},
+                    ["pkc"],
+                )
             self.uc__vc = WrappedHaloUpdater(
                 comm.get_vector_halo_updater(
                     [full_size_xiyz_halo_spec], [full_size_xyiz_halo_spec]

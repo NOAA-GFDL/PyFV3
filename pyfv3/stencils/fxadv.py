@@ -538,15 +538,9 @@ class FiniteVolumeFluxPrep:
         origin = grid_indexing.origin_full()
         domain = grid_indexing.domain_full()
         ax_offsets = grid_indexing.axis_offsets(origin, domain)
-        kwargs = {"externals": ax_offsets, "origin": origin, "domain": domain}
         origin_corners = grid_indexing.origin_full(add=(1, 1, 0))
         domain_corners = grid_indexing.domain_full(add=(-1, -1, 0))
         corner_offsets = grid_indexing.axis_offsets(origin_corners, domain_corners)
-        kwargs_corners = {
-            "externals": corner_offsets,
-            "origin": origin_corners,
-            "domain": domain_corners,
-        }
         self._main_uc_vc_contra_stencil = stencil_factory.from_origin_domain(
             main_uc_vc_contra,
             externals={"grid_type": grid_type, **ax_offsets},
@@ -555,25 +549,46 @@ class FiniteVolumeFluxPrep:
         )
         if self._grid_type < 3:
             self._uc_contra_y_edge_stencil = stencil_factory.from_origin_domain(
-                uc_contra_y_edge, **kwargs
+                uc_contra_y_edge,
+                externals=ax_offsets,
+                origin=origin,
+                domain=domain,
             )
             self._vc_contra_y_edge_stencil = stencil_factory.from_origin_domain(
-                vc_contra_y_edge, **kwargs
+                vc_contra_y_edge,
+                externals=ax_offsets,
+                origin=origin,
+                domain=domain,
             )
             self._vc_contra_x_edge_stencil = stencil_factory.from_origin_domain(
-                vc_contra_x_edge, **kwargs
+                vc_contra_x_edge,
+                externals=ax_offsets,
+                origin=origin,
+                domain=domain,
             )
             self._uc_contra_x_edge_stencil = stencil_factory.from_origin_domain(
-                uc_contra_x_edge, **kwargs
+                uc_contra_x_edge,
+                externals=ax_offsets,
+                origin=origin,
+                domain=domain,
             )
             self._uc_contra_corners_stencil = stencil_factory.from_origin_domain(
-                uc_contra_corners, **kwargs_corners
+                uc_contra_corners,
+                externals=corner_offsets,
+                origin=origin_corners,
+                domain=domain_corners,
             )
             self._vc_contra_corners_stencil = stencil_factory.from_origin_domain(
-                vc_contra_corners, **kwargs_corners
+                vc_contra_corners,
+                externals=corner_offsets,
+                origin=origin_corners,
+                domain=domain_corners,
             )
         self._fxadv_fluxes_stencil = stencil_factory.from_origin_domain(
-            fxadv_fluxes_stencil, **kwargs
+            fxadv_fluxes_stencil,
+            externals=ax_offsets,
+            origin=origin,
+            domain=domain,
         )
         # self._set_nans = get_set_nan_func(
         #     grid_indexing,
