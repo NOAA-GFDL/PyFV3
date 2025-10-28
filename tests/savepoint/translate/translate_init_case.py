@@ -220,7 +220,6 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
             ny_tile=self.config.nx_tile,
             nz=self.config.nz,
             n_halo=N_HALO_DEFAULT,
-            extra_dim_lengths={},
             layout=self.config.layout,
             tile_partitioner=communicator.partitioner.tile,
             tile_rank=communicator.tile.rank,
