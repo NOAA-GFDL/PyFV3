@@ -345,7 +345,7 @@ class DycoreState:
                     extent=sizer.get_extent(dims),
                     gt4py_backend=backend,
                 )
-        state = cls(**dict_state)  # type: ignore
+        state = cls(**dict_state)
         return state
 
     @classmethod
