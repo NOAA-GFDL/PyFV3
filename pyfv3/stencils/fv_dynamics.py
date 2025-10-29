@@ -442,7 +442,7 @@ class DynamicalCore:
     def step_dynamics(
         self,
         state: DycoreState,
-        timer: Timer = NullTimer(),
+        timer: Timer | None = None,
     ):
         """
         Step the model state forward by one timestep.
@@ -451,6 +451,9 @@ class DynamicalCore:
             state: model prognostic state and inputs
             timer: keep time of model sections
         """
+        if timer is None:
+            timer = NullTimer()
+
         self._checkpoint_fvdynamics(state=state, tag="In")
         self._compute(state, timer)
         self._checkpoint_fvdynamics(state=state, tag="Out")

@@ -341,7 +341,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
             return {}
         outputs = {}
         storages = {}
-        for name, properties in self.outputs.items():
+        for name, _properties in self.outputs.items():
             if isinstance(state[name], Quantity):
                 storages[name] = state[name].data
             elif len(self.outputs[name]["dims"]) > 0:
