@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import ndsl.constants as constants
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import (
@@ -122,7 +120,7 @@ def apply_height_fluxes(
 
 def cubic_spline_interpolation_constants(
     dp0: Quantity, quantity_factory: QuantityFactory
-) -> Tuple[Quantity, Quantity, Quantity]:
+) -> tuple[Quantity, Quantity, Quantity]:
     """
     Computes constants used in cubic spline interpolation
     from cell center to interface levels.

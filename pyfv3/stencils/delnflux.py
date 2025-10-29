@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dace
 
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
@@ -274,8 +272,8 @@ class DelnFlux:
         q: FloatField,
         fx: FloatField,
         fy: FloatField,
-        d2: Optional["FloatField"] = None,
-        mass: Optional["FloatField"] = None,
+        d2: FloatField | None = None,
+        mass: FloatField | None = None,
     ):
         """
         Del-n damping for fluxes, where n = 2 * nord + 2
@@ -331,7 +329,7 @@ class DelnFluxNoSG:
         damping_coefficients: DampingCoefficients,
         rarea: Quantity,
         nord: Quantity,
-        nk: Optional[int] = None,
+        nk: int | None = None,
     ):
         """
         nord sets the order of damping to apply:

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation
@@ -165,7 +163,7 @@ class FiniteVolumeTransport:
             # [DaCe] Use _do_delnflux instead of a None function
             # to have DaCe parsing working
             self._do_delnflux = True
-            self.delnflux: Optional[DelnFlux] = DelnFlux(
+            self.delnflux: DelnFlux | None = DelnFlux(
                 stencil_factory=stencil_factory,
                 quantity_factory=quantity_factory,
                 damping_coefficients=damping_coefficients,

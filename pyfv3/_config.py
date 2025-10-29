@@ -3,7 +3,6 @@ from __future__ import annotations
 import dataclasses
 from datetime import timedelta
 from math import floor
-from typing import Optional, Tuple
 
 import f90nml
 import yaml
@@ -203,7 +202,7 @@ class DynamicalCoreConfig:
     vtdm4: float = DEFAULT_FLOAT
     z_tracer: bool = DEFAULT_BOOL
     do_qa: bool = DEFAULT_BOOL
-    layout: Tuple[int, int] = (1, 1)
+    layout: tuple[int, int] = (1, 1)
     grid_type: int = 0
     u_max: float = 350.0
     """max windspeed for dp config"""
@@ -285,8 +284,8 @@ class DynamicalCoreConfig:
     n_sponge: int = 1
     sw_dynamics: bool = False
     """shallow water conditions"""
-    namelist_override: Optional[str] = None
-    target_nml_groups: Optional[Tuple[str, ...]] = DEFAULT_DYCORE_NML_GROUPS
+    namelist_override: str | None = None
+    target_nml_groups: tuple[str, ...] | None = DEFAULT_DYCORE_NML_GROUPS
 
     def __post_init__(self) -> None:
         if self.namelist_override is not None:
@@ -308,13 +307,13 @@ class DynamicalCoreConfig:
     def from_f90nml(
         cls,
         nml: f90nml.Namelist,
-        target_groups: Tuple[str, ...] | None = DEFAULT_DYCORE_NML_GROUPS,
+        target_groups: tuple[str, ...] | None = DEFAULT_DYCORE_NML_GROUPS,
     ) -> DynamicalCoreConfig:
         """Uses the nml to create a DynamicalCoreConfig.
 
         Args:
             nml: f90nml.Namelist
-            target_groups: Tuple[str,...] | None
+            target_groups: tuple[str,...] | None
                 This list will be used to specify which groups in the nml to
                 use when initializing the DynamicalCoreConfig. If None, all
                 groups will be used. (Default: DEFAULT_DYCORE_NML_GROUPS)
@@ -340,8 +339,8 @@ class DynamicalCoreConfig:
         dacite_config = Config(
             strict=False,
             type_hooks={
-                Tuple[int, int]: lambda x: tuple(x),
-                Tuple[str, ...]: lambda x: tuple(x) if x is not None else None,
+                tuple[int, int]: lambda x: tuple(x),
+                tuple[str, ...]: lambda x: tuple(x) if x is not None else None,
             },
         )
         dycore_config = from_dict(

@@ -1,5 +1,4 @@
 import typing
-from typing import Dict
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
@@ -110,7 +109,7 @@ class FillNegativeTracerValues:
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
         nq: int,
-        tracers: Dict[str, Quantity],
+        tracers: dict[str, Quantity],
     ):
         orchestrate(
             obj=self,
@@ -144,7 +143,7 @@ class FillNegativeTracerValues:
     def __call__(
         self,
         dp2: FloatField,
-        tracers: Dict[str, Quantity],
+        tracers: dict[str, Quantity],
     ):
         """
         Args:

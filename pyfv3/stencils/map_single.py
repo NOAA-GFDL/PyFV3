@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from collections.abc import Sequence
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
@@ -154,7 +154,7 @@ class MapSingle:
         q1: FloatField,
         pe1: FloatField,
         pe2: FloatField,
-        qs: Optional["FloatFieldIJ"] = None,
+        qs: FloatFieldIJ | None = None,
         qmin: Float = 0.0,
     ):
         """

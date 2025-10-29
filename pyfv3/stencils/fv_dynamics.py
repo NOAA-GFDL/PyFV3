@@ -1,5 +1,5 @@
+from collections.abc import Mapping
 from datetime import timedelta
-from typing import Mapping, Optional
 
 from dace.frontend.python.interface import nounroll as dace_no_unroll
 
@@ -99,7 +99,7 @@ class DynamicalCore:
         phis: Quantity,
         state: DycoreState,
         timestep: timedelta,
-        checkpointer: Optional[Checkpointer] = None,
+        checkpointer: Checkpointer | None = None,
     ):
         """
         Args:

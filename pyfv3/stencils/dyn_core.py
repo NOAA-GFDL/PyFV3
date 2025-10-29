@@ -1,4 +1,4 @@
-from typing import Dict, Mapping, Optional
+from collections.abc import Mapping
 
 import numpy as np
 from dace.frontend.python.interface import nounroll as dace_nounroll
@@ -203,7 +203,7 @@ def get_nk_heat_dissipation(
 def dyncore_temporaries(
     quantity_factory: QuantityFactory,
 ) -> Mapping[str, Quantity]:
-    temporaries: Dict[str, Quantity] = {}
+    temporaries: dict[str, Quantity] = {}
     for name in ["ut", "vt", "gz", "zh", "pem", "pkc", "pk3", "heat_source", "cappa"]:
         # TODO: the dimensions of ut and vt may not be correct,
         #       because they are not used. double-check and correct as needed.
@@ -391,7 +391,7 @@ class AcousticDynamics:
         phis: FloatFieldIJ,
         wsd: FloatFieldIJ,
         state,  # [DaCe] hack to get around quantity as parameters for halo updates
-        checkpointer: Optional[Checkpointer] = None,
+        checkpointer: Checkpointer | None = None,
     ):
         """
         Args:

@@ -1,5 +1,3 @@
-from typing import Dict, Optional
-
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import (
     X_DIM,
@@ -294,8 +292,8 @@ class LagrangianToEulerian:
         area_64,
         nq,
         pfull,
-        tracers: Dict[str, Quantity],
-        checkpointer: Optional[Checkpointer] = None,
+        tracers: dict[str, Quantity],
+        checkpointer: Checkpointer | None = None,
     ):
         orchestrate(
             obj=self,
@@ -518,7 +516,7 @@ class LagrangianToEulerian:
 
     def __call__(
         self,
-        tracers: Dict[str, Quantity],
+        tracers: dict[str, Quantity],
         pt: FloatField,
         delp: FloatField,
         delz: FloatField,
