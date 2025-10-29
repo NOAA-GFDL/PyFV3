@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Sequence
+from typing import Optional
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
@@ -156,7 +155,7 @@ class MapSingle:
         q1: FloatField,
         pe1: FloatField,
         pe2: FloatField,
-        qs: FloatFieldIJ | None = None,
+        qs: Optional["FloatFieldIJ"] = None,
         qmin: Float = 0.0,
     ):
         """

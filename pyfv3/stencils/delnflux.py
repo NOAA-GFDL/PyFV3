@@ -1,4 +1,4 @@
-from __future__ import annotations
+from typing import Optional
 
 import dace
 
@@ -274,8 +274,8 @@ class DelnFlux:
         q: FloatField,
         fx: FloatField,
         fy: FloatField,
-        d2: FloatField | None = None,
-        mass: FloatField | None = None,
+        d2: Optional["FloatField"] = None,
+        mass: Optional["FloatField"] = None,
     ):
         """
         Del-n damping for fluxes, where n = 2 * nord + 2
@@ -396,20 +396,16 @@ class DelnFluxNoSG:
 
         self._d2_damp = stencil_factory.from_origin_domain(
             d2_damp_interval,
-            externals={
-                **preamble_ax_offsets,
-            },
             origin=origin_d2,
             domain=domain_d2,
+            externals={**preamble_ax_offsets},
         )
 
         self._copy_stencil_interval = stencil_factory.from_origin_domain(
             copy_stencil_interval,
-            externals={
-                **preamble_ax_offsets,
-            },
             origin=origin_d2,
             domain=domain_d2,
+            externals={**preamble_ax_offsets},
         )
 
         self._d2_stencil = get_stencils_with_varied_bounds(
