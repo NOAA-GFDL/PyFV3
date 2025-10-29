@@ -1,12 +1,13 @@
 from dataclasses import fields
 from datetime import timedelta
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import pytest
 from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, StencilFactory
+from ndsl.comm import Comm
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,
@@ -17,7 +18,7 @@ from ndsl.constants import (
 )
 from ndsl.grid import GridData
 from ndsl.performance import NullTimer
-from ndsl.stencils.testing import ParallelTranslateBaseSlicing
+from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import fv_dynamics
@@ -25,7 +26,7 @@ from pyfv3.stencils import fv_dynamics
 
 class TranslateFVDynamics(ParallelTranslateBaseSlicing):
     compute_grid_option = True
-    inputs: Dict[str, Any] = {
+    inputs: dict[str, Any] = {
         "q_con": {
             "name": "total_condensate_mixing_ratio",
             "dims": [X_DIM, Y_DIM, Z_DIM],
@@ -215,12 +216,12 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
 
     def __init__(
         self,
-        grid,
+        grid: Grid,
         namelist: Namelist,
         stencil_factory: StencilFactory,
-        *args,
-        **kwargs,
-    ):
+        *args: Any,
+        **kwargs: dict,
+    ) -> None:
         super().__init__(grid, namelist, stencil_factory, *args, **kwargs)
         fv_dynamics_vars = {
             "u": grid.y3d_domain_dict(),
@@ -283,11 +284,11 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         for qvar in utils.tracer_variables:
             self.ignore_near_zero_errors[qvar] = True
         self.ignore_near_zero_errors["q_con"] = True
-        self.dycore: Optional[fv_dynamics.DynamicalCore] = None
+        self.dycore: fv_dynamics.DynamicalCore | None = None
         self.stencil_factory = stencil_factory
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
-    def state_from_inputs(self, inputs):
+    def state_from_inputs(self, inputs: dict) -> DycoreState:
         input_storages = super().state_from_inputs(inputs)
         # making sure we init DycoreState with the exact set of variables
         accepted_keys = [_field.name for _field in fields(DycoreState)]
@@ -298,10 +299,9 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         for name in to_delete:
             del input_storages[name]
 
-        state = DycoreState.init_from_storages(input_storages, sizer=self.grid.sizer)
-        return state
+        return DycoreState.init_from_storages(input_storages, sizer=self.grid.sizer)
 
-    def prepare_data(self, inputs) -> Tuple[DycoreState, GridData]:
+    def prepare_data(self, inputs: dict) -> tuple[DycoreState, GridData]:
         for name in ("ak", "bk"):
             inputs[name] = utils.make_storage_data(
                 inputs[name],
@@ -319,7 +319,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         state = self.state_from_inputs(inputs)
         return state, grid_data
 
-    def compute_parallel(self, inputs, communicator):
+    def compute_parallel(self, inputs: dict, communicator: Comm) -> dict:
         state, grid_data = self.prepare_data(inputs)
         self.dycore = fv_dynamics.DynamicalCore(
             comm=communicator,
@@ -336,7 +336,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         outputs = self.outputs_from_state(state)
         return outputs
 
-    def outputs_from_state(self, state: dict):
+    def outputs_from_state(self, state: DycoreState) -> dict:
         if len(self.outputs) == 0:
             return {}
         outputs = {}
@@ -351,7 +351,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         outputs.update(self._base.slice_output(storages))
         return outputs
 
-    def compute_sequential(self, *args, **kwargs):
+    def compute_sequential(self, *args: Any, **kwargs: dict) -> None:
         pytest.skip(
             f"{self.__class__} only has a mpirun implementation, "
             "not running in mock-parallel"

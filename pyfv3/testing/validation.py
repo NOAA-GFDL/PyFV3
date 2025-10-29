@@ -1,10 +1,9 @@
 import inspect
-from typing import Callable, Mapping, Tuple
+from collections.abc import Callable, Mapping
 
 import numpy as np
 
 import pyfv3.stencils.divergence_damping
-import pyfv3.stencils.updatedzd
 from ndsl import Quantity
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 
@@ -12,7 +11,7 @@ from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 def get_selective_class(
     cls: type,
     name_to_origin_domain_function: Mapping[
-        str, Callable[..., Tuple[Tuple[int, ...], Tuple[int, ...]]]
+        str, Callable[..., tuple[tuple[int, ...], tuple[int, ...]]]
     ],
 ):
     """
@@ -92,7 +91,7 @@ def get_selective_class(
 
 def get_selective_tracer_advection(
     cls: type,
-    origin_domain_func: Callable[..., Tuple[Tuple[int, ...], Tuple[int, ...]]],
+    origin_domain_func: Callable[..., tuple[tuple[int, ...], tuple[int, ...]]],
 ):
     class SelectivelyValidatedTracerAdvection:
         """
@@ -142,7 +141,7 @@ def get_selective_tracer_advection(
 
 def get_compute_domain_k_interfaces(
     instance,
-) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
+) -> tuple[tuple[int, ...], tuple[int, ...]]:
     try:
         origin = instance.grid_indexing.origin_compute()
         domain = instance.grid_indexing.domain_compute(add=(0, 0, 1))

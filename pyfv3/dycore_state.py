@@ -1,5 +1,6 @@
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field, fields
-from typing import Any, Dict, Mapping, Union
+from typing import Any, Self
 
 import xarray as xr
 
@@ -295,7 +296,7 @@ class DycoreState:
     bdt: float = field(default=0.0)
     mdt: float = field(default=0.0)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         for _field in fields(self):
             for check_name in ["units", "dims"]:
                 if check_name in _field.metadata:
@@ -310,7 +311,7 @@ class DycoreState:
                         )
 
     @classmethod
-    def init_zeros(cls, quantity_factory: QuantityFactory):
+    def init_zeros(cls, quantity_factory: QuantityFactory) -> Self:
         initial_storages = {}
         for _field in fields(cls):
             if "dims" in _field.metadata.keys():
@@ -325,8 +326,8 @@ class DycoreState:
 
     @classmethod
     def init_from_numpy_arrays(
-        cls, dict_of_numpy_arrays, sizer: GridSizer, backend: str
-    ):
+        cls, dict_of_numpy_arrays: dict, sizer: GridSizer, backend: str
+    ) -> Self:
         field_names = [_field.name for _field in fields(cls)]
         for variable_name in dict_of_numpy_arrays.keys():
             if variable_name not in field_names:
@@ -355,7 +356,7 @@ class DycoreState:
         sizer: GridSizer,
         bdt: float = 0.0,
         mdt: float = 0.0,
-    ):
+    ) -> Self:
         inputs = {}
         for _field in fields(cls):
             if "dims" in _field.metadata.keys():
@@ -377,7 +378,7 @@ class DycoreState:
         quantity_factory: QuantityFactory,
         communicator: Communicator,
         path: str,
-    ):
+    ) -> Self:
         state_dict: Mapping[str, Quantity] = open_restart(
             dirname=path,
             communicator=communicator,
@@ -440,10 +441,10 @@ class DycoreState:
         return new
 
     @property
-    def xr_dataset(self):
+    def xr_dataset(self) -> xr.Dataset:
         data_vars = {}
         for name, field_info in self.__dataclass_fields__.items():
-            if issubclass(field_info.type, Quantity):
+            if issubclass(field_info.type, Quantity):  # type: ignore[arg-type]
                 dims = [
                     f"{dim_name}_{name}" for dim_name in field_info.metadata["dims"]
                 ]
@@ -457,14 +458,14 @@ class DycoreState:
                 )
         return xr.Dataset(data_vars=data_vars)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: str) -> Any:
         return getattr(self, item)
 
-    def as_dict(self, quantity_only=True) -> Dict[str, Union[Quantity, int]]:
+    def as_dict(self, quantity_only: bool = True) -> dict[str, Quantity | int]:
         if quantity_only:
             return {k: v for k, v in asdict(self).items() if isinstance(v, Quantity)}
-        else:
-            return {k: v for k, v in asdict(self).items()}
+
+        return {k: v for k, v in asdict(self).items()}
 
 
 TRACER_PROPERTIES = {

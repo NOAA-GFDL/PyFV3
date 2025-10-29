@@ -19,7 +19,8 @@ repos:
       - id: mypy
         name: mypy-fv3core
         args: [--config-file, pyproject.toml]
-        files: pyFV3
+        additional_dependencies: [types-PyYAML]
+        files: pyfv3
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:

@@ -288,7 +288,7 @@ class DynamicalCoreConfig:
     namelist_override: Optional[str] = None
     target_nml_groups: Optional[Tuple[str, ...]] = DEFAULT_DYCORE_NML_GROUPS
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.namelist_override is not None:
             try:
                 f90_nml = f90nml.read(self.namelist_override)

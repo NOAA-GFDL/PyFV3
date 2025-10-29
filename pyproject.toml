@@ -83,13 +83,27 @@ sections = "FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
 use_parentheses = true
 
 [tool.mypy]
-exclude = ["pyfv3/stencils/fv_subgridz.py", "tests/conftest.py"]
-explicit_package_bases = true
-follow_imports = "normal"
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+# TODO: understand what's wrong with imports and fix
 ignore_missing_imports = true
-namespace_packages = true
-strict_optional = false
+strict_equality = true
+strict_optional = true
+warn_redundant_casts = true
 warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+disallow_incomplete_defs = false
+disallow_untyped_defs = false
+module = [
+  # not sure if we can ever type all stencils
+  "pyfv3.stencils.*",
+  "pyfv3.initialization.test_cases.*",
+  "pyfv3.initialization.init_utils",
+  "pyfv3.testing.validation"
+]
 
 [tool.setuptools]
 include-package-data = true
