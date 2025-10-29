@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dace
 
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
