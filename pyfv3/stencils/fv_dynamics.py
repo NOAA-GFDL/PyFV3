@@ -448,8 +448,8 @@ class DynamicalCore:
         Step the model state forward by one timestep.
 
         Args:
-            timer: keep time of model sections
             state: model prognostic state and inputs
+            timer: keep time of model sections
         """
         self._checkpoint_fvdynamics(state=state, tag="In")
         self._compute(state, timer)
