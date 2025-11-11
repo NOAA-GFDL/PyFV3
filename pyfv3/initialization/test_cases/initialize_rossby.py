@@ -203,7 +203,7 @@ def init_rossby_state(
     state = DycoreState.init_from_numpy_arrays(
         numpy_state.__dict__,
         sizer=quantity_factory.sizer,
-        backend=sample_quantity.metadata.gt4py_backend,
+        backend=sample_quantity.metadata.backend,
     )
 
     comm.halo_update(state.phis, n_points=NHALO)

@@ -204,7 +204,7 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
                 properties["units"],
                 origin=self.grid.sizer.get_origin(dims),
                 extent=self.grid.sizer.get_extent(dims),
-                gt4py_backend=self.stencil_factory.backend,
+                backend=self.stencil_factory.backend,
             )
 
         metric_terms = MetricTerms.from_tile_sizing(
