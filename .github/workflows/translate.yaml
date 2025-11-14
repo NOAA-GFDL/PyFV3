@@ -90,7 +90,6 @@ jobs:
               --backend=numpy \
               --which_modules=FvTp2d \
               --threshold_overrides_file=./tests/savepoint/translate/overrides/standard.yaml \
-              --no_legacy_namelist \
               ./tests/savepoint
 
       - name: Numpy D_SW
@@ -101,7 +100,6 @@ jobs:
                --backend=numpy \
                --which_modules=D_SW \
                --threshold_overrides_file=./tests/savepoint/translate/overrides/standard.yaml \
-               --no_legacy_namelist \
                ./tests/savepoint
 
       - name: Numpy Remapping
@@ -112,7 +110,6 @@ jobs:
               --backend=numpy \
               --which_modules=Remapping \
               --threshold_overrides_file=./tests/savepoint/translate/overrides/standard.yaml \
-              --no_legacy_namelist \
               ./tests/savepoint
 
       - name: Orchestrated dace-cpu Acoustics
@@ -129,5 +126,4 @@ jobs:
             --which_rank=0 \
             --which_modules=DynCore \
             --threshold_overrides_file=./tests/savepoint/translate/overrides/standard.yaml \
-            --no_legacy_namelist \
             ./tests/savepoint
