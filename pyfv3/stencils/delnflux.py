@@ -331,7 +331,7 @@ class DelnFluxNoSG:
         damping_coefficients: DampingCoefficients,
         rarea: Quantity,
         nord: Quantity,
-        nk: Optional[int] = None,
+        nk: int | None = None,
     ):
         """
         nord sets the order of damping to apply:
@@ -396,20 +396,16 @@ class DelnFluxNoSG:
 
         self._d2_damp = stencil_factory.from_origin_domain(
             d2_damp_interval,
-            externals={
-                **preamble_ax_offsets,
-            },
             origin=origin_d2,
             domain=domain_d2,
+            externals={**preamble_ax_offsets},
         )
 
         self._copy_stencil_interval = stencil_factory.from_origin_domain(
             copy_stencil_interval,
-            externals={
-                **preamble_ax_offsets,
-            },
             origin=origin_d2,
             domain=domain_d2,
+            externals={**preamble_ax_offsets},
         )
 
         self._d2_stencil = get_stencils_with_varied_bounds(

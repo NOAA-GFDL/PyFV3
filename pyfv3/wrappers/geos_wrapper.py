@@ -2,7 +2,7 @@ import enum
 import logging
 import os
 from datetime import timedelta
-from typing import Dict, List, Tuple
+from types import TracebackType
 
 import f90nml
 import numpy as np
@@ -67,7 +67,7 @@ class StencilBackendCompilerOverride:
             gt_build_settings["extra_compile_args"]["cxx"].append("-w")
             gt_build_settings["extra_compile_args"]["cuda"].append("-w")
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         if self.no_op:
             return
         if self.config.do_compile:
@@ -76,7 +76,12 @@ class StencilBackendCompilerOverride:
             ndsl_log.info(f"Stencil backend waits on {self.comm.Get_rank()}")
             self.comm.Barrier()
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(
+        self,
+        type: type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         if self.no_op:
             return
         if not self.config.do_compile:
@@ -105,7 +110,7 @@ class GeosDycoreWrapper:
         comm: Comm,
         backend: str,
         fortran_mem_space: MemorySpace = MemorySpace.HOST,
-    ):
+    ) -> None:
         # Look for an override to run on a single node
         gtfv3_single_rank_override = int(os.getenv("GTFV3_SINGLE_RANK_OVERRIDE", -1))
         if gtfv3_single_rank_override >= 0:
@@ -204,7 +209,7 @@ class GeosDycoreWrapper:
             MemorySpace.DEVICE if is_gpu_backend(backend) else MemorySpace.HOST
         )
 
-        self.output_dict: Dict[str, np.ndarray] = {}
+        self.output_dict: dict[str, np.ndarray] = {}
         self._allocate_output_dir()
 
         # Feedback information
@@ -232,7 +237,7 @@ class GeosDycoreWrapper:
             f"     Nvidia MPS : {MPS_is_on}"
         )
 
-    def _critical_path(self):
+    def _critical_path(self) -> None:
         """Top-level orchestration function"""
         with self.perf_collector.timestep_timer.clock("step_dynamics"):
             self.dynamical_core.step_dynamics(
@@ -242,7 +247,7 @@ class GeosDycoreWrapper:
 
     def __call__(
         self,
-        timings: Dict[str, List[float]],
+        timings: dict[str, list[float]],
         u: np.ndarray,
         v: np.ndarray,
         w: np.ndarray,
@@ -267,7 +272,7 @@ class GeosDycoreWrapper:
         cxd: np.ndarray,
         cyd: np.ndarray,
         diss_estd: np.ndarray,
-    ) -> Tuple[Dict[str, np.ndarray], Dict[str, List[float]]]:
+    ) -> tuple[dict[str, np.ndarray], dict[str, list[float]]]:
         with self.perf_collector.timestep_timer.clock("numpy-to-dycore"):
             self.dycore_state = self._put_fortran_data_in_dycore(
                 u,
@@ -387,7 +392,7 @@ class GeosDycoreWrapper:
 
         return state
 
-    def _prep_outputs_for_geos(self) -> Dict[str, np.ndarray]:
+    def _prep_outputs_for_geos(self) -> dict[str, np.ndarray]:
         output_dict = self.output_dict
         isc = self._grid_indexing.isc
         jsc = self._grid_indexing.jsc
@@ -521,7 +526,7 @@ class GeosDycoreWrapper:
 
         return output_dict
 
-    def _allocate_output_dir(self):
+    def _allocate_output_dir(self) -> None:
         if self._fortran_mem_space != self._pace_mem_space:
             nhalo = self._grid_indexing.n_halo
             shape_centered = self._grid_indexing.domain_full(add=(0, 0, 0))

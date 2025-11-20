@@ -48,7 +48,7 @@ def init_analytic_state(
         AnalyticCase.rossby,
     ]
 
-    if analytic_init_case in spherical_cases:  # type: ignore
+    if analytic_init_case in spherical_cases:
         # TODO: Consider CubedSphereCommunicator check within individual init_*() calls
         if not isinstance(comm, CubedSphereCommunicator):
             raise TypeError(
@@ -56,7 +56,7 @@ def init_analytic_state(
                 f"got {type(comm).__name__} instead."
             )
 
-        if analytic_init_case == AnalyticCase.baroclinic_instability:  # type: ignore
+        if analytic_init_case == AnalyticCase.baroclinic_instability:
             return bc.init_baroclinic_state(
                 grid_data=grid_data,
                 quantity_factory=quantity_factory,
@@ -66,7 +66,7 @@ def init_analytic_state(
                 is_steady=False,
                 comm=comm,
             )
-        elif analytic_init_case == AnalyticCase.baroclinic_steady:  # type: ignore
+        elif analytic_init_case == AnalyticCase.baroclinic_steady:
             return bc.init_baroclinic_state(
                 grid_data=grid_data,
                 quantity_factory=quantity_factory,
@@ -76,14 +76,14 @@ def init_analytic_state(
                 is_steady=True,
                 comm=comm,
             )
-        elif analytic_init_case == AnalyticCase.tropicalcyclone:  # type: ignore
+        elif analytic_init_case == AnalyticCase.tropicalcyclone:
             return tc.init_tc_state(
                 grid_data=grid_data,
                 quantity_factory=quantity_factory,
                 hydrostatic=hydrostatic,
                 comm=comm,
             )
-        elif analytic_init_case == AnalyticCase.rossby:  # type: ignore
+        elif analytic_init_case == AnalyticCase.rossby:
             # TODO sw_dynamics check is awkward here, and should be moved.
             if sw_dynamics is False:
                 raise ValueError(

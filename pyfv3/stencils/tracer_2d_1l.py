@@ -1,5 +1,4 @@
 import math
-from typing import Dict
 
 from ndsl import (
     Quantity,
@@ -192,7 +191,7 @@ class TracerAdvection:
         transport: FiniteVolumeTransport,
         grid_data,
         comm: Communicator,
-        tracers: Dict[str, Quantity],
+        tracers: dict[str, Quantity],
     ):
         orchestrate(
             obj=self,
@@ -290,7 +289,7 @@ class TracerAdvection:
 
     def __call__(
         self,
-        tracers: Dict[str, Quantity],
+        tracers: dict[str, Quantity],
         dp1,
         x_mass_flux,
         y_mass_flux,

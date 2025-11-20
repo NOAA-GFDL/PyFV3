@@ -1,5 +1,5 @@
+from collections.abc import Mapping
 from datetime import timedelta
-from typing import Mapping, Optional
 
 from dace.frontend.python.interface import nounroll as dace_no_unroll
 
@@ -99,7 +99,7 @@ class DynamicalCore:
         phis: Quantity,
         state: DycoreState,
         timestep: timedelta,
-        checkpointer: Optional[Checkpointer] = None,
+        checkpointer: Checkpointer | None = None,
     ):
         """
         Args:
@@ -442,7 +442,7 @@ class DynamicalCore:
     def step_dynamics(
         self,
         state: DycoreState,
-        timer: Timer = NullTimer(),
+        timer: Timer | None = None,
     ):
         """
         Step the model state forward by one timestep.
@@ -451,6 +451,9 @@ class DynamicalCore:
             state: model prognostic state and inputs
             timer: keep time of model sections
         """
+        if timer is None:
+            timer = NullTimer()
+
         self._checkpoint_fvdynamics(state=state, tag="In")
         self._compute(state, timer)
         self._checkpoint_fvdynamics(state=state, tag="Out")

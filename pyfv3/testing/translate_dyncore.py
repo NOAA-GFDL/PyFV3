@@ -2,8 +2,9 @@ from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, StencilFactory
+from ndsl.comm import Comm
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
-from ndsl.stencils.testing import ParallelTranslate2PyState
+from ndsl.stencils.testing import Grid, ParallelTranslate2PyState
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import dyn_core
@@ -51,10 +52,10 @@ class TranslateDynCore(ParallelTranslate2PyState):
 
     def __init__(
         self,
-        grid,
+        grid: Grid,
         namelist: Namelist,
         stencil_factory: StencilFactory,
-    ):
+    ) -> None:
         super().__init__(grid, namelist, stencil_factory)
         self._base.in_vars["data_vars"] = {
             "cappa": {},
@@ -125,7 +126,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
         self.stencil_factory = stencil_factory
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
-    def compute_parallel(self, inputs, communicator):
+    def compute_parallel(self, inputs: dict, communicator: Comm) -> dict:
         # ak, bk, and phis are numpy arrays at this point and
         #   must be converted into gt4py storages
         for name in ("ak", "bk", "phis"):
@@ -176,7 +177,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
         )
         acoustic_dynamics.cappa.data[:] = inputs["cappa"][:]
 
-        acoustic_dynamics(state, timestep=inputs["mdt"], n_map=state.n_map)
+        acoustic_dynamics(state, timestep=inputs["mdt"], n_map=state.n_map)  # type: ignore[attr-defined]
         # the "inputs" dict is not used to return, we construct a new dict based
         # on variables attached to `state`
         storages_only = {}

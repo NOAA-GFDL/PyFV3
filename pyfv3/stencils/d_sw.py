@@ -1,4 +1,4 @@
-from typing import Dict, Mapping
+from collections.abc import Mapping
 
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
@@ -668,7 +668,7 @@ def get_column_namelist(
     if config.d2_bg_k2 < 0:
         raise NotImplementedError("D_SW.column with d2_bg_k2 < 0 is not implemented")
 
-    col: Dict[str, Quantity] = {}
+    col: dict[str, Quantity] = {}
     for name in all_names:
         # TODO: fill units information
         col[name] = quantity_factory.zeros(

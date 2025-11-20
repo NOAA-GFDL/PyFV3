@@ -178,9 +178,9 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
     def outputs_from_state(self, state: dict):
         outputs = {}
         arrays = {}
-        for name, properties in self.outputs.items():
+        for name, _properties in self.outputs.items():
             if isinstance(state[name], dict):
-                for tracer, quantity in state[name].items():
+                for tracer, _quantity in state[name].items():
                     state[name][tracer] = state[name][tracer].data
                 arrays[name] = state[name]
             elif len(self.outputs[name]["dims"]) > 0:
