@@ -5,7 +5,8 @@ from typing import Any, Dict, Optional, Tuple
 import pytest
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Namelist, Quantity, QuantityFactory, StencilFactory, FieldBundle
+from ndsl import Quantity, QuantityFactory, StencilFactory, FieldBundle
+from f90nml import Namelist
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,

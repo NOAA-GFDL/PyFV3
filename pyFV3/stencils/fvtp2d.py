@@ -11,6 +11,7 @@ from ndsl.grid import DampingCoefficients, GridData
 from pyFV3.stencils.delnflux import DelnFlux
 from pyFV3.stencils.xppm import XPiecewiseParabolic
 from pyFV3.stencils.yppm import YPiecewiseParabolic
+from pyFV3.stencils.corners import CopyCornersX, CopyCornersY
 
 
 @gtscript.function
@@ -179,9 +180,7 @@ class FiniteVolumeTransport:
             # self.delnflux = None
             self._do_delnflux = False
 
-        self._copy_corners_y: corners.CopyCorners = corners.CopyCorners(
-            "y", stencil_factory
-        )
+        self._copy_corners_y = CopyCornersY(stencil_factory)
         self.y_piecewise_parabolic_inner = YPiecewiseParabolic(
             stencil_factory=stencil_factory,
             dya=grid_data.dya,
@@ -204,9 +203,7 @@ class FiniteVolumeTransport:
             domain=idx.domain_compute(add=(1, 1, 1)),
         )
 
-        self._copy_corners_x: corners.CopyCorners = corners.CopyCorners(
-            "x", stencil_factory
-        )
+        self._copy_corners_x = CopyCornersX(stencil_factory)
         self.x_piecewise_parabolic_inner = XPiecewiseParabolic(
             stencil_factory=stencil_factory,
             dxa=grid_data.dxa,

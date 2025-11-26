@@ -1,7 +1,8 @@
 from typing import Any, Dict
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
+from f90nml import Namelist
 from ndsl.stencils import corners
 from pyFV3.testing import TranslateDycoreFortranData2Py
 

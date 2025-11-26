@@ -1,4 +1,5 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
+from f90nml import Namelist
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
 from pyFV3.stencils.remapping import pe_pk_delp_peln
@@ -135,7 +136,6 @@ class TranslatePE_pk_delp_peln(TranslateFortranData2Py):
         )
 
     def compute_from_storage(self, inputs):
-
         self._pe_pk_delp_peln(
             inputs["pe_"],
             inputs["pk"],

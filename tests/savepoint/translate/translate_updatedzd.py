@@ -1,6 +1,7 @@
 import numpy as np
 
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
+from f90nml import Namelist
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from pyFV3 import DynamicalCoreConfig
 from pyFV3.stencils import UpdateHeightOnDGrid, d_sw

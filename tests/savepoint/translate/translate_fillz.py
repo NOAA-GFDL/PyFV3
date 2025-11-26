@@ -1,8 +1,7 @@
-from typing import List
-
 import numpy as np
 
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
+from f90nml import Namelist
 from ndsl.stencils.testing import pad_field_in_j
 from pyFV3.stencils.fillz import FillNegativeTracerValues
 from pyFV3.testing import TranslateDycoreFortranData2Py

@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
-from ndsl import Namelist, StencilFactory, Quantity
+from ndsl import StencilFactory, Quantity
+from f90nml import Namelist
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,

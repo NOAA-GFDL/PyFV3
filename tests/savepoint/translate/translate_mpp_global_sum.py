@@ -1,4 +1,5 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
+from f90nml import Namelist
 from ndsl.stencils.testing import ParallelTranslate
 from ndsl.stencils.testing.grid import Grid
 from ndsl.typing import Communicator

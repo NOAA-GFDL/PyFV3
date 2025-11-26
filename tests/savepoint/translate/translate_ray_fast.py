@@ -1,4 +1,5 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
+from f90nml import Namelist
 from pyFV3.stencils import RayleighDamping
 from pyFV3.testing import TranslateDycoreFortranData2Py
 

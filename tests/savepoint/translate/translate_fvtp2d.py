@@ -1,5 +1,6 @@
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
+from f90nml import Namelist
 from ndsl.constants import Z_DIM
 from ndsl.dsl.typing import Float
 from pyFV3.stencils import FiniteVolumeTransport

@@ -1,18 +1,25 @@
+from __future__ import annotations
+
 import dataclasses
 from datetime import timedelta
 from math import floor
-from typing import Optional, Tuple
 
 import f90nml
 import yaml
+from dacite import Config, from_dict
 
-from ndsl.namelist import Namelist, NamelistDefaults
+from ndsl.utils import f90nml_as_dict
 
 
 DEFAULT_INT = 0
 DEFAULT_STR = ""
 DEFAULT_FLOAT = 0.0
 DEFAULT_BOOL = False
+DEFAULT_DYCORE_NML_GROUPS = (
+    "main_nml",
+    "coupler_nml",
+    "fv_core_nml",
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -112,7 +119,6 @@ class AcousticDynamicsConfig:
     """
     mainly for backwards compatibility, not really used anymore
     """
-    dz_min: float
     riemann: RiemannConfig
     d_grid_shallow_water: DGridShallowWaterLagrangianDynamicsConfig
 
@@ -196,97 +202,101 @@ class DynamicalCoreConfig:
     vtdm4: float = DEFAULT_FLOAT
     z_tracer: bool = DEFAULT_BOOL
     do_qa: bool = DEFAULT_BOOL
-    layout: Tuple[int, int] = NamelistDefaults.layout
-    grid_type: int = NamelistDefaults.grid_type
-    u_max: float = NamelistDefaults.u_max  # max windspeed for dp config
-    do_f3d: bool = NamelistDefaults.do_f3d
-    inline_q: bool = NamelistDefaults.inline_q
-    do_skeb: bool = NamelistDefaults.do_skeb  # save dissipation estimate
-    use_logp: bool = NamelistDefaults.use_logp
-    moist_phys: bool = NamelistDefaults.moist_phys
-    check_negative: bool = NamelistDefaults.check_negative
+    layout: tuple[int, int] = (1, 1)
+    grid_type: int = 0
+    u_max: float = 350.0
+    """max windspeed for dp config"""
+    do_f3d: bool = False
+    inline_q: bool = False
+    do_skeb: bool = False
+    """save dissipation estimate"""
+    use_logp: bool = False
+    moist_phys: bool = True
+    check_negative: bool = False
     # gfdl_cloud_microphys.F90
-    tau_r2g: float = NamelistDefaults.tau_r2g  # rain freezing during fast_sat
-    tau_smlt: float = NamelistDefaults.tau_smlt  # snow melting
-    tau_g2r: float = NamelistDefaults.tau_g2r  # graupel melting to rain
-    tau_imlt: float = NamelistDefaults.tau_imlt  # cloud ice melting
-    tau_i2s: float = NamelistDefaults.tau_i2s  # cloud ice to snow auto - conversion
-    tau_l2r: float = NamelistDefaults.tau_l2r  # cloud water to rain auto - conversion
-    tau_g2v: float = NamelistDefaults.tau_g2v  # graupel sublimation
-    tau_v2g: float = (
-        NamelistDefaults.tau_v2g
-    )  # graupel deposition -- make it a slow process
-    sat_adj0: float = (
-        NamelistDefaults.sat_adj0
-    )  # adjustment factor (0: no 1: full) during fast_sat_adj
+    tau_r2g: float = 900.0
+    """rain freezing during fast_sat"""
+    tau_smlt: float = 900.0
+    """snow melting"""
+    tau_g2r: float = 600.0
+    """graupel melting to rain"""
+    tau_imlt: float = 600.0
+    """cloud ice melting"""
+    tau_i2s: float = 1000.0
+    """cloud ice to snow auto - conversion"""
+    tau_l2r: float = 900.0
+    """cloud water to rain auto - conversion"""
+    tau_g2v: float = 1200.0
+    """graupel sublimation"""
+    tau_v2g: float = 21600.0
+    """graupel deposition -- make it a slow process"""
+    sat_adj0: float = 0.90
+    """adjustment factor (0: no 1: full) during fast_sat_adj"""
     ql_gen: float = (
         1.0e-3  # max new cloud water during remapping step if fast_sat_adj = .t.
     )
-    ql_mlt: float = (
-        NamelistDefaults.ql_mlt
-    )  # max value of cloud water allowed from melted cloud ice
-    qs_mlt: float = NamelistDefaults.qs_mlt  # max cloud water due to snow melt
-    ql0_max: float = (
-        NamelistDefaults.ql0_max
-    )  # max cloud water value (auto converted to rain)
-    t_sub: float = NamelistDefaults.t_sub  # min temp for sublimation of cloud ice
-    qi_gen: float = (
-        NamelistDefaults.qi_gen
-    )  # max cloud ice generation during remapping step
-    qi_lim: float = (
-        NamelistDefaults.qi_lim
-    )  # cloud ice limiter to prevent large ice build up
-    qi0_max: float = NamelistDefaults.qi0_max  # max cloud ice value (by other sources)
-    rad_snow: bool = (
-        NamelistDefaults.rad_snow
-    )  # consider snow in cloud fraction calculation
-    rad_rain: bool = (
-        NamelistDefaults.rad_rain
-    )  # consider rain in cloud fraction calculation
-    rad_graupel: bool = (
-        NamelistDefaults.rad_graupel
-    )  # consider graupel in cloud fraction calculation
-    tintqs: bool = (
-        NamelistDefaults.tintqs
-    )  # use temperature in the saturation mixing in PDF
-    dw_ocean: float = NamelistDefaults.dw_ocean  # base value for ocean
-    dw_land: float = (
-        NamelistDefaults.dw_land
-    )  # base value for subgrid deviation / variability over land
+    ql_mlt: float = 2.0e-3
+    """max value of cloud water allowed from melted cloud ice"""
+    qs_mlt: float = 1.0e-6
+    """max cloud water due to snow melt"""
+    ql0_max: float = 2.0e-3
+    """max cloud water value (auto converted to rain)"""
+    t_sub: float = 184.0
+    """min temp for sublimation of cloud ice"""
+    qi_gen: float = 1.82e-6
+    """max cloud ice generation during remapping step"""
+    qi_lim: float = 1.0
+    """cloud ice limiter to prevent large ice build up"""
+    qi0_max: float = 1.0e-4
+    """max cloud ice value (by other sources)"""
+    rad_snow: bool = True
+    """consider snow in cloud fraction calculation"""
+    rad_rain: bool = True
+    """consider rain in cloud fraction calculation"""
+    rad_graupel: bool = True
+    """consider graupel in cloud fraction calculation"""
+    tintqs: bool = False
+    """use temperature in the saturation mixing in PDF"""
+    dw_ocean: float = 0.10
+    """base value for ocean"""
+    dw_land: float = 0.15
+    """base value for subgrid deviation / variability over land"""
     # cloud scheme 0 - ?
     # 1: old fvgfs gfdl) mp implementation
     # 2: binary cloud scheme (0 / 1)
-    icloud_f: int = NamelistDefaults.icloud_f
-    cld_min: float = NamelistDefaults.cld_min  # !< minimum cloud fraction
-    tau_l2v: float = (
-        NamelistDefaults.tau_l2v
-    )  # cloud water to water vapor (evaporation)
-    tau_v2l: float = (
-        NamelistDefaults.tau_v2l
-    )  # water vapor to cloud water (condensation)
-    c2l_ord: int = NamelistDefaults.c2l_ord
-    regional: bool = NamelistDefaults.regional
-    m_split: int = NamelistDefaults.m_split
-    convert_ke: bool = NamelistDefaults.convert_ke
-    breed_vortex_inline: bool = NamelistDefaults.breed_vortex_inline
-    use_old_omega: bool = NamelistDefaults.use_old_omega
-    rf_fast: bool = NamelistDefaults.rf_fast
-    adiabatic: bool = NamelistDefaults.adiabatic
-    nf_omega: int = NamelistDefaults.nf_omega
-    fv_sg_adj: int = NamelistDefaults.fv_sg_adj
-    n_sponge: int = NamelistDefaults.n_sponge
-    dz_min: float = 2.0
-    """Controls minimum thickness in NH solver"""
-    namelist_override: Optional[str] = None
+    icloud_f: int = 0
+    cld_min: float = 0.05
+    """!< minimum cloud fraction"""
+    tau_l2v: float = 300.0
+    """cloud water to water vapor (evaporation)"""
+    tau_v2l: float = 90.0
+    """water vapor to cloud water (condensation)"""
+    c2l_ord: int = 4
+    regional: bool = False
+    m_split: int = 0
+    convert_ke: bool = False
+    breed_vortex_inline: bool = False
+    use_old_omega: bool = True
+    rf_fast: bool = False
+    adiabatic: bool = False
+    nf_omega: int = 1
+    fv_sg_adj: int = -1
+    n_sponge: int = 1
+    sw_dynamics: bool = False
+    """shallow water conditions"""
+    namelist_override: str | None = None
+    target_nml_groups: tuple[str, ...] | None = DEFAULT_DYCORE_NML_GROUPS
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.namelist_override is not None:
             try:
                 f90_nml = f90nml.read(self.namelist_override)
             except FileNotFoundError:
                 print(f"{self.namelist_override} does not exist")
                 raise
-            dycore_config = self.from_f90nml(f90_nml)
+            # TODO: Find a better way to do below. Passing self.* as an argument
+            # to a class function of the same class is always a bit fishy.
+            dycore_config = self.from_f90nml(f90_nml, self.target_nml_groups)
             for var in dycore_config.__dict__.keys():
                 setattr(self, var, dycore_config.__dict__[var])
         # Single tile cartesian grids
@@ -294,102 +304,52 @@ class DynamicalCoreConfig:
             self.nf_omega = 0
 
     @classmethod
-    def from_f90nml(cls, f90_namelist: f90nml.Namelist) -> "DynamicalCoreConfig":
-        namelist = Namelist.from_f90nml(f90_namelist)
-        return cls.from_namelist(namelist)
+    def from_f90nml(
+        cls,
+        nml: f90nml.Namelist,
+        target_groups: tuple[str, ...] | None = DEFAULT_DYCORE_NML_GROUPS,
+    ) -> DynamicalCoreConfig:
+        """Uses the nml to create a DynamicalCoreConfig.
+
+        Args:
+            nml: f90nml.Namelist
+            target_groups: tuple[str,...] | None
+                This list will be used to specify which groups in the nml to
+                use when initializing the DynamicalCoreConfig. If None, all
+                groups will be used. (Default: DEFAULT_DYCORE_NML_GROUPS)
+        """
+        groups = list(target_groups) if target_groups is not None else None
+        nml_dict = f90nml_as_dict(nml, flatten=True, target_groups=groups)
+        nml_dict["target_nml_groups"] = target_groups
+        return cls.from_dict(nml_dict)
 
     @classmethod
-    def from_namelist(cls, namelist: Namelist) -> "DynamicalCoreConfig":
-        return cls(
-            dt_atmos=namelist.dt_atmos,
-            a_imp=namelist.a_imp,
-            beta=namelist.beta,
-            consv_te=namelist.consv_te,
-            d2_bg=namelist.d2_bg,
-            d2_bg_k1=namelist.d2_bg_k1,
-            d2_bg_k2=namelist.d2_bg_k2,
-            d4_bg=namelist.d4_bg,
-            d_con=namelist.d_con,
-            d_ext=namelist.d_ext,
-            dddmp=namelist.dddmp,
-            delt_max=namelist.delt_max,
-            do_sat_adj=namelist.do_sat_adj,
-            do_vort_damp=namelist.do_vort_damp,
-            fill=namelist.fill,
-            hord_dp=namelist.hord_dp,
-            hord_mt=namelist.hord_mt,
-            hord_tm=namelist.hord_tm,
-            hord_tr=namelist.hord_tr,
-            hord_vt=namelist.hord_vt,
-            hydrostatic=namelist.hydrostatic,
-            k_split=namelist.k_split,
-            ke_bg=namelist.ke_bg,
-            kord_mt=namelist.kord_mt,
-            kord_tm=namelist.kord_tm,
-            kord_tr=namelist.kord_tr,
-            kord_wz=namelist.kord_wz,
-            n_split=namelist.n_split,
-            nord=namelist.nord,
-            npx=namelist.npx,
-            npy=namelist.npy,
-            npz=namelist.npz,
-            ntiles=namelist.ntiles,
-            nwat=namelist.nwat,
-            p_fac=namelist.p_fac,
-            rf_cutoff=namelist.rf_cutoff,
-            tau=namelist.tau,
-            vtdm4=namelist.vtdm4,
-            z_tracer=namelist.z_tracer,
-            do_qa=namelist.do_qa,
-            layout=namelist.layout,
-            grid_type=namelist.grid_type,
-            u_max=namelist.u_max,
-            do_f3d=namelist.do_f3d,
-            inline_q=namelist.inline_q,
-            do_skeb=namelist.do_skeb,
-            check_negative=namelist.check_negative,
-            tau_r2g=namelist.tau_r2g,
-            tau_smlt=namelist.tau_smlt,
-            tau_g2r=namelist.tau_g2r,
-            tau_imlt=namelist.tau_imlt,
-            tau_i2s=namelist.tau_i2s,
-            tau_l2r=namelist.tau_l2r,
-            tau_g2v=namelist.tau_g2v,
-            tau_v2g=namelist.tau_v2g,
-            sat_adj0=namelist.sat_adj0,
-            ql_gen=namelist.ql_gen,
-            ql_mlt=namelist.ql_mlt,
-            qs_mlt=namelist.qs_mlt,
-            ql0_max=namelist.ql0_max,
-            t_sub=namelist.t_sub,
-            qi_gen=namelist.qi_gen,
-            qi_lim=namelist.qi_lim,
-            qi0_max=namelist.qi0_max,
-            rad_snow=namelist.rad_snow,
-            rad_rain=namelist.rad_rain,
-            rad_graupel=namelist.rad_graupel,
-            tintqs=namelist.tintqs,
-            dw_ocean=namelist.dw_ocean,
-            dw_land=namelist.dw_land,
-            icloud_f=namelist.icloud_f,
-            cld_min=namelist.cld_min,
-            tau_l2v=namelist.tau_l2v,
-            tau_v2l=namelist.tau_v2l,
-            c2l_ord=namelist.c2l_ord,
-            regional=namelist.regional,
-            m_split=namelist.m_split,
-            convert_ke=namelist.convert_ke,
-            breed_vortex_inline=namelist.breed_vortex_inline,
-            use_old_omega=namelist.use_old_omega,
-            rf_fast=namelist.rf_fast,
-            adiabatic=namelist.adiabatic,
-            nf_omega=namelist.nf_omega,
-            fv_sg_adj=namelist.fv_sg_adj,
-            n_sponge=namelist.n_sponge,
+    def from_dict(
+        cls,
+        data: dict,
+    ) -> DynamicalCoreConfig:
+        """Create a DynamicalCoreConfig from the given data.
+
+        Args:
+            data: "flattened" dictionary where the keys match the class member variables
+        """
+        # NOTE: We're setting strict to False so that extra keys in the data are
+        # ignored. Eventually, we'd like to turn this to True once we move away from
+        # expecting dicts that are basically flattened yamls and f90nml files.
+        dacite_config = Config(
+            strict=False,
+            type_hooks={
+                tuple[int, int]: lambda x: tuple(x),
+                tuple[str, ...]: lambda x: tuple(x) if x is not None else None,
+            },
         )
+        dycore_config = from_dict(
+            data_class=DynamicalCoreConfig, data=data, config=dacite_config
+        )
+        return dycore_config
 
     @classmethod
-    def from_yaml(cls, yaml_config: str) -> "DynamicalCoreConfig":
+    def from_yaml(cls, yaml_config: str) -> DynamicalCoreConfig:
         config = cls()
         with open(yaml_config, "r") as f:
             raw_config = yaml.safe_load(f)
@@ -491,7 +451,6 @@ class DynamicalCoreConfig:
             use_old_omega=self.use_old_omega,
             riemann=self.riemann,
             d_grid_shallow_water=self.d_grid_shallow_water,
-            dz_min=self.dz_min,
         )
 
     @property

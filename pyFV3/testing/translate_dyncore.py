@@ -1,5 +1,6 @@
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Namelist, Quantity, StencilFactory
+from ndsl import Quantity, StencilFactory
+from f90nml.namelist import Namelist
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.stencils.testing import ParallelTranslate2PyState
 from numpy import dtype

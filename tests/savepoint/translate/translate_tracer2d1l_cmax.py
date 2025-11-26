@@ -1,4 +1,5 @@
-from ndsl import Namelist, StencilFactory, QuantityFactory, Quantity
+from ndsl import StencilFactory, QuantityFactory, Quantity
+from f90nml import Namelist
 from ndsl.stencils.testing import ParallelTranslate2Py
 from pyFV3.stencils.tracer_2d_1l import TracerCMax
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM

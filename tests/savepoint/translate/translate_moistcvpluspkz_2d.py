@@ -1,4 +1,5 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
+from f90nml import Namelist
 from ndsl.dsl.typing import FloatField
 from ndsl.stencils.testing import pad_field_in_j
 from pyFV3.stencils import moist_cv

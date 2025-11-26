@@ -7,7 +7,8 @@ import ndsl.constants as constants
 import pyFV3.initialization.analytic_init as analytic_init
 import pyFV3.initialization.init_utils as init_utils
 import pyFV3.initialization.test_cases.initialize_baroclinic as baroclinic_init
-from ndsl import Namelist, Quantity, QuantityFactory, StencilFactory, SubtileGridSizer
+from ndsl import Quantity, QuantityFactory, StencilFactory, SubtileGridSizer
+from f90nml import Namelist
 from ndsl.constants import (
     N_HALO_DEFAULT,
     X_DIM,

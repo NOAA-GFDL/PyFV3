@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
+from f90nml import Namelist
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,

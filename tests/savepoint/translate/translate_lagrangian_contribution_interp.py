@@ -1,4 +1,5 @@
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
+from f90nml import Namelist
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Bool, BoolFieldIJ, FloatField, Int, IntField, IntFieldIJ
 from ndsl.stencils.testing import TranslateFortranData2Py
@@ -127,7 +128,6 @@ class TranslateLagrangian_Contribution_Interp(TranslateFortranData2Py):
         }
 
     def compute_from_storage(self, inputs):
-
         self._not_exit_loop = self.quantity_factory.zeros(
             [X_DIM, Y_DIM],
             units="",

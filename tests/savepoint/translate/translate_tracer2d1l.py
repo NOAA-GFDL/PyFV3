@@ -1,11 +1,13 @@
 import pytest
 
-from ndsl import Namelist, QuantityFactory, StencilFactory
+from ndsl import QuantityFactory, StencilFactory
+from f90nml.namelist import Namelist
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.stencils.testing import ParallelTranslate
 from pyFV3.stencils import FiniteVolumeTransport, TracerAdvection
 from pyFV3.tracers import TracersType, setup_tracers
 from pyFV3.utils.functional_validation import get_subset_func
+from pyFV3 import DynamicalCoreConfig
 
 
 class TranslateTracer2D1L(ParallelTranslate):
@@ -38,12 +40,12 @@ class TranslateTracer2D1L(ParallelTranslate):
             sizer=stencil_factory.grid_indexing._sizer,
             backend=stencil_factory.backend,
         )
-        self.namelist = namelist
         self._subset = get_subset_func(
             self.grid.grid_indexing,
             dims=[X_DIM, Y_DIM, Z_DIM],
             n_halo=((0, 0), (0, 0)),
         )
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def compute_parallel(self, inputs, communicator):
         self._base.make_storage_data_input_vars(inputs, dict_4d=False)
@@ -60,7 +62,7 @@ class TranslateTracer2D1L(ParallelTranslate):
             grid_data=self.grid.grid_data,
             damping_coefficients=self.grid.damping_coefficients,
             grid_type=self.grid.grid_type,
-            hord=self.namelist.hord_tr,
+            hord=self.config.hord_tr,
         )
 
         self.tracer_advection = TracerAdvection(
@@ -87,7 +89,7 @@ class TranslateTracer2D1L(ParallelTranslate):
         # outputs["tracers"] = tracers.quantity.field[:]
         return outputs
 
-    def compute_sequential(self, a, b):
+    def compute_sequential(self, inputs_list, communicator_list):
         pytest.skip(
             f"{self.__class__} only has a mpirun implementation, "
             "not running in mock-parallel"

@@ -1,4 +1,5 @@
-from ndsl import Namelist, QuantityFactory, StencilFactory
+from ndsl import QuantityFactory, StencilFactory
+from f90nml.namelist import Namelist
 from pyFV3.stencils import CGridShallowWaterDynamics
 from pyFV3.testing import TranslateDycoreFortranData2Py
 

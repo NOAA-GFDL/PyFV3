@@ -1,6 +1,7 @@
 import numpy as np
 
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
+from f90nml import Namelist
 from ndsl.quantity import Quantity
 from ndsl.stencils.testing import ParallelTranslate
 from ndsl.stencils.testing.grid import Grid

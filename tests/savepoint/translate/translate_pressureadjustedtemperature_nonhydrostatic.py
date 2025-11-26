@@ -1,7 +1,8 @@
 import numpy as np
 from typing import Any, Dict
 
-from ndsl import Namelist, StencilFactory
+from ndsl import StencilFactory
+from f90nml import Namelist
 from ndsl.dsl.typing import Float
 from pyFV3 import DynamicalCoreConfig
 from pyFV3.stencils import temperature_adjust

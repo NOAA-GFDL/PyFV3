@@ -1,7 +1,8 @@
 import numpy as np
 from typing import Any, Dict
 
-from ndsl import Namelist, StencilFactory, orchestrate
+from ndsl import StencilFactory, orchestrate
+from f90nml import Namelist
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from pyFV3.stencils import DivergenceDamping
 from pyFV3.testing import TranslateDycoreFortranData2Py
