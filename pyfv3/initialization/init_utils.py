@@ -12,6 +12,7 @@ from ndsl.grid.gnomonic import (
     get_unit_vector_direction,
     lon_lat_midpoint,
 )
+from ndsl.logging import ndsl_log_on_rank_0
 from pyfv3.dycore_state import DycoreState
 
 
@@ -375,3 +376,91 @@ def temperature(eta, eta_v, t_mean, lat):
         * constants.RADIUS
         * constants.OMEGA
     )
+
+def hydro_eq(
+    npz,
+    nx,
+    ny,
+    ps,
+    hs,
+    drym,
+    delp,
+    ak,
+    bk,
+    pt,
+    delz,
+    area,
+    mountain: bool,
+    hydrostatic: bool,
+    hybrid_z: bool,
+):
+    gz = np.zeros((nx, ny, npz))
+    ph = np.zeros((nx, ny, npz))
+    p1 = 25000.
+    z1 = 10.E3 * constants.GRAV
+    t1 = 200.
+    t0 = 300.0  # sea-level temp.
+    a0 = (t1-t0)/z1*0.5
+    c0 = t0/a0
+
+    if hybrid_z:
+        ptop = 100.0  # *** hardwired model top ***
+    else:
+        ptop = ak[0]
+    
+    ztop = z1 + (constants.RDGAS*t1)*np.log(p1/ptop)
+
+    if mountain:
+        raise NotImplementedError("Mountain init has not been implemented")
+    else:
+        mslp = drym  # 1000.E2
+        ps[:] = mslp
+        dps = 0.
+    ps[:] = ps[:] + dps
+    gz[:, :, 0] = ztop
+    gz[:, :, -1] = hs[:]
+    ph[:, :, 0] = ptop
+    ph[:, :, -1] = ps[:]
+
+    if hybrid_z:
+        #---------------
+        # Hybrid Z
+        #---------------
+        for k in range(npz-1, 0, -1):
+            gz[:, :, k] = gz[:, :, k+1] - delz[:, :, k]*constants.GRAV
+        # Correct delz at the top:
+        delz[:, :, 0] = (gz[:, :, 1] - ztop) / constants.GRAV
+
+        for k in range(1, npz):
+            if gz[:, :, k] >= z1:
+                # Isothermal
+                ph[:, :, k] = ptop*np.exp( (gz[:, :, 0]-gz[:, :, k])/(constants.RDGAS*t1) )
+            else:
+                # Constant lapse rate region (troposphere)
+                ph[:, :, k] = ps[:]*np.exp(-1./(a0*constants.RDGAS)*(gz[:, :, k]-hs[:])/(gz[:, :, k]-hs[:]+c0))
+    else:
+        #---------------
+        # Hybrid sigma-p
+        #---------------
+        for k in range(1, npz+1):
+            ph[:, :, k] = ak[k] + bk[k]*ps[:]
+        for k in range(npz-1, 0, -1):
+            if ph[:, :, k] <= p1:
+                gz[:, :, k] = gz[:, :, k+1] +  (constants.RDGAS*t1)*np.log(ph[:, :, k+1]/ph[:, :, k])
+            else:
+                # Constant lapse rate region (troposphere)
+                gz[:, :, k] = c0/(1+a0*constants.RDGAS*np.log(ph[:, :, k]/ps[:]))+hs[:]-c0
+        # model top
+        if ph[:, :, 0] <= p1:
+            gz[:, :, 0] = gz[:, :, 1] +  (constants.RDGAS*t1)*np.log(ph[:, :, 1]/ph[:, :, 0])
+        else:
+            gz[:, :, 0] = (hs[:]+c0)/(ph[:, :, 0]/ps[:])**(a0*constants.RDGAS) - c0
+        if not hydrostatic:
+            delz[:, :, :-1] = ( gz[:, :, 1:] - gz[:, :, :-1] ) / constants.GRAV
+    
+    # Convert geopotential to Temperature
+    pt[:, :, :-1] = (gz[:, :, :-1]-gz[:, :, 1:])/(constants.RDGAS*(np.log(ph[:, :, 1:]/ph[:, :, :-1])))
+    pt[:, :, :-1] = max(t1, pt[:, :, :-1])
+    delp[:, :, :-1] = ph[:, :, 1:] - ph[:, :, :-1]
+    for k in range(npz):
+        ndsl_log_on_rank_0.info(f"{k}, {pt[:,0,k]}, {gz[:, 0, k+1]}, {(gz[:, 0, k]-gz[:, 0, k+1])}, {ph[:, 0, k]}")
