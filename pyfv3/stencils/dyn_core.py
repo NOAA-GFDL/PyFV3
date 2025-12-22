@@ -91,6 +91,15 @@ def zero_data(
                 diss_estd = 0.0
 
 
+def average_gravity(grav_var: FloatField, grav_var_h: FloatField):
+    """
+    Args:
+        grav_var (out): gravity field
+        grav_var_h (in): gravity value at height
+    """
+    with computation(FORWARD), interval(...):
+        grav_var[0, 0, 0] = 0.5*(grav_var_h[0, 0, 0] + grav_var_h[0, 0, 1])
+
 def gz_from_surface_height_and_thicknesses(
     zs: FloatFieldIJ, delz: FloatField, gz: FloatField
 ):
@@ -123,9 +132,9 @@ def interface_pressure_from_toa_pressure_and_thickness(
             pem[0, 0, 0] = pem[0, 0, -1] + delp
 
 
-def compute_geopotential(zh: FloatField, gz: FloatField):
+def compute_geopotential(zh: FloatField, gz: FloatField, grav_var_h: FloatField):
     with computation(PARALLEL), interval(...):
-        gz = zh * constants.GRAV
+        gz = zh * grav_var_h
 
 
 def p_grad_c_stencil(
@@ -647,6 +656,12 @@ class AcousticDynamics:
             pkc=self._pkc,
         )
 
+        self._average_gravity = stencil_factory.from_origin_domain(
+            average_gravity,
+            origin=grid_indexing.origin_full(),
+            domain=grid_indexing.domain_full(),
+        )
+
     # See divergence_damping.py, _get_da_min for explanation of this function
     @dace_inhibitor
     def _get_da_min(self) -> float:
@@ -784,6 +799,7 @@ class AcousticDynamics:
                     self._halo_updaters.gz.start()
             if it == 0:
                 self._halo_updaters.delp__pt.wait()
+                self._average_gravity(state.grav_var, state.grav_var_h)
 
             if it == n_split - 1 and end_step:
                 if self.config.use_old_omega:
@@ -964,6 +980,7 @@ class AcousticDynamics:
                 self._compute_geopotential_stencil(
                     self._zh,
                     self._gz,
+                    state.grav_var_h,
                 )
                 self._halo_updaters.pkc.wait()
 
