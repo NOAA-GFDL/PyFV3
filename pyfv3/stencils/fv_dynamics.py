@@ -75,15 +75,21 @@ def fvdyn_temporaries(
         tmps[name] = quantity
     return tmps
 
-def init_gravity(grav_var_h: FloatField, grav_var: FloatField):
+def init_gravity(grav_var: FloatField):
     """
     Args:
-        grav_var_h (out): height based gravity
         grav_var (out): gravity field
     """
     with computation(PARALLEL), interval(...):
-        grav_var_h[0, 0, 0] = GRAV
-        grav_var[0, 0, 0] = GRAV
+        grav_var = GRAV
+
+def init_gravity_h(grav_var: FloatField):
+    """
+    Args:
+        grav_var_h (out): gravity field
+    """
+    with computation(PARALLEL), interval(...):
+        grav_var_h = GRAV
 
 def adjust_gravity(
         grav_var: FloatField, 
@@ -98,13 +104,13 @@ def adjust_gravity(
         phis (out): 
         delz (out):
     """
-    with computation(FORWARD), interval(npz+1):
+    with computation(FORWARD), interval(-1,None):
         newrad = RADIUS + (phis/GRAV)
-        grav_var_h[0, 0, npz+1] = GRAV*(RADIUS**2)/newrad**2
+        grav_var_h = GRAV*(RADIUS**2)/newrad**2
     with computation(BACKWARD), interval(...):
-        newrad = newrad - delz[0, 0, 0]
-        grav_var_h[0, 0, 0] = GRAV*(RADIUS**2)/newrad**2
-        grav_var[0, 0, 0] = 0.5*(grav_var_h[0, 0, 1] + grav_var_h[0, 0, 0])
+        newrad = newrad - delz
+        grav_var_h = GRAV*(RADIUS**2)/newrad**2
+        grav_var = 0.5*(grav_var_h[0, 0, 1] + grav_var_h[0, 0, 0])
 
 
 @dace_inhibitor
@@ -295,6 +301,11 @@ class DynamicalCore:
         )
         self._init_gravity = stencil_factory.from_origin_domain(
             init_gravity,
+            origin=grid_indexing.origin_full(),
+            domain=grid_indexing.domain_full(),
+        )
+        self._init_gravity_h = stencil_factory.from_origin_domain(
+            init_gravity_h,
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(),
         )
@@ -522,7 +533,8 @@ class DynamicalCore:
             self._dp_initial,
         )
 
-        self._init_gravity(state.grav_var_h, state.grav_var)
+        self._init_gravity(state.grav_var)
+        self._init_gravity_h(state.grav_var_h)
 
         if self.config.wam:
             self._adjust_gravity(state.grav_var, state.grav_var_h, state.phis, state.delz)
