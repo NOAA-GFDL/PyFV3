@@ -8,10 +8,10 @@ import pyfv3.stencils.moist_cv as moist_cv
 from ndsl import Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater
 from ndsl.checkpointer import NullCheckpointer
 from ndsl.comm.mpi import MPI
-from ndsl.constants import KAPPA, NQ, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM, ZVIR
+from ndsl.constants import KAPPA, NQ, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM, ZVIR, GRAV, RADIUS
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
 from ndsl.dsl.gt4py import PARALLEL, computation, interval
-from ndsl.dsl.typing import Float, FloatField
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log
 from ndsl.performance import NullTimer, Timer
@@ -74,6 +74,37 @@ def fvdyn_temporaries(
         )
         tmps[name] = quantity
     return tmps
+
+def init_gravity(grav_var_h: FloatField, grav_var: FloatField):
+    """
+    Args:
+        grav_var_h (out): height based gravity
+        grav_var (out): gravity field
+    """
+    with computation(PARALLEL), interval(...):
+        grav_var_h[0, 0, 0] = GRAV
+        grav_var[0, 0, 0] = GRAV
+
+def adjust_gravity(
+        grav_var: FloatField, 
+        grav_var_h: FloatField, 
+        phis: FloatFieldIJ,
+        delz: FloatField,
+):
+    """
+    Args:
+        grav_var (out): gravity field
+        grav_var_h (out): height based gravity
+        phis (out): 
+        delz (out):
+    """
+    with computation(FORWARD), interval(npz+1):
+        newrad = RADIUS + (phis/GRAV)
+        grav_var_h[0, 0, npz+1] = GRAV*(RADIUS**2)/newrad**2
+    with computation(BACKWARD), interval(...):
+        newrad = newrad - delz[0, 0, 0]
+        grav_var_h[0, 0, 0] = GRAV*(RADIUS**2)/newrad**2
+        grav_var[0, 0, 0] = 0.5*(grav_var_h[0, 0, 1] + grav_var_h[0, 0, 0])
 
 
 @dace_inhibitor
@@ -259,6 +290,16 @@ class DynamicalCore:
         )
         self._copy_stencil = stencil_factory.from_origin_domain(
             copy_defn,
+            origin=grid_indexing.origin_full(),
+            domain=grid_indexing.domain_full(),
+        )
+        self._init_gravity = stencil_factory.from_origin_domain(
+            init_gravity,
+            origin=grid_indexing.origin_full(),
+            domain=grid_indexing.domain_full(),
+        )
+        self._adjust_gravity = stencil_factory.from_origin_domain(
+            adjust_gravity,
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(),
         )
@@ -481,6 +522,11 @@ class DynamicalCore:
             self._dp_initial,
         )
 
+        self._init_gravity(state.grav_var_h, state.grav_var)
+
+        if self.config.wam:
+            self._adjust_gravity(state.grav_var, state.grav_var_h, state.phis, state.delz)
+
         if self._conserve_total_energy > 0:
             raise NotImplementedError(
                 "Dynamical Core (fv_dynamics): compute total energy is not implemented"
@@ -604,6 +650,8 @@ class DynamicalCore:
                         self._timestep / self._k_split,
                     )
                     self._checkpoint_remapping_out(state)
+                    if self.config.wam:
+                        self._adjust_gravity(state.grav_var, state.grav_var_h, state.phis, state.delz)
                 # TODO: can we pull this block out of the loop intead of
                 # using an if-statement?
                 if last_step:

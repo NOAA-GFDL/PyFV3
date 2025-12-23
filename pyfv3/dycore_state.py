@@ -293,6 +293,22 @@ class DycoreState:
             "intent": "in",
         }
     )
+    grav_var_h: Quantity = field(
+        metadata={
+            "name": "variable gravity for Whole Atmosphere calculations based on height",
+            "units": "m s^-2",
+            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "intent": "inout",
+        }
+    )
+    grav_var: Quantity = field(
+        metadata={
+            "name": "variable gravity for Whole Atmosphere calculations",
+            "units": "m s^-2",
+            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "intent": "inout",
+        }
+    )
     bdt: float = field(default=0.0)
     mdt: float = field(default=0.0)
 
