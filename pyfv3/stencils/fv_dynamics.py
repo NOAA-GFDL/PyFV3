@@ -10,7 +10,7 @@ from ndsl.checkpointer import NullCheckpointer
 from ndsl.comm.mpi import MPI
 from ndsl.constants import KAPPA, NQ, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM, ZVIR, GRAV, RADIUS
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
-from ndsl.dsl.gt4py import PARALLEL, computation, interval
+from ndsl.dsl.gt4py import FORWARD, BACKWARD, PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log
