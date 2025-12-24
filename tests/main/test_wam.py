@@ -65,3 +65,25 @@ def test_p_grad_c_stencil() -> None:
     assert false # TODO
 
 ############################ fv_dynamics.py
+
+def test_init_gravity() -> None:
+    # Check that init_gravity sets 3d grav_var to the constant GRAV for all vals
+    assert false # TODO
+
+def test_init_gravity_h() -> None:
+    # Check that init_gravity sets 3d grav_var_h to constant GRAV for all vals
+    assert false # TODO
+
+def test_adjust_gravity() -> None:
+    # Check that adjust_gravity sets grav_var and grav_var_h are set appropriately
+    # with computation(FORWARD), interval(-1,None):
+    #     newrad = RADIUS + (phis/GRAV)
+    #     grav_var_h = GRAV*(RADIUS**2)/newrad**2
+    # with computation(BACKWARD), interval(...):
+    #    newrad = newrad - delz
+    #    grav_var_h = GRAV*(RADIUS**2)/newrad**2
+    #    grav_var = 0.5*(grav_var_h[0, 0, 1] + grav_var_h[0, 0, 0])
+
+    assert false # TODO
+
+# TODO JK NOTE to self --- checkout log_on_rank_0 for values that might be useful for test (possibly)
