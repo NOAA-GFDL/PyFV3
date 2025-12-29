@@ -19,10 +19,11 @@ from ndsl import (
 from ndsl.grid import GridData, MetricTerms
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.constants import GRAV, X_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.dsl.gt4py import stencil
 from pyfv3 import DynamicalCoreConfig, DycoreState
 from pyfv3.initialization import init_utils
 from pyfv3.initialization.analytic_init import AnalyticCase
-from pyfv3.stencils.fv_dynamics import init_gravity
+from pyfv3.stencils.fv_dynamics import init_gravity, init_gravity_h
 
 # use numpy for now until I figure out how to use FloatField
 import numpy as np
@@ -212,7 +213,32 @@ def test_init_gravity() -> None:
 def test_init_gravity_h() -> None:
     # Check that init_gravity sets 3d grav_var_h to constant GRAV for all vals
     # same as above? Why is init_gravity and init_gravity_h the same? maybe will be different in future?
-    assert False # TODO
+
+    # Using 01_gt4py_basics.ipynb for a simpler approach than test_init_gravity()
+    nx = 5
+    ny = 5
+    nz = 2
+    shape = (nx, ny, nz)
+    n_halos = 3
+
+    example_data = np.zeros(shape)
+    example_dims = ["I", "J", "K"]
+    example_units = "test units"
+    example_backend="numpy"
+
+    example_qty = Quantity(
+        data=example_data,
+        dims=example_dims,
+        units=example_units,
+        number_of_halo_points=n_halos,
+        gt4py_backend=example_backend,
+    )
+
+    init_gravity_h_numpy = stencil(backend=example_backend, definition=init_gravity_h)
+    init_gravity_h_numpy(example_qty)
+
+    assert np.all(example_qty.field == GRAV)
+
 
 def test_adjust_gravity() -> None:
     # Check that adjust_gravity sets grav_var and grav_var_h are set appropriately

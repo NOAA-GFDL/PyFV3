@@ -83,7 +83,7 @@ def init_gravity(grav_var: FloatField):
     with computation(PARALLEL), interval(...):
         grav_var = GRAV
 
-def init_gravity_h(grav_var: FloatField):
+def init_gravity_h(grav_var_h: FloatField):
     """
     Args:
         grav_var_h (out): gravity field
