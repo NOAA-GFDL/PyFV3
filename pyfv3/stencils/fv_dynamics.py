@@ -83,7 +83,7 @@ def init_gravity(grav_var: FloatField):
     with computation(PARALLEL), interval(...):
         grav_var = GRAV
 
-def init_gravity_h(grav_var: FloatField):
+def init_gravity_h(grav_var_h: FloatField):
     """
     Args:
         grav_var_h (out): gravity field
@@ -536,7 +536,7 @@ class DynamicalCore:
         self._init_gravity(state.grav_var)
         self._init_gravity_h(state.grav_var_h)
 
-        if self.config.wam:
+        if self.config.enable_wam:
             self._adjust_gravity(state.grav_var, state.grav_var_h, state.phis, state.delz)
 
         if self._conserve_total_energy > 0:
@@ -662,7 +662,7 @@ class DynamicalCore:
                         self._timestep / self._k_split,
                     )
                     self._checkpoint_remapping_out(state)
-                    if self.config.wam:
+                    if self.config.enable_wam:
                         self._adjust_gravity(state.grav_var, state.grav_var_h, state.phis, state.delz)
                 # TODO: can we pull this block out of the loop intead of
                 # using an if-statement?
