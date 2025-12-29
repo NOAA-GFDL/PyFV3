@@ -1,19 +1,31 @@
 from pathlib import Path
+from dataclasses import field
 
 import pyfv3.initialization.analytic_init as ai
 from ndsl import (
+    CompilationConfig,
     CubedSphereCommunicator,
     CubedSpherePartitioner,
+    DaceConfig,
+    GridIndexing,
     NullComm,
+    Quantity,
     QuantityFactory,
+    StencilConfig,
+    StencilFactory,
     SubtileGridSizer,
     TilePartitioner,
 )
 from ndsl.grid import GridData, MetricTerms
+from ndsl.dsl.typing import Float, FloatField
+from ndsl.constants import GRAV, X_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from pyfv3 import DynamicalCoreConfig, DycoreState
 from pyfv3.initialization import init_utils
 from pyfv3.initialization.analytic_init import AnalyticCase
+from pyfv3.stencils.fv_dynamics import init_gravity
 
+# use numpy for now until I figure out how to use FloatField
+import numpy as np
 
 # JK NOTE TODO: Just sticking things in here for now, will distribute them into their right
 # places in the future.
@@ -162,11 +174,44 @@ def test_p_grad_c_stencil() -> None:
 
 def test_init_gravity() -> None:
     # Check that init_gravity sets 3d grav_var to the constant GRAV for all vals
-
-    assert False # TODO
+    backend = "numpy"
+    nx_tile, ny_tile, nz, n_halo = 6, 6, 2, 3
+    layout = (1,1)
+    partitioner = CubedSpherePartitioner(TilePartitioner(layout))
+    mpi_comm = NullComm(rank=0, total_ranks=6, fill_value=0.0)
+    communicator = CubedSphereCommunicator(mpi_comm, partitioner)
+    compilation_config = CompilationConfig(backend=backend, rebuild=False, validate_args=True)
+    dace_config = DaceConfig(communicator=communicator, backend=backend)
+    stencil_config = StencilConfig(compilation_config=compilation_config, dace_config=dace_config)
+    sizer = SubtileGridSizer.from_tile_params(
+        nx_tile=nx_tile,
+        ny_tile=ny_tile,
+        nz=nz,
+        n_halo=n_halo,
+        layout=layout,
+        tile_partitioner=partitioner.tile,
+        tile_rank=communicator.tile.rank
+    )
+    grid_indexing = GridIndexing.from_sizer_and_communicator(sizer=sizer, comm=communicator)
+    stencil_factory = StencilFactory(config=stencil_config, grid_indexing=grid_indexing)
+    quantity_factory = QuantityFactory.from_backend(sizer=sizer, backend=backend)
+    init_gravity_stencil = stencil_factory.from_dims_halo(
+        init_gravity,
+        compute_dims=[X_DIM, Y_DIM, Z_DIM],
+        compute_halos=(n_halo, n_halo),
+    )
+    grav_var: Quantity = quantity_factory.zeros(
+        [X_DIM, Y_DIM, Z_DIM],
+        units="test",
+        dtype=Float,
+    )
+    init_gravity_stencil(grav_var)
+    assert np.all(grav_var.field == GRAV)
+    # JK TODO: There's so much setup... Find a simpler way to set of stencil and quantity?
 
 def test_init_gravity_h() -> None:
     # Check that init_gravity sets 3d grav_var_h to constant GRAV for all vals
+    # same as above? Why is init_gravity and init_gravity_h the same? maybe will be different in future?
     assert False # TODO
 
 def test_adjust_gravity() -> None:
