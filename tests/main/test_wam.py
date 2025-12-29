@@ -23,7 +23,7 @@ from ndsl.dsl.gt4py import stencil
 from pyfv3 import DynamicalCoreConfig, DycoreState
 from pyfv3.initialization import init_utils
 from pyfv3.initialization.analytic_init import AnalyticCase
-from pyfv3.stencils.fv_dynamics import init_gravity, init_gravity_h
+from pyfv3.stencils.fv_dynamics import adjust_gravity, init_gravity, init_gravity_h
 
 # use numpy for now until I figure out how to use FloatField
 import numpy as np
@@ -249,7 +249,53 @@ def test_adjust_gravity() -> None:
     #    newrad = newrad - delz
     #    grav_var_h = GRAV*(RADIUS**2)/newrad**2
     #    grav_var = 0.5*(grav_var_h[0, 0, 1] + grav_var_h[0, 0, 0])
+    nx = 5
+    ny = 5
+    nz = 2
+    shape = (nx, ny, nz)
+    n_halos = 3
 
-    assert False # TODO
+    example_data = np.zeros(shape)
+    example_dims = ["I", "J", "K"]
+    example_backend="numpy"
+
+    # 3D quantities:
+    grav_var = Quantity(
+        data=example_data,
+        dims=example_dims,
+        units="grav_var units",
+        number_of_halo_points=n_halos,
+        gt4py_backend=example_backend,
+    )
+
+    grav_var_h = Quantity(
+        data=example_data,
+        dims=example_dims,
+        units="grav_var_h units",
+        number_of_halo_points=n_halos,
+        gt4py_backend=example_backend,
+    )
+
+    delz = Quantity(
+        data=example_data,
+        dims=example_dims,
+        units="delz units",
+        number_of_halo_points=n_halos,
+        gt4py_backend=example_backend,
+    )
+
+    # 2D quantities:
+    phis = Quantity(
+        data=np.zeros((shape[0], shape[1])),
+        dims=["I", "J"],
+        units="phis units",
+        number_of_halo_points=n_halos,
+        gt4py_backend=example_backend,
+    )
+
+    init_adjust_gravity_numpy = stencil(backend=example_backend, definition=adjust_gravity)
+    init_adjust_gravity_numpy(grav_var, grav_var_h, phis, delz)
+
+    assert False # JK TODO what am I checking here?
 
 # TODO JK NOTE to self --- checkout log_on_rank_0 for values that might be useful for test (possibly)
