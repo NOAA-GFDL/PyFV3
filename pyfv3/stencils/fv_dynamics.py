@@ -10,7 +10,7 @@ from ndsl.checkpointer import NullCheckpointer
 from ndsl.comm.mpi import MPI
 from ndsl.constants import KAPPA, NQ, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM, ZVIR, GRAV, RADIUS
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
-from ndsl.dsl.gt4py import PARALLEL, computation, interval
+from ndsl.dsl.gt4py import FORWARD, BACKWARD, PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log
@@ -83,7 +83,7 @@ def init_gravity(grav_var: FloatField):
     with computation(PARALLEL), interval(...):
         grav_var = GRAV
 
-def init_gravity_h(grav_var: FloatField):
+def init_gravity_h(grav_var_h: FloatField):
     """
     Args:
         grav_var_h (out): gravity field
@@ -539,7 +539,7 @@ class DynamicalCore:
         self._init_gravity(state.grav_var)
         self._init_gravity_h(state.grav_var_h)
 
-        if self.config.wam:
+        if self.config.enable_wam:
             self._adjust_gravity(state.grav_var, state.grav_var_h, state.phis, state.delz)
 
         if self._conserve_total_energy > 0:
@@ -665,7 +665,7 @@ class DynamicalCore:
                         self._timestep / self._k_split,
                     )
                     self._checkpoint_remapping_out(state)
-                    if self.config.wam:
+                    if self.config.enable_wam:
                         self._adjust_gravity(state.grav_var, state.grav_var_h, state.phis, state.delz)
                 # TODO: can we pull this block out of the loop intead of
                 # using an if-statement?
