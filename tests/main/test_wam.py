@@ -615,7 +615,7 @@ def test_adjust_gravity() -> None:
 
     for j in range(ny):
         for i in range(nx):
-            for k in range(nz-1, 0, -1):
+            for k in range(nz-1, -1, -1):
                 newrad[i,j] = newrad[i,j] - delz.field[i,j,k]
                 expected_grav_var_h_np[i,j,k] = GRAV*((RADIUS**2)/(newrad[i,j]**2))
                 expected_grav_var_np[i,j,k] = 0.5*(expected_grav_var_h_np[i,j,k+1]+expected_grav_var_h_np[i,j,k])
@@ -640,13 +640,25 @@ def test_adjust_gravity() -> None:
 """
 >       assert np.array_equal(grav_var_h.field[:], expected_grav_var_h_np)
 E       assert False
-E        +  where False = <function array_equal at 0x7f10cd303bb0>(
+E        +  where False = <function array_equal at 0x7fd7d82242f0>(
 
-array([[[3.98073395e+14, 9.80665276e+00, 0.00000000e+00],\n        [0.00000000e+00, 9.80665276e+00, 0.00000000e+00],\n  ...,\n        [0.00000000e+00, 9.80665276e+00, 0.00000000e+00],\n        [3.98073395e+14, 9.80665276e+00, 0.00000000e+00]]]), 
+array([
+[[3.98073395e+14, 9.80665276e+00, 0.00000000e+00],\n        
+[0.00000000e+00, 9.80665276e+00, 0.00000000e+00],\n
+  ...,\n        
+[0.00000000e+00, 9.80665276e+00, 0.00000000e+00],\n        
+[3.98073395e+14, 9.80665276e+00, 0.00000000e+00]]
+]), 
 
-array([[[0.        , 9.80665276, 9.80664969],\n        [0.        , 9.80665276, 9.80664969],\n        [0.        , 9.806... 9.80665276, 9.80664969],\n        [0.        , 9.80665276, 9.80664969],\n        [0.        , 9.80665276, 9.80664969]]]))
-E        +    where <function array_equal at 0x7f10cd303bb0> = np.array_equal
 
-tests/main/test_wam.py:378: AssertionError
-=
+array([
+[[9.80665584, 9.80665276, 9.80664969],\n        
+[9.80665584, 9.80665276, 9.80664969],\n        
+[9.80665584, 9.806... 9.80665276, 9.80664969],\n        
+[9.80665584, 9.80665276, 9.80664969],\n        
+[9.80665584, 9.80665276, 9.80664969]]
+]))
+E        +    where <function array_equal at 0x7fd7d82242f0> = np.array_equal
+
+tests/main/test_wam.py:633: AssertionError
 """
