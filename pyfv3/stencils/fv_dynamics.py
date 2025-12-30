@@ -99,7 +99,6 @@ def adjust_gravity_h(
     Args:
         grav_var_h (out): height based gravity
         phis (out): 
-        delz (out):
     """
     with computation(FORWARD), interval(-1,None):
         newrad = RADIUS + (phis/GRAV)
