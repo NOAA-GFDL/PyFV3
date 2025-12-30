@@ -1,5 +1,7 @@
 from pathlib import Path
 from dataclasses import field
+from datetime import timedelta
+from typing import Tuple
 import copy
 
 import pyfv3.initialization.analytic_init as ai
@@ -17,13 +19,14 @@ from ndsl import (
     SubtileGridSizer,
     TilePartitioner,
 )
-from ndsl.grid import GridData, MetricTerms
+from ndsl.grid import DampingCoefficients, GridData, MetricTerms
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.constants import GRAV, RADIUS, X_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.dsl.gt4py import stencil
-from pyfv3 import DynamicalCoreConfig, DycoreState
+from pyfv3 import DynamicalCore, DynamicalCoreConfig, DycoreState
 from pyfv3.initialization import init_utils
 from pyfv3.initialization.analytic_init import AnalyticCase
+from pyfv3.stencils.dyn_core import AcousticDynamics
 from pyfv3.stencils.fv_dynamics import adjust_gravity, init_gravity, init_gravity_h
 from pyfv3.stencils.dyn_core import average_gravity, compute_geopotential
 
@@ -233,13 +236,195 @@ def test_compute_geopotential() -> None:
     assert np.array_equal(gz.field[:], expected_gz_np)
 
 
-def test_p_grad_c_stencil() -> None:
-    # Check that
-    # 1. addition of average_gravity stencil and
-    # 2. addition of grav_var_h parameter in self._compute_geopotential_stencil
-    # still produces reasonable results
+def setup_acoustic_dynamics(npx, npy, n_halo) -> Tuple[AcousticDynamics, DycoreState]:
+    backend = "numpy"
+    config = DynamicalCoreConfig(
+        layout=(1, 1),
+        npx=npx,
+        npy=npy,
+        npz=79,
+        ntiles=6,
+        nwat=6,
+        dt_atmos=225,
+        a_imp=1.0,
+        beta=0.0,
+        consv_te=False,  # not implemented, needs allreduce
+        d2_bg=0.0,
+        d2_bg_k1=0.2,
+        d2_bg_k2=0.1,
+        d4_bg=0.15,
+        d_con=1.0,
+        d_ext=0.0,
+        dddmp=0.5,
+        delt_max=0.002,
+        do_sat_adj=True,
+        do_vort_damp=True,
+        fill=True,
+        hord_dp=6,
+        hord_mt=6,
+        hord_tm=6,
+        hord_tr=8,
+        hord_vt=6,
+        hydrostatic=False,
+        k_split=1,
+        ke_bg=0.0,
+        kord_mt=9,
+        kord_tm=-9,
+        kord_tr=9,
+        kord_wz=9,
+        n_split=1,
+        nord=3,
+        p_fac=0.05,
+        rf_fast=True,
+        rf_cutoff=3000.0,
+        tau=10.0,
+        vtdm4=0.06,
+        z_tracer=True,
+        do_qa=True,
+    )
+    mpi_comm = NullComm(
+        rank=0, total_ranks=6 * config.layout[0] * config.layout[1], fill_value=0.0
+    )
+    partitioner = CubedSpherePartitioner(TilePartitioner(config.layout))
+    communicator = CubedSphereCommunicator(mpi_comm, partitioner)
+    dace_config = DaceConfig(communicator=communicator, backend=backend)
+    stencil_config = StencilConfig(
+        compilation_config=CompilationConfig(
+            backend=backend, rebuild=False, validate_args=True
+        ),
+        dace_config=dace_config,
+    )
+    sizer = SubtileGridSizer.from_tile_params(
+        nx_tile=config.npx - 1,
+        ny_tile=config.npy - 1,
+        nz=config.npz,
+        n_halo=n_halo,
+        layout=config.layout,
+        tile_partitioner=partitioner.tile,
+        tile_rank=communicator.tile.rank,
+    )
+    grid_indexing = GridIndexing.from_sizer_and_communicator(
+        sizer=sizer, comm=communicator
+    )
+    quantity_factory = QuantityFactory.from_backend(sizer=sizer, backend=backend)
+    eta_file = Path(__file__).resolve().parents[1] / "data" / "eta79.nc"
+    metric_terms = MetricTerms(
+        quantity_factory=quantity_factory,
+        communicator=communicator,
+        eta_file=eta_file,
+    )
+    grid_data = GridData.new_from_metric_terms(metric_terms)
+
+    # create an initial state from the Jablonowski & Williamson Baroclinic
+    # test case perturbation. JRMS2006
+    state = ai.init_analytic_state(
+        analytic_init_case=AnalyticCase.baroclinic_instability,
+        grid_data=grid_data,
+        quantity_factory=quantity_factory,
+        adiabatic=config.adiabatic,
+        hydrostatic=config.hydrostatic,
+        moist_phys=config.moist_phys,
+        sw_dynamics=config.sw_dynamics,
+        comm=communicator,
+    )
+    stencil_factory = StencilFactory(
+        config=stencil_config,
+        grid_indexing=grid_indexing,
+    )
+
+    dycore = DynamicalCore(
+        comm=communicator,
+        grid_data=grid_data,
+        stencil_factory=stencil_factory,
+        quantity_factory=quantity_factory,
+        damping_coefficients=DampingCoefficients.new_from_metric_terms(metric_terms),
+        config=config,
+        timestep=timedelta(seconds=config.dt_atmos),
+        phis=state.phis,
+        state=state,
+    )
+
+    # JK TODO simplify this please, if possible...
+    return dycore.acoustic_dynamics, state
+
+def test_acoustic_dynamics_init_average_gravity() -> None:
+    # Check that average gravity is called/used in AcousticDynamics initialization
+
+    nx = 12
+    ny = 12
+    nz = 79
+    n_halo = 3
+
+    # JK TODO: Why does the config need npx = nx-(2*n_halo)+1
+    ac_dyn, _ = setup_acoustic_dynamics(nx-(2*n_halo)+1, ny-(2*n_halo)+1, n_halo) # nz is hard-coded to 79
+
+    # JK TODO: switch from example grav_var, grav_var_h to state.grav_var, state.grav_var_h
+
+    example_dims = ["I", "J", "K"]
+    example_backend="numpy"
+
+    grav_var = Quantity(
+        data=np.zeros((nx, ny, nz)),
+        dims=example_dims,
+        units="grav_var units",
+        number_of_halo_points=n_halo,
+        backend=example_backend,
+    )
+
+    grav_var_h_np = np.random.random((nx, ny, nz+1))
+    expected_grav_var_h_np = copy.deepcopy(grav_var_h_np)
+    grav_var_h = Quantity(
+        data=grav_var_h_np,
+        dims=example_dims,
+        units="grav_var_h units",
+        number_of_halo_points=n_halo,
+        backend=example_backend,
+    )
+
+    # call ad_dyn._average_gravity
+    ac_dyn._average_gravity(grav_var, grav_var_h)
+
+    # grav_var_h should be unchanged by the stencil
+    assert np.array_equal(grav_var_h.field[:], expected_grav_var_h_np)
+
+    expected_grav_var_np = (expected_grav_var_h_np[:,:,:-1]+expected_grav_var_h_np[:,:,1:]) / 2
+    assert np.array_equal(grav_var.field[:], expected_grav_var_np)
+
+
+def test_acoustic_dynamics_call_average_gravity() -> None:
+    # Check that average gravity is called/used in AcousticDynamics call
+    nx = 12
+    ny = 12
+    nz = 79
+    n_halo = 3
+    timestep = 225 # JK TODO: Is this right?
+
+    # JK TODO: Why does the config need npx = nx-(2*n_halo)+1
+    ac_dyn, state = setup_acoustic_dynamics(nx-(2*n_halo)+1, ny-(2*n_halo)+1, n_halo) # nz is hard-coded to 79
+
+    init_grav_var_np = copy.deepcopy(state.grav_var.field)
+    init_grav_var_h_np = copy.deepcopy(state.grav_var_h.field)
+
+    ac_dyn(state, timestep)
     
-    assert False # TODO
+    # The state.grav_var_h should be unchanged by the stencil.
+    assert np.array_equal(state.grav_var_h.field[:], init_grav_var_h_np)
+
+    # Check that the state.grav_var values match expectation:
+    expected_grav_var_np = (init_grav_var_h_np[:,:,:-1]+init_grav_var_h_np[:,:,1:]) / 2
+    assert np.array_equal(state.grav_var.field[:], expected_grav_var_np)
+
+"""
+E        +  where False = <function array_equal at 0x7fd9f38750b0>(
+
+array([
+[[0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n ...\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.]]]), 
+
+array([[[0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n ...\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.]]]))
+
+E        +    where <function array_equal at 0x7fd9f38750b0> = np.array_equal
+
+"""
 
 ############################ fv_dynamics.py
 
