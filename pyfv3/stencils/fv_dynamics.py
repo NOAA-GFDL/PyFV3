@@ -91,6 +91,20 @@ def init_gravity_h(grav_var_h: FloatField):
     with computation(PARALLEL), interval(...):
         grav_var_h = GRAV
 
+def adjust_gravity_h(
+        grav_var_h: FloatField, 
+        phis: FloatFieldIJ,
+):
+    """
+    Args:
+        grav_var_h (out): height based gravity
+        phis (out): 
+        delz (out):
+    """
+    with computation(FORWARD), interval(-1,None):
+        newrad = RADIUS + (phis/GRAV)
+        grav_var_h = GRAV*(RADIUS**2)/newrad**2
+
 def adjust_gravity(
         grav_var: FloatField, 
         grav_var_h: FloatField, 
@@ -104,10 +118,8 @@ def adjust_gravity(
         phis (out): 
         delz (out):
     """
-    with computation(FORWARD), interval(-1,None):
-        newrad = RADIUS + (phis/GRAV)
-        grav_var_h = GRAV*(RADIUS**2)/newrad**2
     with computation(BACKWARD), interval(...):
+        newrad = RADIUS + (phis/GRAV)
         newrad = newrad - delz
         grav_var_h = GRAV*(RADIUS**2)/newrad**2
         grav_var = 0.5*(grav_var_h[0, 0, 1] + grav_var_h[0, 0, 0])
@@ -306,6 +318,11 @@ class DynamicalCore:
         )
         self._init_gravity_h = stencil_factory.from_origin_domain(
             init_gravity_h,
+            origin=grid_indexing.origin_full(),
+            domain=grid_indexing.domain_full(),
+        )
+        self._adjust_gravity_h = stencil_factory.from_origin_domain(
+            adjust_gravity_h,
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(),
         )
@@ -540,6 +557,7 @@ class DynamicalCore:
         self._init_gravity_h(state.grav_var_h)
 
         if self.config.enable_wam:
+            self._adjust_gravity_h(state.grav_var_h, state.phis, state.delz)
             self._adjust_gravity(state.grav_var, state.grav_var_h, state.phis, state.delz)
 
         if self._conserve_total_energy > 0:
@@ -666,6 +684,7 @@ class DynamicalCore:
                     )
                     self._checkpoint_remapping_out(state)
                     if self.config.enable_wam:
+                        self._adjust_gravity_h(state.grav_var_h, state.phis, state.delz)
                         self._adjust_gravity(state.grav_var, state.grav_var_h, state.phis, state.delz)
                 # TODO: can we pull this block out of the loop intead of
                 # using an if-statement?
