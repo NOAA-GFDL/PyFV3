@@ -25,10 +25,10 @@ from pyfv3 import DynamicalCoreConfig, DycoreState
 from pyfv3.initialization import init_utils
 from pyfv3.initialization.analytic_init import AnalyticCase
 from pyfv3.stencils.fv_dynamics import adjust_gravity, init_gravity, init_gravity_h
-from pyfv3.stencils.dyn_core import average_gravity
+from pyfv3.stencils.dyn_core import average_gravity, compute_geopotential
 
 # use numpy for now until I figure out how to use FloatField
-import numpy as np
+import numpy as np # JK TODO: Should I be using xumpy?
 
 # JK NOTE TODO: Just sticking things in here for now, will distribute them into their right
 # places in the future.
@@ -139,7 +139,7 @@ def test_dycore_state_has_wam_attributes():
     dycore_state = setup_dycore_state()
     assert hasattr(dycore_state, "grav_var")
     assert hasattr(dycore_state, "grav_var_h")
-    # TODO: Is this really useful as a test?
+    # JK TODO: Is this really useful as a test?
 
 
 ############################ dyn_core.py
@@ -161,6 +161,7 @@ def test_average_gravity() -> None:
     )
 
     grav_var_h_np = np.random.random((nx, ny, nz+1))
+    expected_grav_var_h_np = copy.deepcopy(grav_var_h_np)
     grav_var_h = Quantity(
         data=grav_var_h_np,
         dims=example_dims,
@@ -173,19 +174,64 @@ def test_average_gravity() -> None:
     average_gravity_numpy(grav_var, grav_var_h)
 
     # grav_var_h should be unchanged by the stencil
-    assert np.array_equal(grav_var_h.field[:], grav_var_h_np)
+    assert np.array_equal(grav_var_h.field[:], expected_grav_var_h_np)
 
-    grav_var_np = (grav_var_h_np[:,:,:-1]+grav_var_h_np[:,:,1:]) / 2
-    assert np.array_equal(grav_var.field[:], grav_var_np)
+    expected_grav_var_np = (expected_grav_var_h_np[:,:,:-1]+expected_grav_var_h_np[:,:,1:]) / 2
+    assert np.array_equal(grav_var.field[:], expected_grav_var_np)
 
 
 def test_compute_geopotential() -> None:
-    # Check that the change from constants.GRAV to grav_var_h are reasonable.
-    
-    #def compute_geopotential(zh: FloatField, gz: FloatField, grav_var_h: FloatField):
-    #with computation(PARALLEL), interval(...):
-    #    gz = zh * grav_var_h
-    assert False # TODO
+    nx = 5
+    ny = 5
+    nz = 2
+    n_halos = 3
+
+    example_dims = ["I", "J", "K"]
+    example_backend="numpy"
+
+    grav_var_h_np = np.random.random((nx, ny, nz+1))
+    expected_grav_var_h_np = copy.deepcopy(grav_var_h_np)
+    grav_var_h = Quantity(
+        data=grav_var_h_np,
+        dims=example_dims,
+        units="grav_var_h units",
+        number_of_halo_points=n_halos,
+        backend=example_backend,
+    )
+
+    gz_np = np.random.random((nx, ny, nz))
+    gz_np_copy = copy.deepcopy(gz_np)
+    gz = Quantity(
+        data=gz_np,
+        dims=example_dims,
+        units="gz units",
+        number_of_halo_points=n_halos,
+        backend=example_backend,
+    )
+
+    zh_np = np.random.random((nx, ny, nz))
+    expected_zh_np = copy.deepcopy(zh_np)
+    zh = Quantity(
+        data=zh_np,
+        dims=example_dims,
+        units="zh units",
+        number_of_halo_points=n_halos,
+        backend=example_backend,
+    )
+
+    compute_geopotential_np = stencil(backend=example_backend, definition=compute_geopotential)
+    compute_geopotential_np(zh, gz, grav_var_h)
+
+    # Check that zh and grav_var_h are unchanged
+    assert np.array_equal(zh.field[:], expected_zh_np)
+    assert np.array_equal(grav_var_h.field[:], expected_grav_var_h_np)
+
+    # Check that gz = zh * grav_var_h
+    assert not np.array_equal(gz.field[:], gz_np_copy)
+    # JK TODO: Is the expected_gz_np calculated correctly? double check with fortran or frank...
+    expected_gz_np = zh_np * grav_var_h_np[:,:,:-1]
+    assert np.array_equal(gz.field[:], expected_gz_np)
+
 
 def test_p_grad_c_stencil() -> None:
     # Check that
