@@ -27,7 +27,7 @@ from pyfv3 import DynamicalCore, DynamicalCoreConfig, DycoreState
 from pyfv3.initialization import init_utils
 from pyfv3.initialization.analytic_init import AnalyticCase
 from pyfv3.stencils.dyn_core import AcousticDynamics
-from pyfv3.stencils.fv_dynamics import adjust_gravity, init_gravity, init_gravity_h
+from pyfv3.stencils.fv_dynamics import adjust_gravity, adjust_gravity_h, init_gravity, init_gravity_h
 from pyfv3.stencils.dyn_core import average_gravity, compute_geopotential
 
 # use numpy for now until I figure out how to use FloatField
@@ -381,7 +381,7 @@ def test_acoustic_dynamics_init_average_gravity() -> None:
         backend=example_backend,
     )
 
-    # call ad_dyn._average_gravity
+    # Call ad_dyn._average_gravity. This is what we're testing.
     ac_dyn._average_gravity(grav_var, grav_var_h)
 
     # grav_var_h should be unchanged by the stencil
@@ -495,6 +495,67 @@ def test_init_gravity_h() -> None:
     assert np.all(example_qty.field == GRAV)
 
 
+def test_adjust_gravity_h() -> None:
+    # Check that adjust_gravity_h sets grav_var_h appropriately
+    nx = 5
+    ny = 5
+    nz = 2
+    n_halos = 3
+
+    example_dims = ["I", "J", "K"]
+    example_backend="numpy"
+
+    grav_var_h = Quantity(
+        data=np.zeros((nx, ny, nz+1)),
+        dims=example_dims,
+        units="grav_var_h units",
+        number_of_halo_points=n_halos,
+        backend=example_backend,
+    )
+
+    phis = Quantity(
+        data=np.ones((nx, ny)),
+        dims=["I", "J"],
+        units="phis units",
+        number_of_halo_points=n_halos,
+        backend=example_backend,
+    )
+
+    adjust_gravity_h_stencil = stencil(backend=example_backend, definition=adjust_gravity_h)
+    adjust_gravity_h_stencil(grav_var_h, phis)
+
+    # Check that phis is unchanged
+    assert np.array_equal(phis.field[:], np.ones((nx, ny)))
+
+    # Check that grav_var_h is as expected
+
+    ##### Stencil:
+    # with computation(FORWARD), interval(-1,None):
+    #     newrad = RADIUS + (phis/GRAV)
+    #     grav_var_h = GRAV*(RADIUS**2)/newrad**2
+    ##### Fortran:
+    #    do j=js,je
+    #      do i=is,ie
+    #        newrad(i,j) = radius + (phis(i,j)/grav)
+    #        grav_var_h(i,j,npz+1) = grav*((radius**2)/(newrad(i,j)**2))
+    #      enddo
+    #    enddo
+
+    newrad = np.zeros((nx, ny))
+    expected_grav_var_h_np = np.zeros((nx, ny, nz+1))
+
+    newrad[:,:] = RADIUS + (phis/GRAV)
+    expected_grav_var_h_np[:,:,-1] += GRAV*(RADIUS**2)/newrad**2
+
+    # Iterative sanity check:
+    #for j in range(ny):
+    #    for i in range(nx):
+    #        newrad[i,j] = RADIUS + (phis.field[i,j]/GRAV)
+    #        expected_grav_var_h_np[i,j,-1] += GRAV*(RADIUS**2)/newrad[i,j]**2
+
+    assert np.array_equal(grav_var_h.field[:], expected_grav_var_h_np)
+
+
 def test_adjust_gravity() -> None:
     # Check that adjust_gravity sets grav_var and grav_var_h are set appropriately
     nx = 5
@@ -529,7 +590,6 @@ def test_adjust_gravity() -> None:
         backend=example_backend,
     )
 
-    # 2D quantities:
     phis = Quantity(
         data=np.ones((nx, ny)),
         dims=["I", "J"],
@@ -546,119 +606,23 @@ def test_adjust_gravity() -> None:
     assert np.array_equal(delz.field[:], np.ones((nx, ny, nz)))
 
     # Check that grav_var and grav_var_h are set appropriately
-    expected_grav_var = Quantity(
-        data=np.zeros((nx, ny, nz)),
-        dims=example_dims,
-        units="grav_var units",
-        number_of_halo_points=n_halos,
-        backend=example_backend,
-    )
-    expected_grav_var_h = Quantity(
-        data=np.zeros((nx, ny, nz+1)),
-        dims=example_dims,
-        units="grav_var_h units",
-        number_of_halo_points=n_halos,
-        backend=example_backend,
-    )
-
-    # Calculated numpy versions of expected values
-
-
-    # Look at Fortran version and figure out a better test.
-
-    # ValueError: operands could not be broadcast together with shapes (5,5) (5,5,2)
-    # newrad = RADIUS + (phis/GRAV) - delz
-
-    # TODO: There's gotta be a better way to do this to avoid the valueerror:
     newrad = np.zeros((nx, ny))
     expected_grav_var_np = np.zeros((nx, ny, nz))
     expected_grav_var_h_np = np.zeros((nx, ny, nz+1))
     
     assert np.array_equal(grav_var_h.field[:].shape, expected_grav_var_h_np.shape)
 
-    ##### Stencil:
-    # with computation(FORWARD), interval(-1,None):
-    #     newrad = RADIUS + (phis/GRAV)
-    #     grav_var_h = GRAV*(RADIUS**2)/newrad**2
-    ##### Fortran:
-    #    do j=js,je
-    #      do i=is,ie
-    #        newrad(i,j) = radius + (phis(i,j)/grav)
-    #        grav_var_h(i,j,npz+1) = grav*((radius**2)/(newrad(i,j)**2))
-    #      enddo
-    #    enddo
-
-    #newrad[:,:] = RADIUS + (phis/GRAV)
-    #expected_grav_var_h_np[:,:,-1] += GRAV*(RADIUS**2)/newrad**2
-
-    # dumb iterative sanity check:
-    for j in range(ny):
-        for i in range(nx):
-            newrad[i,j] = RADIUS + (phis.field[i,j]/GRAV)
-            expected_grav_var_h_np[i,j,-1] += GRAV*(RADIUS**2)/newrad[i,j]**2
-
-    ##### Stencil:
-    # with computation(BACKWARD), interval(...):
-    #    newrad = newrad - delz
-    #    grav_var_h = GRAV*(RADIUS**2)/newrad**2
-    #    grav_var = 0.5*(grav_var_h[0, 0, 1] + grav_var_h[0, 0, 0])
-    ##### Fortran:
-    #     do j=js,je
-    #       do i=is,ie
-    #        do k=npz,1,-1
-    #          newrad(i,j) = newrad(i,j) - delz(i,j,k)
-    #          grav_var_h(i,j,k) = grav*((radius**2)/(newrad(i,j)**2))
-    #          grav_var(i,j,k) = 0.5*(grav_var_h(i,j,k+1)+grav_var_h(i,j,k))
-    #        enddo
-    #      enddo
-    #    enddo
-
     for j in range(ny):
         for i in range(nx):
             for k in range(nz-1, -1, -1):
+                newrad[i,j] = RADIUS + (phis.field[i,j]/GRAV)
                 newrad[i,j] = newrad[i,j] - delz.field[i,j,k]
                 expected_grav_var_h_np[i,j,k] = GRAV*((RADIUS**2)/(newrad[i,j]**2))
                 expected_grav_var_np[i,j,k] = 0.5*(expected_grav_var_h_np[i,j,k+1]+expected_grav_var_h_np[i,j,k])
 
-    #k=1
-    #newrad += -delz.field[:,:,k]
-    #expected_grav_var_h_np[:,:,k] = GRAV*((RADIUS**2)/(newrad**2))
-    #expected_grav_var_np[:,:,k] = 0.5*(expected_grav_var_h_np[:,:,k+1]+expected_grav_var_h_np[:,:,k])
-
-    #k=0
-    #newrad += -delz.field[:,:,k]
-    #expected_grav_var_h_np[:,:,k] = GRAV*((RADIUS**2)/(newrad**2))
-    #expected_grav_var_np[:,:,k] = 0.5*(expected_grav_var_h_np[:,:,k+1]+expected_grav_var_h_np[:,:,k])
-
-    assert np.array_equal(grav_var_h.field[:], expected_grav_var_h_np)
-    assert np.array_equal(grav_var.field[:], expected_grav_var_np)
+    # JK TODO: is there some rtol/atol threshold? the np vs stencil calculations are close but not exact.
+    assert np.allclose(grav_var_h.field[:], expected_grav_var_h_np)
+    assert np.allclose(grav_var.field[:], expected_grav_var_np)
     
 
 # TODO JK NOTE to self --- checkout log_on_rank_0 for values that might be useful for test (possibly)
-
-
-"""
->       assert np.array_equal(grav_var_h.field[:], expected_grav_var_h_np)
-E       assert False
-E        +  where False = <function array_equal at 0x7fd7d82242f0>(
-
-array([
-[[3.98073395e+14, 9.80665276e+00, 0.00000000e+00],\n        
-[0.00000000e+00, 9.80665276e+00, 0.00000000e+00],\n
-  ...,\n        
-[0.00000000e+00, 9.80665276e+00, 0.00000000e+00],\n        
-[3.98073395e+14, 9.80665276e+00, 0.00000000e+00]]
-]), 
-
-
-array([
-[[9.80665584, 9.80665276, 9.80664969],\n        
-[9.80665584, 9.80665276, 9.80664969],\n        
-[9.80665584, 9.806... 9.80665276, 9.80664969],\n        
-[9.80665584, 9.80665276, 9.80664969],\n        
-[9.80665584, 9.80665276, 9.80664969]]
-]))
-E        +    where <function array_equal at 0x7fd7d82242f0> = np.array_equal
-
-tests/main/test_wam.py:633: AssertionError
-"""
