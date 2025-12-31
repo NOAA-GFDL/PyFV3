@@ -395,7 +395,7 @@ class DynamicalCore:
             comm.get_scalar_halo_updater([full_xyz_spec]), state, ["omga"], comm=comm
         )
         self._gravity_halo_updater = WrappedHaloUpdater(
-            comm.get_scalar_halo_updater([full_xyz_spec], state, ["grav_var"], comm=comm)
+            comm.get_scalar_halo_updater([full_xyz_spec]), state, ["grav_var"], comm=comm
         )
         self._n_split = config.n_split
         self._k_split = config.k_split
