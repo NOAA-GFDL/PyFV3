@@ -532,6 +532,7 @@ class LagrangianToEulerian:
         pe: FloatField,
         hs: FloatFieldIJ,
         ps: FloatFieldIJ,
+        rdg_var: FloatField,
         wsd: FloatFieldIJ,
         ak: FloatFieldK,
         bk: FloatFieldK,
@@ -645,6 +646,7 @@ class LagrangianToEulerian:
             cappa,
             delp,
             delz,
+            rdg_var,
             zvir,
         )
 
@@ -696,6 +698,7 @@ class LagrangianToEulerian:
                 pt,
                 pkz,
                 cappa,
+                rdg_var,
                 zvir,
                 mdt,
                 fast_mp_consv,

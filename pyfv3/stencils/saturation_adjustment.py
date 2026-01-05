@@ -557,6 +557,7 @@ def satadjust(
     qr: FloatField,
     qs: FloatField,
     cappa: FloatField,
+    rdg_var: FloatField,
     qg: FloatField,
     pt: FloatField,
     dp: FloatField,
@@ -597,6 +598,7 @@ def satadjust(
         qr (inout):
         qs (inout):
         cappa (out):
+        rdg_var (in):
         qg (inout):
         pt (inout):
         dp (in):
@@ -930,7 +932,7 @@ def satadjust(
                 qa = 0.0
 
         if __INLINED(not hydrostatic):
-            pkz = compute_pkz_func(dp, delz, pt, cappa)
+            pkz = compute_pkz_func(dp, delz, pt, cappa, rdg_var)
 
 
 class SatAdjust3d:
@@ -988,6 +990,7 @@ class SatAdjust3d:
         pt: FloatField,
         pkz: FloatField,
         cappa: FloatField,
+        rdg_var: FloatField,
         r_vir: Float,
         mdt: Float,
         fast_mp_consv: bool,
@@ -1069,6 +1072,7 @@ class SatAdjust3d:
             qrain,
             qsnow,
             cappa,
+            rdg_var,
             qgraupel,
             pt,
             delp,
