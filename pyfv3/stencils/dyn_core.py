@@ -100,6 +100,18 @@ def average_gravity(grav_var: FloatField, grav_var_h: FloatField):
     with computation(FORWARD), interval(...):
         grav_var[0, 0, 0] = 0.5*(grav_var_h[0, 0, 0] + grav_var_h[0, 0, 1])
 
+
+def neg_rdgas_div_gravity(rdg: FloatField, grav_var: FloatField):
+    """
+    # JK TODO: Is there a better name than this?
+    Args:
+        rdg (out): negative radiative gas divided by variable gravity
+        grav_var (in): variable gravity
+    """
+    with computation(FORWARD), interval(...):
+        rdg = - constants.RDGAS / grav_var
+
+
 def gz_from_surface_height_and_thicknesses(
     zs: FloatFieldIJ, delz: FloatField, gz: FloatField
 ):
@@ -669,6 +681,11 @@ class AcousticDynamics:
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(),
         )
+        self._neg_rdgas_div_gravity = stencil_factory.from_origin_domain(
+            neg_rdgas_div_gravity,
+            origin=grid_indexing.origin_full(),
+            domain=grid_indexing.domain_full(),
+        )
 
     # See divergence_damping.py, _get_da_min for explanation of this function
     @dace_inhibitor
@@ -809,6 +826,7 @@ class AcousticDynamics:
                 self._halo_updaters.delp__pt.wait()
                 self._halo_updaters.grav_var_h.update()
                 self._average_gravity(state.grav_var, state.grav_var_h)
+                self._neg_rdgas_div_gravity(state.rdg_var, state.grav_var)
 
             if it == n_split - 1 and end_step:
                 if self.config.use_old_omega:

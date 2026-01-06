@@ -21,7 +21,7 @@ from ndsl import (
 )
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
 from ndsl.dsl.typing import Float, FloatField
-from ndsl.constants import GRAV, RADIUS, X_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import GRAV, RDGAS, RADIUS, X_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.dsl.gt4py import stencil
 from pyfv3 import DynamicalCore, DynamicalCoreConfig, DycoreState
 from pyfv3.initialization import init_utils
@@ -142,10 +142,50 @@ def test_dycore_state_has_wam_attributes():
     dycore_state = setup_dycore_state()
     assert hasattr(dycore_state, "grav_var")
     assert hasattr(dycore_state, "grav_var_h")
+    assert hasattr(dycore_state, "rdg_var")
     # JK TODO: Is this really useful as a test?
 
 
 ############################ dyn_core.py
+def test_neg_rdgas_div_gravity() -> None:
+    nx = 5
+    ny = 5
+    nz = 2
+    n_halos = 3
+
+    example_dims = ["I", "J", "K"]
+    example_backend="numpy"
+
+    grav_var = Quantity(
+        data=np.zeros((nx, ny, nz)),
+        dims=example_dims,
+        units="grav_var units",
+        number_of_halo_points=n_halos,
+        backend=example_backend,
+    )
+
+    rdg = Quantity(
+        data=np.zeros((nx, ny, nz)),
+        dims=example_dims,
+        units="rdg units",
+        number_of_halo_points=n_halos,
+        backend=example_backend,
+    )
+
+    init_gravity_stencil = stencil(backend=example_backend, definition=init_gravity)
+    init_gravity_stencil(grav_var)
+    expected_grav_var_np = copy.deepcopy(grav_var.field[:])
+
+    neg_rdgas_div_gravity_stencil = stencil(backend=example_backend, definition=neg_rdgas_div_gravity)
+    neg_rdgas_div_gravity_stencil(rdg, grav_var)
+
+    # grav_var_h should be unchanged by the stencil
+    assert np.array_equal(grav_var.field[:], expected_grav_var_np)
+
+    expected_rdg_np = - (RDGAS / expected_grav_var_np[:])
+    assert np.array_equal(rdg.field[:], expected_rdg_np)
+
+
 def test_average_gravity() -> None:
     nx = 5
     ny = 5
