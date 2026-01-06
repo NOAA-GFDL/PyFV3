@@ -109,7 +109,7 @@ def neg_rdgas_div_gravity(rdg: FloatField, grav_var: FloatField):
         grav_var (in): variable gravity
     """
     with computation(FORWARD), interval(...):
-        rdg[0, 0, 0] = - constants.RDGAS / grav_var[0, 0, 0]
+        rdg = - constants.RDGAS / grav_var
 
 
 def gz_from_surface_height_and_thicknesses(
