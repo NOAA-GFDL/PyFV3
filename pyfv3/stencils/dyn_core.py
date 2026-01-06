@@ -273,6 +273,7 @@ class AcousticDynamics:
             divgd: Quantity,
             heat_source: Quantity,
             pkc: Quantity,
+            grav_var_h: Quantity,
         ):
             # Define the memory specification required
             # Those can be re-used as they are read-only descriptors
@@ -384,6 +385,12 @@ class AcousticDynamics:
             )
             self.interface_uc__vc = WrappedHaloUpdater(
                 None, state, ["u"], ["v"], comm=comm
+            )
+            self.grav_var_h = WrappedHaloUpdater(
+                comm.get_scalar_halo_updater([full_size_xyzi_halo_spec]),
+                state,
+                {"grav_var_h": grav_var_h},
+                ["grav_var_h"],
             )
 
     def __init__(
@@ -654,6 +661,7 @@ class AcousticDynamics:
             divgd=self._divgd,
             heat_source=self._heat_source,
             pkc=self._pkc,
+            grav_var_h=state.grav_var_h,
         )
 
         self._average_gravity = stencil_factory.from_origin_domain(
@@ -799,6 +807,7 @@ class AcousticDynamics:
                     self._halo_updaters.gz.start()
             if it == 0:
                 self._halo_updaters.delp__pt.wait()
+                self._halo_updaters.grav_var_h.update()
                 self._average_gravity(state.grav_var, state.grav_var_h)
 
             if it == n_split - 1 and end_step:

@@ -295,15 +295,15 @@ class DycoreState:
     )
     grav_var_h: Quantity = field(
         metadata={
-            "name": "variable gravity for Whole Atmosphere calculations based on height",
+            "name": "Interface gravity values",
             "units": "m s^-2",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
             "intent": "inout",
         }
     )
     grav_var: Quantity = field(
         metadata={
-            "name": "variable gravity for Whole Atmosphere calculations",
+            "name": "variable gravity",
             "units": "m s^-2",
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "intent": "inout",
