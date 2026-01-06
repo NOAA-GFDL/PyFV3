@@ -225,12 +225,9 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
             tile_rank=communicator.tile.rank,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, backend=self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         grid_data = GridData.new_from_metric_terms(metric_terms)
-        quantity_factory = QuantityFactory()
 
         state = analytic_init.init_analytic_state(
             analytic_init_case="baroclinic",
