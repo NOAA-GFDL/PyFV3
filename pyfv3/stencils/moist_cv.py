@@ -118,10 +118,9 @@ def moist_pt_last_step(
 
 
 @gtfunction
-def compute_pkz_func(delp, delz, pt, cappa):
+def compute_pkz_func(delp, delz, pt, cappa, rdg_var):
     # TODO use the exponential form for closer answer matching
-    return exp(cappa * log(constants.RDG * delp / delz * pt))
-
+    return exp(cappa * log(rdg_var * delp / delz * pt))
 
 def moist_pkz(
     qvapor: FloatField,
@@ -138,6 +137,7 @@ def moist_pkz(
     cappa: FloatField,
     delp: FloatField,
     delz: FloatField,
+    rdg_var: FloatField,
     r_vir: Float,
 ):
     """
@@ -156,6 +156,7 @@ def moist_pkz(
         cappa (out):
         delp (in):
         delz (in):
+        rdg_var (in):
         r_vir (in):
     """
     # TODO: What is happening with q_con and gz here?
@@ -165,7 +166,7 @@ def moist_pkz(
         )  # if (nwat == 6) else moist_cv_default_fn(constants.CV_AIR)
         q_con[0, 0, 0] = gz
         cappa = set_cappa(qvapor, cvm, r_vir)
-        pkz = compute_pkz_func(delp, delz, pt, cappa)
+        pkz = compute_pkz_func(delp, delz, pt, cappa, rdg_var)
 
 
 def fv_setup(

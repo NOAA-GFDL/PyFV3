@@ -670,6 +670,7 @@ class DynamicalCore:
                         state.pe,
                         state.phis,
                         state.ps,
+                        state.rdg_var,
                         self._wsd,
                         self._ak,
                         self._bk,
