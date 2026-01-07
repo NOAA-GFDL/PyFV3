@@ -15,7 +15,7 @@ from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log
 from ndsl.performance import NullTimer, Timer
-from ndsl.stencils.basic_operations import copy_defn
+from ndsl.stencils.basic_operations import copy_defn, set_value
 from ndsl.stencils.c2l_ord import CubedToLatLon
 from ndsl.typing import Checkpointer, Communicator
 from pyfv3._config import DynamicalCoreConfig
@@ -74,22 +74,6 @@ def fvdyn_temporaries(
         )
         tmps[name] = quantity
     return tmps
-
-def init_gravity(grav_var: FloatField):
-    """
-    Args:
-        grav_var (out): gravity field
-    """
-    with computation(PARALLEL), interval(...):
-        grav_var = GRAV
-
-def init_gravity_h(grav_var_h: FloatField):
-    """
-    Args:
-        grav_var_h (out): gravity field
-    """
-    with computation(PARALLEL), interval(...):
-        grav_var_h = GRAV
 
 def adjust_gravity(
         grav_var: FloatField, 
@@ -302,14 +286,9 @@ class DynamicalCore:
             domain=grid_indexing.domain_full(),
         )
         self._init_gravity = stencil_factory.from_origin_domain(
-            init_gravity,
+            set_value,
             origin=grid_indexing.origin_full(),
-            domain=grid_indexing.domain_full(),
-        )
-        self._init_gravity_h = stencil_factory.from_origin_domain(
-            init_gravity_h,
-            origin=grid_indexing.origin_full(),
-            domain=grid_indexing.domain_full(),
+            domain=grid_indexing.domain_full(add=(0,0,1)),
         )
         self._adjust_gravity = stencil_factory.from_origin_domain(
             adjust_gravity,
@@ -538,8 +517,9 @@ class DynamicalCore:
             self._dp_initial,
         )
 
-        self._init_gravity(state.grav_var)
-        self._init_gravity_h(state.grav_var_h)
+        # self._init_gravity(state.grav_var, state.grav_var_h)
+        self._init_gravity(state.grav_var, GRAV)
+        self._init_gravity(state.grav_var_h, GRAV)
 
         if self.config.enable_wam:
             self._adjust_gravity(state.grav_var, state.grav_var_h, state.phis, state.delz)

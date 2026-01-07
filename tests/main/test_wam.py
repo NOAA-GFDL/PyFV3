@@ -21,13 +21,14 @@ from ndsl import (
 )
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
 from ndsl.dsl.typing import Float, FloatField
-from ndsl.constants import GRAV, RDGAS, RADIUS, X_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import GRAV, RDGAS, RADIUS, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.dsl.gt4py import stencil
+from ndsl.stencils.basic_operations import set_value
 from pyfv3 import DynamicalCore, DynamicalCoreConfig, DycoreState
 from pyfv3.initialization import init_utils
 from pyfv3.initialization.analytic_init import AnalyticCase
 from pyfv3.stencils.dyn_core import AcousticDynamics
-from pyfv3.stencils.fv_dynamics import adjust_gravity, init_gravity, init_gravity_h
+from pyfv3.stencils.fv_dynamics import adjust_gravity
 from pyfv3.stencils.dyn_core import average_gravity, compute_geopotential
 
 # use numpy for now until I figure out how to use FloatField
@@ -172,8 +173,8 @@ def test_neg_rdgas_div_gravity() -> None:
         backend=example_backend,
     )
 
-    init_gravity_stencil = stencil(backend=example_backend, definition=init_gravity)
-    init_gravity_stencil(grav_var)
+    init_gravity_stencil = stencil(backend=example_backend, definition=set_value)
+    init_gravity_stencil(grav_var, GRAV)
     expected_grav_var_np = copy.deepcopy(grav_var.field[:])
 
     neg_rdgas_div_gravity_stencil = stencil(backend=example_backend, definition=neg_rdgas_div_gravity)
@@ -491,18 +492,25 @@ def test_init_gravity() -> None:
     grid_indexing = GridIndexing.from_sizer_and_communicator(sizer=sizer, comm=communicator)
     stencil_factory = StencilFactory(config=stencil_config, grid_indexing=grid_indexing)
     quantity_factory = QuantityFactory.from_backend(sizer=sizer, backend=backend)
-    init_gravity_stencil = stencil_factory.from_dims_halo(
-        init_gravity,
-        compute_dims=[X_DIM, Y_DIM, Z_DIM],
-        compute_halos=(n_halo, n_halo),
+    init_gravity_stencil = stencil_factory.from_origin_domain(
+        set_value,
+        origin=grid_indexing.origin_full(),
+        domain=grid_indexing.domain_full(add=(0,0,1)),
     )
     grav_var: Quantity = quantity_factory.zeros(
         [X_DIM, Y_DIM, Z_DIM],
         units="test",
         dtype=Float,
     )
-    init_gravity_stencil(grav_var)
+    grav_var_h: Quantity = quantity_factory.zeros(
+        [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+        units="test",
+        dtype=Float,
+    )
+    init_gravity_stencil(grav_var, GRAV)
+    init_gravity_stencil(grav_var_h, GRAV)
     assert np.all(grav_var.field == GRAV)
+    assert np.all(grav_var_h.field == GRAV)
     # JK TODO: There's so much setup... Find a simpler way to set of stencil and quantity?
 
 
