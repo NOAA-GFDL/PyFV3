@@ -27,6 +27,7 @@ from pyfv3 import DynamicalCore, DynamicalCoreConfig, DycoreState
 from pyfv3.initialization import init_utils
 from pyfv3.initialization.analytic_init import AnalyticCase
 from pyfv3.stencils.dyn_core import AcousticDynamics
+from pyfv3.stencils.rdg_adjust import neg_rdgas_div_gravity
 from pyfv3.stencils.fv_dynamics import adjust_gravity, init_gravity, init_gravity_h
 from pyfv3.stencils.dyn_core import average_gravity, compute_geopotential
 
