@@ -27,8 +27,8 @@ from pyfv3 import DynamicalCore, DynamicalCoreConfig, DycoreState
 from pyfv3.initialization import init_utils
 from pyfv3.initialization.analytic_init import AnalyticCase
 from pyfv3.stencils.dyn_core import AcousticDynamics
-from pyfv3.stencils.fv_dynamics import adjust_gravity, adjust_gravity_h, init_gravity, init_gravity_h
-from pyfv3.stencils.dyn_core import average_gravity, compute_geopotential, neg_rdgas_div_gravity
+from pyfv3.stencils.fv_dynamics import adjust_gravity, init_gravity, init_gravity_h
+from pyfv3.stencils.dyn_core import average_gravity, compute_geopotential
 
 # use numpy for now until I figure out how to use FloatField
 import numpy as np # JK TODO: Should I be using xumpy?
@@ -505,96 +505,6 @@ def test_init_gravity() -> None:
     assert np.all(grav_var.field == GRAV)
     # JK TODO: There's so much setup... Find a simpler way to set of stencil and quantity?
 
-def test_init_gravity_h() -> None:
-    # Check that init_gravity sets 3d grav_var_h to constant GRAV for all vals
-    # same as above? Why is init_gravity and init_gravity_h the same? maybe will be different in future?
-
-    # Using 01_gt4py_basics.ipynb for a simpler approach than test_init_gravity()
-    nx = 5
-    ny = 5
-    nz = 2
-    shape = (nx, ny, nz+1)
-    n_halos = 3
-
-    example_data = np.zeros(shape)
-    example_dims = ["I", "J", "K"]
-    example_units = "test units"
-    example_backend="numpy"
-
-    example_qty = Quantity(
-        data=example_data,
-        dims=example_dims,
-        units=example_units,
-        number_of_halo_points=n_halos,
-        backend=example_backend,
-    )
-
-    init_gravity_h_numpy = stencil(backend=example_backend, definition=init_gravity_h)
-    init_gravity_h_numpy(example_qty)
-
-    assert np.all(example_qty.field == GRAV)
-
-
-def test_adjust_gravity_h() -> None:
-    # Check that adjust_gravity_h sets grav_var_h appropriately
-    nx = 5
-    ny = 5
-    nz = 2
-    n_halos = 3
-
-    example_dims = ["I", "J", "K"]
-    example_backend="numpy"
-
-    grav_var_h = Quantity(
-        data=np.zeros((nx, ny, nz+1)),
-        dims=example_dims,
-        units="grav_var_h units",
-        number_of_halo_points=n_halos,
-        backend=example_backend,
-    )
-
-    phis = Quantity(
-        data=np.ones((nx, ny)),
-        dims=["I", "J"],
-        units="phis units",
-        number_of_halo_points=n_halos,
-        backend=example_backend,
-    )
-
-    adjust_gravity_h_stencil = stencil(backend=example_backend, definition=adjust_gravity_h)
-    adjust_gravity_h_stencil(grav_var_h, phis)
-
-    # Check that phis is unchanged
-    assert np.array_equal(phis.field[:], np.ones((nx, ny)))
-
-    # Check that grav_var_h is as expected
-
-    ##### Stencil:
-    # with computation(FORWARD), interval(-1,None):
-    #     newrad = RADIUS + (phis/GRAV)
-    #     grav_var_h = GRAV*(RADIUS**2)/newrad**2
-    ##### Fortran:
-    #    do j=js,je
-    #      do i=is,ie
-    #        newrad(i,j) = radius + (phis(i,j)/grav)
-    #        grav_var_h(i,j,npz+1) = grav*((radius**2)/(newrad(i,j)**2))
-    #      enddo
-    #    enddo
-
-    newrad = np.zeros((nx, ny))
-    expected_grav_var_h_np = np.zeros((nx, ny, nz+1))
-
-    newrad[:,:] = RADIUS + (phis/GRAV)
-    expected_grav_var_h_np[:,:,-1] += GRAV*(RADIUS**2)/newrad**2
-
-    # Iterative sanity check:
-    #for j in range(ny):
-    #    for i in range(nx):
-    #        newrad[i,j] = RADIUS + (phis.field[i,j]/GRAV)
-    #        expected_grav_var_h_np[i,j,-1] += GRAV*(RADIUS**2)/newrad[i,j]**2
-
-    assert np.array_equal(grav_var_h.field[:], expected_grav_var_h_np)
-
 
 def test_adjust_gravity() -> None:
     # Check that adjust_gravity sets grav_var and grav_var_h are set appropriately
@@ -654,11 +564,14 @@ def test_adjust_gravity() -> None:
 
     for j in range(ny):
         for i in range(nx):
-            for k in range(nz-1, -1, -1):
-                newrad[i,j] = RADIUS + (phis.field[i,j]/GRAV)
-                newrad[i,j] = newrad[i,j] - delz.field[i,j,k]
+            for k in range(nz, -1, -1):
+                if k == nz:
+                    newrad[i,j] = RADIUS + (phis.field[i,j]/GRAV)
+                else:
+                    newrad[i,j] = newrad[i,j] - delz.field[i,j,k]
                 expected_grav_var_h_np[i,j,k] = GRAV*((RADIUS**2)/(newrad[i,j]**2))
-                expected_grav_var_np[i,j,k] = 0.5*(expected_grav_var_h_np[i,j,k+1]+expected_grav_var_h_np[i,j,k])
+                if k < nz:
+                    expected_grav_var_np[i,j,k] = 0.5*(expected_grav_var_h_np[i,j,k+1]+expected_grav_var_h_np[i,j,k])
 
     # JK TODO: is there some rtol/atol threshold? the np vs stencil calculations are close but not exact.
     assert np.allclose(grav_var_h.field[:], expected_grav_var_h_np)
