@@ -31,6 +31,7 @@ def precompute(
     ptop: Float,
     peln1: Float,
     ptk: Float,
+    grav_var: FloatField,
 ):
     """
     Args:
@@ -48,6 +49,10 @@ def precompute(
         dz (out):
         p_gas (out): pressure defined at vertical mid levels due to gas-phase
             only, excluding condensates (Pa)
+        ptop (in):
+        peln1 (in):
+        ptk (in):
+        grav_var (in): variable gravity
     """
     with computation(PARALLEL), interval(...):
         delta_mass = delp
@@ -73,7 +78,7 @@ def precompute(
             pk3 = exp(constants.KAPPA * log_p_interface)
     with computation(PARALLEL), interval(...):
         gamma = 1.0 / (1.0 - cappa)  # gamma, cp/cv
-        delta_mass = delta_mass * constants.RGRAV
+        delta_mass = delta_mass / grav_var
     with computation(PARALLEL), interval(0, -1):
         p_gas = (p_interface_gas[0, 0, 1] - p_interface_gas) / (
             log_p_interface_gas[0, 0, 1] - log_p_interface_gas
@@ -232,6 +237,7 @@ class NonhydrostaticVerticalSolver:
         pk: FloatField,
         log_p_interface: FloatField,
         w: FloatFieldIJ,
+        grav_var: FloatField,
     ):
         """
         Solves for the nonhydrostatic terms for vertical velocity (w)
@@ -262,6 +268,7 @@ class NonhydrostaticVerticalSolver:
             log_p_interface (out): logarithm of interface pressure,
                 only written if last_call=True
             w (inout): vertical velocity
+            grav_var (in): variable gravity
         """
 
         # TODO: propagate variable renaming for these into stencils here and
@@ -298,6 +305,7 @@ class NonhydrostaticVerticalSolver:
             ptop,
             peln1,
             ptk,
+            grav_var,
         )
 
         self._sim1_solve(

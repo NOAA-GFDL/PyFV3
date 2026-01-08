@@ -22,6 +22,7 @@ def precompute(
     gm: FloatField,
     pm: FloatField,
     ptop: Float,
+    grav_var: FloatField,
 ):
     """
     Args:
@@ -40,6 +41,8 @@ def precompute(
         pm (out): hydrostatic cell mean pressure, derivation in documentation
             (Chapter 4? 7?)
             TODO: identify chapter reference, will be sent by Lucas
+        ptop (in):
+        grav_var (in): variable gravity
     """
     with computation(PARALLEL), interval(...):
         dm = delpc
@@ -57,7 +60,7 @@ def precompute(
         dz = gz[0, 0, 1] - gz
     with computation(PARALLEL), interval(...):
         gm = 1.0 / (1.0 - cappa)
-        dm /= constants.GRAV
+        dm /= grav_var
     with computation(PARALLEL), interval(0, -1):
         # (1) From \partial p*/\partial z = -\rho g, we can separate and integrate
         # over a layer to get
@@ -87,6 +90,7 @@ def finalize(
     pef: FloatField,
     gz: FloatField,
     ptop: Float,
+    grav_var: FloatField,
 ):
     """
     Enforce vertical boundary conditions.
@@ -101,6 +105,8 @@ def finalize(
         dz (in):
         pef (out):
         gz (out):
+        ptop (in):
+        grav_var (in): variable gravity
     """
     with computation(PARALLEL):
         with interval(0, 1):
@@ -111,7 +117,7 @@ def finalize(
         with interval(-1, None):
             gz = hs
         with interval(0, -1):
-            gz = gz[0, 0, 1] - dz * constants.GRAV
+            gz = gz[0, 0, 1] - dz * grav_var
 
 
 class NonhydrostaticVerticalSolverCGrid:
@@ -201,6 +207,7 @@ class NonhydrostaticVerticalSolverCGrid:
         gz: FloatField,
         pef: FloatField,
         w3: FloatField,
+        grav_var: FloatField,
     ):
         """
         Solves for the nonhydrostatic terms for vertical velocity (w)
@@ -219,6 +226,7 @@ class NonhydrostaticVerticalSolverCGrid:
            gz (inout): geopotential height
            pef (out): full hydrostatic pressure
            w3 (in): vertical velocity
+           grav_var (in): variable gravity
         """
 
         # TODO: integrate these notes into comments/code, double-check:
@@ -266,4 +274,6 @@ class NonhydrostaticVerticalSolverCGrid:
             ws,
         )
         # pe is nonhydrostatic perturbation pressure defined on interfaces
-        self._finalize_stencil(self._pe, self._pem, hs, self._dz, pef, gz, ptop)
+        self._finalize_stencil(
+            self._pe, self._pem, hs, self._dz, pef, gz, ptop, grav_var
+        )

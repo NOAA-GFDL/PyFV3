@@ -894,6 +894,7 @@ class AcousticDynamics:
                     self._gz,
                     self._pkc,
                     state.omga,
+                    state.grav_var,
                 )
 
             self._p_grad_c(
@@ -981,6 +982,7 @@ class AcousticDynamics:
                     state.pk,
                     state.peln,
                     state.w,
+                    state.grav_var,
                 )
 
                 self._halo_updaters.zh.start()
