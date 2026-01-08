@@ -312,7 +312,7 @@ class DycoreState:
     rdg_var: Quantity = field(
         metadata={
             "name": "gas constant for dry air over variable gravity (RDGAS / grav_var) for Whole Atmosphere calculations",
-            "units": "(J/kg/deg) / (m s^-2)", # JK TODO: What are the units?
+            "units": "(J/kg/deg) / (m s^-2)",  # JK TODO: What are the units?
             "dims": [X_DIM, Y_DIM, Z_DIM],
             "intent": "inout",
         }

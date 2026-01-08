@@ -1,8 +1,10 @@
-from pathlib import Path
-from dataclasses import field
-from datetime import timedelta
-from typing import Tuple
 import copy
+from datetime import timedelta
+from pathlib import Path
+from typing import Tuple
+
+# use numpy for now until I figure out how to use FloatField
+import numpy as np  # JK TODO: Should I be using xumpy?
 
 import pyfv3.initialization.analytic_init as ai
 from ndsl import (
@@ -19,27 +21,23 @@ from ndsl import (
     SubtileGridSizer,
     TilePartitioner,
 )
-from ndsl.grid import DampingCoefficients, GridData, MetricTerms
-from ndsl.dsl.typing import Float, FloatField
-from ndsl.constants import GRAV, RDGAS, RADIUS, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.constants import GRAV, RADIUS, RDGAS, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.dsl.gt4py import stencil
+from ndsl.dsl.typing import Float
+from ndsl.grid import DampingCoefficients, GridData, MetricTerms
 from ndsl.stencils.basic_operations import set_value
-from pyfv3 import DynamicalCore, DynamicalCoreConfig, DycoreState
-from pyfv3.initialization import init_utils
+from pyfv3 import DycoreState, DynamicalCore, DynamicalCoreConfig
 from pyfv3.initialization.analytic_init import AnalyticCase
-from pyfv3.stencils.dyn_core import AcousticDynamics
-from pyfv3.stencils.fv_dynamics import adjust_gravity
-from pyfv3.stencils.dyn_core import average_gravity, compute_geopotential
+from pyfv3.stencils.dyn_core import AcousticDynamics, compute_geopotential
+from pyfv3.stencils.gravity import adjust_gravity, average_gravity_stencil_defn
 
-# use numpy for now until I figure out how to use FloatField
-import numpy as np # JK TODO: Should I be using xumpy?
 
-# JK NOTE TODO: Just sticking things in here for now, will distribute them into their right
-# places in the future.
+# JK NOTE TODO: Just sticking things in here for now,
+# will distribute them into their right places in the future.
 
 
 def test_enable_wam() -> None:
-    # Set up dycore config with enable_wam = True 
+    # Set up dycore config with enable_wam = True
     # Set up dycore
     # Check that gravity is variable and grav_var and grav_var_h are used somehow?
     # maybe call to compute_geopotential?
@@ -51,8 +49,8 @@ def test_enable_wam() -> None:
 
     # TODO assert that something is different between wam_enabled = False
     # JK NOTE: I have to find out what to test.....
-    
-    assert False # TODO
+
+    assert False  # TODO
 
 
 ############################ dyncore_state.py
@@ -117,7 +115,7 @@ def setup_dycore_state() -> DycoreState:
         tile_rank=communicator.tile.rank,
     )
     quantity_factory = QuantityFactory.from_backend(sizer=sizer, backend=backend)
-    #eta_file = Path("tests/data/eta79.nc")
+    # eta_file = Path("tests/data/eta79.nc")
     eta_file = Path(__file__).resolve().parents[1] / "data" / "eta79.nc"
     metric_terms = MetricTerms(
         quantity_factory=quantity_factory,
@@ -155,7 +153,7 @@ def test_neg_rdgas_div_gravity() -> None:
     n_halos = 3
 
     example_dims = ["I", "J", "K"]
-    example_backend="numpy"
+    example_backend = "numpy"
 
     grav_var = Quantity(
         data=np.zeros((nx, ny, nz)),
@@ -177,13 +175,15 @@ def test_neg_rdgas_div_gravity() -> None:
     init_gravity_stencil(grav_var, GRAV)
     expected_grav_var_np = copy.deepcopy(grav_var.field[:])
 
-    neg_rdgas_div_gravity_stencil = stencil(backend=example_backend, definition=neg_rdgas_div_gravity)
+    neg_rdgas_div_gravity_stencil = stencil(
+        backend=example_backend, definition=neg_rdgas_div_gravity
+    )
     neg_rdgas_div_gravity_stencil(rdg, grav_var)
 
     # grav_var_h should be unchanged by the stencil
     assert np.array_equal(grav_var.field[:], expected_grav_var_np)
 
-    expected_rdg_np = - (RDGAS / expected_grav_var_np[:])
+    expected_rdg_np = -(RDGAS / expected_grav_var_np[:])
     assert np.array_equal(rdg.field[:], expected_rdg_np)
 
 
@@ -194,7 +194,7 @@ def test_average_gravity() -> None:
     n_halos = 3
 
     example_dims = ["I", "J", "K"]
-    example_backend="numpy"
+    example_backend = "numpy"
 
     grav_var = Quantity(
         data=np.zeros((nx, ny, nz)),
@@ -204,7 +204,7 @@ def test_average_gravity() -> None:
         backend=example_backend,
     )
 
-    grav_var_h_np = np.random.random((nx, ny, nz+1))
+    grav_var_h_np = np.random.random((nx, ny, nz + 1))
     expected_grav_var_h_np = copy.deepcopy(grav_var_h_np)
     grav_var_h = Quantity(
         data=grav_var_h_np,
@@ -213,14 +213,18 @@ def test_average_gravity() -> None:
         number_of_halo_points=n_halos,
         backend=example_backend,
     )
-    
-    average_gravity_numpy = stencil(backend=example_backend, definition=average_gravity)
+
+    average_gravity_numpy = stencil(
+        backend=example_backend, definition=average_gravity_stencil_defn
+    )
     average_gravity_numpy(grav_var, grav_var_h)
 
     # grav_var_h should be unchanged by the stencil
     assert np.array_equal(grav_var_h.field[:], expected_grav_var_h_np)
 
-    expected_grav_var_np = (expected_grav_var_h_np[:,:,:-1]+expected_grav_var_h_np[:,:,1:]) / 2
+    expected_grav_var_np = (
+        expected_grav_var_h_np[:, :, :-1] + expected_grav_var_h_np[:, :, 1:]
+    ) / 2
     assert np.array_equal(grav_var.field[:], expected_grav_var_np)
 
 
@@ -231,9 +235,9 @@ def test_compute_geopotential() -> None:
     n_halos = 3
 
     example_dims = ["I", "J", "K"]
-    example_backend="numpy"
+    example_backend = "numpy"
 
-    grav_var_h_np = np.random.random((nx, ny, nz+1))
+    grav_var_h_np = np.random.random((nx, ny, nz + 1))
     expected_grav_var_h_np = copy.deepcopy(grav_var_h_np)
     grav_var_h = Quantity(
         data=grav_var_h_np,
@@ -263,7 +267,9 @@ def test_compute_geopotential() -> None:
         backend=example_backend,
     )
 
-    compute_geopotential_np = stencil(backend=example_backend, definition=compute_geopotential)
+    compute_geopotential_np = stencil(
+        backend=example_backend, definition=compute_geopotential
+    )
     compute_geopotential_np(zh, gz, grav_var_h)
 
     # Check that zh and grav_var_h are unchanged
@@ -273,7 +279,7 @@ def test_compute_geopotential() -> None:
     # Check that gz = zh * grav_var_h
     assert not np.array_equal(gz.field[:], gz_np_copy)
     # JK TODO: Is the expected_gz_np calculated correctly? double check with fortran or frank...
-    expected_gz_np = zh_np * grav_var_h_np[:,:,:-1]
+    expected_gz_np = zh_np * grav_var_h_np[:, :, :-1]
     assert np.array_equal(gz.field[:], expected_gz_np)
 
 
@@ -388,6 +394,7 @@ def setup_acoustic_dynamics(npx, npy, n_halo) -> Tuple[AcousticDynamics, DycoreS
     # JK TODO simplify this please, if possible...
     return dycore.acoustic_dynamics, state
 
+
 def test_acoustic_dynamics_init_average_gravity() -> None:
     # Check that average gravity is called/used in AcousticDynamics initialization
 
@@ -397,12 +404,14 @@ def test_acoustic_dynamics_init_average_gravity() -> None:
     n_halo = 3
 
     # JK TODO: Why does the config need npx = nx-(2*n_halo)+1
-    ac_dyn, _ = setup_acoustic_dynamics(nx-(2*n_halo)+1, ny-(2*n_halo)+1, n_halo) # nz is hard-coded to 79
+    ac_dyn, _ = setup_acoustic_dynamics(
+        nx - (2 * n_halo) + 1, ny - (2 * n_halo) + 1, n_halo
+    )  # nz is hard-coded to 79
 
     # JK TODO: switch from example grav_var, grav_var_h to state.grav_var, state.grav_var_h
 
     example_dims = ["I", "J", "K"]
-    example_backend="numpy"
+    example_backend = "numpy"
 
     grav_var = Quantity(
         data=np.zeros((nx, ny, nz)),
@@ -412,7 +421,7 @@ def test_acoustic_dynamics_init_average_gravity() -> None:
         backend=example_backend,
     )
 
-    grav_var_h_np = np.random.random((nx, ny, nz+1))
+    grav_var_h_np = np.random.random((nx, ny, nz + 1))
     expected_grav_var_h_np = copy.deepcopy(grav_var_h_np)
     grav_var_h = Quantity(
         data=grav_var_h_np,
@@ -428,7 +437,9 @@ def test_acoustic_dynamics_init_average_gravity() -> None:
     # grav_var_h should be unchanged by the stencil
     assert np.array_equal(grav_var_h.field[:], expected_grav_var_h_np)
 
-    expected_grav_var_np = (expected_grav_var_h_np[:,:,:-1]+expected_grav_var_h_np[:,:,1:]) / 2
+    expected_grav_var_np = (
+        expected_grav_var_h_np[:, :, :-1] + expected_grav_var_h_np[:, :, 1:]
+    ) / 2
     assert np.array_equal(grav_var.field[:], expected_grav_var_np)
 
 
@@ -438,28 +449,33 @@ def test_acoustic_dynamics_call_average_gravity() -> None:
     ny = 12
     nz = 79
     n_halo = 3
-    timestep = 225 # JK TODO: Is this right?
+    timestep = 225  # JK TODO: Is this right?
 
     # JK TODO: Why does the config need npx = nx-(2*n_halo)+1
-    ac_dyn, state = setup_acoustic_dynamics(nx-(2*n_halo)+1, ny-(2*n_halo)+1, n_halo) # nz is hard-coded to 79
+    ac_dyn, state = setup_acoustic_dynamics(
+        nx - (2 * n_halo) + 1, ny - (2 * n_halo) + 1, n_halo
+    )  # nz is hard-coded to 79
 
     init_grav_var_np = copy.deepcopy(state.grav_var.field)
     init_grav_var_h_np = copy.deepcopy(state.grav_var_h.field)
 
     ac_dyn(state, timestep)
-    
+
     # The state.grav_var_h should be unchanged by the stencil.
     assert np.array_equal(state.grav_var_h.field[:], init_grav_var_h_np)
 
     # Check that the state.grav_var values match expectation:
-    expected_grav_var_np = (init_grav_var_h_np[:,:,:-1]+init_grav_var_h_np[:,:,1:]) / 2
+    expected_grav_var_np = (
+        init_grav_var_h_np[:, :, :-1] + init_grav_var_h_np[:, :, 1:]
+    ) / 2
     assert np.array_equal(state.grav_var.field[:], expected_grav_var_np)
+
 
 """
 E        +  where False = <function array_equal at 0x7fd9f38750b0>(
 
 array([
-[[0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n ...\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.]]]), 
+[[0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n ...\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.]]]),
 
 array([[[0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n ...\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.]]]))
 
@@ -469,17 +485,22 @@ E        +    where <function array_equal at 0x7fd9f38750b0> = np.array_equal
 
 ############################ fv_dynamics.py
 
+
 def test_init_gravity() -> None:
     # Check that init_gravity sets 3d grav_var to the constant GRAV for all vals
     backend = "numpy"
     nx_tile, ny_tile, nz, n_halo = 6, 6, 2, 3
-    layout = (1,1)
+    layout = (1, 1)
     partitioner = CubedSpherePartitioner(TilePartitioner(layout))
     mpi_comm = NullComm(rank=0, total_ranks=6, fill_value=0.0)
     communicator = CubedSphereCommunicator(mpi_comm, partitioner)
-    compilation_config = CompilationConfig(backend=backend, rebuild=False, validate_args=True)
+    compilation_config = CompilationConfig(
+        backend=backend, rebuild=False, validate_args=True
+    )
     dace_config = DaceConfig(communicator=communicator, backend=backend)
-    stencil_config = StencilConfig(compilation_config=compilation_config, dace_config=dace_config)
+    stencil_config = StencilConfig(
+        compilation_config=compilation_config, dace_config=dace_config
+    )
     sizer = SubtileGridSizer.from_tile_params(
         nx_tile=nx_tile,
         ny_tile=ny_tile,
@@ -487,15 +508,17 @@ def test_init_gravity() -> None:
         n_halo=n_halo,
         layout=layout,
         tile_partitioner=partitioner.tile,
-        tile_rank=communicator.tile.rank
+        tile_rank=communicator.tile.rank,
     )
-    grid_indexing = GridIndexing.from_sizer_and_communicator(sizer=sizer, comm=communicator)
+    grid_indexing = GridIndexing.from_sizer_and_communicator(
+        sizer=sizer, comm=communicator
+    )
     stencil_factory = StencilFactory(config=stencil_config, grid_indexing=grid_indexing)
     quantity_factory = QuantityFactory.from_backend(sizer=sizer, backend=backend)
     init_gravity_stencil = stencil_factory.from_origin_domain(
         set_value,
         origin=grid_indexing.origin_full(),
-        domain=grid_indexing.domain_full(add=(0,0,1)),
+        domain=grid_indexing.domain_full(add=(0, 0, 1)),
     )
     grav_var: Quantity = quantity_factory.zeros(
         [X_DIM, Y_DIM, Z_DIM],
@@ -522,7 +545,7 @@ def test_adjust_gravity() -> None:
     n_halos = 3
 
     example_dims = ["I", "J", "K"]
-    example_backend="numpy"
+    example_backend = "numpy"
 
     grav_var = Quantity(
         data=np.zeros((nx, ny, nz)),
@@ -533,7 +556,7 @@ def test_adjust_gravity() -> None:
     )
 
     grav_var_h = Quantity(
-        data=np.zeros((nx, ny, nz+1)),
+        data=np.zeros((nx, ny, nz + 1)),
         dims=example_dims,
         units="grav_var_h units",
         number_of_halo_points=n_halos,
@@ -566,24 +589,29 @@ def test_adjust_gravity() -> None:
     # Check that grav_var and grav_var_h are set appropriately
     newrad = np.zeros((nx, ny))
     expected_grav_var_np = np.zeros((nx, ny, nz))
-    expected_grav_var_h_np = np.zeros((nx, ny, nz+1))
-    
+    expected_grav_var_h_np = np.zeros((nx, ny, nz + 1))
+
     assert np.array_equal(grav_var_h.field[:].shape, expected_grav_var_h_np.shape)
 
     for j in range(ny):
         for i in range(nx):
             for k in range(nz, -1, -1):
                 if k == nz:
-                    newrad[i,j] = RADIUS + (phis.field[i,j]/GRAV)
+                    newrad[i, j] = RADIUS + (phis.field[i, j] / GRAV)
                 else:
-                    newrad[i,j] = newrad[i,j] - delz.field[i,j,k]
-                expected_grav_var_h_np[i,j,k] = GRAV*((RADIUS**2)/(newrad[i,j]**2))
+                    newrad[i, j] = newrad[i, j] - delz.field[i, j, k]
+                expected_grav_var_h_np[i, j, k] = GRAV * (
+                    (RADIUS**2) / (newrad[i, j] ** 2)
+                )
                 if k < nz:
-                    expected_grav_var_np[i,j,k] = 0.5*(expected_grav_var_h_np[i,j,k+1]+expected_grav_var_h_np[i,j,k])
+                    expected_grav_var_np[i, j, k] = 0.5 * (
+                        expected_grav_var_h_np[i, j, k + 1]
+                        + expected_grav_var_h_np[i, j, k]
+                    )
 
     # JK TODO: is there some rtol/atol threshold? the np vs stencil calculations are close but not exact.
     assert np.allclose(grav_var_h.field[:], expected_grav_var_h_np)
     assert np.allclose(grav_var.field[:], expected_grav_var_np)
-    
+
 
 # TODO JK NOTE to self --- checkout log_on_rank_0 for values that might be useful for test (possibly)

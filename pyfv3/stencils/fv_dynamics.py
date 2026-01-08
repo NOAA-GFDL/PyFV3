@@ -4,14 +4,15 @@ from datetime import timedelta
 from dace.frontend.python.interface import nounroll as dace_no_unroll
 
 import ndsl.dsl.gt4py_utils as utils
+import pyfv3.stencils.gravity as gravity
 import pyfv3.stencils.moist_cv as moist_cv
 from ndsl import Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater
 from ndsl.checkpointer import NullCheckpointer
 from ndsl.comm.mpi import MPI
-from ndsl.constants import KAPPA, NQ, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM, ZVIR, GRAV, RADIUS
+from ndsl.constants import GRAV, KAPPA, NQ, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM, ZVIR
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
-from ndsl.dsl.gt4py import FORWARD, BACKWARD, PARALLEL, computation, interval
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from ndsl.dsl.gt4py import PARALLEL, computation, interval
+from ndsl.dsl.typing import Float, FloatField
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log
 from ndsl.performance import NullTimer, Timer
@@ -74,29 +75,6 @@ def fvdyn_temporaries(
         )
         tmps[name] = quantity
     return tmps
-
-def adjust_gravity(
-        grav_var: FloatField, 
-        grav_var_h: FloatField, 
-        phis: FloatFieldIJ,
-        delz: FloatField,
-):
-    """
-    Args:
-        grav_var (out): gravity field
-        grav_var_h (out): height based gravity
-        phis (out): 
-        delz (out):
-    """
-    with computation(FORWARD), interval(-1,None):
-        newrad = RADIUS + (phis/GRAV)
-        grav_var_h = GRAV*(RADIUS**2)/newrad**2
-
-    with computation(BACKWARD), interval(0,-1):
-        newrad = RADIUS + (phis/GRAV)
-        newrad = newrad - delz
-        grav_var_h = GRAV*(RADIUS**2)/newrad**2
-        grav_var = 0.5*(grav_var_h[0, 0, 1] + grav_var_h[0, 0, 0])
 
 
 @dace_inhibitor
@@ -288,12 +266,12 @@ class DynamicalCore:
         self._init_gravity = stencil_factory.from_origin_domain(
             set_value,
             origin=grid_indexing.origin_full(),
-            domain=grid_indexing.domain_full(add=(0,0,1)),
+            domain=grid_indexing.domain_full(add=(0, 0, 1)),
         )
         self._adjust_gravity = stencil_factory.from_origin_domain(
-            adjust_gravity,
+            gravity.adjust_gravity,
             origin=grid_indexing.origin_full(),
-            domain=grid_indexing.domain_full(add=(0,0,1)),
+            domain=grid_indexing.domain_full(add=(0, 0, 1)),
         )
         self.acoustic_dynamics = AcousticDynamics(
             comm=comm,
@@ -360,7 +338,10 @@ class DynamicalCore:
             comm.get_scalar_halo_updater([full_xyz_spec]), state, ["omga"], comm=comm
         )
         self._gravity_halo_updater = WrappedHaloUpdater(
-            comm.get_scalar_halo_updater([full_xyz_spec]), state, ["grav_var"], comm=comm
+            comm.get_scalar_halo_updater([full_xyz_spec]),
+            state,
+            ["grav_var"],
+            comm=comm,
         )
         self._n_split = config.n_split
         self._k_split = config.k_split
@@ -517,12 +498,14 @@ class DynamicalCore:
             self._dp_initial,
         )
 
-        # self._init_gravity(state.grav_var, state.grav_var_h)
         self._init_gravity(state.grav_var, GRAV)
         self._init_gravity(state.grav_var_h, GRAV)
 
         if self.config.enable_wam:
-            self._adjust_gravity(state.grav_var, state.grav_var_h, state.phis, state.delz)
+            self._adjust_gravity(
+                state.grav_var, state.grav_var_h, state.phis, state.delz
+            )
+            self._gravity_halo_updater.update()
 
         if self._conserve_total_energy > 0:
             raise NotImplementedError(
@@ -649,7 +632,9 @@ class DynamicalCore:
                     )
                     self._checkpoint_remapping_out(state)
                     if self.config.enable_wam:
-                        self._adjust_gravity(state.grav_var, state.grav_var_h, state.phis, state.delz)
+                        self._adjust_gravity(
+                            state.grav_var, state.grav_var_h, state.phis, state.delz
+                        )
                 # TODO: can we pull this block out of the loop intead of
                 # using an if-statement?
                 if last_step:

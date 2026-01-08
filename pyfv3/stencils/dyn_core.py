@@ -6,6 +6,7 @@ from dace.frontend.python.interface import nounroll as dace_nounroll
 import ndsl.constants as constants
 import ndsl.stencils.basic_operations as basic
 import pyfv3.stencils.d_sw as d_sw
+import pyfv3.stencils.gravity as gravity
 import pyfv3.stencils.nh_p_grad as nh_p_grad
 import pyfv3.stencils.pe_halo as pe_halo
 import pyfv3.stencils.ray_fast as ray_fast
@@ -91,16 +92,6 @@ def zero_data(
                 diss_estd = 0.0
 
 
-def average_gravity(grav_var: FloatField, grav_var_h: FloatField):
-    """
-    Args:
-        grav_var (out): gravity field
-        grav_var_h (in): gravity value at height
-    """
-    with computation(FORWARD), interval(...):
-        grav_var[0, 0, 0] = 0.5*(grav_var_h[0, 0, 0] + grav_var_h[0, 0, 1])
-
-
 def neg_rdgas_div_gravity(rdg: FloatField, grav_var: FloatField):
     """
     # JK TODO: Is there a better name than this?
@@ -109,7 +100,7 @@ def neg_rdgas_div_gravity(rdg: FloatField, grav_var: FloatField):
         grav_var (in): variable gravity
     """
     with computation(FORWARD), interval(...):
-        rdg = - constants.RDGAS / grav_var
+        rdg = -constants.RDGAS / grav_var
 
 
 def gz_from_surface_height_and_thicknesses(
@@ -677,10 +668,11 @@ class AcousticDynamics:
         )
 
         self._average_gravity = stencil_factory.from_origin_domain(
-            average_gravity,
+            gravity.average_gravity_stencil_defn,
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(),
         )
+
         self._neg_rdgas_div_gravity = stencil_factory.from_origin_domain(
             neg_rdgas_div_gravity,
             origin=grid_indexing.origin_full(),
