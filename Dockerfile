@@ -1,9 +1,5 @@
 FROM python:3.11-slim-bookworm@sha256:7cd3fa11d619688317226bc93dc59bc8966e9aec6bc2a6abb847e8ab7d656706
 
-RUN apt-get update &&\
-    apt install -y --no-install-recommends \
-    software-properties-common
-
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends\
     g++ \

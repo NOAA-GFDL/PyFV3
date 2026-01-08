@@ -29,7 +29,7 @@ BUILD_FLAGS ?=
 VOLUMES ?=
 
 ifeq ($(DEV), y)
-	VOLUMES += -v $(CWD):/pyFV3
+	VOLUMES += -v $(CWD):/pyfv3
 endif
 
 TEST_DATA_TARFILE = $(TEST_DATA_VERSION)_$(TEST_CONFIG)_$(TEST_TYPE).tar.gz
@@ -78,9 +78,10 @@ dev:
 	DEV=y $(MAKE) enter
 
 notebook:
+	$(VOLUMES) += -v $(CWD):/examples
 	CMD="jupyter notebook --ip 0.0.0.0 --no-browser --allow-root --notebook-dir=$(ROOT_DIR)/examples/notebook" \
 	DEV=y \
-	$(MAKE) enter
+	$(MAKE) dev
 
 get_test_data:
 	if [ ! -d $(TEST_DATA_LOC) ]; then \
