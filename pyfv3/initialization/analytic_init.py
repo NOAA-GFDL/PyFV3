@@ -86,7 +86,7 @@ def init_analytic_state(
                 hydrostatic=hydrostatic,
                 comm=comm,
             )
-        elif analytic_init_case == AnalyticCase.tropicalcyclone:
+        elif analytic_init_case == AnalyticCase.aquaplanet:
             return aq.init_aquaplanet_state(
                 grid_data=grid_data,
                 quantity_factory=quantity_factory,
