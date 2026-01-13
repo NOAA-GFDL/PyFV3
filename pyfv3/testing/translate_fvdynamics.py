@@ -7,7 +7,6 @@ from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, StencilFactory
-from ndsl.comm import Comm
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,
@@ -19,6 +18,7 @@ from ndsl.constants import (
 from ndsl.grid import GridData
 from ndsl.performance import NullTimer
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
+from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import fv_dynamics
@@ -299,7 +299,9 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         for name in to_delete:
             del input_storages[name]
 
-        return DycoreState.init_from_storages(input_storages, sizer=self.grid.sizer)
+        return DycoreState.init_from_storages(
+            input_storages, sizer=self.grid.sizer, backend=self.grid.backend
+        )
 
     def prepare_data(self, inputs: dict) -> tuple[DycoreState, GridData]:
         for name in ("ak", "bk"):
@@ -319,7 +321,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         state = self.state_from_inputs(inputs)
         return state, grid_data
 
-    def compute_parallel(self, inputs: dict, communicator: Comm) -> dict:
+    def compute_parallel(self, inputs: dict, communicator: Communicator) -> dict:
         state, grid_data = self.prepare_data(inputs)
         self.dycore = fv_dynamics.DynamicalCore(
             comm=communicator,

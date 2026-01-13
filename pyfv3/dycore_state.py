@@ -321,7 +321,9 @@ class DycoreState:
                     dtype=Float,
                 ).data
         return cls.init_from_storages(
-            storages=initial_storages, sizer=quantity_factory.sizer
+            storages=initial_storages,
+            sizer=quantity_factory.sizer,
+            backend=quantity_factory.backend,
         )
 
     @classmethod
@@ -346,8 +348,7 @@ class DycoreState:
                     extent=sizer.get_extent(dims),
                     backend=backend,
                 )
-        state = cls(**dict_state)
-        return state
+        return cls(**dict_state)  # type: ignore[arg-type,unused-ignore]
 
     @classmethod
     def init_from_storages(
@@ -356,6 +357,7 @@ class DycoreState:
         sizer: GridSizer,
         bdt: float = 0.0,
         mdt: float = 0.0,
+        backend: str | None = None,
     ) -> Self:
         inputs = {}
         for _field in fields(cls):
@@ -367,6 +369,7 @@ class DycoreState:
                     _field.metadata["units"],
                     origin=sizer.get_origin(dims),
                     extent=sizer.get_extent(dims),
+                    backend=backend,
                 )
                 inputs[_field.name] = quantity
         return cls(**inputs, bdt=bdt, mdt=mdt)
