@@ -27,7 +27,7 @@ def calc_damp(damp_c: Quantity, da_min: Float, nord: Quantity) -> Quantity:
         units="unknown",
         origin=damp_c.origin,
         extent=damp_c.extent,
-        gt4py_backend=damp_c.gt4py_backend,
+        backend=damp_c.backend,
     )
 
 

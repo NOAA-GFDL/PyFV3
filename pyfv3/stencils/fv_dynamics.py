@@ -26,6 +26,7 @@ from pyfv3.stencils.del2cubed import HyperdiffusionDamping
 from pyfv3.stencils.dyn_core import AcousticDynamics
 from pyfv3.stencils.neg_adj3 import AdjustNegativeTracerMixingRatio
 from pyfv3.stencils.remapping import LagrangianToEulerian
+import pyfv3.stencils.rdg_adjust as rdg_adjust
 
 
 def pt_to_potential_density_pt(
@@ -273,6 +274,11 @@ class DynamicalCore:
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(add=(0, 0, 1)),
         )
+        self._adjust_rdg = stencil_factory.from_origin_domain(
+            rdg_adjust.neg_rdgas_div_gravity,
+            origin=grid_indexing.origin_full(),
+            domain=grid_indexing.domain_full(),
+        )
         self.acoustic_dynamics = AcousticDynamics(
             comm=comm,
             stencil_factory=stencil_factory,
@@ -506,6 +512,8 @@ class DynamicalCore:
                 state.grav_var, state.grav_var_h, state.phis, state.delz
             )
             self._gravity_halo_updater.update()
+
+        self._adjust_rdg(state.rdg_var, state.grav_var)
 
         if self._conserve_total_energy > 0:
             raise NotImplementedError(

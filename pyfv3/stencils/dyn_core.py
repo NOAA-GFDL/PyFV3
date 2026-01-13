@@ -11,6 +11,7 @@ import pyfv3.stencils.nh_p_grad as nh_p_grad
 import pyfv3.stencils.pe_halo as pe_halo
 import pyfv3.stencils.ray_fast as ray_fast
 import pyfv3.stencils.temperature_adjust as temperature_adjust
+import pyfv3.stencils.rdg_adjust as rdg_adjust
 import pyfv3.stencils.updatedzc as updatedzc
 import pyfv3.stencils.updatedzd as updatedzd
 from ndsl import (
@@ -92,15 +93,14 @@ def zero_data(
                 diss_estd = 0.0
 
 
-def neg_rdgas_div_gravity(rdg: FloatField, grav_var: FloatField):
+def average_gravity(grav_var: FloatField, grav_var_h: FloatField):
     """
-    # JK TODO: Is there a better name than this?
     Args:
-        rdg (out): negative radiative gas divided by variable gravity
-        grav_var (in): variable gravity
+        grav_var (out): gravity field
+        grav_var_h (in): gravity value at height
     """
     with computation(FORWARD), interval(...):
-        rdg = -constants.RDGAS / grav_var
+        grav_var[0, 0, 0] = 0.5*(grav_var_h[0, 0, 0] + grav_var_h[0, 0, 1])
 
 
 def gz_from_surface_height_and_thicknesses(
@@ -674,7 +674,7 @@ class AcousticDynamics:
         )
 
         self._neg_rdgas_div_gravity = stencil_factory.from_origin_domain(
-            neg_rdgas_div_gravity,
+            rdg_adjust.neg_rdgas_div_gravity,
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(),
         )
@@ -1062,4 +1062,5 @@ class AcousticDynamics:
                     self._heat_source,
                     state.pt,
                     delt_time_factor,
+                    state.rdg_var
                 )

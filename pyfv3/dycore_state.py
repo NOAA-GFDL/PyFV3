@@ -368,7 +368,7 @@ class DycoreState:
                     _field.metadata["units"],
                     origin=sizer.get_origin(dims),
                     extent=sizer.get_extent(dims),
-                    gt4py_backend=backend,
+                    backend=backend,
                 )
         state = cls(**dict_state)
         return state
