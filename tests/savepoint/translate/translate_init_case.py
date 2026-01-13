@@ -204,7 +204,7 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
                 properties["units"],
                 origin=self.grid.sizer.get_origin(dims),
                 extent=self.grid.sizer.get_extent(dims),
-                gt4py_backend=self.stencil_factory.backend,
+                backend=self.stencil_factory.backend,
             )
 
         metric_terms = MetricTerms.from_tile_sizing(
@@ -225,12 +225,9 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
             tile_rank=communicator.tile.rank,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, backend=self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         grid_data = GridData.new_from_metric_terms(metric_terms)
-        quantity_factory = QuantityFactory()
 
         state = analytic_init.init_analytic_state(
             analytic_init_case="baroclinic",

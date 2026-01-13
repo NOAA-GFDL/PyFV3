@@ -97,7 +97,7 @@ def test_dycore_runs_one_step() -> None:
     grid_indexing = GridIndexing.from_sizer_and_communicator(
         sizer=sizer, comm=communicator
     )
-    quantity_factory = QuantityFactory.from_backend(sizer=sizer, backend=backend)
+    quantity_factory = QuantityFactory(sizer=sizer, backend=backend)
     metric_terms = MetricTerms(
         quantity_factory=quantity_factory,
         communicator=communicator,

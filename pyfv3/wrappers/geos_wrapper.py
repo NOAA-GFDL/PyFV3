@@ -143,7 +143,7 @@ class GeosDycoreWrapper:
         sizer = SubtileGridSizer.from_namelist(
             self.namelist, partitioner.tile, self.communicator.tile.rank
         )
-        quantity_factory = QuantityFactory.from_backend(sizer=sizer, backend=backend)
+        quantity_factory = QuantityFactory(sizer=sizer, backend=backend)
 
         # set up the metric terms and grid data
         metric_terms = MetricTerms(
