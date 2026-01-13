@@ -4,8 +4,8 @@ from datetime import timedelta
 from dace.frontend.python.interface import nounroll as dace_no_unroll
 
 import ndsl.dsl.gt4py_utils as utils
-import pyfv3.stencils.wam as wam
 import pyfv3.stencils.moist_cv as moist_cv
+import pyfv3.stencils.wam as wam
 from ndsl import Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater
 from ndsl.checkpointer import NullCheckpointer
 from ndsl.comm.mpi import MPI

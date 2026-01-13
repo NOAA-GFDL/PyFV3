@@ -6,14 +6,15 @@ from dace.frontend.python.interface import nounroll as dace_nounroll
 import ndsl.constants as constants
 import ndsl.stencils.basic_operations as basic
 import pyfv3.stencils.d_sw as d_sw
-import pyfv3.stencils.wam as wam
 import pyfv3.stencils.nh_p_grad as nh_p_grad
 import pyfv3.stencils.pe_halo as pe_halo
 import pyfv3.stencils.ray_fast as ray_fast
 import pyfv3.stencils.temperature_adjust as temperature_adjust
+
 # import pyfv3.stencils.rdg_adjust as rdg_adjust
 import pyfv3.stencils.updatedzc as updatedzc
 import pyfv3.stencils.updatedzd as updatedzd
+import pyfv3.stencils.wam as wam
 from ndsl import (
     GridIndexing,
     Quantity,
@@ -91,6 +92,7 @@ def zero_data(
             with horizontal(region[3:-3, 3:-3]):
                 heat_source = 0.0
                 diss_estd = 0.0
+
 
 def gz_from_surface_height_and_thicknesses(
     zs: FloatFieldIJ, delz: FloatField, gz: FloatField
@@ -1052,5 +1054,5 @@ class AcousticDynamics:
                     self._heat_source,
                     state.pt,
                     delt_time_factor,
-                    state.rdg_var
+                    state.rdg_var,
                 )

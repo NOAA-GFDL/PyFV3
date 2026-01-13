@@ -28,9 +28,12 @@ from ndsl.grid import DampingCoefficients, GridData, MetricTerms
 from ndsl.stencils.basic_operations import set_value
 from pyfv3 import DycoreState, DynamicalCore, DynamicalCoreConfig
 from pyfv3.initialization.analytic_init import AnalyticCase
-from pyfv3.stencils.dyn_core import AcousticDynamics
-from pyfv3.stencils.wam import adjust_gravity, average_gravity_stencil_defn, neg_rdgas_div_gravity
-from pyfv3.stencils.dyn_core import compute_geopotential
+from pyfv3.stencils.dyn_core import AcousticDynamics, compute_geopotential
+from pyfv3.stencils.wam import (
+    adjust_gravity,
+    average_gravity_stencil_defn,
+    neg_rdgas_div_gravity,
+)
 
 
 # JK NOTE TODO: Just sticking things in here for now,

@@ -1,9 +1,9 @@
+from ndsl import StencilFactory
 from ndsl.constants import GRAV, RADIUS, RDGAS, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
-from ndsl import StencilFactory
 
 
 @gtfunction
@@ -46,6 +46,7 @@ def adjust_gravity(
         grav_var_h = GRAV * (RADIUS**2) / newrad**2
         grav_var = average_gravity(grav_var, grav_var_h)
 
+
 def neg_rdgas_div_gravity(rdg: FloatField, grav_var: FloatField):
     """
     # JK TODO: Is there a better name than this?
@@ -57,7 +58,8 @@ def neg_rdgas_div_gravity(rdg: FloatField, grav_var: FloatField):
         grav_var (in): variable gravity
     """
     with computation(FORWARD), interval(...):
-        rdg = - RDGAS / grav_var
+        rdg = -RDGAS / grav_var
+
 
 class WholeAtmos:
     def __init__(self, stencil_factory: StencilFactory):
@@ -74,6 +76,13 @@ class WholeAtmos:
             compute_dims=[X_DIM, Y_DIM, Z_DIM],
         )
 
-    def __call__(self, grav_var: FloatField, grav_var_h: FloatField, rdg: FloatField, phis: FloatFieldIJ, delz: FloatField):
+    def __call__(
+        self,
+        grav_var: FloatField,
+        grav_var_h: FloatField,
+        rdg: FloatField,
+        phis: FloatFieldIJ,
+        delz: FloatField,
+    ):
         self.constructed_adjust_gravity_stencil(grav_var, grav_var_h, phis, delz)
         self.constructed_neg_rdgas_div_gravity_stencil(rdg, grav_var)
