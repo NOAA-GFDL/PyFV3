@@ -300,7 +300,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
             del input_storages[name]
 
         return DycoreState.init_from_storages(
-            input_storages, sizer=self.grid.sizer, backend=self.grid.backend
+            input_storages, sizer=self.grid.sizer, backend=self.stencil_factory.backend
         )
 
     def prepare_data(self, inputs: dict) -> tuple[DycoreState, GridData]:
