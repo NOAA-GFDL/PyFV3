@@ -4,7 +4,7 @@ from datetime import timedelta
 from dace.frontend.python.interface import nounroll as dace_no_unroll
 
 import ndsl.dsl.gt4py_utils as utils
-import pyfv3.stencils.gravity as gravity
+import pyfv3.stencils.wam as wam
 import pyfv3.stencils.moist_cv as moist_cv
 from ndsl import Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater
 from ndsl.checkpointer import NullCheckpointer
@@ -26,7 +26,6 @@ from pyfv3.stencils.del2cubed import HyperdiffusionDamping
 from pyfv3.stencils.dyn_core import AcousticDynamics
 from pyfv3.stencils.neg_adj3 import AdjustNegativeTracerMixingRatio
 from pyfv3.stencils.remapping import LagrangianToEulerian
-import pyfv3.stencils.rdg_adjust as rdg_adjust
 
 
 def pt_to_potential_density_pt(
@@ -270,12 +269,12 @@ class DynamicalCore:
             domain=grid_indexing.domain_full(add=(0, 0, 1)),
         )
         self._adjust_gravity = stencil_factory.from_origin_domain(
-            gravity.adjust_gravity,
+            wam.adjust_gravity,
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(add=(0, 0, 1)),
         )
         self._adjust_rdg = stencil_factory.from_origin_domain(
-            rdg_adjust.neg_rdgas_div_gravity,
+            wam.neg_rdgas_div_gravity,
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(),
         )

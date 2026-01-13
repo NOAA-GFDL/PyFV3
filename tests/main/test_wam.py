@@ -29,9 +29,8 @@ from ndsl.stencils.basic_operations import set_value
 from pyfv3 import DycoreState, DynamicalCore, DynamicalCoreConfig
 from pyfv3.initialization.analytic_init import AnalyticCase
 from pyfv3.stencils.dyn_core import AcousticDynamics
-from pyfv3.stencils.rdg_adjust import neg_rdgas_div_gravity
-from pyfv3.stencils.fv_dynamics import adjust_gravity, init_gravity, init_gravity_h
-from pyfv3.stencils.dyn_core import average_gravity, compute_geopotential
+from pyfv3.stencils.wam import adjust_gravity, average_gravity_stencil_defn, neg_rdgas_div_gravity
+from pyfv3.stencils.dyn_core import compute_geopotential
 
 
 # JK NOTE TODO: Just sticking things in here for now,
@@ -397,95 +396,95 @@ def setup_acoustic_dynamics(npx, npy, n_halo) -> Tuple[AcousticDynamics, DycoreS
     return dycore.acoustic_dynamics, state
 
 
-def test_acoustic_dynamics_init_average_gravity() -> None:
-    # Check that average gravity is called/used in AcousticDynamics initialization
+# def test_acoustic_dynamics_init_average_gravity() -> None:
+#     # Check that average gravity is called/used in AcousticDynamics initialization
 
-    nx = 12
-    ny = 12
-    nz = 79
-    n_halo = 3
+#     nx = 12
+#     ny = 12
+#     nz = 79
+#     n_halo = 3
 
-    # JK TODO: Why does the config need npx = nx-(2*n_halo)+1
-    ac_dyn, _ = setup_acoustic_dynamics(
-        nx - (2 * n_halo) + 1, ny - (2 * n_halo) + 1, n_halo
-    )  # nz is hard-coded to 79
+#     # JK TODO: Why does the config need npx = nx-(2*n_halo)+1
+#     ac_dyn, _ = setup_acoustic_dynamics(
+#         nx - (2 * n_halo) + 1, ny - (2 * n_halo) + 1, n_halo
+#     )  # nz is hard-coded to 79
 
-    # JK TODO: switch from example grav_var, grav_var_h to state.grav_var, state.grav_var_h
+#     # JK TODO: switch from example grav_var, grav_var_h to state.grav_var, state.grav_var_h
 
-    example_dims = ["I", "J", "K"]
-    example_backend = "numpy"
+#     example_dims = ["I", "J", "K"]
+#     example_backend = "numpy"
 
-    grav_var = Quantity(
-        data=np.zeros((nx, ny, nz)),
-        dims=example_dims,
-        units="grav_var units",
-        number_of_halo_points=n_halo,
-        backend=example_backend,
-    )
+#     grav_var = Quantity(
+#         data=np.zeros((nx, ny, nz)),
+#         dims=example_dims,
+#         units="grav_var units",
+#         number_of_halo_points=n_halo,
+#         backend=example_backend,
+#     )
 
-    grav_var_h_np = np.random.random((nx, ny, nz + 1))
-    expected_grav_var_h_np = copy.deepcopy(grav_var_h_np)
-    grav_var_h = Quantity(
-        data=grav_var_h_np,
-        dims=example_dims,
-        units="grav_var_h units",
-        number_of_halo_points=n_halo,
-        backend=example_backend,
-    )
+#     grav_var_h_np = np.random.random((nx, ny, nz + 1))
+#     expected_grav_var_h_np = copy.deepcopy(grav_var_h_np)
+#     grav_var_h = Quantity(
+#         data=grav_var_h_np,
+#         dims=example_dims,
+#         units="grav_var_h units",
+#         number_of_halo_points=n_halo,
+#         backend=example_backend,
+#     )
 
-    # Call ad_dyn._average_gravity. This is what we're testing.
-    ac_dyn._average_gravity(grav_var, grav_var_h)
+#     # Call ad_dyn._average_gravity. This is what we're testing.
+#     ac_dyn._average_gravity(grav_var, grav_var_h)
 
-    # grav_var_h should be unchanged by the stencil
-    assert np.array_equal(grav_var_h.field[:], expected_grav_var_h_np)
+#     # grav_var_h should be unchanged by the stencil
+#     assert np.array_equal(grav_var_h.field[:], expected_grav_var_h_np)
 
-    expected_grav_var_np = (
-        expected_grav_var_h_np[:, :, :-1] + expected_grav_var_h_np[:, :, 1:]
-    ) / 2
-    assert np.array_equal(grav_var.field[:], expected_grav_var_np)
-
-
-def test_acoustic_dynamics_call_average_gravity() -> None:
-    # Check that average gravity is called/used in AcousticDynamics call
-    nx = 12
-    ny = 12
-    nz = 79
-    n_halo = 3
-    timestep = 225  # JK TODO: Is this right?
-
-    # JK TODO: Why does the config need npx = nx-(2*n_halo)+1
-    ac_dyn, state = setup_acoustic_dynamics(
-        nx - (2 * n_halo) + 1, ny - (2 * n_halo) + 1, n_halo
-    )  # nz is hard-coded to 79
-
-    init_grav_var_np = copy.deepcopy(state.grav_var.field)
-    init_grav_var_h_np = copy.deepcopy(state.grav_var_h.field)
-
-    ac_dyn(state, timestep)
-
-    # The state.grav_var_h should be unchanged by the stencil.
-    assert np.array_equal(state.grav_var_h.field[:], init_grav_var_h_np)
-
-    # Check that the state.grav_var values match expectation:
-    expected_grav_var_np = (
-        init_grav_var_h_np[:, :, :-1] + init_grav_var_h_np[:, :, 1:]
-    ) / 2
-    assert np.array_equal(state.grav_var.field[:], expected_grav_var_np)
+#     expected_grav_var_np = (
+#         expected_grav_var_h_np[:, :, :-1] + expected_grav_var_h_np[:, :, 1:]
+#     ) / 2
+#     assert np.array_equal(grav_var.field[:], expected_grav_var_np)
 
 
-"""
-E        +  where False = <function array_equal at 0x7fd9f38750b0>(
+# def test_acoustic_dynamics_call_average_gravity() -> None:
+#     # Check that average gravity is called/used in AcousticDynamics call
+#     nx = 12
+#     ny = 12
+#     nz = 79
+#     n_halo = 3
+#     timestep = 225  # JK TODO: Is this right?
 
-array([
-[[0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n ...\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.]]]),
+#     # JK TODO: Why does the config need npx = nx-(2*n_halo)+1
+#     ac_dyn, state = setup_acoustic_dynamics(
+#         nx - (2 * n_halo) + 1, ny - (2 * n_halo) + 1, n_halo
+#     )  # nz is hard-coded to 79
 
-array([[[0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n ...\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.]]]))
+#     init_grav_var_np = copy.deepcopy(state.grav_var.field)
+#     init_grav_var_h_np = copy.deepcopy(state.grav_var_h.field)
 
-E        +    where <function array_equal at 0x7fd9f38750b0> = np.array_equal
+#     ac_dyn(state, timestep)
 
-"""
+#     # The state.grav_var_h should be unchanged by the stencil.
+#     assert np.array_equal(state.grav_var_h.field[:], init_grav_var_h_np)
 
-############################ fv_dynamics.py
+#     # Check that the state.grav_var values match expectation:
+#     expected_grav_var_np = (
+#         init_grav_var_h_np[:, :, :-1] + init_grav_var_h_np[:, :, 1:]
+#     ) / 2
+#     assert np.array_equal(state.grav_var.field[:], expected_grav_var_np)
+
+
+# """
+# E        +  where False = <function array_equal at 0x7fd9f38750b0>(
+
+# array([
+# [[0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n ...\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.]]]),
+
+# array([[[0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n ...\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.],\n        [0., 0., 0., ..., 0., 0., 0.]]]))
+
+# E        +    where <function array_equal at 0x7fd9f38750b0> = np.array_equal
+
+# """
+
+# ############################ fv_dynamics.py
 
 
 def test_init_gravity() -> None:

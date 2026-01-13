@@ -6,12 +6,12 @@ from dace.frontend.python.interface import nounroll as dace_nounroll
 import ndsl.constants as constants
 import ndsl.stencils.basic_operations as basic
 import pyfv3.stencils.d_sw as d_sw
-import pyfv3.stencils.gravity as gravity
+import pyfv3.stencils.wam as wam
 import pyfv3.stencils.nh_p_grad as nh_p_grad
 import pyfv3.stencils.pe_halo as pe_halo
 import pyfv3.stencils.ray_fast as ray_fast
 import pyfv3.stencils.temperature_adjust as temperature_adjust
-import pyfv3.stencils.rdg_adjust as rdg_adjust
+# import pyfv3.stencils.rdg_adjust as rdg_adjust
 import pyfv3.stencils.updatedzc as updatedzc
 import pyfv3.stencils.updatedzd as updatedzd
 from ndsl import (
@@ -91,17 +91,6 @@ def zero_data(
             with horizontal(region[3:-3, 3:-3]):
                 heat_source = 0.0
                 diss_estd = 0.0
-
-
-def average_gravity(grav_var: FloatField, grav_var_h: FloatField):
-    """
-    Args:
-        grav_var (out): gravity field
-        grav_var_h (in): gravity value at height
-    """
-    with computation(FORWARD), interval(...):
-        grav_var[0, 0, 0] = 0.5*(grav_var_h[0, 0, 0] + grav_var_h[0, 0, 1])
-
 
 def gz_from_surface_height_and_thicknesses(
     zs: FloatFieldIJ, delz: FloatField, gz: FloatField
@@ -667,17 +656,17 @@ class AcousticDynamics:
             grav_var_h=state.grav_var_h,
         )
 
-        self._average_gravity = stencil_factory.from_origin_domain(
-            gravity.average_gravity_stencil_defn,
-            origin=grid_indexing.origin_full(),
-            domain=grid_indexing.domain_full(),
-        )
+        # self._average_gravity = stencil_factory.from_origin_domain(
+        #     wam.average_gravity_stencil_defn,
+        #     origin=grid_indexing.origin_full(),
+        #     domain=grid_indexing.domain_full(),
+        # )
 
-        self._neg_rdgas_div_gravity = stencil_factory.from_origin_domain(
-            rdg_adjust.neg_rdgas_div_gravity,
-            origin=grid_indexing.origin_full(),
-            domain=grid_indexing.domain_full(),
-        )
+        # self._neg_rdgas_div_gravity = stencil_factory.from_origin_domain(
+        #     wam.neg_rdgas_div_gravity,
+        #     origin=grid_indexing.origin_full(),
+        #     domain=grid_indexing.domain_full(),
+        # )
 
     # See divergence_damping.py, _get_da_min for explanation of this function
     @dace_inhibitor
@@ -817,8 +806,9 @@ class AcousticDynamics:
             if it == 0:
                 self._halo_updaters.delp__pt.wait()
                 self._halo_updaters.grav_var_h.update()
-                self._average_gravity(state.grav_var, state.grav_var_h)
-                self._neg_rdgas_div_gravity(state.rdg_var, state.grav_var)
+                # ALREADY HAPPENING IN DYNAMICAL CORE CALL
+                # self._average_gravity(state.grav_var, state.grav_var_h)
+                # self._neg_rdgas_div_gravity(state.rdg_var, state.grav_var)
 
             if it == n_split - 1 and end_step:
                 if self.config.use_old_omega:
