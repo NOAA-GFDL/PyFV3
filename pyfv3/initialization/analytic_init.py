@@ -48,54 +48,57 @@ def init_analytic_state(
         AnalyticCase.rossby,
     ]
 
-    if analytic_init_case in spherical_cases:
-        # TODO: Consider CubedSphereCommunicator check within individual init_*() calls
-        if not isinstance(comm, CubedSphereCommunicator):
-            raise TypeError(
-                f"Expected CubedSphereCommunicator instance for 'comm', "
-                f"got {type(comm).__name__} instead."
-            )
-
-        if analytic_init_case == AnalyticCase.baroclinic_instability:
-            return bc.init_baroclinic_state(
-                grid_data=grid_data,
-                quantity_factory=quantity_factory,
-                adiabatic=adiabatic,
-                hydrostatic=hydrostatic,
-                moist_phys=moist_phys,
-                is_steady=False,
-                comm=comm,
-            )
-        elif analytic_init_case == AnalyticCase.baroclinic_steady:
-            return bc.init_baroclinic_state(
-                grid_data=grid_data,
-                quantity_factory=quantity_factory,
-                adiabatic=adiabatic,
-                hydrostatic=hydrostatic,
-                moist_phys=moist_phys,
-                is_steady=True,
-                comm=comm,
-            )
-        elif analytic_init_case == AnalyticCase.tropicalcyclone:
-            return tc.init_tc_state(
-                grid_data=grid_data,
-                quantity_factory=quantity_factory,
-                hydrostatic=hydrostatic,
-                comm=comm,
-            )
-        elif analytic_init_case == AnalyticCase.rossby:
-            # TODO sw_dynamics check is awkward here, and should be moved.
-            if sw_dynamics is False:
-                raise ValueError(
-                    "Rossby initialization requires dynamical core config "
-                    "sw_dynamics flag to be True."
-                )
-            return rossby.init_rossby_state(
-                grid_data=grid_data,
-                quantity_factory=quantity_factory,
-                comm=comm,
-            )
-        else:
-            raise ValueError(f"Case {analytic_init_case} not implemented")
-    else:
+    if analytic_init_case not in spherical_cases:
         raise ValueError(f"Case {analytic_init_case} not recognized")
+
+    # TODO: Consider CubedSphereCommunicator check within individual init_*() calls
+    if not isinstance(comm, CubedSphereCommunicator):
+        raise TypeError(
+            f"Expected CubedSphereCommunicator instance for 'comm', "
+            f"got {type(comm).__name__} instead."
+        )
+
+    if analytic_init_case == AnalyticCase.baroclinic_instability:
+        return bc.init_baroclinic_state(
+            grid_data=grid_data,
+            quantity_factory=quantity_factory,
+            adiabatic=adiabatic,
+            hydrostatic=hydrostatic,
+            moist_phys=moist_phys,
+            is_steady=False,
+            comm=comm,
+        )
+
+    if analytic_init_case == AnalyticCase.baroclinic_steady:
+        return bc.init_baroclinic_state(
+            grid_data=grid_data,
+            quantity_factory=quantity_factory,
+            adiabatic=adiabatic,
+            hydrostatic=hydrostatic,
+            moist_phys=moist_phys,
+            is_steady=True,
+            comm=comm,
+        )
+
+    if analytic_init_case == AnalyticCase.tropicalcyclone:
+        return tc.init_tc_state(
+            grid_data=grid_data,
+            quantity_factory=quantity_factory,
+            hydrostatic=hydrostatic,
+            comm=comm,
+        )
+
+    if analytic_init_case == AnalyticCase.rossby:
+        # TODO sw_dynamics check is awkward here, and should be moved.
+        if sw_dynamics is False:
+            raise ValueError(
+                "Rossby initialization requires dynamical core config "
+                "sw_dynamics flag to be True."
+            )
+        return rossby.init_rossby_state(
+            grid_data=grid_data,
+            quantity_factory=quantity_factory,
+            comm=comm,
+        )
+
+    raise ValueError(f"Case {analytic_init_case} not implemented")

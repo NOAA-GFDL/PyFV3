@@ -341,6 +341,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
     def outputs_from_state(self, state: DycoreState) -> dict:
         if len(self.outputs) == 0:
             return {}
+
         outputs = {}
         storages = {}
         for name, _properties in self.outputs.items():
