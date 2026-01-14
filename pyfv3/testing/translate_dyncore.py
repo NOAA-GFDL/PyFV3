@@ -2,9 +2,9 @@ from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, StencilFactory
-from ndsl.comm import Comm
 from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
 from ndsl.stencils.testing import Grid, ParallelTranslate2PyState
+from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import dyn_core
@@ -126,7 +126,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
         self.stencil_factory = stencil_factory
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
-    def compute_parallel(self, inputs: dict, communicator: Comm) -> dict:
+    def compute_parallel(self, inputs: dict, communicator: Communicator) -> dict:
         # ak, bk, and phis are numpy arrays at this point and
         #   must be converted into gt4py storages
         for name in ("ak", "bk", "phis"):

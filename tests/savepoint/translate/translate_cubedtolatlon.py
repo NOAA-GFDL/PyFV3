@@ -43,11 +43,13 @@ class TranslateCubedToLatLon(ParallelTranslate2Py):
             inputs["u"],
             self.inputs["u"]["dims"],
             self.grid.grid_indexing,
+            self.stencil_factory.backend,
         )
         v_quantity = _quantity_wrap(
             inputs["v"],
             self.inputs["v"]["dims"],
             self.grid.grid_indexing,
+            self.stencil_factory.backend,
         )
         state_dict = {"u": u_quantity, "v": v_quantity}
 
@@ -64,7 +66,7 @@ class TranslateCubedToLatLon(ParallelTranslate2Py):
         return self._base.slice_output(inputs)
 
 
-def _quantity_wrap(storage, dims, grid_indexing):
+def _quantity_wrap(storage, dims, grid_indexing, backend):
     origin, extent = grid_indexing.get_origin_domain(dims)
     return Quantity(
         storage,
@@ -72,4 +74,5 @@ def _quantity_wrap(storage, dims, grid_indexing):
         units="unknown",
         origin=origin,
         extent=extent,
+        backend=backend,
     )
