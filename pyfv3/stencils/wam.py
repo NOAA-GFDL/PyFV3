@@ -59,30 +59,3 @@ def neg_rdgas_div_gravity(rdg: FloatField, grav_var: FloatField):
     """
     with computation(FORWARD), interval(...):
         rdg = -RDGAS / grav_var
-
-
-class WholeAtmos:
-    def __init__(self, stencil_factory: StencilFactory):
-        self.constructed_average_gravity_stencil = stencil_factory.from_dims_halo(
-            func=average_gravity_stencil_defn,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
-        )
-        self.constructed_adjust_gravity_stencil = stencil_factory.from_dims_halo(
-            func=adjust_gravity,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
-        )
-        self.constructed_neg_rdgas_div_gravity_stencil = stencil_factory.from_dims_halo(
-            func=neg_rdgas_div_gravity,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
-        )
-
-    def __call__(
-        self,
-        grav_var: FloatField,
-        grav_var_h: FloatField,
-        rdg: FloatField,
-        phis: FloatFieldIJ,
-        delz: FloatField,
-    ):
-        self.constructed_adjust_gravity_stencil(grav_var, grav_var_h, phis, delz)
-        self.constructed_neg_rdgas_div_gravity_stencil(rdg, grav_var)
