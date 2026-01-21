@@ -143,7 +143,10 @@ class GeosDycoreWrapper:
         )
 
         sizer = SubtileGridSizer.from_namelist(
-            self.namelist, partitioner.tile, self.communicator.tile.rank
+            self.namelist,
+            partitioner.tile,
+            self.communicator.tile.rank,
+            backend=backend,
         )
         quantity_factory = QuantityFactory(sizer=sizer, backend=backend)
 
