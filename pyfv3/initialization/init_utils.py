@@ -506,7 +506,7 @@ def hydro_eq(
                 ))
                 pt[i, j, k] = max(t1, pt[i, j, k])
                 delp[i, j, k] = ph[i, k+1] - ph[i, k]
-        if j == js:
-            i = is_
-            for k in range(km):
-                ndsl_log.info(k, pt[i, j, k], gz[i, k+1], (gz[i, k]-gz[i, k+1]), ph[i, k])
+        #if j == js:
+        #    i = is_
+        #    for k in range(km):
+        #        ndsl_log.info(f"{k}, {pt[i, j, k]}, {gz[i, k+1]}, {(gz[i, k]-gz[i, k+1])}, {ph[i, k]}")
