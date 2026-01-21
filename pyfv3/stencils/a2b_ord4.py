@@ -5,7 +5,7 @@ from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region, sin, sqrt
 from ndsl.dsl.typing import Float, FloatField, FloatFieldI, FloatFieldIJ
 from ndsl.grid import GridData
-from ndsl.stencils.basic_operations import copy_defn
+from ndsl.stencils.basic_operations import copy
 
 
 # compact 4-pt cubic interpolation
@@ -665,7 +665,7 @@ class AGrid2BGridFourthOrder:
                 a2b_interpolation, externals=ax_offsets, origin=origin, domain=domain
             )
             self._copy_stencil = stencil_factory.from_dims_halo(
-                copy_defn, compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, z_dim]
+                copy, compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, z_dim]
             )
 
         else:  # grid type >= 3:
@@ -675,7 +675,7 @@ class AGrid2BGridFourthOrder:
             )
             if self.replace:
                 self._copy_stencil = stencil_factory.from_dims_halo(
-                    copy_defn, compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, z_dim]
+                    copy, compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, z_dim]
                 )
 
     def _exclude_tile_edges(self, origin, domain, dims=("x", "y")):

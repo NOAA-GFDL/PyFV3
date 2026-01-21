@@ -206,6 +206,7 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
             layout=self.config.layout,
             tile_partitioner=communicator.partitioner.tile,
             tile_rank=communicator.tile.rank,
+            backend=self.stencil_factory.backend,
         )
 
         quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)

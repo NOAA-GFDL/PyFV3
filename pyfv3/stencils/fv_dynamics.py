@@ -15,7 +15,7 @@ from ndsl.dsl.typing import Float, FloatField
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log
 from ndsl.performance import NullTimer, Timer
-from ndsl.stencils.basic_operations import copy_defn
+from ndsl.stencils.basic_operations import copy
 from ndsl.stencils.c2l_ord import CubedToLatLon
 from ndsl.typing import Checkpointer, Communicator
 from pyfv3._config import DynamicalCoreConfig
@@ -258,7 +258,7 @@ class DynamicalCore:
             domain=grid_indexing.domain_compute(),
         )
         self._copy_stencil = stencil_factory.from_origin_domain(
-            copy_defn,
+            copy,
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(),
         )
