@@ -4,12 +4,11 @@ import numpy as np
 import pytest
 from f90nml import Namelist
 
-import ndsl.constants as constants
 import ndsl.dsl.gt4py_utils as utils
 import pyfv3.initialization.analytic_init as analytic_init
 import pyfv3.initialization.init_utils as init_utils
 import pyfv3.initialization.test_cases.initialize_baroclinic as baroclinic_init
-from ndsl import Quantity, QuantityFactory, StencilFactory, SubtileGridSizer
+from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
 from ndsl.constants import (
     N_HALO_DEFAULT,
     X_DIM,
@@ -22,7 +21,7 @@ from ndsl.constants import (
 from ndsl.grid import GridData, MetricTerms
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
 from ndsl.stencils.testing.grid import TRACER_DIM  # type: ignore
-from pyfv3 import DynamicalCoreConfig
+from pyfv3 import DycoreState, DynamicalCoreConfig
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
@@ -175,7 +174,7 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
             "not running in mock-parallel"
         )
 
-    def outputs_from_state(self, state: dict):
+    def outputs_from_state(self, state: DycoreState) -> dict:
         outputs = {}
         arrays = {}
         for name, _properties in self.outputs.items():
@@ -191,22 +190,6 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
         return outputs
 
     def compute_parallel(self, inputs, communicator):
-        state = {}
-        full_shape = (
-            *self.grid.domain_shape_full(add=(1, 1, 1)),
-            constants.NQ,
-        )
-        for variable, properties in self.outputs.items():
-            dims = properties["dims"]
-            state[variable] = Quantity(
-                np.zeros(full_shape[0 : len(dims)]),
-                dims,
-                properties["units"],
-                origin=self.grid.sizer.get_origin(dims),
-                extent=self.grid.sizer.get_extent(dims),
-                backend=self.stencil_factory.backend,
-            )
-
         metric_terms = MetricTerms.from_tile_sizing(
             npx=self.config.npx,
             npy=self.config.npy,
@@ -223,6 +206,7 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
             layout=self.config.layout,
             tile_partitioner=communicator.partitioner.tile,
             tile_rank=communicator.tile.rank,
+            backend=self.stencil_factory.backend,
         )
 
         quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
@@ -230,7 +214,7 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
         grid_data = GridData.new_from_metric_terms(metric_terms)
 
         state = analytic_init.init_analytic_state(
-            analytic_init_case="baroclinic",
+            analytic_init_case=analytic_init.AnalyticCase.baroclinic_instability,
             grid_data=grid_data,
             quantity_factory=quantity_factory,
             adiabatic=self.config.adiabatic,
@@ -242,7 +226,7 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
         state.q4d = {}
         for tracer in utils.tracer_variables:
             state.q4d[tracer] = getattr(state, tracer)
-        return self.outputs_from_state(state.__dict__)
+        return self.outputs_from_state(state)
 
 
 def make_sliced_inputs_dict(inputs, slice_2d):

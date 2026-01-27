@@ -5,7 +5,7 @@ from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntFieldIJ  # noqa: F401
-from ndsl.stencils.basic_operations import copy_defn
+from ndsl.stencils.basic_operations import copy
 from pyfv3.stencils.remap_profile import RemapProfile
 
 
@@ -120,7 +120,7 @@ class MapSingle:
         self._lev = quantity_factory.zeros([X_DIM, Y_DIM], units="", dtype=int)
 
         self._copy_stencil = stencil_factory.from_dims_halo(
-            copy_defn,
+            copy,
             compute_dims=dims,
         )
 

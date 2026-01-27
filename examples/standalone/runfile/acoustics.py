@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # type: ignore
 from types import SimpleNamespace
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import click
 import f90nml
@@ -14,22 +14,18 @@ from ndsl import (
     CubedSphereCommunicator,
     CubedSpherePartitioner,
     DaceConfig,
-    NullComm,
+    LocalComm,
+    MPIComm,
     StencilConfig,
     StencilFactory,
     TilePartitioner,
 )
+from ndsl.comm import Comm
 from ndsl.performance import Timer
 from ndsl.stencils.testing import Grid
 from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils import AcousticDynamics
 from pyfv3.testing import TranslateDynCore
-
-
-try:
-    from mpi4py import MPI
-except ImportError:
-    MPI = None
 
 
 def dycore_config_from_namelist(data_directory: str) -> DynamicalCoreConfig:
@@ -89,17 +85,15 @@ def get_state_from_input(
 def set_up_communicator(
     disable_halo_exchange: bool,
     layout: Tuple[int, int],
-) -> Tuple[Optional[MPI.Comm], Optional[CubedSphereCommunicator]]:
-    partitioner = CubedSpherePartitioner(TilePartitioner(layout))
-    if MPI is not None:
-        comm = MPI.COMM_WORLD
-    else:
-        comm = None
-    if not disable_halo_exchange:
-        assert comm is not None
-        cube_comm = CubedSphereCommunicator(comm, partitioner)
-    else:
-        cube_comm = CubedSphereCommunicator(NullComm(0, 0), partitioner)
+) -> Tuple[Comm, CubedSphereCommunicator]:
+    comm = (
+        LocalComm(rank=0, total_ranks=1, buffer={})
+        if disable_halo_exchange
+        else MPIComm()
+    )
+    cube_comm = CubedSphereCommunicator(
+        comm, CubedSpherePartitioner(TilePartitioner(layout))
+    )
     return comm, cube_comm
 
 

@@ -638,7 +638,7 @@ class AcousticDynamics:
         )
         self._pk3_halo = PK3Halo(stencil_factory, quantity_factory)
         self._copy_stencil = stencil_factory.from_origin_domain(
-            basic.copy_defn,
+            basic.copy,
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(add=(0, 0, 1)),
         )
