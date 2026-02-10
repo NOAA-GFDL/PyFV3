@@ -16,6 +16,7 @@ from ndsl import (
     TilePartitioner,
 )
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
+from ndsl.performance import NullTimer
 from pyfv3 import DynamicalCore, DynamicalCoreConfig
 
 
@@ -134,4 +135,4 @@ def test_dycore_runs_one_step() -> None:
     )
 
     # run one step
-    dycore.step_dynamics(state)
+    dycore.step_dynamics(state, NullTimer())
