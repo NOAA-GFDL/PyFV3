@@ -514,23 +514,23 @@ class DynamicalCore:
                     n_map=n_map,
                 )
 
-            if not self.config.z_tracer:
+            if self.config.z_tracer:
+                if __debug__:
+                    log_on_rank_0("TracerAdvection")
+
+                with timer.clock("TracerAdvection"):
+                    self._checkpoint_tracer_advection_in(state)
+                    self.tracer_advection(
+                        self.tracers,
+                        self._dp_initial,
+                        state.mfxd,
+                        state.mfyd,
+                        state.cxd,
+                        state.cyd,
+                    )
+                    self._checkpoint_tracer_advection_out(state)
+            else:
                 raise NotImplementedError("z_tracer=False is not implemented")
-
-            if __debug__:
-                log_on_rank_0("TracerAdvection")
-
-            with timer.clock("TracerAdvection"):
-                self._checkpoint_tracer_advection_in(state)
-                self.tracer_advection(
-                    self.tracers,
-                    self._dp_initial,
-                    state.mfxd,
-                    state.mfyd,
-                    state.cxd,
-                    state.cyd,
-                )
-                self._checkpoint_tracer_advection_out(state)
 
             # 1 is shallow water model, don't need vertical remapping
             # 2 and 3 are also simple baroclinic models that don't need
