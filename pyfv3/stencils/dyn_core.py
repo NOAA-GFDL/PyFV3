@@ -10,9 +10,11 @@ import pyfv3.stencils.nh_p_grad as nh_p_grad
 import pyfv3.stencils.pe_halo as pe_halo
 import pyfv3.stencils.ray_fast as ray_fast
 import pyfv3.stencils.temperature_adjust as temperature_adjust
-import pyfv3.stencils.rdg_adjust as rdg_adjust
+
+# import pyfv3.stencils.rdg_adjust as rdg_adjust
 import pyfv3.stencils.updatedzc as updatedzc
 import pyfv3.stencils.updatedzd as updatedzd
+import pyfv3.stencils.wam as wam
 from ndsl import (
     GridIndexing,
     Quantity,
@@ -90,16 +92,6 @@ def zero_data(
             with horizontal(region[3:-3, 3:-3]):
                 heat_source = 0.0
                 diss_estd = 0.0
-
-
-def average_gravity(grav_var: FloatField, grav_var_h: FloatField):
-    """
-    Args:
-        grav_var (out): gravity field
-        grav_var_h (in): gravity value at height
-    """
-    with computation(FORWARD), interval(...):
-        grav_var[0, 0, 0] = 0.5*(grav_var_h[0, 0, 0] + grav_var_h[0, 0, 1])
 
 
 def gz_from_surface_height_and_thicknesses(
@@ -646,7 +638,7 @@ class AcousticDynamics:
         )
         self._pk3_halo = PK3Halo(stencil_factory, quantity_factory)
         self._copy_stencil = stencil_factory.from_origin_domain(
-            basic.copy_defn,
+            basic.copy,
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(add=(0, 0, 1)),
         )
@@ -664,17 +656,6 @@ class AcousticDynamics:
             heat_source=self._heat_source,
             pkc=self._pkc,
             grav_var_h=state.grav_var_h,
-        )
-
-        self._average_gravity = stencil_factory.from_origin_domain(
-            average_gravity,
-            origin=grid_indexing.origin_full(),
-            domain=grid_indexing.domain_full(),
-        )
-        self._neg_rdgas_div_gravity = stencil_factory.from_origin_domain(
-            rdg_adjust.neg_rdgas_div_gravity,
-            origin=grid_indexing.origin_full(),
-            domain=grid_indexing.domain_full(),
         )
 
     # See divergence_damping.py, _get_da_min for explanation of this function
@@ -815,8 +796,9 @@ class AcousticDynamics:
             if it == 0:
                 self._halo_updaters.delp__pt.wait()
                 self._halo_updaters.grav_var_h.update()
-                self._average_gravity(state.grav_var, state.grav_var_h)
-                self._neg_rdgas_div_gravity(state.rdg_var, state.grav_var)
+                # ALREADY HAPPENING IN DYNAMICAL CORE CALL
+                # self._average_gravity(state.grav_var, state.grav_var_h)
+                # self._neg_rdgas_div_gravity(state.rdg_var, state.grav_var)
 
             if it == n_split - 1 and end_step:
                 if self.config.use_old_omega:
@@ -892,6 +874,7 @@ class AcousticDynamics:
                     self._gz,
                     self._pkc,
                     state.omga,
+                    state.grav_var,
                 )
 
             self._p_grad_c(
@@ -979,6 +962,7 @@ class AcousticDynamics:
                     state.pk,
                     state.peln,
                     state.w,
+                    state.grav_var,
                 )
 
                 self._halo_updaters.zh.start()
@@ -1058,5 +1042,5 @@ class AcousticDynamics:
                     self._heat_source,
                     state.pt,
                     delt_time_factor,
-                    state.rdg_var
+                    state.rdg_var,
                 )

@@ -16,6 +16,7 @@ from ndsl import (
     TilePartitioner,
 )
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
+from ndsl.performance import NullTimer
 from pyfv3 import DynamicalCore, DynamicalCoreConfig
 
 
@@ -93,11 +94,12 @@ def test_dycore_runs_one_step() -> None:
         layout=config.layout,
         tile_partitioner=partitioner,
         tile_rank=communicator.rank,
+        backend=backend,
     )
     grid_indexing = GridIndexing.from_sizer_and_communicator(
         sizer=sizer, comm=communicator
     )
-    quantity_factory = QuantityFactory.from_backend(sizer=sizer, backend=backend)
+    quantity_factory = QuantityFactory(sizer=sizer, backend=backend)
     metric_terms = MetricTerms(
         quantity_factory=quantity_factory,
         communicator=communicator,
@@ -133,4 +135,4 @@ def test_dycore_runs_one_step() -> None:
     )
 
     # run one step
-    dycore.step_dynamics(state)
+    dycore.step_dynamics(state, NullTimer())

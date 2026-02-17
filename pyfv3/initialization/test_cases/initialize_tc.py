@@ -570,7 +570,7 @@ def init_tc_state(
     state = DycoreState.init_from_numpy_arrays(
         numpy_state.__dict__,
         sizer=quantity_factory.sizer,
-        backend=sample_quantity.metadata.gt4py_backend,
+        backend=sample_quantity.metadata.backend,
     )
 
     return state

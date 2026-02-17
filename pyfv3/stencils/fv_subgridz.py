@@ -10,7 +10,6 @@ from ndsl.constants import (
     CP_VAP,
     CV_AIR,
     CV_VAP,
-    GRAV,
     RDGAS,
     X_DIM,
     Y_DIM,
@@ -28,7 +27,6 @@ from pyfv3.dycore_state import DycoreState
 from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 RK = CP_AIR / RDGAS + 1.0
-G2 = 0.5 * GRAV
 T1_MIN = 160.0
 T2_MIN = 165.0
 T2_MAX = 315.0
@@ -95,6 +93,7 @@ def init(
     qo3mr: FloatField,
     qsgs_tke: FloatField,
     qcld: FloatField,
+    grav_var: FloatField,
 ):
     with computation(PARALLEL), interval(...):
         t0 = ta
@@ -117,11 +116,11 @@ def init(
         cpm, cvm = standard_cm(
             cpm, cvm, q0_vapor, q0_liquid, q0_rain, q0_ice, q0_snow, q0_graupel
         )
-        gz = gzh[0, 0, 1] - G2 * delz
+        gz = gzh[0, 0, 1] - grav_var * delz
         tmp = tvol(gz, u0, v0, w0)
         static_energy = cpm * t0 + tmp
         total_energy = cvm * t0 + tmp
-        gzh = gzh[0, 0, 1] - GRAV * delz
+        gzh = gzh[0, 0, 1] - grav_var * delz
 
 
 @gtfunction
@@ -903,6 +902,7 @@ class DryConvectiveAdjustment:
             state.qo3mr,
             state.qsgs_tke,
             state.qcld,
+            state.grav_var,
         )
 
         for n in range(self._m):
