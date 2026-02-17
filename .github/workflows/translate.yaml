@@ -12,6 +12,10 @@ on:
         type: string
         default: ''
         required: false
+      python_version:
+        type: string
+        default: ''
+        required: false
   pull_request: # ... a PR is opened / updated
     branches:
       - main
@@ -32,18 +36,19 @@ jobs:
     env:
       DATA_PATH: ./test_data/8.1.3/c12_6ranks_standard/dycore
       DATA_URL: "https://portal.nccs.nasa.gov/datashare/astg/smt/pace-regression-data/8.1.3_c12_6ranks_standard.tar.gz"
+      python_default: '3.11'
 
     steps:
-      - name: Setup Python 3.11
+      - name: 'Setup Python ${{ inputs.python_version && inputs.python_version || env.python_default }}'
         uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: ${{ inputs.python_version && inputs.python_version || env.python_default }}
 
       - name: Install mpi (MPICH flavor)
         run: pip3 install mpich
 
       - name: External trigger Checkout pyFV3
-        if: ${{inputs.component_trigger}}
+        if: ${{inputs.component_name}}
         uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -57,14 +62,14 @@ jobs:
           path: pyFV3/${{inputs.component_name}}
 
       - name: External trigger install NDSL packages
-        if: ${{inputs.component_trigger}}
+        if: ${{inputs.component_name}}
         run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
           cd NDSL && pip3 install . && cd ../
           pip3 install .[test]
 
       - name: Install pyFV3 packages
-        if: ${{ ! inputs.component_trigger }}
+        if: ${{ ! inputs.component_name }}
         run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
           pip install .[ndsl,test]
