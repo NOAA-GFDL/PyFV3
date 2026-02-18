@@ -5,7 +5,6 @@ import ndsl.dsl.gt4py_utils as utils
 from ndsl import CubedSphereCommunicator, QuantityFactory
 from ndsl.dsl.typing import Float
 from ndsl.grid import GridData
-from ndsl.grid.gnomonic import great_circle_distance_lon_lat, lon_lat_midpoint
 from pyfv3.dycore_state import DycoreState
 from pyfv3.initialization import init_utils
 
@@ -34,9 +33,9 @@ def init_aquaplanet_state(
     # Initializing to values the Fortran does for easy comparison
     numpy_state.delp[:] = 1e30
     numpy_state.delp[:NHALO, :NHALO] = 0.0
-    numpy_state.delp[:NHALO, NHALO + ny:] = 0.0
-    numpy_state.delp[NHALO + nx:, :NHALO] = 0.0
-    numpy_state.delp[NHALO + nx:, NHALO + ny:] = 0.0
+    numpy_state.delp[:NHALO, NHALO + ny :] = 0.0
+    numpy_state.delp[NHALO + nx :, :NHALO] = 0.0
+    numpy_state.delp[NHALO + nx :, NHALO + ny :] = 0.0
     numpy_state.pe[:] = 0.0
     numpy_state.pt[:] = 1.0
     numpy_state.ua[:] = 1e35
@@ -52,10 +51,7 @@ def init_aquaplanet_state(
     islice, jslice, slice_3d, slice_2d = init_utils.compute_slices(nx, ny)
     # Slices with extra buffer points in the horizontal dimension
     # to accomodate averaging over shifted calculations on the grid
-    _, _, slice_3d_buffer, slice_2d_buffer = init_utils.compute_slices(
-        nx + 1,
-        ny + 1
-    )
+    _, _, slice_3d_buffer, slice_2d_buffer = init_utils.compute_slices(nx + 1, ny + 1)
 
     init_utils.setup_pressure_fields(
         eta=eta,
@@ -72,28 +68,44 @@ def init_aquaplanet_state(
     )
     alpha = 0
     # Initialize dry atmosphere
-    numpy_state.qvapor[:] = 3.e-6
-    numpy_state.qliquid[:] = 3.e-6
-    numpy_state.qice[:] = 3.e-6
-    numpy_state.qrain[:] = 3.e-6
-    numpy_state.qsnow[:] = 3.e-6
-    numpy_state.qgraupel[:] = 3.e-6
-    numpy_state.qo3mr[:] = 3.e-6
-    numpy_state.qsgs_tke[:] = 3.e-6
-    numpy_state.qcld[:] = 3.e-6
-    numpy_state.q_con[:] = 3.e-6
+    numpy_state.qvapor[:] = 3.0e-6
+    numpy_state.qliquid[:] = 3.0e-6
+    numpy_state.qice[:] = 3.0e-6
+    numpy_state.qrain[:] = 3.0e-6
+    numpy_state.qsnow[:] = 3.0e-6
+    numpy_state.qgraupel[:] = 3.0e-6
+    numpy_state.qo3mr[:] = 3.0e-6
+    numpy_state.qsgs_tke[:] = 3.0e-6
+    numpy_state.qcld[:] = 3.0e-6
+    numpy_state.q_con[:] = 3.0e-6
     numpy_state.u[:] = 0.0
     numpy_state.v[:] = 0.0
-    if not hydrostatic: 
+    if not hydrostatic:
         numpy_state.w[:] = 0.0
 
     numpy_state.phis[:] = 0.0
     print(numpy_state.ps.shape)
     init_utils.hydro_eq(
-        nz, isc, iec, jsc, jec, numpy_state.ps[:], numpy_state.phis[:], 1.e5,
-        numpy_state.delp[:], grid_data.ak.data[:], grid_data.bk.data[:],
-        numpy_state.pt[:], numpy_state.delz[:], grid_data.area.data[:],
-        NHALO, False, hydrostatic, hybrid_z, comm)
+        nz,
+        isc,
+        iec,
+        jsc,
+        jec,
+        numpy_state.ps[:],
+        numpy_state.phis[:],
+        1.0e5,
+        numpy_state.delp[:],
+        grid_data.ak.data[:],
+        grid_data.bk.data[:],
+        numpy_state.pt[:],
+        numpy_state.delz[:],
+        grid_data.area.data[:],
+        NHALO,
+        False,
+        hydrostatic,
+        hybrid_z,
+        comm,
+    )
 
     state = DycoreState.init_from_numpy_arrays(
         numpy_state.__dict__,

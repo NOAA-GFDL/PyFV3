@@ -48,7 +48,7 @@ def init_analytic_state(
         AnalyticCase.baroclinic_steady,
         AnalyticCase.tropicalcyclone,
         AnalyticCase.rossby,
-        AnalyticCase.aquaplanet
+        AnalyticCase.aquaplanet,
     ]
 
     if analytic_init_case in spherical_cases:
