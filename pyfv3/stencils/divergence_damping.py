@@ -411,7 +411,7 @@ class DivergenceDamping:
         )
 
         self._copy_computeplus = high_k_stencil_factory.from_dims_halo(
-            func=basic.copy_defn,
+            func=basic.copy,
             compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
             compute_halos=(0, 0),
         )

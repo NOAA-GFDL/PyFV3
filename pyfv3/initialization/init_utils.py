@@ -5,7 +5,6 @@ from types import SimpleNamespace
 import numpy as np
 
 import ndsl.constants as constants
-from ndsl.logging import ndsl_log
 from ndsl.dsl.typing import Float
 from ndsl.grid.eta import SURFACE_PRESSURE, compute_eta, vertical_coordinate
 from ndsl.grid.gnomonic import (
@@ -13,6 +12,7 @@ from ndsl.grid.gnomonic import (
     get_unit_vector_direction,
     lon_lat_midpoint,
 )
+from ndsl.logging import ndsl_log
 from pyfv3.dycore_state import DycoreState
 
 
@@ -387,24 +387,43 @@ def temperature(eta, eta_v, t_mean, lat):
 
 
 def hydro_eq(
-    km, is_, ie, js, je, ps, hs, drym, delp, ak, bk, pt, delz, area, ng, mountain, hydrostatic, hybrid_z, comm
+    km,
+    is_,
+    ie,
+    js,
+    je,
+    ps,
+    hs,
+    drym,
+    delp,
+    ak,
+    bk,
+    pt,
+    delz,
+    area,
+    ng,
+    mountain,
+    hydrostatic,
+    hybrid_z,
+    comm,
 ):
     # ndsl_log.info('Initializing ATM hydrostatically')
     # ndsl_log.info('Initializing Earth')
 
-    gz = np.empty((ie + 1 - is_, km+1))
-    ph = np.empty((ie + 1 - is_, km+1))
+    gz = np.empty((ie, km + 1))
+    ph = np.empty((ie, km + 1))
+    print(ph.shape)
 
     # Given p1 and z1 (250mb, 10km)
     p1 = 25000.0
-    z1 = 10.e3 * constants.GRAV
+    z1 = 10.0e3 * constants.GRAV
     t1 = 200.0
     t0 = 300.0  # sea-level temp.
     a0 = (t1 - t0) / z1 * 0.5
     c0 = t0 / a0
 
     if hybrid_z:
-        ptop = 100.  # *** hardwired model top ***
+        ptop = 100.0  # *** hardwired model top ***
     else:
         ptop = ak[0]
 
@@ -431,7 +450,7 @@ def hydro_eq(
     else:
         mslp = drym  # 1000.E2
         ps[is_:ie, js:je] = mslp
-        dps = 0.
+        dps = 0.0
 
     for j in range(js, je):
         for i in range(is_, ie):
@@ -445,25 +464,28 @@ def hydro_eq(
             # ---------------
             # Hybrid Z
             # ---------------
-            for k in range(km-1, 0, -1):  # k=km,2,-1
+            for k in range(km - 1, 0, -1):  # k=km,2,-1
                 for i in range(is_, ie):
-                    gz[i, k] = gz[i, k+1] - delz[i, j, k] * constants.GRAV
+                    gz[i, k] = gz[i, k + 1] - delz[i, j, k] * constants.GRAV
             # Correct delz at the top:
             for i in range(is_, ie):
                 delz[i, j, 0] = (gz[i, 1] - ztop) / constants.GRAV
 
             for k in range(1, km):  # k=2,km
                 for i in range(is_, ie):
-                    if (gz[i, k] >= z1):
+                    if gz[i, k] >= z1:
                         # Isothermal
                         ph[i, k] = ptop * np.exp(
                             (gz[i, 0] - gz[i, k]) / (constants.RDGAS * t1)
                         )
                     else:
                         # Constant lapse rate region (troposphere)
-                        ph[i, k] = ps[i, j] * np.exp(-1. / (
-                            a0 * constants.RDGAS
-                        ) * (gz[i, k] - hs[i, j]) / (gz[i, k] - hs[i, j] + c0))
+                        ph[i, k] = ps[i, j] * np.exp(
+                            -1.0
+                            / (a0 * constants.RDGAS)
+                            * (gz[i, k] - hs[i, j])
+                            / (gz[i, k] - hs[i, j] + c0)
+                        )
         else:
             # ---------------
             # Hybrid sigma-p
@@ -472,41 +494,45 @@ def hydro_eq(
                 for i in range(is_, ie):
                     ph[i, k] = ak[k] + bk[k] * ps[i, j]
 
-            for k in range(km-1, 0, -1):  # k=km,2,-1
+            for k in range(km - 1, 0, -1):  # k=km,2,-1
                 for i in range(is_, ie):
-                    if (ph[i, k] <= p1):
-                        gz[i, k] = gz[i, k + 1] + (
-                            constants.RDGAS * t1
-                        ) * np.log(ph[i, k + 1] / ph[i, k])
+                    if ph[i, k] <= p1:
+                        gz[i, k] = gz[i, k + 1] + (constants.RDGAS * t1) * np.log(
+                            ph[i, k + 1] / ph[i, k]
+                        )
                     else:
                         # Constant lapse rate region (troposphere)
-                        gz[i, k] = c0/(
-                            1 + a0 * constants.RDGAS * np.log(ph[i, k] / ps[i, j])
-                        ) + hs[i, j] - c0\
-            # model top
+                        gz[i, k] = (
+                            c0
+                            / (1 + a0 * constants.RDGAS * np.log(ph[i, k] / ps[i, j]))
+                            + hs[i, j]
+                            - c0
+                        )  # model top
             for i in range(is_, ie):
-                if (ph[i, 0] <= p1):
+                if ph[i, 0] <= p1:
                     gz[i, 0] = gz[i, 1] + (constants.RDGAS * t1) * np.log(
                         ph[i, 1] / ph[i, 0]
                     )
                 else:
-                    gz[i, 0] = (hs[i, j] + c0) / (ph[i, 0] / ps[i, j])**(
+                    gz[i, 0] = (hs[i, j] + c0) / (ph[i, 0] / ps[i, j]) ** (
                         a0 * constants.RDGAS
                     ) - c0
             if not hydrostatic:
                 for k in range(km):
                     for i in range(is_, ie):
-                        delz[i, j, k] = (gz[i, k+1] - gz[i, k]) / constants.GRAV
+                        delz[i, j, k] = (gz[i, k + 1] - gz[i, k]) / constants.GRAV
 
         # Convert geopotential to Temperature
         for k in range(km):
             for i in range(is_, ie):
-                pt[i, j, k] = (gz[i, k] - gz[i, k+1]) / (constants.RDGAS * (
-                    np.log(ph[i, k+1] / ph[i, k])
-                ))
+                pt[i, j, k] = (gz[i, k] - gz[i, k + 1]) / (
+                    constants.RDGAS * (np.log(ph[i, k + 1] / ph[i, k]))
+                )
                 pt[i, j, k] = max(t1, pt[i, j, k])
-                delp[i, j, k] = ph[i, k+1] - ph[i, k]
-        #if j == js:
-        #    i = is_
-        #    for k in range(km):
-        #        ndsl_log.info(f"{k}, {pt[i, j, k]}, {gz[i, k+1]}, {(gz[i, k]-gz[i, k+1])}, {ph[i, k]}")
+                delp[i, j, k] = ph[i, k + 1] - ph[i, k]
+        if j == js:
+            i = is_
+            for k in range(km):
+                ndsl_log.info(
+                    f"{k}, {pt[i, j, k]}, {gz[i, k+1]}, {(gz[i, k]-gz[i, k+1])}, {ph[i, k]}"
+                )
