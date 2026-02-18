@@ -4,7 +4,7 @@ from ndsl.dsl.gt4py import PARALLEL, computation, horizontal, interval, region
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, cast_to_index3d
 from ndsl.grid import DampingCoefficients
-from ndsl.stencils.basic_operations import copy_defn
+from ndsl.stencils.basic_operations import copy
 from pyfv3.stencils.copy_corners import CopyCornersX, CopyCornersY
 
 
@@ -155,7 +155,7 @@ class HyperdiffusionDamping:
 
         """Stencil responsible for doing corners updates in x-direction."""
         self._copy_stencil = stencil_factory.from_dims_halo(
-            func=copy_defn,
+            func=copy,
             compute_dims=[X_DIM, Y_DIM, Z_DIM],
             compute_halos=(3, 3),
         )

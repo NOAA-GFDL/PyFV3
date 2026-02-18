@@ -21,11 +21,13 @@ def init_aquaplanet_state(
     comm: CubedSphereCommunicator,
 ) -> DycoreState:
     sample_quantity = grid_data.lat
-    shape = (*sample_quantity.data.shape[0:2], grid_data.ak.data.shape[0])
-    nx, ny, nz = init_utils.local_compute_size(shape)
-    numpy_state = init_utils.empty_numpy_dycore_state(shape)
-    isc, iec, jsc, jec = init_utils.local_compute_bounds(shape)
+    field_shape = (*sample_quantity.field.shape[0:2], grid_data.ak.data.shape[0])
+    data_shape = (*sample_quantity.data.shape[0:2], grid_data.ak.data.shape[0])
+    nx, ny, nz = init_utils.local_compute_size(data_shape)
+    numpy_state = init_utils.empty_numpy_dycore_state(data_shape)
+    isc, iec, jsc, jec = init_utils.local_compute_bounds(field_shape)
     print(isc, iec, jsc, jec)
+    print(nx, ny, nz)
 
     hybrid_z = False
 
@@ -86,12 +88,17 @@ def init_aquaplanet_state(
         numpy_state.w[:] = 0.0
 
     numpy_state.phis[:] = 0.0
-    init_utils.hydro_eq(nz, 0, nx, 0, ny, numpy_state.ps[:], numpy_state.phis[:], 1.e5, numpy_state.delp[:], grid_data.ak.data[:], grid_data.bk.data[:], numpy_state.pt[:], numpy_state.delz[:], grid_data.area.field[:], NHALO, False, hydrostatic, hybrid_z, comm)
+    print(numpy_state.ps.shape)
+    init_utils.hydro_eq(
+        nz, isc, iec, jsc, jec, numpy_state.ps[:], numpy_state.phis[:], 1.e5,
+        numpy_state.delp[:], grid_data.ak.data[:], grid_data.bk.data[:],
+        numpy_state.pt[:], numpy_state.delz[:], grid_data.area.data[:],
+        NHALO, False, hydrostatic, hybrid_z, comm)
 
     state = DycoreState.init_from_numpy_arrays(
         numpy_state.__dict__,
         sizer=quantity_factory.sizer,
-        backend=sample_quantity.metadata.gt4py_backend,
+        backend=sample_quantity.metadata.backend,
     )
 
     comm.halo_update(state.phis, n_points=NHALO)

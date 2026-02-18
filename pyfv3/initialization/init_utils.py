@@ -392,8 +392,9 @@ def hydro_eq(
     # ndsl_log.info('Initializing ATM hydrostatically')
     # ndsl_log.info('Initializing Earth')
 
-    gz = np.empty((ie + 1 - is_, km+1))
-    ph = np.empty((ie + 1 - is_, km+1))
+    gz = np.empty((ie, km+1))
+    ph = np.empty((ie, km+1))
+    print(ph.shape)
 
     # Given p1 and z1 (250mb, 10km)
     p1 = 25000.0
@@ -509,4 +510,4 @@ def hydro_eq(
         if j == js:
             i = is_
             for k in range(km):
-                ndsl_log.info(k, pt[i, j, k], gz[i, k+1], (gz[i, k]-gz[i, k+1]), ph[i, k])
+                ndsl_log.info(f"{k}, {pt[i, j, k]}, {gz[i, k+1]}, {(gz[i, k]-gz[i, k+1])}, {ph[i, k]}")
