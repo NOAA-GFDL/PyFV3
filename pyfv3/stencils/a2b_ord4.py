@@ -1,5 +1,5 @@
 from ndsl import GridIndexing, QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, asin, computation, cos
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region, sin, sqrt
@@ -525,7 +525,7 @@ class AGrid2BGridFourthOrder:
         quantity_factory: QuantityFactory,
         grid_data: GridData,
         grid_type: int,
-        z_dim=Z_DIM,
+        z_dim=K_DIM,
         replace: bool = False,
     ):
         """
@@ -562,19 +562,19 @@ class AGrid2BGridFourthOrder:
             self._edge_n = grid_data.edge_n
 
             self._tmp_qx = quantity_factory.zeros(
-                dims=[X_INTERFACE_DIM, Y_DIM, z_dim],
+                dims=[I_INTERFACE_DIM, J_DIM, z_dim],
                 units="unknown",
                 dtype=Float,
             )
             self._tmp_qy = quantity_factory.zeros(
-                dims=[X_DIM, Y_INTERFACE_DIM, z_dim],
+                dims=[I_DIM, J_INTERFACE_DIM, z_dim],
                 units="unknown",
                 dtype=Float,
             )
             # TODO: the dimensions of tmp_qout_edges may not be correct, verify
             # with Lucas and either update the code or remove this comment
             self._tmp_qout_edges = quantity_factory.zeros(
-                dims=[X_DIM, Y_DIM, z_dim],
+                dims=[I_DIM, J_DIM, z_dim],
                 units="unknown",
                 dtype=Float,
             )
@@ -642,18 +642,18 @@ class AGrid2BGridFourthOrder:
 
             self._ppm_volume_mean_x_stencil = stencil_factory.from_dims_halo(
                 ppm_volume_mean_x,
-                compute_dims=[X_INTERFACE_DIM, Y_DIM, z_dim],
+                compute_dims=[I_INTERFACE_DIM, J_DIM, z_dim],
                 compute_halos=(0, 2),
             )
 
             self._ppm_volume_mean_y_stencil = stencil_factory.from_dims_halo(
                 ppm_volume_mean_y,
-                compute_dims=[X_DIM, Y_INTERFACE_DIM, z_dim],
+                compute_dims=[I_DIM, J_INTERFACE_DIM, z_dim],
                 compute_halos=(2, 0),
             )
 
             origin, domain = self._idx.get_origin_domain(
-                dims=(X_INTERFACE_DIM, Y_INTERFACE_DIM, z_dim),
+                dims=(I_INTERFACE_DIM, J_INTERFACE_DIM, z_dim),
             )
             origin, domain = self._exclude_tile_edges(origin, domain)
 
@@ -665,17 +665,17 @@ class AGrid2BGridFourthOrder:
                 a2b_interpolation, externals=ax_offsets, origin=origin, domain=domain
             )
             self._copy_stencil = stencil_factory.from_dims_halo(
-                copy, compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, z_dim]
+                copy, compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, z_dim]
             )
 
         else:  # grid type >= 3:
             self._doubly_periodic_a2b_ord4 = stencil_factory.from_dims_halo(
                 doubly_periodic_a2b_ord4_stencil,
-                compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, z_dim],
+                compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, z_dim],
             )
             if self.replace:
                 self._copy_stencil = stencil_factory.from_dims_halo(
-                    copy, compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, z_dim]
+                    copy, compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, z_dim]
                 )
 
     def _exclude_tile_edges(self, origin, domain, dims=("x", "y")):

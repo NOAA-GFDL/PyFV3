@@ -8,12 +8,12 @@ from ndsl import (
     orchestrate,
 )
 from ndsl.constants import (
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
     N_HALO_DEFAULT,
-    X_DIM,
-    X_INTERFACE_DIM,
-    Y_DIM,
-    Y_INTERFACE_DIM,
-    Z_DIM,
 )
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
@@ -204,32 +204,32 @@ class TracerAdvection:
         self.grid_data = grid_data
 
         self._x_area_flux = quantity_factory.zeros(
-            [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            [I_INTERFACE_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._y_area_flux = quantity_factory.zeros(
-            [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            [I_DIM, J_INTERFACE_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._x_flux = quantity_factory.zeros(
-            [X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            [I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._y_flux = quantity_factory.zeros(
-            [X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            [I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._tmp_dp = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="Pa",
             dtype=Float,
         )
         self._tmp_dp2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="Pa",
             dtype=Float,
         )
@@ -277,7 +277,7 @@ class TracerAdvection:
 
         # Setup halo updater for tracers
         tracer_halo_spec = quantity_factory.get_quantity_halo_spec(
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             n_halo=N_HALO_DEFAULT,
             dtype=Float,
         )

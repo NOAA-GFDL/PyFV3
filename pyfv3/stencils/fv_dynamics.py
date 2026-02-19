@@ -8,7 +8,7 @@ import pyfv3.stencils.moist_cv as moist_cv
 from ndsl import Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater
 from ndsl.checkpointer import NullCheckpointer
 from ndsl.comm.mpi import MPI
-from ndsl.constants import KAPPA, NQ, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM, ZVIR
+from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM, KAPPA, NQ, ZVIR
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
 from ndsl.dsl.gt4py import PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField
@@ -59,14 +59,14 @@ def fvdyn_temporaries(quantity_factory: QuantityFactory) -> Mapping[str, Quantit
     tmps = {}
     for name in ["te_2d", "te0_2d", "wsd"]:
         quantity = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
         tmps[name] = quantity
     for name in ["dp1", "cvm"]:
         quantity = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -172,8 +172,7 @@ class DynamicalCore:
         )
         if timestep == timedelta(seconds=0):
             raise RuntimeError(
-                "Bad dynamical core configuration:"
-                " the atmospheric timestep is 0 seconds!"
+                "Bad dynamical core configuration: the atmospheric timestep is 0 seconds!"
             )
         # nested and stretched_grid are options in the Fortran code which we
         # have not implemented, so they are hard-coded here.
@@ -187,8 +186,7 @@ class DynamicalCore:
         grid_indexing = stencil_factory.grid_indexing
         if not config.moist_phys:
             raise NotImplementedError(
-                "Dynamical core (fv_dynamics):"
-                " fvsetup is only implemented for moist_phys=true."
+                "Dynamical core (fv_dynamics): fvsetup is only implemented for moist_phys=true."
             )
         if config.nwat != 6:
             raise NotImplementedError(
@@ -295,8 +293,7 @@ class DynamicalCore:
 
         if not (not self.config.inline_q and NQ != 0):
             raise NotImplementedError(
-                "Dynamical core (fv_dynamics):"
-                "tracer_2d not implemented. z_tracer available"
+                "Dynamical core (fv_dynamics):tracer_2d not implemented. z_tracer available"
             )
         self._adjust_tracer_mixing_ratio = AdjustNegativeTracerMixingRatio(
             stencil_factory,
@@ -317,7 +314,7 @@ class DynamicalCore:
         )
 
         full_xyz_spec = quantity_factory.get_quantity_halo_spec(
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             n_halo=grid_indexing.n_halo,
             dtype=Float,
         )
@@ -361,7 +358,7 @@ class DynamicalCore:
                 delp=state.delp,
                 delz=state.delz,
                 peln=state.peln.transpose(
-                    [X_DIM, Z_INTERFACE_DIM, Y_DIM]
+                    [I_DIM, K_INTERFACE_DIM, J_DIM]
                 ),  # [x, z, y] fortran data
                 u=state.u,
                 v=state.v,
@@ -371,7 +368,7 @@ class DynamicalCore:
                 cappa=self._cappa,
                 pk=state.pk,
                 pe=state.pe.transpose(
-                    [X_DIM, Z_INTERFACE_DIM, Y_DIM]
+                    [I_DIM, K_INTERFACE_DIM, J_DIM]
                 ),  # [x, z, y] fortran data
                 phis=state.phis,
                 te_2d=self._te0_2d,
@@ -389,7 +386,7 @@ class DynamicalCore:
                 delp=state.delp,
                 delz=state.delz,
                 peln=state.peln.transpose(
-                    [X_DIM, Z_INTERFACE_DIM, Y_DIM]
+                    [I_DIM, K_INTERFACE_DIM, J_DIM]
                 ),  # [x, z, y] fortran data
                 u=state.u,
                 v=state.v,
@@ -398,7 +395,7 @@ class DynamicalCore:
                 pkz=state.pkz,
                 pk=state.pk,
                 pe=state.pe.transpose(
-                    [X_DIM, Z_INTERFACE_DIM, Y_DIM]
+                    [I_DIM, K_INTERFACE_DIM, J_DIM]
                 ),  # [x, z, y] fortran data
                 dp1=self._dp_initial,
             )
@@ -474,8 +471,7 @@ class DynamicalCore:
 
         if self.config.adiabatic and self.config.kord_tm > 0:
             raise NotImplementedError(
-                "Dynamical Core (fv_dynamics): Adiabatic with positive kord_tm"
-                " is not implemented."
+                "Dynamical Core (fv_dynamics): Adiabatic with positive kord_tm is not implemented."
             )
 
         if __debug__:

@@ -1,11 +1,11 @@
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import (
-    X_DIM,
-    X_INTERFACE_DIM,
-    Y_DIM,
-    Y_INTERFACE_DIM,
-    Z_DIM,
-    Z_INTERFACE_DIM,
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    K_INTERFACE_DIM,
 )
 from ndsl.dsl.gt4py import (
     BACKWARD,
@@ -321,48 +321,48 @@ class LagrangianToEulerian:
         )
 
         self._pe1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
         self._pe2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
         self._pe3 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
         self._dp2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="Pa",
             dtype=Float,
         )
         self._pn2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="Pa",
             dtype=Float,
         )
         self._pe0 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
         self._pe3 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
 
         self._gz = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="m^2 s^-2",
             dtype=Float,
         )
         self._cvm = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -401,7 +401,7 @@ class LagrangianToEulerian:
             quantity_factory,
             self._kord_tm,
             1,
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
         )
 
         self._mapn_tracer = MapNTracer(
@@ -418,7 +418,7 @@ class LagrangianToEulerian:
             quantity_factory,
             self._kord_wz,
             -2,
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
         )
 
         self._map_single_delz = MapSingle(
@@ -426,7 +426,7 @@ class LagrangianToEulerian:
             quantity_factory,
             self._kord_wz,
             1,
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
         )
 
         self._undo_delz_adjust_and_copy_peln = stencil_factory.from_origin_domain(
@@ -456,7 +456,7 @@ class LagrangianToEulerian:
             quantity_factory,
             self._kord_mt,
             -1,
-            dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
         )
 
         self._pressures_mapv = stencil_factory.from_origin_domain(
@@ -474,7 +474,7 @@ class LagrangianToEulerian:
             quantity_factory,
             self._kord_mt,
             -1,
-            dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
         )
 
         ax_offsets_jextra = grid_indexing.axis_offsets(
@@ -665,8 +665,7 @@ class LagrangianToEulerian:
         if last_step:
             if consv_te > CONSV_MIN:
                 raise NotImplementedError(
-                    "We do not support consv_te > 0.001 "
-                    "because that would trigger an allReduce"
+                    "We do not support consv_te > 0.001 because that would trigger an allReduce"
                 )
             elif consv_te < -CONSV_MIN:
                 raise NotImplementedError(

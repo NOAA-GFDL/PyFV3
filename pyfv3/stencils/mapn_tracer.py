@@ -1,6 +1,6 @@
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import Float, FloatField
 from pyfv3.stencils.fillz import FillNegativeTracerValues
 from pyfv3.stencils.map_single import MapSingle
@@ -27,7 +27,7 @@ class MapNTracer:
         )
         self._nq = int(nq)
         self._qs = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -41,7 +41,7 @@ class MapNTracer:
                 quantity_factory,
                 kord_tracer[i],
                 0,
-                dims=[X_DIM, Y_DIM, Z_DIM],
+                dims=[I_DIM, J_DIM, K_DIM],
             )
             for i in range(len(kord_tracer))
         ]

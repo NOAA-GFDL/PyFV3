@@ -10,13 +10,13 @@ import pyfv3.initialization.init_utils as init_utils
 import pyfv3.initialization.test_cases.initialize_baroclinic as baroclinic_init
 from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
 from ndsl.constants import (
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    K_INTERFACE_DIM,
     N_HALO_DEFAULT,
-    X_DIM,
-    X_INTERFACE_DIM,
-    Y_DIM,
-    Y_INTERFACE_DIM,
-    Z_DIM,
-    Z_INTERFACE_DIM,
 )
 from ndsl.grid import GridData, MetricTerms
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
@@ -29,91 +29,91 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
     outputs: Dict[str, Any] = {
         "u": {
             "name": "x_wind",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
         },
         "v": {
             "name": "y_wind",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "ua": {
             "name": "eastward_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "va": {
             "name": "northward_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "uc": {
             "name": "x_wind_on_c_grid",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "vc": {
             "name": "y_wind_on_c_grid",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
         },
         "w": {
             "name": "vertical_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "phis": {
             "name": "surface_geopotential",
             "units": "m^2 s^-2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
         },
         "delp": {
             "name": "pressure_thickness_of_atmospheric_layer",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "Pa",
         },
         "delz": {
             "name": "vertical_thickness_of_atmospheric_layer",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m",
         },
         "ps": {
             "name": "surface_pressure",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "Pa",
         },
         "pe": {
             "name": "interface_pressure",
-            "dims": [X_DIM, Z_INTERFACE_DIM, Y_DIM],
+            "dims": [I_DIM, K_INTERFACE_DIM, J_DIM],
             "units": "Pa",
             "n_halo": 1,
         },
         "pk": {
             "name": "interface_pressure_raised_to_power_of_kappa",
             "units": "unknown",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [I_DIM, J_DIM, K_INTERFACE_DIM],
             "n_halo": 0,
         },
         "pkz": {
             "name": "layer_mean_pressure_raised_to_power_of_kappa",
             "units": "unknown",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "n_halo": 0,
         },
         "peln": {
             "name": "logarithm_of_interface_pressure",
             "units": "ln(Pa)",
-            "dims": [X_DIM, Z_INTERFACE_DIM, Y_DIM],
+            "dims": [I_DIM, K_INTERFACE_DIM, J_DIM],
             "n_halo": 0,
         },
         "pt": {
             "name": "air_temperature",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "degK",
         },
         "q4d": {
             "name": "tracers",
-            "dims": [X_DIM, Y_DIM, Z_DIM, TRACER_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM, TRACER_DIM],
             "units": "kg/kg",
         },
     }
@@ -170,8 +170,7 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
 
     def compute_sequential(self, *args, **kwargs):
         pytest.skip(
-            f"{self.__class__} only has a mpirun implementation, "
-            "not running in mock-parallel"
+            f"{self.__class__} only has a mpirun implementation, not running in mock-parallel"
         )
 
     def outputs_from_state(self, state: DycoreState) -> dict:

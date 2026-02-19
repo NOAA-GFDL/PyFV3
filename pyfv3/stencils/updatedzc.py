@@ -1,6 +1,6 @@
 import ndsl.constants as constants
 from ndsl import Quantity, QuantityFactory, StencilFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval
@@ -141,12 +141,12 @@ class UpdateGeopotentialHeightOnCGrid:
         )
         self._dp_ref.view[:] = dp_ref.view[:]
         self._gz_x = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="m**2/s**2",
             dtype=Float,
         )
         self._gz_y = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="m**2/s**2",
             dtype=Float,
         )
