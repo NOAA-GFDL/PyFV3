@@ -43,7 +43,7 @@ extras = [
   "pyfv3[ndsl]",
   "pyfv3[test]"
 ]
-ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@2026.01.00"]
+ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git#feature/NDSL_Backend"]
 test = [
   "coverage",
   "pytest",
