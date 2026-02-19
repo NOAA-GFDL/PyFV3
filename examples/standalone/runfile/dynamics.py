@@ -27,6 +27,7 @@ from ndsl import (
     StencilConfig,
     StencilFactory,
     TilePartitioner,
+    Backend,
 )
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
 from ndsl.performance import Timer
@@ -55,7 +56,7 @@ def parse_args() -> Namespace:
         "backend",
         type=str,
         action="store",
-        help="gt4py backend to use",
+        help="backend to use",
     )
     parser.add_argument(
         "hash",
@@ -82,9 +83,7 @@ def parse_args() -> Namespace:
     return parser.parse_args()
 
 
-def set_experiment_info(
-    experiment_name: str, time_step: int, backend: str, git_hash: str
-) -> Dict[str, Any]:
+def set_experiment_info(experiment_name: str, time_step: int, backend: Backend, git_hash: str) -> Dict[str, Any]:
     experiment: Dict[str, Any] = {}
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
@@ -144,9 +143,7 @@ def write_global_timings(experiment: Dict[str, Any]) -> None:
         json.dump(experiment, outfile, sort_keys=True, indent=4)
 
 
-def gather_hit_counts(
-    hits_per_step: List[Dict[str, int]], results: Dict[str, Any]
-) -> Dict[str, Any]:
+def gather_hit_counts(hits_per_step: List[Dict[str, int]], results: Dict[str, Any]) -> Dict[str, Any]:
     """collects the hit count across all timers called in a program execution"""
     for data_point in hits_per_step:
         for name, value in data_point.items():
@@ -191,7 +188,7 @@ def read_serialized_initial_state(rank, grid, namelist, stencil_factory, data_di
 
 
 def collect_data_and_write_to_file(
-    args: Namespace, comm: MPI.Comm, hits_per_step, times_per_step, experiment_name
+    args: Namespace, comm: MPI.Comm, hits_per_step, times_per_step, experiment_name, backend: Backend
 ) -> None:
     """
     collect the gathered data from all the ranks onto rank 0 and write the timing file
@@ -212,7 +209,7 @@ def collect_data_and_write_to_file(
 
 
 def setup_dycore(
-    dycore_config, mpi_comm, backend, is_baroclinic_test_case, data_dir
+    dycore_config, mpi_comm, backend: Backend, is_baroclinic_test_case, data_dir
 ) -> Tuple[DynamicalCore, DycoreState, StencilFactory]:
     # set up grid-dependent helper structures
     partitioner = CubedSpherePartitioner(TilePartitioner(dycore_config.layout))
@@ -296,10 +293,11 @@ if __name__ == "__main__":
             if args.disable_halo_exchange
             else MPIComm()
         )
+        backend = Backend(args.backend)
         dycore, state, stencil_factory = setup_dycore(
             dycore_config,
             mpi_comm,
-            args.backend,
+            backend,
             is_baroclinic_test_case,
             args.data_dir,
         )
@@ -337,14 +335,19 @@ if __name__ == "__main__":
 
     # output profiling data
     if profiler is not None:
-        profiler.dump_stats(f"fv3core_{experiment_name}_{args.backend}_{rank}.prof")
+        profiler.dump_stats(f"fv3core_{experiment_name}_{backend.as_safe_for_path()}_{rank}.prof")
 
     # Timings
     if not args.disable_json_dump:
         # Collect times and output statistics in json
         MPI.COMM_WORLD.Barrier()
         collect_data_and_write_to_file(
-            args, MPI.COMM_WORLD, hits_per_step, times_per_step, experiment_name
+            args,
+            MPI.COMM_WORLD,
+            hits_per_step,
+            times_per_step,
+            experiment_name,
+            backend,
         )
     else:
         # Print a brief summary of timings

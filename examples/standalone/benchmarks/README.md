@@ -6,7 +6,7 @@
 
 - timesteps: Number of timesteps to execute (this includes the first one as a warm up step)
 - ranks: Number of ranks to run with
-- backend: choice of gt4py backend
+- backend: choice of NDSL backend
 - data_path: the test data
 
 ### Constraints

@@ -5,7 +5,7 @@ from typing import Any, Self
 import xarray as xr
 
 import ndsl.dsl.gt4py_utils as gt_utils
-from ndsl import GridSizer, Quantity, QuantityFactory
+from ndsl import GridSizer, Quantity, QuantityFactory, Backend
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,
@@ -328,7 +328,7 @@ class DycoreState:
 
     @classmethod
     def init_from_numpy_arrays(
-        cls, dict_of_numpy_arrays: dict, sizer: GridSizer, backend: str
+        cls, dict_of_numpy_arrays: dict, sizer: GridSizer, backend: Backend
     ) -> Self:
         field_names = [_field.name for _field in fields(cls)]
         for variable_name in dict_of_numpy_arrays.keys():
@@ -357,8 +357,10 @@ class DycoreState:
         sizer: GridSizer,
         bdt: float = 0.0,
         mdt: float = 0.0,
-        backend: str | None = None,
+        backend: Backend | None = None,
     ) -> Self:
+        if not backend:
+            backend = Backend.python()
         inputs = {}
         for _field in fields(cls):
             if "dims" in _field.metadata.keys():
