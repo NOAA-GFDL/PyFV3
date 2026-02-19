@@ -5,7 +5,7 @@ from typing import Any, Self
 import xarray as xr
 
 import ndsl.dsl.gt4py_utils as gt_utils
-from ndsl import GridSizer, Quantity, QuantityFactory, Backend
+from ndsl import Backend, GridSizer, Quantity, QuantityFactory
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,

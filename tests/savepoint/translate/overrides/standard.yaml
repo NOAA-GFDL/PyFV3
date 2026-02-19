@@ -38,7 +38,6 @@ Riem_Solver3:
     max_error: 5e-6
   - backend: gt:cpu_ifirst
     max_error: 5e-6
-    max_error: 5e-6
   - backend: st:dace:gpu:KJI
     max_error: 5e-6
   - backend: st:dace:cpu:KIJ

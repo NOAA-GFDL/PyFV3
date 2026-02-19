@@ -9,7 +9,7 @@ import f90nml
 import gt4py.cartesian.config
 from mpi4py import MPI
 
-from ndsl import LocalComm, Backend
+from ndsl import Backend, LocalComm
 from pyfv3 import DynamicalCoreConfig
 
 

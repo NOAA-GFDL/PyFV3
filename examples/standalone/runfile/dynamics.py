@@ -18,6 +18,7 @@ from mpi4py import MPI
 # ndsl.util, otherwise xarray precedes gt4py, causing
 # very strange errors on some systems (e.g. daint)
 from ndsl import (
+    Backend,
     CompilationConfig,
     CubedSphereCommunicator,
     CubedSpherePartitioner,
@@ -27,7 +28,6 @@ from ndsl import (
     StencilConfig,
     StencilFactory,
     TilePartitioner,
-    Backend,
 )
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
 from ndsl.performance import Timer
@@ -83,7 +83,9 @@ def parse_args() -> Namespace:
     return parser.parse_args()
 
 
-def set_experiment_info(experiment_name: str, time_step: int, backend: Backend, git_hash: str) -> Dict[str, Any]:
+def set_experiment_info(
+    experiment_name: str, time_step: int, backend: Backend, git_hash: str
+) -> Dict[str, Any]:
     experiment: Dict[str, Any] = {}
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
@@ -143,7 +145,9 @@ def write_global_timings(experiment: Dict[str, Any]) -> None:
         json.dump(experiment, outfile, sort_keys=True, indent=4)
 
 
-def gather_hit_counts(hits_per_step: List[Dict[str, int]], results: Dict[str, Any]) -> Dict[str, Any]:
+def gather_hit_counts(
+    hits_per_step: List[Dict[str, int]], results: Dict[str, Any]
+) -> Dict[str, Any]:
     """collects the hit count across all timers called in a program execution"""
     for data_point in hits_per_step:
         for name, value in data_point.items():
@@ -188,7 +192,12 @@ def read_serialized_initial_state(rank, grid, namelist, stencil_factory, data_di
 
 
 def collect_data_and_write_to_file(
-    args: Namespace, comm: MPI.Comm, hits_per_step, times_per_step, experiment_name, backend: Backend
+    args: Namespace,
+    comm: MPI.Comm,
+    hits_per_step,
+    times_per_step,
+    experiment_name,
+    backend: Backend,
 ) -> None:
     """
     collect the gathered data from all the ranks onto rank 0 and write the timing file
@@ -335,7 +344,9 @@ if __name__ == "__main__":
 
     # output profiling data
     if profiler is not None:
-        profiler.dump_stats(f"fv3core_{experiment_name}_{backend.as_safe_for_path()}_{rank}.prof")
+        profiler.dump_stats(
+            f"fv3core_{experiment_name}_{backend.as_safe_for_path()}_{rank}.prof"
+        )
 
     # Timings
     if not args.disable_json_dump:

@@ -10,6 +10,7 @@ import yaml
 from timing import collect_data_and_write_to_file
 
 from ndsl import (
+    Backend,
     CompilationConfig,
     CubedSphereCommunicator,
     CubedSpherePartitioner,
@@ -19,7 +20,6 @@ from ndsl import (
     StencilConfig,
     StencilFactory,
     TilePartitioner,
-    Backend,
 )
 from ndsl.comm import Comm
 from ndsl.performance import Timer

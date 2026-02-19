@@ -15,7 +15,6 @@ from ndsl import (
     CubedSphereCommunicator,
     CubedSpherePartitioner,
     DaceConfig,
-    DaCeOrchestration,
     GridIndexing,
     LocalComm,
     PerformanceCollector,
