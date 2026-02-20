@@ -8,7 +8,7 @@ from argparse import ArgumentParser, Namespace
 import f90nml
 import gt4py.cartesian.config
 
-from ndsl import NullComm
+from ndsl import LocalComm
 from pyfv3 import DynamicalCoreConfig
 
 
@@ -68,10 +68,10 @@ if __name__ == "__main__":
     for iteration in range(iterations):
         top_tile_rank = global_rank + size * iteration
         if top_tile_rank < sub_tiles:
-            mpi_comm = NullComm(
+            mpi_comm = LocalComm(
                 rank=top_tile_rank,
                 total_ranks=6 * sub_tiles,
-                fill_value=0.0,
+                buffer_dict={}
             )
             gt4py.cartesian.config.cache_settings["dir_name"] = os.environ.get(
                 "GT_CACHE_ROOT", f".gt_cache_{mpi_comm.Get_rank():06}"

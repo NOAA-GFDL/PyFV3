@@ -474,7 +474,7 @@ class DivergenceDamping:
         )
 
         self._set_value = high_k_stencil_factory.from_dims_halo(
-            func=basic.set_value_defn,
+            func=basic.set_value,
             compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
             compute_halos=(self.grid_indexing.n_halo, self.grid_indexing.n_halo),
         )

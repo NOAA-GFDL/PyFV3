@@ -22,7 +22,7 @@ from ndsl import (
     CubedSphereCommunicator,
     CubedSpherePartitioner,
     DaceConfig,
-    NullComm,
+    LocalComm,
     StencilConfig,
     StencilFactory,
     TilePartitioner,
@@ -287,7 +287,7 @@ if __name__ == "__main__":
         dycore_config = DynamicalCoreConfig.from_f90nml(namelist)
         experiment_name, is_baroclinic_test_case = get_experiment_info(args.data_dir)
         if args.disable_halo_exchange:
-            mpi_comm = NullComm(MPI.COMM_WORLD.Get_rank(), MPI.COMM_WORLD.Get_size())
+            mpi_comm = LocalComm(MPI.COMM_WORLD.Get_rank(), MPI.COMM_WORLD.Get_size(), {})
         else:
             mpi_comm = MPI.COMM_WORLD
         dycore, state, stencil_factory = setup_dycore(

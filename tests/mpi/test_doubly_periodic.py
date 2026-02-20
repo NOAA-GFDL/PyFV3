@@ -93,6 +93,7 @@ def test_dycore_runs_one_step() -> None:
         layout=config.layout,
         tile_partitioner=partitioner,
         tile_rank=communicator.rank,
+        backend=backend,
     )
     grid_indexing = GridIndexing.from_sizer_and_communicator(
         sizer=sizer, comm=communicator

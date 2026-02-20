@@ -14,7 +14,7 @@ from ndsl import (
     CubedSphereCommunicator,
     CubedSpherePartitioner,
     DaceConfig,
-    NullComm,
+    LocalComm,
     StencilConfig,
     StencilFactory,
     TilePartitioner,
@@ -99,7 +99,7 @@ def set_up_communicator(
         assert comm is not None
         cube_comm = CubedSphereCommunicator(comm, partitioner)
     else:
-        cube_comm = CubedSphereCommunicator(NullComm(0, 0), partitioner)
+        cube_comm = CubedSphereCommunicator(LocalComm(0, 0, {}), partitioner)
     return comm, cube_comm
 
 
