@@ -177,10 +177,7 @@ class DynamicalCore:
         # nested and stretched_grid are options in the Fortran code which we
         # have not implemented, so they are hard-coded here.
         self.call_checkpointer = checkpointer is not None
-        if checkpointer is None:
-            self.checkpointer = NullCheckpointer()
-        else:
-            self.checkpointer = checkpointer
+        self.checkpointer = NullCheckpointer() if checkpointer is None else checkpointer
         nested = False
         stretched_grid = False
         grid_indexing = stencil_factory.grid_indexing
