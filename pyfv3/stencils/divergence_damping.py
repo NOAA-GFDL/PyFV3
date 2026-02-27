@@ -416,7 +416,7 @@ class DivergenceDamping:
             compute_halos=(0, 0),
         )
         self.fill_corners_bgrid_x = corners.FillCornersBGrid(
-            direction="x",
+            direction="i",
             stencil_factory=high_k_stencil_factory,
         )
 
@@ -447,7 +447,7 @@ class DivergenceDamping:
         )
 
         self.fill_corners_bgrid_y = corners.FillCornersBGrid(
-            direction="y",
+            direction="j",
             stencil_factory=high_k_stencil_factory,
         )
 
