@@ -11,6 +11,7 @@ from mpi4py import MPI
 
 import pyfv3
 from ndsl import (
+    Backend,
     CompilationConfig,
     CubedSphereCommunicator,
     CubedSpherePartitioner,
@@ -27,7 +28,6 @@ from ndsl import (
 )
 from ndsl.comm.comm_abc import Comm
 from ndsl.dsl.dace.build import set_distributed_caches
-from ndsl.dsl.gt4py_utils import is_gpu_backend
 from ndsl.dsl.typing import get_precision
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
 from ndsl.logging import ndsl_log
@@ -105,7 +105,7 @@ class GeosDycoreWrapper:
         namelist: f90nml.Namelist,
         bdt: int,
         comm: Comm,
-        backend: str,
+        backend: Backend,
         fortran_mem_space: MemorySpace = MemorySpace.HOST,
     ) -> None:
         # Look for an override to run on a single node
@@ -143,9 +143,9 @@ class GeosDycoreWrapper:
             self.namelist,
             partitioner.tile,
             self.communicator.tile.rank,
-            backend=backend,
+            backend=self.backend,
         )
-        quantity_factory = QuantityFactory(sizer=sizer, backend=backend)
+        quantity_factory = QuantityFactory(sizer=sizer, backend=self.backend)
 
         # set up the metric terms and grid data
         metric_terms = MetricTerms(
@@ -157,7 +157,7 @@ class GeosDycoreWrapper:
 
         stencil_config = StencilConfig(
             compilation_config=CompilationConfig(
-                backend=backend, rebuild=False, validate_args=False
+                backend=self.backend, rebuild=False, validate_args=False
             ),
         )
 
@@ -206,9 +206,10 @@ class GeosDycoreWrapper:
                 state=self.dycore_state,
             )
 
+        is_gpu_backend = self.backend.is_gpu_backend()
         self._fortran_mem_space = fortran_mem_space
         self._pace_mem_space = (
-            MemorySpace.DEVICE if is_gpu_backend(backend) else MemorySpace.HOST
+            MemorySpace.DEVICE if is_gpu_backend else MemorySpace.HOST
         )
 
         self.output_dict: dict[str, np.ndarray] = {}
@@ -217,13 +218,13 @@ class GeosDycoreWrapper:
         # Feedback information
         device_ordinal_info = (
             f"  Device PCI bus id: {cp.cuda.Device(0).pci_bus_id}\n"
-            if is_gpu_backend(backend)
+            if is_gpu_backend
             else "N/A"
         )
         MPS_pipe_directory = os.getenv("CUDA_MPS_PIPE_DIRECTORY", None)
         MPS_is_on = (
             MPS_pipe_directory is not None
-            and is_gpu_backend(backend)
+            and is_gpu_backend
             and os.path.exists(f"{MPS_pipe_directory}/log")
         )
         ndsl_log.info(
