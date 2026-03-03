@@ -14,7 +14,7 @@ classifiers = [
 dependencies = [
   "dacite",
   "f90nml>=1.1.0",
-  "numpy==1.26.4",
+  "numpy>=2",
   "pyyaml",
   "xarray"
 ]
