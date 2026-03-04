@@ -10,7 +10,7 @@ on:
 
 jobs:
   pyshield_translate_tests:
-    uses: romanc/PySHiELD/.github/workflows/translate.yaml@noop
+    uses: NOAA-GFDL/PySHiELD/.github/workflows/translate.yaml@develop
     with:
       component_trigger: true
       component_name: pyFV3
