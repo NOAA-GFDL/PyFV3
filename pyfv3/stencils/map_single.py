@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import Optional
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntFieldIJ  # noqa: F401
 from ndsl.stencils.basic_operations import copy
@@ -102,7 +102,7 @@ class MapSingle:
 
         def make_quantity():
             return quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM],
+                [I_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=Float,
             )
@@ -113,11 +113,11 @@ class MapSingle:
         self._q4_3 = make_quantity()
         self._q4_4 = make_quantity()
         self._tmp_qs = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
-        self._lev = quantity_factory.zeros([X_DIM, Y_DIM], units="", dtype=int)
+        self._lev = quantity_factory.zeros([I_DIM, J_DIM], units="", dtype=int)
 
         self._copy_stencil = stencil_factory.from_dims_halo(
             copy,

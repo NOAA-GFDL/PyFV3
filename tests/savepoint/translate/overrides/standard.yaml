@@ -1,38 +1,28 @@
 CS_Profile_2d:
-  - backend: gt:gpu
+  - backend: st:gt:gpu:KJI
     max_error: 2.5e-9
     near_zero: 1.5e-14
-  - backend: cuda
-    max_error: 2.5e-9
-    near_zero: 1.5e-14
-  - backend: dace:gpu
+  - backend: st:dace:gpu:KJI
     max_error: 2.5e-9
     near_zero: 1.5e-14
 
 CS_Profile_2d-2:
-  - backend: gt:gpu
+  - backend: st:gt:gpu:KJI
     max_error: 3e-8
     near_zero: 1.5e-14
-  - backend: dace:gpu
-    max_error: 3e-8
-    near_zero: 1.5e-14
-  - backend: cuda
+  - backend: st:dace:gpu:KJI
     max_error: 3e-8
     near_zero: 1.5e-14
 
 Fillz:
-  - backend: gt:gpu
+  - backend: st:gt:gpu:KJI
     max_error: 5e-6
-  - backend: dace:gpu
+  - backend: st:dace:gpu:KJI
     max_error: 5e-6
 
 MapN_Tracer_2d:
-  - backend: gtcuda
-    max_error: 2e-7
-    near_zero: 1e-17
-    ignore_near_zero_errors:
-      - qtracers
-  - backend: dace:gpu
+
+  - backend: st:dace:gpu:KJI
     max_error: 2e-7
     near_zero: 1e-17
     ignore_near_zero_errors:
@@ -41,33 +31,26 @@ MapN_Tracer_2d:
     max_error: 9e-9 # 48_6ranks
 
 NH_P_Grad:
-  - backend: gtcuda
-    max_error: 2e-9
-  - backend: dace:cpu
-    max_error: 6e-11
+  max_error: 6e-11
 
 Riem_Solver3:
-  - backend: gt:gpu
+  - backend: st:gt:gpu:KJI
     max_error: 5e-6
   - backend: gt:cpu_ifirst
     max_error: 5e-6
-  - backend: cuda
+  - backend: st:dace:gpu:KJI
     max_error: 5e-6
-  - backend: numpy
-    max_error: 5e-6
-  - backend: dace:gpu
-    max_error: 5e-6
-  - backend: dace:cpu
+  - backend: st:dace:cpu:KIJ
     max_error: 5e-6
 
 Remapping:
-  - backend: gt:gpu
+  - backend: st:gt:gpu:KJI
     max_error: 1e-9
     near_zero: 5e-6
     ignore_near_zero_errors:
       - q_con
       - tracers
-  - backend: dace:gpu
+  - backend: st:dace:gpu:KJI
     max_error: 1e-9
     near_zero: 5e-6
     ignore_near_zero_errors:
@@ -75,74 +58,55 @@ Remapping:
       - tracers
 
 UpdateDzC:
-  - backend: gt:gpu
+  - backend: st:gt:gpu:KJI
     max_error: 5e-10
     near_zero: 4.5e-15
     ignore_near_zero_errors:
       - ws
-  - backend: cuda
+  - backend: st:dace:gpu:KJI
     max_error: 5e-10
     near_zero: 4.5e-15
     ignore_near_zero_errors:
       - ws
-  - backend: dace:gpu
-    max_error: 5e-10
-    near_zero: 4.5e-15
-    ignore_near_zero_errors:
-      - ws
-  - backend: dace:cpu
+  - backend: st:dace:cpu:KIJ
     max_error: 3e-13
 
 UpdateDzD:
-  - backend: gt:gpu
+  - backend: st:gt:gpu:KJI
     max_error: 5e-10
     ignore_near_zero_errors:
       - wsd
-  - backend: cuda
+  - backend: st:dace:gpu:KJI
     max_error: 5e-10
     ignore_near_zero_errors:
       - wsd
-  - backend: dace:gpu
-    max_error: 5e-10
-    ignore_near_zero_errors:
-      - wsd
-  - backend: dace:cpu
+  - backend: st:dace:cpu:KIJ
     max_error: 5e-10
     ignore_near_zero_errors:
       - wsd
 
 FVSubgridZ:
-  - backend: gt:gpu
+  - backend: st:gt:gpu:KJI
     max_error: 1e-8
-  - backend: dace:gpu
+  - backend: st:dace:gpu:KJI
     max_error: 1e-8
-    skip_test: true # Register overflow lead to CUDA 401
-  - backend: cuda
-    max_error: 1e-8
-
 DynCore:
-  - backend: gt:gpu
+  - backend: st:gt:gpu:KJI
     ignore_near_zero_errors:
       - wsd
-  - backend: cuda
+  - backend: st:dace:cpu:KIJ
     ignore_near_zero_errors:
       - wsd
-  - backend: dace:cpu
-    ignore_near_zero_errors:
-      - wsd
-  - backend: dace:gpu
+  - backend: st:dace:gpu:KJI
     ignore_near_zero_errors:
       - wsd
 
 Tracer2D1L:
-  - backend: gt:gpu
+  - backend: st:gt:gpu:KJI
     max_error: 1e-9
-  - backend: cuda
-    max_error: 1e-9
-  - backend: dace:cpu
     ignore_near_zero_errors:
       tracers: 1e-9
-  - backend: dace:gpu
+  - backend: st:dace:gpu:KJI
     ignore_near_zero_errors:
       tracers: 1e-9
   - backend: gt:cpu_ifirst
@@ -194,33 +158,33 @@ FVDynamics:
   - max_error: 5e-5 # 48_6ranks using metric terms
 
 DivergenceDamping:
-  - backend: dace:cpu
+  - backend: st:dace:cpu:KIJ
     max_error: 1e-9
-  - backend: dace:gpu
+  - backend: st:dace:gpu:KJI
     max_error: 1e-9
 
 DelnFlux:
   - max_error: 2e-13 # changes in code for mass conservation at single precision, which is not included in original translate tests.
 
 Del2Cubed:
-  - backend: dace:cpu
+  - backend: st:dace:cpu:KIJ
     max_error: 8e-12
 
 FvTp2d:
   - max_error: 2e-13 # changes in code for mass conservation at single precision, which is not included in original translate tests.
 
 FxAdv:
-  - backend: dace:cpu
+  - backend: st:dace:cpu:KIJ
     max_error: 5e-12
 
 XPPM:
-  - backend: dace:cpu
+  - backend: st:dace:cpu:KIJ
     max_error: 2e-12
 
 YPPM:
-  - backend: dace:cpu
+  - backend: st:dace:cpu:KIJ
     max_error: 2e-13
 
 A2B_Ord4:
-  - backend: dace:cpu
+  - backend: st:dace:cpu:KIJ
     max_error: 1e-13

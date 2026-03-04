@@ -10,6 +10,7 @@ import yaml
 from timing import collect_data_and_write_to_file
 
 from ndsl import (
+    Backend,
     CompilationConfig,
     CubedSphereCommunicator,
     CubedSpherePartitioner,
@@ -125,7 +126,7 @@ def read_and_reset_timer(timestep_timer, times_per_step, hits_per_step):
 @click.command()
 @click.argument("data_directory", required=True, nargs=1)
 @click.argument("time_steps", required=False, default="1")
-@click.argument("backend", required=False, default="gt:cpu_ifirst")
+@click.argument("backend", required=False, default="st:gt:cpu:KJI")
 @click.option("--disable_halo_exchange/--no-disable_halo_exchange", default=False)
 @click.option("--print_timings/--no-print_timings", default=True)
 def driver(
@@ -143,16 +144,17 @@ def driver(
         mpi_comm, communicator = set_up_communicator(
             disable_halo_exchange, layout=layout
         )
-        grid = Grid.with_data_from_namelist(dycore_config, communicator, backend)
+        ndsl_backend = Backend(backend)
+        grid = Grid.with_data_from_namelist(dycore_config, communicator, ndsl_backend)
         dace_config = DaceConfig(
             communicator,
-            backend,
+            ndsl_backend,
             tile_nx=dycore_config.npx,
             tile_nz=dycore_config.npz,
         )
         stencil_config = StencilConfig(
             compilation_config=CompilationConfig(
-                backend=backend, rebuild=False, validate_args=True
+                backend=ndsl_backend, rebuild=False, validate_args=True
             ),
             dace_config=dace_config,
         )
@@ -209,7 +211,7 @@ def driver(
         "name": "acoustics",
         "dataset": experiment_name,
         "timesteps": time_steps,
-        "backend": backend,
+        "backend": ndsl_backend,
         "halo_update": not disable_halo_exchange,
         "hash": "",
     }

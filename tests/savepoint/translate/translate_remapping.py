@@ -2,7 +2,7 @@ from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
-from ndsl.constants import Z_DIM
+from ndsl.constants import K_DIM
 from pyfv3.stencils import LagrangianToEulerian
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
@@ -106,7 +106,7 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
         inputs["wsd"] = wsd_2d
         inputs["q_cld"] = inputs["tracers"]["qcld"]
         inputs["last_step"] = bool(inputs["last_step"])
-        pfull = self.grid.quantity_factory.zeros([Z_DIM], units="Pa")
+        pfull = self.grid.quantity_factory.zeros([K_DIM], units="Pa")
         pfull.data[:] = pfull.np.asarray(inputs.pop("pfull"))
         l_to_e_obj = LagrangianToEulerian(
             self.stencil_factory,

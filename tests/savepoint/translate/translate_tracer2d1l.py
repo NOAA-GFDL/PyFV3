@@ -3,7 +3,7 @@ from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import ParallelTranslate
 from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils import FiniteVolumeTransport, TracerAdvection
@@ -13,7 +13,7 @@ from pyfv3.utils.functional_validation import get_subset_func
 class TranslateTracer2D1L(ParallelTranslate):
     inputs = {
         "tracers": {
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/m^2",
         }
     }
@@ -38,7 +38,7 @@ class TranslateTracer2D1L(ParallelTranslate):
         self.stencil_factory = stencil_factory
         self._subset = get_subset_func(
             self.grid.grid_indexing,
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             n_halo=((0, 0), (0, 0)),
         )
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
@@ -102,8 +102,7 @@ class TranslateTracer2D1L(ParallelTranslate):
 
     def compute_sequential(self, a, b):
         pytest.skip(
-            f"{self.__class__} only has a mpirun implementation, "
-            "not running in mock-parallel"
+            f"{self.__class__} only has a mpirun implementation, not running in mock-parallel"
         )
 
     def subset_output(self, varname: str, output):

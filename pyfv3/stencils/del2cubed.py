@@ -1,5 +1,5 @@
 from ndsl import QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation, horizontal, interval, region
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, cast_to_index3d
@@ -99,24 +99,24 @@ class HyperdiffusionDamping:
         # the units of these temporaries are relative to the input units,
         # so they are undefined
         self._fx = quantity_factory.zeros(
-            dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
             units="undefined",
             dtype=Float,
         )
         self._fy = quantity_factory.zeros(
-            dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
             units="undefined",
             dtype=Float,
         )
         self._q = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             units="undefined",
             dtype=Float,
         )
 
         self._corner_fill = stencil_factory.from_dims_halo(
             func=corner_fill,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
             compute_halos=(3, 3),
         )
 
@@ -129,13 +129,13 @@ class HyperdiffusionDamping:
         domains = []
         for n_halo in range(self._ntimes - 1, -1, -1):
             origin, domain = grid_indexing.get_origin_domain(
-                [X_DIM, Y_DIM, Z_DIM], halos=(n_halo, n_halo)
+                [I_DIM, J_DIM, K_DIM], halos=(n_halo, n_halo)
             )
             _, domain_x = grid_indexing.get_origin_domain(
-                [X_INTERFACE_DIM, Y_DIM, Z_DIM], halos=(n_halo, n_halo)
+                [I_INTERFACE_DIM, J_DIM, K_DIM], halos=(n_halo, n_halo)
             )
             _, domain_y = grid_indexing.get_origin_domain(
-                [X_DIM, Y_INTERFACE_DIM, Z_DIM], halos=(n_halo, n_halo)
+                [I_DIM, J_INTERFACE_DIM, K_DIM], halos=(n_halo, n_halo)
             )
             origins.append(cast_to_index3d(origin))
             domains.append(cast_to_index3d(domain))
@@ -156,7 +156,7 @@ class HyperdiffusionDamping:
         """Stencil responsible for doing corners updates in x-direction."""
         self._copy_stencil = stencil_factory.from_dims_halo(
             func=copy,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
             compute_halos=(3, 3),
         )
 

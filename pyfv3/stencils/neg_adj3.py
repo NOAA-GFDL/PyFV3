@@ -1,6 +1,6 @@
 import ndsl.constants as constants
 from ndsl import QuantityFactory, StencilFactory
-from ndsl.constants import X_DIM, Y_DIM
+from ndsl.constants import I_DIM, J_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval
@@ -340,12 +340,12 @@ class AdjustNegativeTracerMixingRatio:
     ):
         grid_indexing = stencil_factory.grid_indexing
         self._sum1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
         self._sum2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -356,8 +356,7 @@ class AdjustNegativeTracerMixingRatio:
         if hydrostatic:
             self._d0_vap = constants.CP_VAP - constants.C_LIQ
             raise NotImplementedError(
-                "Adjust Negative Tracer Mixing Ratio (neg_adj3):"
-                " Hydrostatic is not implemented"
+                "Adjust Negative Tracer Mixing Ratio (neg_adj3): Hydrostatic is not implemented"
             )
         else:
             self._d0_vap = constants.CV_VAP - constants.C_LIQ

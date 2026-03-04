@@ -7,7 +7,7 @@
 ## Arguments:
 # $1: number of timesteps to run
 # $2: number of ranks to execute with (ensure that this is compatible with fv3core)
-# $3: backend to use in gt4py
+# $3: backend to use in NDSL
 # $4: path to the data directory that should be run
 # $5: (optional) arguments to pass to python invocation
 # $6: (optional) arguments to pass to dynamics.py invocation

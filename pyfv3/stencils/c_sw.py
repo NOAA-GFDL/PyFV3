@@ -1,5 +1,5 @@
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation, horizontal, interval, region  # noqa
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
@@ -515,7 +515,7 @@ class CGridShallowWaterDynamics:
         # TODO: double-check the dimensions on these, they may be incorrect
         # as they are only documentation and not used by the code
         self.delpc = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -523,7 +523,7 @@ class CGridShallowWaterDynamics:
         pressure thickness on c-grid forward step
         """
         self.ptc = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -532,7 +532,7 @@ class CGridShallowWaterDynamics:
         """
         self._zero_delpc_ptc = stencil_factory.from_dims_halo(
             zero_delpc_ptc,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
             compute_halos=(3, 3),
         )
 
@@ -547,7 +547,7 @@ class CGridShallowWaterDynamics:
 
         def make_quantity() -> Quantity:
             return quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM],
+                [I_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=Float,
             )
@@ -563,7 +563,7 @@ class CGridShallowWaterDynamics:
         if nord > 0:
             self._divergence_corner = stencil_factory.from_dims_halo(
                 func=divergence_corner,
-                compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+                compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
                 externals={"grid_type": grid_type},
             )
         else:
@@ -571,13 +571,13 @@ class CGridShallowWaterDynamics:
 
         self._geoadjust_ut = stencil_factory.from_dims_halo(
             func=geoadjust_ut,
-            compute_dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
             compute_halos=(1, 1),
         )
 
         self._geoadjust_vt = stencil_factory.from_dims_halo(
             func=geoadjust_vt,
-            compute_dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
             compute_halos=(1, 1),
         )
 
@@ -585,13 +585,13 @@ class CGridShallowWaterDynamics:
             self._fill_corners_x_delp_pt_w_stencil = stencil_factory.from_dims_halo(
                 fill_corners_delp_pt_w,
                 externals={"fill_corners_func": corners.fill_corners_2cells_x},
-                compute_dims=[X_DIM, Y_DIM, Z_DIM],
+                compute_dims=[I_DIM, J_DIM, K_DIM],
                 compute_halos=(3, 3),
             )
 
         self._compute_nonhydro_fluxes_x_stencil = stencil_factory.from_dims_halo(
             compute_nonhydrostatic_fluxes_x,
-            compute_dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
             compute_halos=(1, 1),
         )
 
@@ -599,29 +599,29 @@ class CGridShallowWaterDynamics:
             self._fill_corners_y_delp_pt_w_stencil = stencil_factory.from_dims_halo(
                 fill_corners_delp_pt_w,
                 externals={"fill_corners_func": corners.fill_corners_2cells_y},
-                compute_dims=[X_DIM, Y_DIM, Z_DIM],
+                compute_dims=[I_DIM, J_DIM, K_DIM],
                 compute_halos=(3, 3),
             )
 
         self._transportdelp_updatevorticity_and_ke = stencil_factory.from_dims_halo(
             func=transportdelp_update_vorticity_and_kineticenergy,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
             compute_halos=(1, 1),
             externals={"grid_type": grid_type},
         )
 
         self._circulation_cgrid = stencil_factory.from_dims_halo(
             func=circulation_cgrid,
-            compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
         )
         self._absolute_vorticity = stencil_factory.from_dims_halo(
             func=absolute_vorticity,
-            compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
         )
 
         self._update_y_velocity = stencil_factory.from_dims_halo(
             func=update_y_velocity,
-            compute_dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
             externals={
                 "grid_type": grid_type,
             },
@@ -629,7 +629,7 @@ class CGridShallowWaterDynamics:
 
         self._update_x_velocity = stencil_factory.from_dims_halo(
             func=update_x_velocity,
-            compute_dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
             externals={"grid_type": grid_type},
         )
 
