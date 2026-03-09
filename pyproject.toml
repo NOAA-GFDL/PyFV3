@@ -41,11 +41,9 @@ extras = [
   "pyfv3[dev]",
   "pyfv3[docs]",
   "pyfv3[ndsl]",
-  "pyfv3[serialbox]",
   "pyfv3[test]"
 ]
 ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@2026.02.00"]
-serialbox = ["serialbox @ git+https://github.com/FlorianDeconinck/serialbox.git@feature/data_ijkbuff"]
 test = [
   "coverage",
   "pytest",
