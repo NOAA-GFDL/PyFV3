@@ -47,8 +47,7 @@ ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@2026.02.00"]
 test = [
   "coverage",
   "pytest",
-  "pytest-subtests",
-  "serialbox"
+  "pytest-subtests"
 ]
 
 [project.urls]
