@@ -1,10 +1,8 @@
-import numpy as np
-from ndsl import StencilFactory
 from f90nml import Namelist
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from pyFV3.stencils import NonhydrostaticVerticalSolverCGrid
-from pyFV3.testing import TranslateDycoreFortranData2Py
-from pyFV3.utils.functional_validation import get_subset_func
+
+from ndsl import StencilFactory
+from pyfv3.stencils import NonhydrostaticVerticalSolverCGrid
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateRiem_Solver_C(TranslateDycoreFortranData2Py):
@@ -18,7 +16,7 @@ class TranslateRiem_Solver_C(TranslateDycoreFortranData2Py):
         self.compute_func = NonhydrostaticVerticalSolverCGrid(  # type: ignore
             stencil_factory,
             quantity_factory=self.grid.quantity_factory,
-            p_fac=namelist.p_fac,
+            p_fac=self.config.p_fac,
         )
         self.in_vars["data_vars"] = {
             "cappa": {},

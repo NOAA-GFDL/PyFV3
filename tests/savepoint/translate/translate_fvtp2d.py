@@ -1,10 +1,11 @@
+from f90nml import Namelist
+
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
-from f90nml import Namelist
-from ndsl.constants import Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import Float
-from pyFV3.stencils import FiniteVolumeTransport
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.stencils import FiniteVolumeTransport
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateFvTp2d(TranslateDycoreFortranData2Py):
@@ -53,13 +54,19 @@ class TranslateFvTp2d(TranslateDycoreFortranData2Py):
             backend=self.stencil_factory.backend,
         )
         nord_col = self.grid.quantity_factory.zeros(
-            dims=[Z_DIM], units="unknown", dtype=Float
+            dims=[K_DIM], units="unknown", dtype=Float
         )
         nord_col.data[:] = nord_col.np.asarray(inputs.pop("nord"))
         damp_c = self.grid.quantity_factory.zeros(
-            dims=[Z_DIM], units="unknown", dtype=Float
+            dims=[K_DIM], units="unknown", dtype=Float
         )
         damp_c.data[:] = damp_c.np.asarray(inputs.pop("damp_c"))
+
+        q = self.grid.quantity_factory.zeros(
+            dims=[I_DIM, J_DIM, K_DIM], units="unknown", dtype=Float
+        )
+        q.data[:] = q.np.asarray(inputs.pop("q"))
+        inputs["q"] = q
         for optional_arg in ["mass"]:
             if optional_arg not in inputs:
                 inputs[optional_arg] = None

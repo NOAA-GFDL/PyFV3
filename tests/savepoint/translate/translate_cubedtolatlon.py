@@ -1,18 +1,20 @@
+from f90nml import Namelist
+
 from ndsl import Quantity, StencilFactory
-from f90nml.namelist import Namelist
-from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.stencils.c2l_ord import CubedToLatLon
 from ndsl.stencils.testing import ParallelTranslate2Py
+from pyfv3 import DynamicalCoreConfig
 
 
 class TranslateCubedToLatLon(ParallelTranslate2Py):
     inputs = {
         "u": {
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
         },
         "v": {
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
     }
@@ -32,7 +34,8 @@ class TranslateCubedToLatLon(ParallelTranslate2Py):
             "v": self.grid.x3d_domain_dict(),
         }
         self.stencil_factory = stencil_factory
-        self.grid_type = namelist.grid_type
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
+        self.grid_type = self.config.grid_type
 
     def compute_parallel(self, inputs, communicator):
         self._base.make_storage_data_input_vars(inputs)
@@ -40,11 +43,13 @@ class TranslateCubedToLatLon(ParallelTranslate2Py):
             inputs["u"],
             self.inputs["u"]["dims"],
             self.grid.grid_indexing,
+            self.stencil_factory.backend,
         )
         v_quantity = _quantity_wrap(
             inputs["v"],
             self.inputs["v"]["dims"],
             self.grid.grid_indexing,
+            self.stencil_factory.backend,
         )
         state_dict = {"u": u_quantity, "v": v_quantity}
 
@@ -53,7 +58,7 @@ class TranslateCubedToLatLon(ParallelTranslate2Py):
             stencil_factory=self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             grid_data=self.grid.grid_data,
-            order=self.namelist.c2l_ord,
+            order=self.config.c2l_ord,
             comm=communicator,
             grid_type=self.grid_type,
         )
@@ -61,7 +66,7 @@ class TranslateCubedToLatLon(ParallelTranslate2Py):
         return self._base.slice_output(inputs)
 
 
-def _quantity_wrap(storage, dims, grid_indexing):
+def _quantity_wrap(storage, dims, grid_indexing, backend):
     origin, extent = grid_indexing.get_origin_domain(dims)
     return Quantity(
         storage,
@@ -69,4 +74,5 @@ def _quantity_wrap(storage, dims, grid_indexing):
         units="unknown",
         origin=origin,
         extent=extent,
+        backend=backend,
     )

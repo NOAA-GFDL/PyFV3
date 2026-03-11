@@ -1,8 +1,9 @@
-from ndsl import StencilFactory
 from f90nml import Namelist
-from pyFV3 import _config as spec
-from pyFV3.stencils import NonhydrostaticVerticalSolver
-from pyFV3.testing import TranslateDycoreFortranData2Py
+
+from ndsl import StencilFactory
+from pyfv3 import _config as spec
+from pyfv3.stencils import NonhydrostaticVerticalSolver
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateRiem_Solver3(TranslateDycoreFortranData2Py):
@@ -17,10 +18,10 @@ class TranslateRiem_Solver3(TranslateDycoreFortranData2Py):
             stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             config=spec.RiemannConfig(
-                p_fac=namelist.p_fac,
-                a_imp=namelist.a_imp,
-                use_logp=namelist.use_logp,
-                beta=namelist.beta,
+                p_fac=self.config.p_fac,
+                a_imp=self.config.a_imp,
+                use_logp=self.config.use_logp,
+                beta=self.config.beta,
             ),
         )
 

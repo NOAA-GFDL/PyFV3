@@ -2,116 +2,118 @@ from typing import Any, Dict
 
 import numpy as np
 import pytest
-
-import ndsl.constants as constants
-import pyFV3.initialization.analytic_init as analytic_init
-import pyFV3.initialization.init_utils as init_utils
-import pyFV3.initialization.test_cases.initialize_baroclinic as baroclinic_init
-from ndsl import Quantity, QuantityFactory, StencilFactory, SubtileGridSizer
 from f90nml import Namelist
+
+import ndsl.dsl.gt4py_utils as utils
+import pyfv3.initialization.analytic_init as analytic_init
+import pyfv3.initialization.init_utils as init_utils
+import pyfv3.initialization.test_cases.initialize_baroclinic as baroclinic_init
+from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
 from ndsl.constants import (
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    K_INTERFACE_DIM,
     N_HALO_DEFAULT,
-    X_DIM,
-    X_INTERFACE_DIM,
-    Y_DIM,
-    Y_INTERFACE_DIM,
-    Z_DIM,
-    Z_INTERFACE_DIM,
 )
 from ndsl.grid import GridData, MetricTerms
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from ndsl.stencils.testing.grid import TRACER_DIM  # type: ignore
+from pyfv3 import DycoreState, DynamicalCoreConfig
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateInitCase(ParallelTranslateBaseSlicing):
     outputs: Dict[str, Any] = {
         "u": {
             "name": "x_wind",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
         },
         "v": {
             "name": "y_wind",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "ua": {
             "name": "eastward_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "va": {
             "name": "northward_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "uc": {
             "name": "x_wind_on_c_grid",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "vc": {
             "name": "y_wind_on_c_grid",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
         },
         "w": {
             "name": "vertical_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "phis": {
             "name": "surface_geopotential",
             "units": "m^2 s^-2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
         },
         "delp": {
             "name": "pressure_thickness_of_atmospheric_layer",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "Pa",
         },
         "delz": {
             "name": "vertical_thickness_of_atmospheric_layer",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m",
         },
         "ps": {
             "name": "surface_pressure",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "Pa",
         },
         "pe": {
             "name": "interface_pressure",
-            "dims": [X_DIM, Z_INTERFACE_DIM, Y_DIM],
+            "dims": [I_DIM, K_INTERFACE_DIM, J_DIM],
             "units": "Pa",
             "n_halo": 1,
         },
         "pk": {
             "name": "interface_pressure_raised_to_power_of_kappa",
             "units": "unknown",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [I_DIM, J_DIM, K_INTERFACE_DIM],
             "n_halo": 0,
         },
         "pkz": {
             "name": "layer_mean_pressure_raised_to_power_of_kappa",
             "units": "unknown",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "n_halo": 0,
         },
         "peln": {
             "name": "logarithm_of_interface_pressure",
             "units": "ln(Pa)",
-            "dims": [X_DIM, Z_INTERFACE_DIM, Y_DIM],
+            "dims": [I_DIM, K_INTERFACE_DIM, J_DIM],
             "n_halo": 0,
         },
         "pt": {
             "name": "air_temperature",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "degK",
         },
         "q4d": {
             "name": "tracers",
-            "dims": [X_DIM, Y_DIM, Z_DIM, "tracers"],
+            "dims": [I_DIM, J_DIM, K_DIM, TRACER_DIM],
             "units": "kg/kg",
         },
     }
@@ -163,25 +165,22 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
         self.ignore_near_zero_errors = {}
         for var in ["u", "v"]:
             self.ignore_near_zero_errors[var] = {"near_zero": 2e-13}
-        self.namelist = namelist  # type: ignore
         self.stencil_factory = stencil_factory
-        self._quantity_factory = QuantityFactory.from_backend(
-            sizer=stencil_factory.grid_indexing._sizer,
-            backend=stencil_factory.backend,
-        )
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def compute_sequential(self, *args, **kwargs):
         pytest.skip(
-            f"{self.__class__} only has a mpirun implementation, "
-            "not running in mock-parallel"
+            f"{self.__class__} only has a mpirun implementation, not running in mock-parallel"
         )
 
-    def outputs_from_state(self, state: dict):
+    def outputs_from_state(self, state: DycoreState) -> dict:
         outputs = {}
         arrays = {}
-        for name, properties in self.outputs.items():
-            if name == "q4d":
-                arrays[name] = state["tracers"].as_4D_array()
+        for name, _properties in self.outputs.items():
+            if isinstance(state[name], dict):
+                for tracer, _quantity in state[name].items():
+                    state[name][tracer] = state[name][tracer].data
+                arrays[name] = state[name]
             elif len(self.outputs[name]["dims"]) > 0:
                 arrays[name] = state[name].data
             else:
@@ -190,58 +189,43 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
         return outputs
 
     def compute_parallel(self, inputs, communicator):
-        state = {}
-        full_shape = (
-            *self.grid.domain_shape_full(add=(1, 1, 1)),
-            constants.NQ,
-        )
-        for variable, properties in self.outputs.items():
-            dims = properties["dims"]
-            state[variable] = Quantity(
-                np.zeros(full_shape[0 : len(dims)]),
-                dims,
-                properties["units"],
-                origin=self.grid.sizer.get_origin(dims),
-                extent=self.grid.sizer.get_extent(dims),
-                gt4py_backend=self.stencil_factory.backend,
-            )
-
         metric_terms = MetricTerms.from_tile_sizing(
-            npx=self.namelist.npx,
-            npy=self.namelist.npy,
-            npz=self.namelist.npz,
+            npx=self.config.npx,
+            npy=self.config.npy,
+            npz=self.config.npz,
             communicator=communicator,
             backend=self.stencil_factory.backend,
         )
 
         sizer = SubtileGridSizer.from_tile_params(
-            nx_tile=self.namelist.nx_tile,
-            ny_tile=self.namelist.nx_tile,
-            nz=self.namelist.nz,
+            nx_tile=self.config.nx_tile,
+            ny_tile=self.config.nx_tile,
+            nz=self.config.nz,
             n_halo=N_HALO_DEFAULT,
-            extra_dim_lengths={},
-            layout=self.namelist.layout,
+            layout=self.config.layout,
             tile_partitioner=communicator.partitioner.tile,
             tile_rank=communicator.tile.rank,
+            backend=self.stencil_factory.backend,
         )
 
-        quantity_factory = QuantityFactory.from_backend(
-            sizer, backend=self.stencil_factory.backend
-        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
 
         grid_data = GridData.new_from_metric_terms(metric_terms)
 
         state = analytic_init.init_analytic_state(
-            analytic_init_case="baroclinic",
+            analytic_init_case=analytic_init.AnalyticCase.baroclinic_instability,
             grid_data=grid_data,
             quantity_factory=quantity_factory,
-            adiabatic=self.namelist.adiabatic,
-            hydrostatic=self.namelist.hydrostatic,
-            moist_phys=self.namelist.moist_phys,
+            adiabatic=self.config.adiabatic,
+            hydrostatic=self.config.hydrostatic,
+            moist_phys=self.config.moist_phys,
             comm=communicator,
         )
 
-        return self.outputs_from_state(state.__dict__)
+        state.q4d = {}
+        for tracer in utils.tracer_variables:
+            state.q4d[tracer] = getattr(state, tracer)
+        return self.outputs_from_state(state)
 
 
 def make_sliced_inputs_dict(inputs, slice_2d):
@@ -292,7 +276,6 @@ class TranslateInitPreJab(TranslateDycoreFortranData2Py):
             "eta": {"istart": 0, "iend": 0, "jstart": 0, "jend": 0},
             "eta_v": {"istart": 0, "iend": 0, "jstart": 0, "jend": 0},
         }
-        self.namelist = namelist  # type: ignore
         self.stencil_factory = stencil_factory
 
     def compute(self, inputs):
@@ -354,7 +337,6 @@ class TranslateJablonowskiBaroclinic(TranslateDycoreFortranData2Py):
             self.ignore_near_zero_errors[var] = {"near_zero": 2e-13}
 
         self.max_error = 1e-13
-        self.namelist = namelist  # type: ignore
         self.stencil_factory = stencil_factory
 
     def compute(self, inputs):
@@ -391,8 +373,8 @@ class TranslateJablonowskiBaroclinic(TranslateDycoreFortranData2Py):
         baroclinic_init.baroclinic_initialization(
             **sliced_inputs,
             **grid_vars,
-            adiabatic=self.namelist.adiabatic,
-            hydrostatic=self.namelist.hydrostatic,
+            adiabatic=self.config.adiabatic,
+            hydrostatic=self.config.hydrostatic,
             nx=self.grid.nic,
             ny=self.grid.njc,
         )
@@ -436,7 +418,6 @@ class TranslatePVarAuxiliaryPressureVars(TranslateDycoreFortranData2Py):
         self.out_vars = {}
         for var in ["delz", "delp", "ps", "peln"]:
             self.out_vars[var] = self.in_vars["data_vars"][var]
-        self.namelist = namelist  # type: ignore
         self.stencil_factory = stencil_factory
 
     def compute(self, inputs):
@@ -446,14 +427,13 @@ class TranslatePVarAuxiliaryPressureVars(TranslateDycoreFortranData2Py):
             if k != "ptop":
                 inputs[k] = v.data
 
-        namelist = self.namelist
         inputs["delz"][:] = 1.0e25
         sliced_inputs = make_sliced_inputs_dict(
             inputs, self.grid.compute_interface()[0:2]
         )
         init_utils.p_var(
             **sliced_inputs,
-            moist_phys=namelist.moist_phys,
-            make_nh=(not namelist.hydrostatic),
+            moist_phys=self.config.moist_phys,
+            make_nh=(not self.config.hydrostatic),
         )
         return self.slice_output(inputs)

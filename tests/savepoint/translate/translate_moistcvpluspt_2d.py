@@ -4,7 +4,7 @@ from ndsl import StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.stencils.testing import TranslateFortranData2Py, pad_field_in_j
-from pyFV3.stencils import moist_cv
+from pyfv3.stencils import moist_cv
 
 
 def moist_pt(

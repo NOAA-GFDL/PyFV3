@@ -1,12 +1,12 @@
 import numpy as np
-
-from ndsl import StencilFactory
 from f90nml import Namelist
+
+import ndsl.dsl.gt4py_utils as utils
+from ndsl import StencilFactory
 from ndsl.stencils.testing import pad_field_in_j
-from pyFV3.stencils.fillz import FillNegativeTracerValues
-from pyFV3.testing import TranslateDycoreFortranData2Py
-from pyFV3.tracers import setup_tracers
-from ndsl.quantity.field_bundle import FieldBundle
+from ndsl.utils import safe_assign_array
+from pyfv3.stencils import fillz
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateFillz(TranslateDycoreFortranData2Py):

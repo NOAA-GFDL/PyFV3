@@ -1,10 +1,11 @@
 from typing import Optional
 
-from ndsl import StencilFactory
 from f90nml import Namelist
-from ndsl.constants import Z_DIM
-from pyFV3.stencils import DivergenceDamping
-from pyFV3.testing import TranslateDycoreFortranData2Py
+
+from ndsl import StencilFactory
+from ndsl.constants import K_DIM
+from pyfv3.stencils import DivergenceDamping
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateDivergenceDamping(TranslateDycoreFortranData2Py):
@@ -38,12 +39,11 @@ class TranslateDivergenceDamping(TranslateDycoreFortranData2Py):
         self.max_error = 1.4e-10
         self.divdamp: Optional[DivergenceDamping] = None
         self.stencil_factory = stencil_factory
-        self.namelist = namelist  # type: ignore
 
     def compute_from_storage(self, inputs):
-        nord_col = self.grid.quantity_factory.zeros(dims=[Z_DIM], units="unknown")
+        nord_col = self.grid.quantity_factory.zeros(dims=[K_DIM], units="unknown")
         nord_col.data[:] = nord_col.np.asarray(inputs.pop("nord_col"))
-        d2_bg = self.grid.quantity_factory.zeros(dims=[Z_DIM], units="unknown")
+        d2_bg = self.grid.quantity_factory.zeros(dims=[K_DIM], units="unknown")
         d2_bg.data[:] = d2_bg.np.asarray(inputs.pop("d2_bg"))
         self.divdamp = DivergenceDamping(
             self.stencil_factory,
@@ -52,10 +52,10 @@ class TranslateDivergenceDamping(TranslateDycoreFortranData2Py):
             self.grid.damping_coefficients,
             self.grid.nested,
             self.grid.stretched_grid,
-            self.namelist.dddmp,
-            self.namelist.d4_bg,
-            self.namelist.nord,
-            self.namelist.grid_type,
+            self.config.dddmp,
+            self.config.d4_bg,
+            self.config.nord,
+            self.config.grid_type,
             nord_col,
             d2_bg,
         )

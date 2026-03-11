@@ -1,10 +1,10 @@
 import numpy as np
+from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
-import pyFV3.stencils.saturation_adjustment as satadjust
+import pyfv3.stencils.saturation_adjustment as satadjust
 from ndsl import StencilFactory
-from f90nml import Namelist
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateQSInit(TranslateDycoreFortranData2Py):

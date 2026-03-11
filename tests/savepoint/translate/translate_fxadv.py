@@ -1,11 +1,11 @@
 import numpy as np
+from f90nml import Namelist
 
 from ndsl import StencilFactory
-from f90nml import Namelist
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from pyFV3.stencils import FiniteVolumeFluxPrep
-from pyFV3.testing import TranslateDycoreFortranData2Py
-from pyFV3.utils.functional_validation import get_subset_func
+from ndsl.constants import I_DIM, J_DIM, K_DIM
+from pyfv3.stencils import FiniteVolumeFluxPrep
+from pyfv3.testing import TranslateDycoreFortranData2Py
+from pyfv3.utils.functional_validation import get_subset_func
 
 
 class TranslateFxAdv(TranslateDycoreFortranData2Py):
@@ -24,7 +24,7 @@ class TranslateFxAdv(TranslateDycoreFortranData2Py):
         self.compute_func = FiniteVolumeFluxPrep(  # type: ignore
             self.stencil_factory,
             self.grid.grid_data,
-            namelist.grid_type,
+            self.config.grid_type,
         )
         self.in_vars["data_vars"] = {
             "uc": {},
@@ -52,7 +52,7 @@ class TranslateFxAdv(TranslateDycoreFortranData2Py):
 
         self._subset = get_subset_func(
             self.grid.grid_indexing,
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             n_halo=((2, 2), (2, 2)),
         )
 

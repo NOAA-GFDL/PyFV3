@@ -2,21 +2,22 @@ from typing import Any, Dict
 
 import numpy as np
 import pytest
+from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
-from f90nml import Namelist
 from ndsl.constants import (
-    X_DIM,
-    X_INTERFACE_DIM,
-    Y_DIM,
-    Y_INTERFACE_DIM,
-    Z_INTERFACE_DIM,
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_INTERFACE_DIM,
 )
 from ndsl.grid import MetricTerms
 from ndsl.grid.eta import set_hybrid_pressure_coefficients
 from ndsl.grid.global_setup import global_mirror_grid, gnomonic_grid
 from ndsl.stencils.testing import ParallelTranslateGrid
+from pyfv3 import DynamicalCoreConfig
 
 
 class TranslateGnomonicGrids(ParallelTranslateGrid):
@@ -25,13 +26,13 @@ class TranslateGnomonicGrids(ParallelTranslateGrid):
     inputs = {
         "lon": {
             "name": "longitude_on_cell_corners",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "radians",
             "n_halo": 0,
         },
         "lat": {
             "name": "latitude_on_cell_corners",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "radians",
             "n_halo": 0,
         },
@@ -39,13 +40,13 @@ class TranslateGnomonicGrids(ParallelTranslateGrid):
     outputs = {
         "lon": {
             "name": "longitude_on_cell_corners",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "radians",
             "n_halo": 0,
         },
         "lat": {
             "name": "latitude_on_cell_corners",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "radians",
             "n_halo": 0,
         },
@@ -76,8 +77,8 @@ class TranslateMirrorGrid(ParallelTranslateGrid):
         "master_grid_global": {
             "name": "grid_global",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
                 MetricTerms.TILE_DIM,
             ],
@@ -92,8 +93,8 @@ class TranslateMirrorGrid(ParallelTranslateGrid):
         "master_grid_global": {
             "name": "grid_global",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
                 MetricTerms.TILE_DIM,
             ],
@@ -136,92 +137,91 @@ class TranslateGridAreas(ParallelTranslateGrid):
         self.near_zero = 3e-14
         self.ignore_near_zero_errors = {"agrid": True, "dxc": True, "dyc": True}
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs = {
         "grid": {
             "name": "grid",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
             ],
             "units": "radians",
         },
         "agrid": {
             "name": "agrid",
-            "dims": [X_DIM, Y_DIM, MetricTerms.LON_OR_LAT_DIM],
+            "dims": [I_DIM, J_DIM, MetricTerms.LON_OR_LAT_DIM],
             "units": "radians",
         },
         "area": {
             "name": "area",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m^2",
         },
         "area_c": {
             "name": "area_cgrid",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "m^2",
         },
         "dxa": {
             "name": "dx_agrid",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m",
         },
         "dya": {
             "name": "dy_agrid",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m",
         },
         "dxc": {
             "name": "dx_cgrid",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "m",
         },
         "dyc": {
             "name": "dy_cgrid",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "m",
         },
     }
     outputs = {
         "area": {
             "name": "area",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m^2",
         },
         "area_c": {
             "name": "area_cgrid",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "m^2",
         },
         "dxa": {
             "name": "dx_agrid",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m",
         },
         "dya": {
             "name": "dy_agrid",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m",
         },
         "dxc": {
             "name": "dx_cgrid",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "m",
         },
         "dyc": {
             "name": "dy_cgrid",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "m",
         },
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -242,8 +242,8 @@ class TranslateGridGrid(ParallelTranslateGrid):
         "grid_global": {
             "name": "grid",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
                 MetricTerms.TILE_DIM,
             ],
@@ -254,8 +254,8 @@ class TranslateGridGrid(ParallelTranslateGrid):
         "grid": {
             "name": "grid",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
             ],
             "units": "radians",
@@ -273,13 +273,12 @@ class TranslateGridGrid(ParallelTranslateGrid):
         self.near_zero = 1e-14
         self.ignore_near_zero_errors = {"grid": True}
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -301,14 +300,14 @@ class TranslateDxDy(ParallelTranslateGrid):
         super().__init__(rank_grids, namelist, stencil_factory)
         self.max_error = 3e-14
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs = {
         "grid": {
             "name": "grid",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
             ],
             "units": "radians",
@@ -317,21 +316,20 @@ class TranslateDxDy(ParallelTranslateGrid):
     outputs = {
         "dx": {
             "name": "dx",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "m",
         },
         "dy": {
             "name": "dy",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "m",
         },
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -354,20 +352,20 @@ class TranslateAGrid(ParallelTranslateGrid):
     ):
         super().__init__(rank_grids, namelist, stencil_factory)
         self.max_error = 1e-13
-        self.namelist = namelist
         self.stencil_factory = stencil_factory
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs = {
         "agrid": {
             "name": "agrid",
-            "dims": [X_DIM, Y_DIM, MetricTerms.LON_OR_LAT_DIM],
+            "dims": [I_DIM, J_DIM, MetricTerms.LON_OR_LAT_DIM],
             "units": "radians",
         },
         "grid": {
             "name": "grid",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
             ],
             "units": "radians",
@@ -376,14 +374,14 @@ class TranslateAGrid(ParallelTranslateGrid):
     outputs = {
         "agrid": {
             "name": "agrid",
-            "dims": [X_DIM, Y_DIM, MetricTerms.LON_OR_LAT_DIM],
+            "dims": [I_DIM, J_DIM, MetricTerms.LON_OR_LAT_DIM],
             "units": "radians",
         },
         "grid": {
             "name": "grid",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
             ],
             "units": "radians",
@@ -391,10 +389,9 @@ class TranslateAGrid(ParallelTranslateGrid):
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -441,55 +438,55 @@ class TranslateInitGrid(ParallelTranslateGrid):
         "gridvar": {
             "name": "grid",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
             ],
             "units": "radians",
         },
         "agrid": {
             "name": "agrid",
-            "dims": [X_DIM, Y_DIM, MetricTerms.LON_OR_LAT_DIM],
+            "dims": [I_DIM, J_DIM, MetricTerms.LON_OR_LAT_DIM],
             "units": "radians",
         },
         "area": {
             "name": "area",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m^2",
         },
         "area_c": {
             "name": "area_cgrid",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "m^2",
         },
         "dx": {
             "name": "dx",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "m",
         },
         "dy": {
             "name": "dy",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "m",
         },
         "dxc": {
             "name": "dx_cgrid",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "m",
         },
         "dyc": {
             "name": "dy_cgrid",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "m",
         },
         "dxa": {
             "name": "dx_agrid",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m",
         },
         "dya": {
             "name": "dy_agrid",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m",
         },
     }
@@ -505,20 +502,19 @@ class TranslateInitGrid(ParallelTranslateGrid):
         self.near_zero = 3e-14
         self.ignore_near_zero_errors = {"gridvar": True, "agrid": True}
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
-            grid_type=namelist.grid_type,
-            dx_const=namelist.dx_const,
-            dy_const=namelist.dy_const,
-            deglat=namelist.deglat,
+            grid_type=self.config.grid_type,
+            dx_const=self.config.dx_const,
+            dy_const=self.config.dy_const,
+            deglat=self.config.deglat,
         )
         state = {}
         for metric_term, metadata in self.outputs.items():
@@ -540,12 +536,12 @@ class TranslateSetEta(ParallelTranslateGrid):
         },
         "ak": {
             "name": "ak",
-            "dims": [Z_INTERFACE_DIM],
+            "dims": [K_INTERFACE_DIM],
             "units": "mb",
         },
         "bk": {
             "name": "bk",
-            "dims": [Z_INTERFACE_DIM],
+            "dims": [K_INTERFACE_DIM],
             "units": "",
         },
     }
@@ -557,12 +553,12 @@ class TranslateSetEta(ParallelTranslateGrid):
         },
         "ak": {
             "name": "ak",
-            "dims": [Z_INTERFACE_DIM],
+            "dims": [K_INTERFACE_DIM],
             "units": "mb",
         },
         "bk": {
             "name": "bk",
-            "dims": [Z_INTERFACE_DIM],
+            "dims": [K_INTERFACE_DIM],
             "units": "",
         },
     }
@@ -635,39 +631,39 @@ class TranslateUtilVectors(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
             "name": "grid",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
             ],
             "units": "radians",
         },
         "agrid": {
             "name": "agrid",
-            "dims": [X_DIM, Y_DIM, MetricTerms.LON_OR_LAT_DIM],
+            "dims": [I_DIM, J_DIM, MetricTerms.LON_OR_LAT_DIM],
             "units": "radians",
         },
         "ec1": {
             "name": "ec1",
-            "dims": [MetricTerms.CARTESIAN_DIM, X_DIM, Y_DIM],
+            "dims": [MetricTerms.CARTESIAN_DIM, I_DIM, J_DIM],
             "units": "",
         },
         "ec2": {
             "name": "ec2",
-            "dims": [MetricTerms.CARTESIAN_DIM, X_DIM, Y_DIM],
+            "dims": [MetricTerms.CARTESIAN_DIM, I_DIM, J_DIM],
             "units": "",
         },
         "ew1": {
             "name": "ew1",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_INTERFACE_DIM,
-                Y_DIM,
+                I_INTERFACE_DIM,
+                J_DIM,
             ],
             "units": "",
         },
@@ -675,8 +671,8 @@ class TranslateUtilVectors(ParallelTranslateGrid):
             "name": "ew2",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_INTERFACE_DIM,
-                Y_DIM,
+                I_INTERFACE_DIM,
+                J_DIM,
             ],
             "units": "",
         },
@@ -684,8 +680,8 @@ class TranslateUtilVectors(ParallelTranslateGrid):
             "name": "es1",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_DIM,
-                Y_INTERFACE_DIM,
+                I_DIM,
+                J_INTERFACE_DIM,
             ],
             "units": "",
         },
@@ -693,8 +689,8 @@ class TranslateUtilVectors(ParallelTranslateGrid):
             "name": "es2",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_DIM,
-                Y_INTERFACE_DIM,
+                I_DIM,
+                J_INTERFACE_DIM,
             ],
             "units": "",
         },
@@ -702,20 +698,20 @@ class TranslateUtilVectors(ParallelTranslateGrid):
     outputs: Dict[str, Any] = {
         "ec1": {
             "name": "ec1",
-            "dims": [MetricTerms.CARTESIAN_DIM, X_DIM, Y_DIM],
+            "dims": [MetricTerms.CARTESIAN_DIM, I_DIM, J_DIM],
             "units": "",
         },
         "ec2": {
             "name": "ec2",
-            "dims": [MetricTerms.CARTESIAN_DIM, X_DIM, Y_DIM],
+            "dims": [MetricTerms.CARTESIAN_DIM, I_DIM, J_DIM],
             "units": "",
         },
         "ew1": {
             "name": "ew1",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_INTERFACE_DIM,
-                Y_DIM,
+                I_INTERFACE_DIM,
+                J_DIM,
             ],
             "units": "",
         },
@@ -723,8 +719,8 @@ class TranslateUtilVectors(ParallelTranslateGrid):
             "name": "ew2",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_INTERFACE_DIM,
-                Y_DIM,
+                I_INTERFACE_DIM,
+                J_DIM,
             ],
             "units": "",
         },
@@ -732,8 +728,8 @@ class TranslateUtilVectors(ParallelTranslateGrid):
             "name": "es1",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_DIM,
-                Y_INTERFACE_DIM,
+                I_DIM,
+                J_INTERFACE_DIM,
             ],
             "units": "",
         },
@@ -741,18 +737,17 @@ class TranslateUtilVectors(ParallelTranslateGrid):
             "name": "es2",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_DIM,
-                Y_INTERFACE_DIM,
+                I_DIM,
+                J_INTERFACE_DIM,
             ],
             "units": "",
         },
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -803,222 +798,221 @@ class TranslateTrigSg(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
             "name": "grid",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
             ],
             "units": "",
         },
         "agrid": {
             "name": "agrid",
-            "dims": [X_DIM, Y_DIM, MetricTerms.LON_OR_LAT_DIM],
+            "dims": [I_DIM, J_DIM, MetricTerms.LON_OR_LAT_DIM],
             "units": "radians",
         },
         "cos_sg1": {
             "name": "cos_sg1",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg1": {
             "name": "sin_sg1",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg2": {
             "name": "cos_sg2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg2": {
             "name": "sin_sg2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg3": {
             "name": "cos_sg3",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg3": {
             "name": "sin_sg3",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg4": {
             "name": "cos_sg4",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg4": {
             "name": "sin_sg4",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg5": {
             "name": "cos_sg5",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg5": {
             "name": "sin_sg5",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg6": {
             "name": "cos_sg6",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg6": {
             "name": "sin_sg6",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg7": {
             "name": "cos_sg7",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg7": {
             "name": "sin_sg7",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg8": {
             "name": "cos_sg8",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg8": {
             "name": "sin_sg8",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg9": {
             "name": "cos_sg9",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg9": {
             "name": "sin_sg9",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "ec1": {
             "name": "ec1",
-            "dims": [MetricTerms.CARTESIAN_DIM, X_DIM, Y_DIM],
+            "dims": [MetricTerms.CARTESIAN_DIM, I_DIM, J_DIM],
             "units": "",
         },
         "ec2": {
             "name": "ec2",
-            "dims": [MetricTerms.CARTESIAN_DIM, X_DIM, Y_DIM],
+            "dims": [MetricTerms.CARTESIAN_DIM, I_DIM, J_DIM],
             "units": "",
         },
     }
     outputs: Dict[str, Any] = {
         "cos_sg1": {
             "name": "cos_sg1",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg1": {
             "name": "sin_sg1",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg2": {
             "name": "cos_sg2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg2": {
             "name": "sin_sg2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg3": {
             "name": "cos_sg3",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg3": {
             "name": "sin_sg3",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg4": {
             "name": "cos_sg4",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg4": {
             "name": "sin_sg4",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg5": {
             "name": "cos_sg5",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg5": {
             "name": "sin_sg5",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg6": {
             "name": "cos_sg6",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg6": {
             "name": "sin_sg6",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg7": {
             "name": "cos_sg7",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg7": {
             "name": "sin_sg7",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg8": {
             "name": "cos_sg8",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg8": {
             "name": "sin_sg8",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg9": {
             "name": "cos_sg9",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg9": {
             "name": "sin_sg9",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -1051,27 +1045,27 @@ class TranslateAAMCorrection(ParallelTranslateGrid):
         self.near_zero = 1e-14
         self.ignore_near_zero_errors = {"l2c_v": True, "l2c_u": True}
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
             "name": "grid",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
             ],
             "units": "radians",
         },
         "l2c_v": {
             "name": "l2c_v",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
             "n_halo": 0,
         },
         "l2c_u": {
             "name": "l2c_u",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
             "n_halo": 0,
         },
@@ -1079,23 +1073,22 @@ class TranslateAAMCorrection(ParallelTranslateGrid):
     outputs: Dict[str, Any] = {
         "l2c_v": {
             "name": "l2c_v",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
             "n_halo": 0,
         },
         "l2c_u": {
             "name": "l2c_u",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
             "n_halo": 0,
         },
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -1131,114 +1124,114 @@ class TranslateDerivedTrig(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
             "name": "grid",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
             ],
             "units": "radians",
         },
         "cos_sg1": {
             "name": "cos_sg1",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg1": {
             "name": "sin_sg1",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg2": {
             "name": "cos_sg2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg2": {
             "name": "sin_sg2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg3": {
             "name": "cos_sg3",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg3": {
             "name": "sin_sg3",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg4": {
             "name": "cos_sg4",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg4": {
             "name": "sin_sg4",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg5": {
             "name": "cos_sg5",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg5": {
             "name": "sin_sg5",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg6": {
             "name": "cos_sg6",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg6": {
             "name": "sin_sg6",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg7": {
             "name": "cos_sg7",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg7": {
             "name": "sin_sg7",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg8": {
             "name": "cos_sg8",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg8": {
             "name": "sin_sg8",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg9": {
             "name": "cos_sg9",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg9": {
             "name": "sin_sg9",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "ee1": {
             "name": "ee1",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
             ],
             "units": "",
         },
@@ -1246,65 +1239,65 @@ class TranslateDerivedTrig(ParallelTranslateGrid):
             "name": "ee2",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
             ],
             "units": "",
         },
         "cosa_u": {
             "name": "cosa_u",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
         "cosa_v": {
             "name": "cosa_v",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "cosa_s": {
             "name": "cosa_s",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sina_u": {
             "name": "sina_u",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
         "sina_v": {
             "name": "sina_v",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "rsin_u": {
             "name": "rsin_u",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
         "rsin_v": {
             "name": "rsin_v",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "rsina": {
             "name": "rsina",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "",
             "n_halo": 0,
         },
         "rsin2": {
             "name": "rsin2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cosa": {
             "name": "cosa",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "sina": {
             "name": "sina",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "",
         },
     }
@@ -1313,8 +1306,8 @@ class TranslateDerivedTrig(ParallelTranslateGrid):
             "name": "ee1",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
             ],
             "units": "",
         },
@@ -1322,74 +1315,73 @@ class TranslateDerivedTrig(ParallelTranslateGrid):
             "name": "ee2",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
             ],
             "units": "",
         },
         "cosa_u": {
             "name": "cosa_u",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
         "cosa_v": {
             "name": "cosa_v",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "cosa_s": {
             "name": "cosa_s",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sina_u": {
             "name": "sina_u",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
         "sina_v": {
             "name": "sina_v",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "rsin_u": {
             "name": "rsin_u",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
         "rsin_v": {
             "name": "rsin_v",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "rsina": {
             "name": "rsina",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "",
             "n_halo": 0,
         },
         "rsin2": {
             "name": "rsin2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cosa": {
             "name": "cosa",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "sina": {
             "name": "sina",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "",
         },
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -1432,108 +1424,107 @@ class TranslateDivgDel6(ParallelTranslateGrid):
         super().__init__(rank_grids, namelist, stencil_factory)
         self.max_error = 4e-14
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "sin_sg1": {
             "name": "sin_sg1",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg2": {
             "name": "sin_sg2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg3": {
             "name": "sin_sg3",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg4": {
             "name": "sin_sg4",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sina_u": {
             "name": "sina_u",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
         "sina_v": {
             "name": "sina_v",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "dx": {
             "name": "dx",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "m",
         },
         "dy": {
             "name": "dy",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "m",
         },
         "dxc": {
             "name": "dx_cgrid",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "m",
         },
         "dyc": {
             "name": "dy_cgrid",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "divg_u": {
             "name": "divg_u",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "divg_v": {
             "name": "divg_v",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "m",
         },
         "del6_u": {
             "name": "del6_u",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "del6_v": {
             "name": "del6_v",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
     }
     outputs: Dict[str, Any] = {
         "divg_u": {
             "name": "divg_u",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "divg_v": {
             "name": "divg_v",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
         "del6_u": {
             "name": "del6_u",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "del6_v": {
             "name": "del6_v",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -1577,98 +1568,97 @@ class TranslateInitCubedtoLatLon(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "agrid": {
             "name": "agrid",
-            "dims": [X_DIM, Y_DIM, MetricTerms.LON_OR_LAT_DIM],
+            "dims": [I_DIM, J_DIM, MetricTerms.LON_OR_LAT_DIM],
             "units": "radians",
         },
         "ec1": {
             "name": "ec1",
-            "dims": [MetricTerms.CARTESIAN_DIM, X_DIM, Y_DIM],
+            "dims": [MetricTerms.CARTESIAN_DIM, I_DIM, J_DIM],
             "units": "",
         },
         "ec2": {
             "name": "ec2",
-            "dims": [MetricTerms.CARTESIAN_DIM, X_DIM, Y_DIM],
+            "dims": [MetricTerms.CARTESIAN_DIM, I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg5": {
             "name": "sin_sg5",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
     }
     outputs: Dict[str, Any] = {
         "vlon": {
             "name": "vlon",
-            "dims": [X_DIM, Y_DIM, MetricTerms.CARTESIAN_DIM],
+            "dims": [I_DIM, J_DIM, MetricTerms.CARTESIAN_DIM],
             "units": "",
             "n_halo": 2,
         },
         "vlat": {
             "name": "vlat",
-            "dims": [X_DIM, Y_DIM, MetricTerms.CARTESIAN_DIM],
+            "dims": [I_DIM, J_DIM, MetricTerms.CARTESIAN_DIM],
             "units": "",
             "n_halo": 2,
         },
         "z11": {
             "name": "z11",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "z12": {
             "name": "z12",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "z21": {
             "name": "z21",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "z22": {
             "name": "z22",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "a11": {
             "name": "a11",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "a12": {
             "name": "a12",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "a21": {
             "name": "a21",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "a22": {
             "name": "a22",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -1695,120 +1685,119 @@ class TranslateEdgeFactors(ParallelTranslateGrid):
         super().__init__(rank_grids, namelist, stencil_factory)
         self.max_error = 3e-13
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "grid": {
             "name": "grid",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
             ],
             "units": "radians",
         },
         "agrid": {
             "name": "agrid",
-            "dims": [X_DIM, Y_DIM, MetricTerms.LON_OR_LAT_DIM],
+            "dims": [I_DIM, J_DIM, MetricTerms.LON_OR_LAT_DIM],
             "units": "radians",
         },
         "edge_s": {
             "name": "edge_s",
-            "dims": [X_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM],
             "units": "",
             "n_halo": 0,
         },
         "edge_n": {
             "name": "edge_n",
-            "dims": [X_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM],
             "units": "",
             "n_halo": 0,
         },
         "edge_e": {
             "name": "edge_e",
-            "dims": [Y_INTERFACE_DIM],
+            "dims": [J_INTERFACE_DIM],
             "units": "",
             "n_halo": 0,
         },
         "edge_w": {
             "name": "edge_w",
-            "dims": [Y_INTERFACE_DIM],
+            "dims": [J_INTERFACE_DIM],
             "units": "",
             "n_halo": 0,
         },
         "edge_vect_s": {
             "name": "edge_vect_s",
-            "dims": [X_DIM],
+            "dims": [I_DIM],
             "units": "",
         },
         "edge_vect_n": {
             "name": "edge_vect_n",
-            "dims": [X_DIM],
+            "dims": [I_DIM],
             "units": "",
         },
         "edge_vect_e": {
             "name": "edge_vect_e",
-            "dims": [Y_DIM],
+            "dims": [J_DIM],
             "units": "",
         },
         "edge_vect_w": {
             "name": "edge_vect_w",
-            "dims": [Y_DIM],
+            "dims": [J_DIM],
             "units": "",
         },
     }
     outputs: Dict[str, Any] = {
         "edge_s": {
             "name": "edge_s",
-            "dims": [X_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM],
             "units": "",
             "n_halo": 0,
         },
         "edge_n": {
             "name": "edge_n",
-            "dims": [X_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM],
             "units": "",
             "n_halo": 0,
         },
         "edge_e": {
             "name": "edge_e",
-            "dims": [Y_INTERFACE_DIM],
+            "dims": [J_INTERFACE_DIM],
             "units": "",
             "n_halo": 0,
         },
         "edge_w": {
             "name": "edge_w",
-            "dims": [Y_INTERFACE_DIM],
+            "dims": [J_INTERFACE_DIM],
             "units": "",
             "n_halo": 0,
         },
         "edge_vect_s": {
             "name": "edge_vect_s",
-            "dims": [X_DIM],
+            "dims": [I_DIM],
             "units": "",
         },
         "edge_vect_n": {
             "name": "edge_vect_n",
-            "dims": [X_DIM],
+            "dims": [I_DIM],
             "units": "",
         },
         "edge_vect_e": {
             "name": "edge_vect_e",
-            "dims": [Y_DIM],
+            "dims": [J_DIM],
             "units": "",
         },
         "edge_vect_w": {
             "name": "edge_vect_w",
-            "dims": [Y_DIM],
+            "dims": [J_DIM],
             "units": "",
         },
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=1,
             communicator=communicator,
             backend=self.stencil_factory.backend,
@@ -1887,61 +1876,61 @@ class TranslateInitGridUtils(ParallelTranslateGrid):
             },
         }
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     inputs: Dict[str, Any] = {
         "gridvar": {
             "name": "grid",
             "dims": [
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
                 MetricTerms.LON_OR_LAT_DIM,
             ],
             "units": "radians",
         },
         "agrid": {
             "name": "agrid",
-            "dims": [X_DIM, Y_DIM, MetricTerms.LON_OR_LAT_DIM],
+            "dims": [I_DIM, J_DIM, MetricTerms.LON_OR_LAT_DIM],
             "units": "radians",
         },
         "area": {
             "name": "area",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m^2",
         },
         "area_c": {
             "name": "area_cgrid",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "m^2",
         },
         "dx": {
             "name": "dx",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "m",
         },
         "dy": {
             "name": "dy",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "m",
         },
         "dxc": {
             "name": "dx_cgrid",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "m",
         },
         "dyc": {
             "name": "dy_cgrid",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "m",
         },
         "dxa": {
             "name": "dx_agrid",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m",
         },
         "dya": {
             "name": "dy_agrid",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "m",
         },
         "npz": {
@@ -1963,30 +1952,30 @@ class TranslateInitGridUtils(ParallelTranslateGrid):
         },
         "ak": {
             "name": "ak",
-            "dims": [Z_INTERFACE_DIM],
+            "dims": [K_INTERFACE_DIM],
             "units": "mb",
         },
         "bk": {
             "name": "bk",
-            "dims": [Z_INTERFACE_DIM],
+            "dims": [K_INTERFACE_DIM],
             "units": "",
         },
         "ec1": {
             "name": "ec1",
-            "dims": [MetricTerms.CARTESIAN_DIM, X_DIM, Y_DIM],
+            "dims": [MetricTerms.CARTESIAN_DIM, I_DIM, J_DIM],
             "units": "",
         },
         "ec2": {
             "name": "ec2",
-            "dims": [MetricTerms.CARTESIAN_DIM, X_DIM, Y_DIM],
+            "dims": [MetricTerms.CARTESIAN_DIM, I_DIM, J_DIM],
             "units": "",
         },
         "ew1": {
             "name": "ew1",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_INTERFACE_DIM,
-                Y_DIM,
+                I_INTERFACE_DIM,
+                J_DIM,
             ],
             "units": "",
         },
@@ -1994,8 +1983,8 @@ class TranslateInitGridUtils(ParallelTranslateGrid):
             "name": "ew2",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_INTERFACE_DIM,
-                Y_DIM,
+                I_INTERFACE_DIM,
+                J_DIM,
             ],
             "units": "",
         },
@@ -2003,8 +1992,8 @@ class TranslateInitGridUtils(ParallelTranslateGrid):
             "name": "es1",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_DIM,
-                Y_INTERFACE_DIM,
+                I_DIM,
+                J_INTERFACE_DIM,
             ],
             "units": "",
         },
@@ -2012,110 +2001,110 @@ class TranslateInitGridUtils(ParallelTranslateGrid):
             "name": "es2",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_DIM,
-                Y_INTERFACE_DIM,
+                I_DIM,
+                J_INTERFACE_DIM,
             ],
             "units": "",
         },
         "cos_sg1": {
             "name": "cos_sg1",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg1": {
             "name": "sin_sg1",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg2": {
             "name": "cos_sg2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg2": {
             "name": "sin_sg2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg3": {
             "name": "cos_sg3",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg3": {
             "name": "sin_sg3",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg4": {
             "name": "cos_sg4",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg4": {
             "name": "sin_sg4",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg5": {
             "name": "cos_sg5",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg5": {
             "name": "sin_sg5",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg6": {
             "name": "cos_sg6",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg6": {
             "name": "sin_sg6",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg7": {
             "name": "cos_sg7",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg7": {
             "name": "sin_sg7",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg8": {
             "name": "cos_sg8",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg8": {
             "name": "sin_sg8",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cos_sg9": {
             "name": "cos_sg9",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sin_sg9": {
             "name": "sin_sg9",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "l2c_v": {
             "name": "l2c_v",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
             "n_halo": 0,
         },
         "l2c_u": {
             "name": "l2c_u",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
             "n_halo": 0,
         },
@@ -2123,8 +2112,8 @@ class TranslateInitGridUtils(ParallelTranslateGrid):
             "name": "ee1",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
             ],
             "units": "",
         },
@@ -2132,165 +2121,165 @@ class TranslateInitGridUtils(ParallelTranslateGrid):
             "name": "ee2",
             "dims": [
                 MetricTerms.CARTESIAN_DIM,
-                X_INTERFACE_DIM,
-                Y_INTERFACE_DIM,
+                I_INTERFACE_DIM,
+                J_INTERFACE_DIM,
             ],
             "units": "",
         },
         "cosa_u": {
             "name": "cosa_u",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
         "cosa_v": {
             "name": "cosa_v",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "cosa_s": {
             "name": "cosa_s",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "sina_u": {
             "name": "sina_u",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
         "sina_v": {
             "name": "sina_v",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "rsin_u": {
             "name": "rsin_u",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
         "rsin_v": {
             "name": "rsin_v",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "rsina": {
             "name": "rsina",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "",
             "n_halo": 0,
         },
         "rsin2": {
             "name": "rsin2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
         },
         "cosa": {
             "name": "cosa",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "sina": {
             "name": "sina",
-            "dims": [X_INTERFACE_DIM, Y_INTERFACE_DIM],
+            "dims": [I_INTERFACE_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "divg_u": {
             "name": "divg_u",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "divg_v": {
             "name": "divg_v",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
         "del6_u": {
             "name": "del6_u",
-            "dims": [X_DIM, Y_INTERFACE_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM],
             "units": "",
         },
         "del6_v": {
             "name": "del6_v",
-            "dims": [X_INTERFACE_DIM, Y_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM],
             "units": "",
         },
         "vlon": {
             "name": "vlon",
-            "dims": [X_DIM, Y_DIM, MetricTerms.CARTESIAN_DIM],
+            "dims": [I_DIM, J_DIM, MetricTerms.CARTESIAN_DIM],
             "units": "",
             "n_halo": 2,
         },
         "vlat": {
             "name": "vlat",
-            "dims": [X_DIM, Y_DIM, MetricTerms.CARTESIAN_DIM],
+            "dims": [I_DIM, J_DIM, MetricTerms.CARTESIAN_DIM],
             "units": "",
             "n_halo": 2,
         },
         "z11": {
             "name": "z11",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "z12": {
             "name": "z12",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "z21": {
             "name": "z21",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "z22": {
             "name": "z22",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "a11": {
             "name": "a11",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "a12": {
             "name": "a12",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "a21": {
             "name": "a21",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "a22": {
             "name": "a22",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "",
             "n_halo": 1,
         },
         "edge_vect_s": {
             "name": "edge_vect_s",
-            "dims": [X_DIM],
+            "dims": [I_DIM],
             "units": "",
         },
         "edge_vect_n": {
             "name": "edge_vect_n",
-            "dims": [X_DIM],
+            "dims": [I_DIM],
             "units": "",
         },
         "edge_vect_e": {
             "name": "edge_vect_e",
-            "dims": [Y_DIM],
+            "dims": [J_DIM],
             "units": "",
         },
         "edge_vect_w": {
             "name": "edge_vect_w",
-            "dims": [Y_DIM],
+            "dims": [J_DIM],
             "units": "",
         },
         "da_min": {
@@ -2316,17 +2305,16 @@ class TranslateInitGridUtils(ParallelTranslateGrid):
     }
 
     def compute_parallel(self, inputs, communicator):
-        namelist = self.namelist
         grid_generator = MetricTerms.from_tile_sizing(
-            npx=namelist.npx,
-            npy=namelist.npy,
+            npx=self.config.npx,
+            npy=self.config.npy,
             npz=int(inputs["npz"]),
             communicator=communicator,
             backend=self.stencil_factory.backend,
-            grid_type=namelist.grid_type,
-            dx_const=namelist.dx_const,
-            dy_const=namelist.dy_const,
-            deglat=namelist.deglat,
+            grid_type=self.config.grid_type,
+            dx_const=self.config.dx_const,
+            dy_const=self.config.dy_const,
+            deglat=self.config.deglat,
         )
         input_state = self.state_from_inputs(inputs)
         grid_generator._grid = input_state["grid"]

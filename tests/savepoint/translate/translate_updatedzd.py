@@ -1,12 +1,11 @@
 import numpy as np
+from f90nml import Namelist
 
 from ndsl import StencilFactory
-from f90nml import Namelist
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
-from pyFV3 import DynamicalCoreConfig
-from pyFV3.stencils import UpdateHeightOnDGrid, d_sw
-from pyFV3.testing import TranslateDycoreFortranData2Py
-from pyFV3.utils.functional_validation import get_subset_func
+from ndsl.constants import I_DIM, J_DIM, K_DIM
+from pyfv3.stencils import UpdateHeightOnDGrid, d_sw
+from pyfv3.testing import TranslateDycoreFortranData2Py
+from pyfv3.utils.functional_validation import get_subset_func
 
 
 class TranslateUpdateDzD(TranslateDycoreFortranData2Py):
@@ -49,10 +48,9 @@ class TranslateUpdateDzD(TranslateDycoreFortranData2Py):
         self.out_vars["ws"]["kstart"] = grid.npz
         self.out_vars["ws"]["kend"] = None
         self.stencil_factory = stencil_factory
-        self.namelist = DynamicalCoreConfig.from_namelist(namelist)
         self._subset = get_subset_func(
             self.grid.grid_indexing,
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             n_halo=((3, 3), (3, 3)),
         )
         self.ignore_near_zero_errors = {"zh": True, "wsd": True}
@@ -66,10 +64,10 @@ class TranslateUpdateDzD(TranslateDycoreFortranData2Py):
             self.grid.damping_coefficients,
             self.grid.grid_data,
             self.grid.grid_type,
-            self.namelist.hord_tm,
+            self.config.hord_tm,
             dz_min=inputs.pop("dz_min"),
             column_namelist=d_sw.get_column_namelist(
-                self.namelist, quantity_factory=self.grid.quantity_factory
+                self.config, quantity_factory=self.grid.quantity_factory
             ),
         )
         self.updatedzd(**inputs)

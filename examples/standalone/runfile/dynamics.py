@@ -18,11 +18,13 @@ from mpi4py import MPI
 # ndsl.util, otherwise xarray precedes gt4py, causing
 # very strange errors on some systems (e.g. daint)
 from ndsl import (
+    Backend,
     CompilationConfig,
     CubedSphereCommunicator,
     CubedSpherePartitioner,
     DaceConfig,
-    NullComm,
+    LocalComm,
+    MPIComm,
     StencilConfig,
     StencilFactory,
     TilePartitioner,
@@ -30,9 +32,9 @@ from ndsl import (
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
 from ndsl.performance import Timer
 from ndsl.stencils.testing import Grid, dataset_to_dict
-from pyFV3 import DycoreState, DynamicalCore, DynamicalCoreConfig
-from pyFV3.initialization.test_cases import init_baroclinic_state
-from pyFV3.testing import TranslateFVDynamics
+from pyfv3 import DycoreState, DynamicalCore, DynamicalCoreConfig
+from pyfv3.initialization.test_cases import init_baroclinic_state
+from pyfv3.testing import TranslateFVDynamics
 
 
 def parse_args() -> Namespace:
@@ -54,7 +56,7 @@ def parse_args() -> Namespace:
         "backend",
         type=str,
         action="store",
-        help="gt4py backend to use",
+        help="backend to use",
     )
     parser.add_argument(
         "hash",
@@ -82,7 +84,7 @@ def parse_args() -> Namespace:
 
 
 def set_experiment_info(
-    experiment_name: str, time_step: int, backend: str, git_hash: str
+    experiment_name: str, time_step: int, backend: Backend, git_hash: str
 ) -> Dict[str, Any]:
     experiment: Dict[str, Any] = {}
     now = datetime.now()
@@ -190,7 +192,12 @@ def read_serialized_initial_state(rank, grid, namelist, stencil_factory, data_di
 
 
 def collect_data_and_write_to_file(
-    args: Namespace, comm: MPI.Comm, hits_per_step, times_per_step, experiment_name
+    args: Namespace,
+    comm: MPI.Comm,
+    hits_per_step,
+    times_per_step,
+    experiment_name,
+    backend: Backend,
 ) -> None:
     """
     collect the gathered data from all the ranks onto rank 0 and write the timing file
@@ -211,7 +218,7 @@ def collect_data_and_write_to_file(
 
 
 def setup_dycore(
-    dycore_config, mpi_comm, backend, is_baroclinic_test_case, data_dir
+    dycore_config, mpi_comm, backend: Backend, is_baroclinic_test_case, data_dir
 ) -> Tuple[DynamicalCore, DycoreState, StencilFactory]:
     # set up grid-dependent helper structures
     partitioner = CubedSpherePartitioner(TilePartitioner(dycore_config.layout))
@@ -287,14 +294,20 @@ if __name__ == "__main__":
         namelist = f90nml.read(args.data_dir + "/input.nml")
         dycore_config = DynamicalCoreConfig.from_f90nml(namelist)
         experiment_name, is_baroclinic_test_case = get_experiment_info(args.data_dir)
-        if args.disable_halo_exchange:
-            mpi_comm = NullComm(MPI.COMM_WORLD.Get_rank(), MPI.COMM_WORLD.Get_size())
-        else:
-            mpi_comm = MPI.COMM_WORLD
+        mpi_comm = (
+            LocalComm(
+                rank=MPI.COMM_WORLD.Get_rank(),
+                total_ranks=MPI.COMM_WORLD.Get_size(),
+                buffer_dict={},
+            )
+            if args.disable_halo_exchange
+            else MPIComm()
+        )
+        backend = Backend(args.backend)
         dycore, state, stencil_factory = setup_dycore(
             dycore_config,
             mpi_comm,
-            args.backend,
+            backend,
             is_baroclinic_test_case,
             args.data_dir,
         )
@@ -332,14 +345,21 @@ if __name__ == "__main__":
 
     # output profiling data
     if profiler is not None:
-        profiler.dump_stats(f"fv3core_{experiment_name}_{args.backend}_{rank}.prof")
+        profiler.dump_stats(
+            f"fv3core_{experiment_name}_{backend.as_safe_for_path()}_{rank}.prof"
+        )
 
     # Timings
     if not args.disable_json_dump:
         # Collect times and output statistics in json
         MPI.COMM_WORLD.Barrier()
         collect_data_and_write_to_file(
-            args, MPI.COMM_WORLD, hits_per_step, times_per_step, experiment_name
+            args,
+            MPI.COMM_WORLD,
+            hits_per_step,
+            times_per_step,
+            experiment_name,
+            backend,
         )
     else:
         # Print a brief summary of timings

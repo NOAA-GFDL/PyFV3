@@ -1,19 +1,19 @@
 import pytest
+from f90nml import Namelist
 
-from ndsl import QuantityFactory, StencilFactory
-from f90nml.namelist import Namelist
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+import ndsl.dsl.gt4py_utils as utils
+from ndsl import StencilFactory
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import ParallelTranslate
-from pyFV3.stencils import FiniteVolumeTransport, TracerAdvection
-from pyFV3.tracers import TracersType, setup_tracers
-from pyFV3.utils.functional_validation import get_subset_func
-from pyFV3 import DynamicalCoreConfig
+from pyfv3 import DynamicalCoreConfig
+from pyfv3.stencils import FiniteVolumeTransport, TracerAdvection
+from pyfv3.utils.functional_validation import get_subset_func
 
 
 class TranslateTracer2D1L(ParallelTranslate):
     inputs = {
         "tracers": {
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/m^2",
         }
     }
@@ -36,13 +36,13 @@ class TranslateTracer2D1L(ParallelTranslate):
         self._base.in_vars["parameters"] = ["nq"]
         self._base.out_vars = self._base.in_vars["data_vars"]
         self.stencil_factory = stencil_factory
-        self._quantity_factory = QuantityFactory.from_backend(
+        self._quantity_factory = QuantityFactory(
             sizer=stencil_factory.grid_indexing._sizer,
             backend=stencil_factory.backend,
         )
         self._subset = get_subset_func(
             self.grid.grid_indexing,
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             n_halo=((0, 0), (0, 0)),
         )
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
@@ -91,8 +91,7 @@ class TranslateTracer2D1L(ParallelTranslate):
 
     def compute_sequential(self, inputs_list, communicator_list):
         pytest.skip(
-            f"{self.__class__} only has a mpirun implementation, "
-            "not running in mock-parallel"
+            f"{self.__class__} only has a mpirun implementation, not running in mock-parallel"
         )
 
     def subset_output(self, varname: str, output):

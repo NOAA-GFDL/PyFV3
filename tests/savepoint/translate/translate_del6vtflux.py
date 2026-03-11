@@ -1,8 +1,10 @@
-import pyFV3.stencils.delnflux as delnflux
-from ndsl import StencilFactory
 from f90nml import Namelist
-from ndsl.constants import Z_DIM
-from pyFV3.testing import TranslateDycoreFortranData2Py
+
+import pyfv3.stencils.delnflux as delnflux
+from ndsl import StencilFactory
+from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
+from ndsl.dsl.typing import Float
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateDel6VtFlux(TranslateDycoreFortranData2Py):
@@ -37,7 +39,7 @@ class TranslateDel6VtFlux(TranslateDycoreFortranData2Py):
     # use_sg -- 'dx', 'dy', 'rdxc', 'rdyc', 'sin_sg needed
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
-        nord_col = self.grid.quantity_factory.zeros(dims=[Z_DIM], units="unknown")
+        nord_col = self.grid.quantity_factory.zeros(dims=[K_DIM], units="unknown")
         nord_col.data[:] = nord_col.np.asarray(inputs.pop("nord_w"))
         self.compute_func = delnflux.DelnFluxNoSG(  # type: ignore
             self.stencil_factory,
@@ -45,5 +47,13 @@ class TranslateDel6VtFlux(TranslateDycoreFortranData2Py):
             self.grid.rarea,
             nord_col,
         )
+
+        # Convert relevant inputs to quantities:
+        d2 = self.grid.quantity_factory.zeros(
+            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown", dtype=Float
+        )
+        d2.data[:] = d2.np.asarray(inputs.pop("d2"))
+        inputs["d2"] = d2
+
         self.compute_func(**inputs)
         return self.slice_output(inputs)

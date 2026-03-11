@@ -1,11 +1,10 @@
+from f90nml import Namelist
+
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import QuantityFactory, StencilFactory
-from f90nml.namelist import Namelist
-from ndsl.constants import Z_DIM
-from pyFV3 import DynamicalCoreConfig
-from pyFV3.stencils import LagrangianToEulerian
-from pyFV3.testing import TranslateDycoreFortranData2Py
-from pyFV3.tracers import TracersType
+from ndsl import StencilFactory
+from ndsl.constants import K_DIM
+from pyfv3.stencils import LagrangianToEulerian
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateRemapping(TranslateDycoreFortranData2Py):
@@ -98,8 +97,7 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
         self.near_zero = 3e-18
         self.ignore_near_zero_errors = {"q_con": True, "tracers": True}
         self.stencil_factory = stencil_factory
-        self.namelist = DynamicalCoreConfig.from_namelist(namelist)
-        self._quantity_factory = QuantityFactory.from_backend(
+        self._quantity_factory = QuantityFactory(
             sizer=stencil_factory.grid_indexing._sizer,
             backend=stencil_factory.backend,
         )
@@ -126,14 +124,14 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
             tracer_data=inputs["tracers"],
         )
         inputs["last_step"] = bool(inputs["last_step"])
-        pfull = self.grid.quantity_factory.zeros([Z_DIM], units="Pa")
+        pfull = self.grid.quantity_factory.zeros([K_DIM], units="Pa")
         pfull.data[:] = pfull.np.asarray(inputs.pop("pfull"))
         inputs.pop("nq")
         inputs["tracers"] = tracers
         l_to_e_obj = LagrangianToEulerian(
             self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
-            config=DynamicalCoreConfig.from_namelist(self.namelist).remapping,
+            config=self.config.remapping,
             area_64=self.grid.area_64,
             pfull=pfull,
             tracers=inputs["tracers"],

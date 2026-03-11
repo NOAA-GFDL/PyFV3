@@ -1,10 +1,12 @@
 from typing import Any, Dict
 
+from f90nml import Namelist
+
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
-from f90nml import Namelist
 from ndsl.stencils import corners
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.stencils.copy_corners import CopyCornersX, CopyCornersY
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateFill4Corners(TranslateDycoreFortranData2Py):
@@ -66,7 +68,7 @@ class TranslateFillCorners(TranslateDycoreFortranData2Py):
                 domain = (self.grid.nid + 1, self.grid.njd + 1, len(ki))
                 if inputs["dir"] == 1:
                     fill_corners = corners.FillCornersBGrid(
-                        "x",
+                        "i",
                         origin=origin,
                         domain=domain,
                         stencil_factory=self.stencil_factory,
@@ -77,7 +79,7 @@ class TranslateFillCorners(TranslateDycoreFortranData2Py):
                     )
                 elif inputs["dir"] == 2:
                     fill_corners = corners.FillCornersBGrid(
-                        "y",
+                        "j",
                         origin=origin,
                         domain=domain,
                         stencil_factory=self.stencil_factory,
@@ -101,8 +103,8 @@ class TranslateCopyCorners(TranslateDycoreFortranData2Py):
         self.in_vars["data_vars"] = {"q": {}}
         self.in_vars["parameters"] = ["dir"]
         self.out_vars: Dict[str, Any] = {"q": {}}
-        self._copy_corners_x = corners.CopyCorners("x", stencil_factory=stencil_factory)
-        self._copy_corners_y = corners.CopyCorners("y", stencil_factory=stencil_factory)
+        self._copy_corners_x = CopyCornersX(stencil_factory)
+        self._copy_corners_y = CopyCornersY(stencil_factory)
         self.stencil_factory = stencil_factory
 
     def compute_from_storage(self, inputs):

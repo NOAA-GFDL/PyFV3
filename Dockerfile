@@ -1,4 +1,4 @@
-FROM python:3.11
+FROM python:3.11-slim-bookworm@sha256:7cd3fa11d619688317226bc93dc59bc8966e9aec6bc2a6abb847e8ab7d656706
 
 RUN apt-get update &&\
     apt install -y --no-install-recommends \
@@ -16,7 +16,6 @@ RUN apt-get update -y && \
     libgeos-dev \
     libopenmpi3 \
     libopenmpi-dev \
-    libboost-all-dev \
     libhdf5-serial-dev \
     libffi-dev \
     netcdf-bin \
@@ -30,10 +29,10 @@ RUN which python
 RUN pip --version
 RUN which pip
 
-COPY ./ /pyFV3/
+COPY . /pyfv3
 
 # Install pyFV3 and the full dependencies
-RUN pip install -e pyFV3[develop]
+RUN cd /pyfv3 && pip install -e .[dev]
 
 RUN pip install \
     matplotlib \

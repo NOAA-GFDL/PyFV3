@@ -1,11 +1,11 @@
+from f90nml import Namelist
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
-import pyFV3
-import pyFV3.stencils.d_sw as d_sw
+import pyfv3.stencils.d_sw as d_sw
 from ndsl import StencilFactory
-from f90nml import Namelist
+from ndsl.constants import I_DIM, J_DIM, K_INTERFACE_DIM
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
-from pyFV3.testing import TranslateDycoreFortranData2Py
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateD_SW(TranslateDycoreFortranData2Py):
@@ -18,9 +18,8 @@ class TranslateD_SW(TranslateDycoreFortranData2Py):
         super().__init__(grid, namelist, stencil_factory)
         self.max_error = 3.2e-10
         self.stencil_factory = stencil_factory
-        dycore_config = pyFV3.DynamicalCoreConfig.from_namelist(namelist)
         column_namelist = d_sw.get_column_namelist(
-            config=dycore_config.acoustic_dynamics.d_grid_shallow_water,
+            config=self.config.acoustic_dynamics.d_grid_shallow_water,
             quantity_factory=self.grid.quantity_factory,
         )
         self.compute_func = d_sw.DGridShallowWaterLagrangianDynamics(  # type: ignore
@@ -31,7 +30,7 @@ class TranslateD_SW(TranslateDycoreFortranData2Py):
             column_namelist=column_namelist,
             nested=self.grid.nested,
             stretched_grid=self.grid.stretched_grid,
-            config=dycore_config.d_grid_shallow_water,
+            config=self.config.d_grid_shallow_water,
         )
         self.in_vars["data_vars"] = {
             "uc": grid.x3d_domain_dict(),
@@ -65,6 +64,34 @@ class TranslateD_SW(TranslateDycoreFortranData2Py):
         self.in_vars["parameters"] = ["dt"]
         self.out_vars = self.in_vars["data_vars"].copy()
         del self.out_vars["zh"]
+
+    def compute(self, inputs):
+        self.make_storage_data_input_vars(inputs)
+        # Convert relevant inputs to quantities:
+        delp = self.grid.quantity_factory.zeros(
+            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown", dtype=Float
+        )
+        delp.data[:] = delp.np.asarray(inputs.pop("delp"))
+        inputs["delp"] = delp
+        w = self.grid.quantity_factory.zeros(
+            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown", dtype=Float
+        )
+        w.data[:] = delp.np.asarray(inputs.pop("w"))
+        inputs["w"] = w
+        q_con = self.grid.quantity_factory.zeros(
+            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown", dtype=Float
+        )
+        q_con.data[:] = delp.np.asarray(inputs.pop("q_con"))
+        inputs["q_con"] = q_con
+
+        pt = self.grid.quantity_factory.zeros(
+            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown", dtype=Float
+        )
+        pt.data[:] = delp.np.asarray(inputs.pop("pt"))
+        inputs["pt"] = pt
+
+        self.compute_func(**inputs)
+        return self.slice_output(inputs)
 
 
 def ubke(
@@ -211,18 +238,17 @@ class TranslateHeatDiss(TranslateDycoreFortranData2Py):
             "diss_est": grid.compute_dict(),
             "dw": grid.compute_dict(),
         }
-        self.namelist = namelist  # type: ignore
         self.stencil_factory = stencil_factory
 
     def compute_from_storage(self, inputs):
         column_namelist = d_sw.get_column_namelist(
-            config=self.namelist, quantity_factory=self.grid.quantity_factory
+            config=self.config, quantity_factory=self.grid.quantity_factory
         )
         # TODO add these to the serialized data or remove the test
         inputs["damp_w"] = column_namelist["damp_w"]
         inputs["ke_bg"] = column_namelist["ke_bg"]
         inputs["dt"] = Float(
-            self.namelist.dt_atmos / self.namelist.k_split / self.namelist.n_split
+            self.config.dt_atmos / self.config.k_split / self.config.n_split
         )
         inputs["rarea"] = self.grid.rarea
         heat_diss_stencil = self.stencil_factory.from_origin_domain(

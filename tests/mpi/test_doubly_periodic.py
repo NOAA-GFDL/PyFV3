@@ -1,24 +1,28 @@
 from datetime import timedelta
-from typing import Any, List, Tuple, cast
+from pathlib import Path
+from typing import cast
 
-import ndsl.dsl.stencil
-import ndsl.stencils.testing
-import pyFV3.initialization.test_cases.initialize_baroclinic as baroclinic_init
+import pyfv3.initialization.test_cases.initialize_baroclinic as baroclinic_init
 from ndsl import (
+    Backend,
+    CompilationConfig,
     CubedSphereCommunicator,
     GridIndexing,
     MPIComm,
     QuantityFactory,
+    StencilConfig,
+    StencilFactory,
     SubtileGridSizer,
     TileCommunicator,
     TilePartitioner,
 )
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
-from pyFV3 import DynamicalCore, DynamicalCoreConfig
+from ndsl.performance import NullTimer
+from pyfv3 import DynamicalCore, DynamicalCoreConfig
 
 
-def setup_dycore() -> Tuple[DynamicalCore, List[Any]]:
-    backend = "numpy"
+def test_dycore_runs_one_step() -> None:
+    backend = Backend("st:numpy:cpu:IJK")
     layout = (3, 3)
     config = DynamicalCoreConfig(
         layout=layout,
@@ -75,8 +79,8 @@ def setup_dycore() -> Tuple[DynamicalCore, List[Any]]:
         CubedSphereCommunicator,
         TileCommunicator(mpi_comm, partitioner),
     )
-    stencil_config = ndsl.dsl.stencil.StencilConfig(
-        compilation_config=ndsl.dsl.stencil.CompilationConfig(
+    stencil_config = StencilConfig(
+        compilation_config=CompilationConfig(
             communicator=communicator,
             backend=backend,
             rebuild=False,
@@ -88,19 +92,19 @@ def setup_dycore() -> Tuple[DynamicalCore, List[Any]]:
         ny_tile=config.npy - 1,
         nz=config.npz,
         n_halo=3,
-        extra_dim_lengths={},
         layout=config.layout,
         tile_partitioner=partitioner,
         tile_rank=communicator.rank,
+        backend=backend,
     )
     grid_indexing = GridIndexing.from_sizer_and_communicator(
         sizer=sizer, comm=communicator
     )
-    quantity_factory = QuantityFactory.from_backend(sizer=sizer, backend=backend)
+    quantity_factory = QuantityFactory(sizer=sizer, backend=backend)
     metric_terms = MetricTerms(
         quantity_factory=quantity_factory,
         communicator=communicator,
-        eta_file="/pyFV3/test_data/eta79.nc",
+        eta_file=Path(__file__).parent / ".." / "data" / "eta79.nc",
     )
     grid_data = GridData.new_from_metric_terms(metric_terms)
 
@@ -114,7 +118,7 @@ def setup_dycore() -> Tuple[DynamicalCore, List[Any]]:
         moist_phys=config.moist_phys,
         comm=communicator,
     )
-    stencil_factory = ndsl.dsl.stencil.StencilFactory(
+    stencil_factory = StencilFactory(
         config=stencil_config,
         grid_indexing=grid_indexing,
     )
@@ -131,18 +135,6 @@ def setup_dycore() -> Tuple[DynamicalCore, List[Any]]:
         exclude_tracers=[],
         timestep=timedelta(seconds=255),
     )
-    # TODO compute from namelist
-    bdt = config.dt_atmos
 
-    args = [
-        state,
-        config.consv_te,
-        bdt,
-        config.n_split,
-    ]
-    return dycore, args
-
-
-def test_dycore_runs_one_step():
-    dycore, args = setup_dycore()
-    dycore.step_dynamics(*args)
+    # run one step
+    dycore.step_dynamics(state, NullTimer())

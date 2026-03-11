@@ -1,11 +1,13 @@
 from types import SimpleNamespace
 
+from f90nml import Namelist
+
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
-from f90nml import Namelist
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
-from pyFV3 import DryConvectiveAdjustment
+from pyfv3 import DryConvectiveAdjustment
+from pyfv3._config import DynamicalCoreConfig
 
 
 # NOTE, does no halo updates, does not need to be a Parallel test,
@@ -15,105 +17,105 @@ class TranslateFVSubgridZ(ParallelTranslateBaseSlicing):
     inputs = {
         "delp": {
             "name": "pressure_thickness_of_atmospheric_layer",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "Pa",
         },
         "delz": {
             "name": "vertical_thickness_of_atmospheric_layer",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m",
         },
         "pe": {
             "name": "interface_pressure",
-            "dims": [X_DIM, Z_INTERFACE_DIM, Y_DIM],
+            "dims": [I_DIM, K_INTERFACE_DIM, J_DIM],
             "units": "Pa",
             "n_halo": 1,
         },
         "pkz": {
             "name": "layer_mean_pressure_raised_to_power_of_kappa",
             "units": "unknown",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "n_halo": 0,
         },
         "peln": {
             "name": "logarithm_of_interface_pressure",
             "units": "ln(Pa)",
-            "dims": [X_DIM, Z_INTERFACE_DIM, Y_DIM],
+            "dims": [I_DIM, K_INTERFACE_DIM, J_DIM],
             "n_halo": 0,
         },
         "pt": {
             "name": "air_temperature",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "degK",
         },
         "ua": {
             "name": "eastward_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "va": {
             "name": "northward_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "w": {
             "name": "vertical_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "qvapor": {
             "name": "specific_humidity",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "qliquid": {
             "name": "cloud_water_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "qice": {
             "name": "cloud_ice_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "qrain": {
             "name": "rain_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "qsnow": {
             "name": "snow_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "qgraupel": {
             "name": "graupel_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "qo3mr": {
             "name": "ozone_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "qsgs_tke": {
             "name": "turbulent_kinetic_energy",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m**2/s**2",
         },
         "qcld": {
             "name": "cloud_fraction",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "",
         },
         "u_dt": {
             "name": "eastward_wind_tendency_due_to_physics",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s**2",
         },
         "v_dt": {
             "name": "northward_wind_tendency_due_to_physics",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s**2",
         },
         "dt": {"dims": []},
@@ -177,17 +179,17 @@ class TranslateFVSubgridZ(ParallelTranslateBaseSlicing):
         for qvar in utils.tracer_variables:
             self.ignore_near_zero_errors[qvar] = True
         self.stencil_factory = stencil_factory
-        self.namelist = namelist
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def compute_parallel(self, inputs, communicator):
         state = self.state_from_inputs(inputs)
         fvsubgridz = DryConvectiveAdjustment(
             self.stencil_factory,
             self.grid.quantity_factory,
-            self.namelist.nwat,
-            self.namelist.fv_sg_adj,
-            self.namelist.n_sponge,
-            self.namelist.hydrostatic,
+            self.config.nwat,
+            self.config.fv_sg_adj,
+            self.config.n_sponge,
+            self.config.hydrostatic,
         )
         state_namespace = SimpleNamespace(**state)
         fvsubgridz(
@@ -204,10 +206,10 @@ class TranslateFVSubgridZ(ParallelTranslateBaseSlicing):
             fvsubgridz = DryConvectiveAdjustment(
                 self.stencil_factory,
                 self.grid.quantity_factory,
-                self.namelist.nwat,
-                self.namelist.fv_sg_adj,
-                self.namelist.n_sponge,
-                self.namelist.hydrostatic,
+                self.config.nwat,
+                self.config.fv_sg_adj,
+                self.config.n_sponge,
+                self.config.hydrostatic,
             )
             state_namespace = SimpleNamespace(**state)
             fvsubgridz(
