@@ -327,7 +327,7 @@ class DycoreState:
                         dtype_dict[_field.name]
                         if dtype_dict and _field.name in dtype_dict.keys()
                         else Float
-                    ),  # type: ignore
+                    ),
                     allow_mismatch_float_precision=allow_mismatch_float_precision,
                 ).data
             elif _field.name == "tracers":
@@ -337,7 +337,7 @@ class DycoreState:
                 initial_storages[_field.name] = qty_factory_tracers.zeros(
                     [I_DIM, J_DIM, K_DIM, "tracers"],
                     _field.metadata["units"],
-                    dtype=Float,  # type: ignore
+                    dtype=Float,
                 ).data
         return cls.init_from_storages(
             storages=initial_storages,
@@ -372,7 +372,7 @@ class DycoreState:
                     extent=quantity_factory.sizer.get_extent(dims),
                     backend=backend,
                 )
-            elif issubclass(_field.type, Tracers):
+            elif issubclass(_field.type, TracersType):
                 if len(dict_of_numpy_arrays[_field.name]) != len(tracer_list):
                     raise ValueError(
                         "[pyFV3] DycoreState init:"
@@ -384,7 +384,7 @@ class DycoreState:
                     quantity_factory=quantity_factory,
                     tracer_mapping=tracer_list,
                 )
-        state = cls(**dict_state)  # type: ignore
+        state = cls(**dict_state)
         return state
 
     @classmethod
@@ -493,7 +493,7 @@ class DycoreState:
 
         return new
 
-    def _xr_dataarray_from_quantity(self, name: str, metadata: Dict[str, Any], data):
+    def _xr_dataarray_from_quantity(self, name: str, metadata: dict[str, Any], data):
         dims = [f"{dim_name}_{name}" for dim_name in metadata["dims"]]
         return xr.DataArray(
             gt_utils.asarray(data),

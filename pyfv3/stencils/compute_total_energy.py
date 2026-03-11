@@ -1,33 +1,32 @@
 from gt4py.cartesian.gtscript import BACKWARD, FORWARD, K, computation, interval
-from pyFV3._config import DynamicalCoreConfig
-from pyFV3.stencils.moist_cv import moist_cv_nwat6_fn
-from pyFV3.tracers import TracersType
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import GRAV, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
+from pyfv3._config import DynamicalCoreConfig
+from pyfv3.stencils.moist_cv import moist_cv_nwat6_fn
 
 
 def _compute_total_energy__stencil(
-    hs: FloatFieldIJ,  # type: ignore
-    delp: FloatField,  # type: ignore
-    delz: FloatField,  # type: ignore
-    qc: FloatField,  # type:ignore
-    pt: FloatField,  # type: ignore
-    u: FloatField,  # type: ignore
-    v: FloatField,  # type: ignore
-    w: FloatField,  # type: ignore
-    qvapor: FloatField,  # type: ignore
-    qliquid: FloatField,  # type: ignore
-    qrain: FloatField,  # type: ignore
-    qsnow: FloatField,  # type: ignore
-    qice: FloatField,  # type: ignore
-    qgraupel: FloatField,  # type: ignore
-    rsin2: FloatFieldIJ,  # type: ignore
-    cosa_s: FloatFieldIJ,  # type: ignore
-    phyz: FloatField,  # type: ignore
-    te_2d: FloatFieldIJ,  # type: ignore
+    hs: FloatFieldIJ,
+    delp: FloatField,
+    delz: FloatField,
+    qc: FloatField,
+    pt: FloatField,
+    u: FloatField,
+    v: FloatField,
+    w: FloatField,
+    qvapor: FloatField,
+    qliquid: FloatField,
+    qrain: FloatField,
+    qsnow: FloatField,
+    qice: FloatField,
+    qgraupel: FloatField,
+    rsin2: FloatFieldIJ,
+    cosa_s: FloatFieldIJ,
+    phyz: FloatField,
+    te_2d: FloatFieldIJ,
 ):
     """
     Dev Note: this is _very_ close to moist_cv.moist_te. The only numerical differences
@@ -102,14 +101,12 @@ class ComputeTotalEnergy:
         )
         if config.hydrostatic:
             raise NotImplementedError(
-                "Dynamics (Compute Total Energy): "
-                " hydrostatic option is not implemented."
+                "Dynamics (Compute Total Energy):  hydrostatic option is not implemented."
             )
 
         if not config.moist_phys:
             raise NotImplementedError(
-                "Dynamics (Compute Total Energy): "
-                " moist_phys=False option is not implemented."
+                "Dynamics (Compute Total Energy):  moist_phys=False option is not implemented."
             )
 
         self._phyz = quantity_factory.zeros(
@@ -127,16 +124,16 @@ class ComputeTotalEnergy:
 
     def __call__(
         self,
-        hs: FloatFieldIJ,  # type: ignore
-        delp: FloatField,  # type: ignore
-        delz: FloatField,  # type: ignore
-        qc: FloatField,  # type:ignore
-        pt: FloatField,  # type: ignore
-        u: FloatField,  # type: ignore
-        v: FloatField,  # type: ignore
-        w: FloatField,  # type: ignore
-        tracers: TracersType,
-        te_2d: FloatFieldIJ,  # type: ignore
+        hs: FloatFieldIJ,
+        delp: FloatField,
+        delz: FloatField,
+        qc: FloatField,
+        pt: FloatField,
+        u: FloatField,
+        v: FloatField,
+        w: FloatField,
+        tracers,
+        te_2d: FloatFieldIJ,
     ) -> None:
         self._compute_total_energy(
             hs=hs,

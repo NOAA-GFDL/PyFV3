@@ -1,12 +1,12 @@
 import pytest
 from f90nml import Namelist
 
-import ndsl.dsl.gt4py_utils as utils
-from ndsl import StencilFactory
+from ndsl import QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
-from ndsl.stencils.testing import ParallelTranslate
+from ndsl.stencils.testing import Grid, ParallelTranslate
 from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils import FiniteVolumeTransport, TracerAdvection
+from pyfv3.tracers import setup_tracers
 from pyfv3.utils.functional_validation import get_subset_func
 
 
@@ -20,7 +20,7 @@ class TranslateTracer2D1L(ParallelTranslate):
 
     def __init__(
         self,
-        grid,
+        grid: Grid,
         namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
@@ -37,7 +37,7 @@ class TranslateTracer2D1L(ParallelTranslate):
         self._base.out_vars = self._base.in_vars["data_vars"]
         self.stencil_factory = stencil_factory
         self._quantity_factory = QuantityFactory(
-            sizer=stencil_factory.grid_indexing._sizer,
+            sizer=grid.sizer,
             backend=stencil_factory.backend,
         )
         self._subset = get_subset_func(

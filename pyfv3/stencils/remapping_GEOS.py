@@ -358,35 +358,35 @@ class LagrangianToEulerian_GEOS:
     def __call__(
         self,
         tracers: TracersType,
-        pt: FloatField,  # type: ignore
-        delp: FloatField,  # type: ignore
-        delz: FloatField,  # type: ignore
-        peln: FloatField,  # type: ignore
-        u: FloatField,  # type: ignore
-        v: FloatField,  # type: ignore
-        w: FloatField,  # type: ignore
-        mfx: FloatField,  # type: ignore
-        mfy: FloatField,  # type: ignore
-        cx: FloatField,  # type: ignore
-        cy: FloatField,  # type: ignore
-        cappa: FloatField,  # type: ignore
-        q_con: FloatField,  # type: ignore
-        pkz: FloatField,  # type: ignore
-        pk: FloatField,  # type: ignore
-        pe: FloatField,  # type: ignore
-        hs: FloatFieldIJ,  # type: ignore
-        te0_2d: FloatFieldIJ,  # type: ignore
-        ps: FloatFieldIJ,  # type: ignore
-        wsd: FloatFieldIJ,  # type: ignore
-        ak: FloatFieldK,  # type: ignore
-        bk: FloatFieldK,  # type: ignore
-        dp1: FloatField,  # type: ignore
-        ptop: Float,  # type: ignore
-        akap: Float,  # type: ignore
-        zvir: Float,  # type: ignore
+        pt: FloatField,
+        delp: FloatField,
+        delz: FloatField,
+        peln: FloatField,
+        u: FloatField,
+        v: FloatField,
+        w: FloatField,
+        mfx: FloatField,
+        mfy: FloatField,
+        cx: FloatField,
+        cy: FloatField,
+        cappa: FloatField,
+        q_con: FloatField,
+        pkz: FloatField,
+        pk: FloatField,
+        pe: FloatField,
+        hs: FloatFieldIJ,
+        te0_2d: FloatFieldIJ,
+        ps: FloatFieldIJ,
+        wsd: FloatFieldIJ,
+        ak: FloatFieldK,
+        bk: FloatFieldK,
+        dp1: FloatField,
+        ptop: Float,
+        akap: Float,
+        zvir: Float,
         last_step: bool,
-        consv_te: Float,  # type: ignore
-        mdt: Float,  # type: ignore
+        consv_te: Float,
+        mdt: Float,
     ):
         """
         Remap the deformed Lagrangian surfaces onto the reference, or "Eulerian",

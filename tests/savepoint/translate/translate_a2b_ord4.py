@@ -7,6 +7,7 @@ from ndsl import StencilFactory, orchestrate
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from pyfv3.stencils import DivergenceDamping
 from pyfv3.testing import TranslateDycoreFortranData2Py
+from pyfv3.utils.functional_validation import get_subset_func
 
 
 class A2B_Ord4Compute:

@@ -5,7 +5,7 @@ import ndsl.stencils.corners as corners
 from ndsl import Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
-from ndsl.dsl.gt4py import PARALLEL, computation
+from ndsl.dsl.gt4py import PARALLEL, computation, float32
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region, sqrt
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
@@ -24,7 +24,7 @@ def damp_tmp(q, da_min_c, d2_bg, dddmp):
     return damp
 
 
-@gtscript.function
+@gtfunction
 def damp_tmp2(q, da_min_c, d2_bg, dddmp):
     damp: float32 = da_min_c * max(d2_bg, min(0.2, dddmp * q))
     return damp

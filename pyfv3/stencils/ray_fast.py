@@ -47,10 +47,10 @@ def dm_layer(rf, dp, wind):
 
 
 def ray_fast_damping_increment(
-    pfull: FloatFieldK,  # type:ignore
-    dt: Float,  # type:ignore
-    ptop: Float,  # type:ignore
-    rf: FloatField,  # type:ignore
+    pfull: FloatFieldK,
+    dt: Float,
+    ptop: Float,
+    rf: FloatField,
 ):
     """rf is rayleigh damping increment, fraction of vertical velocity
     left after doing rayleigh damping (w -> w * rf)
@@ -85,7 +85,7 @@ def ray_fast_wind_compute(
         rf_cutoff_nudge (in):
         ks (in):
     """
-    from __externals__ import hydrostatic, local_ie, local_je, rf_cutoff, tau
+    from __externals__ import hydrostatic, local_ie, local_je, rf_cutoff
 
     # dm_stencil
     with computation(FORWARD):

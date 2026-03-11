@@ -28,7 +28,6 @@ from ndsl.constants import (
     K_DIM,
     K_INTERFACE_DIM,
 )
-from ndsl.dsl.dace.orchestration import dace_inhibitor
 from ndsl.dsl.gt4py import (
     BACKWARD,
     FORWARD,
@@ -38,7 +37,7 @@ from ndsl.dsl.gt4py import (
     interval,
     region,
 )
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from ndsl.dsl.typing import Float, FloatField, FloatField64, FloatFieldIJ
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.typing import Communicator
 from pyfv3._config import AcousticDynamicsConfig

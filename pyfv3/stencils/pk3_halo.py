@@ -1,6 +1,6 @@
 from ndsl import QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM
-from ndsl.dsl.gt4py import FORWARD, computation, horizontal, interval, region
+from ndsl.dsl.gt4py import FORWARD, computation, exp, horizontal, interval, log, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 
 

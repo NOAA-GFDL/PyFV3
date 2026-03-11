@@ -1,7 +1,10 @@
 from types import SimpleNamespace
 
-from ndsl import StencilFactory, Quantity
 from f90nml import Namelist
+from pyFV3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
+from pyFV3.tracers import TracersType, setup_tracers
+
+from ndsl import Quantity, StencilFactory
 from ndsl.constants import (
     X_DIM,
     X_INTERFACE_DIM,
@@ -13,8 +16,6 @@ from ndsl.constants import (
 from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
 from pyFV3 import DynamicalCoreConfig
-from pyFV3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
-from pyFV3.tracers import TracersType, setup_tracers
 
 
 class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
@@ -393,7 +394,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             return {}
         outputs = {}
         storages = {}
-        for name, properties in self.outputs.items():
+        for name, _properties in self.outputs.items():
             if name in ["mfx_R4", "mfy_R4", "cx_R4", "cy_R4"]:
                 storages[name] = state[name[:-3]]
             elif isinstance(state[name], Quantity):

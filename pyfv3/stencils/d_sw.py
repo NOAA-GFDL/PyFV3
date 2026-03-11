@@ -5,7 +5,7 @@ from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, I, J, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
+from ndsl.dsl.typing import Float, FloatField, FloatField64, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients, GridData
 from pyfv3._config import DGridShallowWaterLagrangianDynamicsConfig
 from pyfv3.stencils import delnflux
@@ -1025,7 +1025,7 @@ class DGridShallowWaterLagrangianDynamics:
         )
         self._accumulate_delp = stencil_factory.from_dims_halo(
             func=delp_increment_accumulation,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
 
     def __call__(

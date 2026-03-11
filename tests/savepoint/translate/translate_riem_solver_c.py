@@ -1,8 +1,11 @@
+import numpy as np
 from f90nml import Namelist
 
 from ndsl import StencilFactory
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from pyfv3.stencils import NonhydrostaticVerticalSolverCGrid
 from pyfv3.testing import TranslateDycoreFortranData2Py
+from pyfv3.utils.functional_validation import get_subset_func
 
 
 class TranslateRiem_Solver_C(TranslateDycoreFortranData2Py):
@@ -35,7 +38,7 @@ class TranslateRiem_Solver_C(TranslateDycoreFortranData2Py):
         self.stencil_factory = stencil_factory
         self._subset = get_subset_func(
             self.grid.grid_indexing,
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             n_halo=((3, 3), (3, 3)),
         )
 

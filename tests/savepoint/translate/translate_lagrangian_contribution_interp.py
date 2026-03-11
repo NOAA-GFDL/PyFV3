@@ -1,10 +1,11 @@
-from ndsl import StencilFactory
 from f90nml import Namelist
+from pyFV3.stencils.map_single import lagrangian_contributions_interp
+
+from ndsl import StencilFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import Bool, BoolFieldIJ, FloatField, Int, IntField, IntFieldIJ
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
-from pyFV3.stencils.map_single import lagrangian_contributions_interp
 
 
 class test_Lagragian_Contribution_Interp:

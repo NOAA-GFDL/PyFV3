@@ -3,7 +3,7 @@ from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, get_precision
 from ndsl.grid import GridData
 from ndsl.stencils import corners
 from pyfv3.stencils.a2b_ord4 import a1, a2, lagrange_x_func, lagrange_y_func

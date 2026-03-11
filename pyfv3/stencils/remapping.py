@@ -1,3 +1,5 @@
+from typing import no_type_check
+
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import (
     I_DIM,
@@ -28,8 +30,6 @@ from pyfv3.stencils.mapn_tracer import MapNTracer
 from pyfv3.stencils.moist_cv import moist_pt_func, moist_pt_last_step
 from pyfv3.stencils.saturation_adjustment import SatAdjust3d
 
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 # TODO: Should this be set here or in global_constants?
 CONSV_MIN = 0.001
@@ -358,7 +358,7 @@ class LagrangianToEulerian:
         config: RemappingConfig,
         area_64,
         pfull,
-        tracers: TracersType,
+        tracers,
         exclude_tracers: list[str],
         checkpointer: Checkpointer | None = None,
     ):
@@ -591,7 +591,7 @@ class LagrangianToEulerian:
     @no_type_check
     def __call__(
         self,
-        tracers: TracersType,
+        tracers,
         pt: FloatField,
         delp: FloatField,
         delz: FloatField,

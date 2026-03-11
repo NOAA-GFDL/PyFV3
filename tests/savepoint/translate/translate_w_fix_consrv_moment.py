@@ -1,7 +1,8 @@
+from pyFV3.stencils.w_fix_consrv_moment import W_fix_consrv_moment
+
 from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
-from pyFV3.stencils.w_fix_consrv_moment import W_fix_consrv_moment
 
 
 class TranslateW_fix_consrv_moment(TranslateFortranData2Py):

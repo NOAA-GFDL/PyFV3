@@ -3,13 +3,22 @@ from datetime import timedelta
 
 from dace.frontend.python.interface import nounroll as dace_no_unroll
 
-import ndsl.dsl.gt4py_utils as utils
 import pyfv3.stencils.moist_cv as moist_cv
 from ndsl import Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater
 from ndsl.comm.mpi import MPI
-from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM, KAPPA, NQ, ZVIR
+from ndsl.constants import (
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    K_INTERFACE_DIM,
+    KAPPA,
+    NQ,
+    ZVIR,
+)
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
-from ndsl.dsl.gt4py import PARALLEL, computation, interval
+from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation, interval
 from ndsl.dsl.typing import (
     NDSL_64BIT_FLOAT_TYPE,
     Float,
@@ -21,16 +30,19 @@ from ndsl.dsl.typing import (
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log
 from ndsl.performance import Timer
-from ndsl.stencils.basic_operations import copy
+from ndsl.stencils.basic_operations import copy, set_value
 from ndsl.stencils.c2l_ord import CubedToLatLon
-from ndsl.typing import Checkpointer, Communicator
+from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import fvtp2d, tracer_2d_1l
+from pyfv3.stencils.compute_total_energy import ComputeTotalEnergy
 from pyfv3.stencils.del2cubed import HyperdiffusionDamping
 from pyfv3.stencils.dyn_core import AcousticDynamics
 from pyfv3.stencils.neg_adj3 import AdjustNegativeTracerMixingRatio
 from pyfv3.stencils.remapping import LagrangianToEulerian
+from pyfv3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
+from pyfv3.version import IS_GEOS
 
 
 class DryMassRoundOff:
@@ -43,19 +55,19 @@ class DryMassRoundOff:
         hydrostatic: bool,
     ) -> None:
         self.psx_2d = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="unknown",
             dtype=NDSL_64BIT_FLOAT_TYPE,
             allow_mismatch_float_precision=True,
         )
         self.dpx = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=NDSL_64BIT_FLOAT_TYPE,
             allow_mismatch_float_precision=True,
         )
         self.dpx0_2d = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="unknown",
             dtype=NDSL_64BIT_FLOAT_TYPE,
             allow_mismatch_float_precision=True,
@@ -78,7 +90,7 @@ class DryMassRoundOff:
         )
 
         halo_spec = quantity_factory.get_quantity_halo_spec(
-            dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
             n_halo=stencil_factory.grid_indexing.n_halo,
             dtype=Float,
         )
@@ -92,9 +104,9 @@ class DryMassRoundOff:
 
     @staticmethod
     def _reset_stencil(
-        dpx: FloatField64,  # type:ignore
-        psx_2d: FloatFieldIJ64,  # type:ignore
-        pe: FloatField,  # type:ignore
+        dpx: FloatField64,
+        psx_2d: FloatFieldIJ64,
+        pe: FloatField,
     ):
         with computation(PARALLEL), interval(...):
             dpx = 0.0
@@ -103,9 +115,9 @@ class DryMassRoundOff:
 
     @staticmethod
     def _apply_dpx_to_psx_stencil(
-        dpx: FloatField64,  # type:ignore
-        dpx0_2d: FloatFieldIJ64,  # type:ignore
-        psx_2d: FloatFieldIJ64,  # type:ignore
+        dpx: FloatField64,
+        dpx0_2d: FloatFieldIJ64,
+        psx_2d: FloatFieldIJ64,
     ):
         with computation(FORWARD), interval(0, 1):
             dpx0_2d = dpx
@@ -118,42 +130,42 @@ class DryMassRoundOff:
 
     @staticmethod
     def _apply_psx_to_pe_stencil(
-        psx_2d: FloatFieldIJ64,  # type:ignore
-        pe: FloatField,  # type:ignore
+        psx_2d: FloatFieldIJ64,
+        pe: FloatField,
     ):
         with computation(FORWARD), interval(-1, None):
             pe[0, 0, 1] = psx_2d
 
-    def reset(self, pe: FloatField):  # type:ignore
+    def reset(self, pe: FloatField):
         self._reset(dpx=self.dpx, psx_2d=self.psx_2d, pe=pe)
 
-    def apply(self, pe: FloatField):  # type:ignore
+    def apply(self, pe: FloatField):
         self._apply_dpx_to_psx(self.dpx, self.dpx0_2d, self.psx_2d)
         self._pe_halo_updater.update()
         self._apply_psx_to_pe(self.psx_2d, pe)
 
 
 def _increment_stencil(
-    value: FloatField,  # type:ignore
-    increment: FloatField,  # type:ignore
+    value: FloatField,
+    increment: FloatField,
 ):
     with computation(PARALLEL), interval(...):
         value += increment
 
 
 def _copy_cast_defn(
-    q_in_64: FloatField64,  # type:ignore
-    q_out: FloatField,  # type:ignore
+    q_in_64: FloatField64,
+    q_out: FloatField,
 ):
     with computation(PARALLEL), interval(...):
         q_out = q_in_64
 
 
 def pt_to_potential_density_pt(
-    pkz: FloatField,  # type: ignore
-    dp_initial: FloatField,  # type: ignore
-    q_con: FloatField,  # type: ignore
-    pt: FloatField,  # type: ignore
+    pkz: FloatField,
+    dp_initial: FloatField,
+    q_con: FloatField,
+    pt: FloatField,
 ):
     """
     Args:
@@ -169,10 +181,10 @@ def pt_to_potential_density_pt(
 
 
 def omega_from_w(
-    delp: FloatField,  # type: ignore
-    delz: FloatField,  # type: ignore
-    w: FloatField,  # type: ignore
-    omega: FloatField,  # type: ignore
+    delp: FloatField,
+    delz: FloatField,
+    w: FloatField,
+    omega: FloatField,
 ):
     """
     Args:
@@ -464,51 +476,51 @@ class DynamicalCore:
         self._f32_correction = get_precision() == 32
         if self._f32_correction:
             self._mfx_f64 = quantity_factory.zeros(
-                dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+                dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=NDSL_64BIT_FLOAT_TYPE,
                 allow_mismatch_float_precision=True,
             )
             self._mfy_f64 = quantity_factory.zeros(
-                dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+                dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
                 units="unknown",
                 dtype=NDSL_64BIT_FLOAT_TYPE,
                 allow_mismatch_float_precision=True,
             )
             self._cx_f64 = quantity_factory.zeros(
-                dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+                dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=NDSL_64BIT_FLOAT_TYPE,
                 allow_mismatch_float_precision=True,
             )
             self._cy_f64 = quantity_factory.zeros(
-                dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+                dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
                 units="unknown",
                 dtype=NDSL_64BIT_FLOAT_TYPE,
                 allow_mismatch_float_precision=True,
             )
         self._mfx_local = quantity_factory.zeros(
-            dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._mfy_local = quantity_factory.zeros(
-            dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._cx_local = quantity_factory.zeros(
-            dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._cy_local = quantity_factory.zeros(
-            dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._set_value = stencil_factory.from_origin_domain(
-            func=set_value_defn,
+            func=set_value,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(add=(1, 1, 0)),
         )

@@ -1,12 +1,11 @@
 import numpy as np
 from f90nml import Namelist
 
-import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
 from ndsl.stencils.testing import pad_field_in_j
-from ndsl.utils import safe_assign_array
 from pyfv3.stencils import fillz
 from pyfv3.testing import TranslateDycoreFortranData2Py
+from pyfv3.tracers import setup_tracers
 
 
 class TranslateFillz(TranslateDycoreFortranData2Py):
@@ -36,7 +35,7 @@ class TranslateFillz(TranslateDycoreFortranData2Py):
         self.stencil_factory = stencil_factory
         self._quantity_factory = grid.quantity_factory
 
-    def make_storage_data_input_vars(self, inputs, tracers: FieldBundle):
+    def make_storage_data_input_vars(self, inputs, tracers):
         storage_vars = self.storage_vars()
         info = storage_vars["dp2"]
         inputs["dp2"] = self.make_storage_data(
@@ -63,11 +62,11 @@ class TranslateFillz(TranslateDycoreFortranData2Py):
                     )
                 )
         inputs.pop("nq")
-        fillz = FillNegativeTracerValues(
+        fillz_ = fillz.FillNegativeTracerValues(
             self.stencil_factory,
             self.grid.quantity_factory,
         )
-        fillz(**inputs)
+        fillz_(**inputs)
         ds = self.grid.default_domain_dict()
         ds.update(self.out_vars["q2tracers"])
         out = {"q2tracers": tracers.quantity.field[:, 0, :, :]}

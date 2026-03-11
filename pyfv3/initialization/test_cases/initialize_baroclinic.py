@@ -35,7 +35,9 @@ def apply_perturbation(u_component, up, lon, lat, is_steady: bool = False):
         R = constants.RADIUS / Float(10.0)  # Perturbation radius for test case 13
     r = np.zeros((u_component.shape[0], u_component.shape[1], 1))
     # Equation (11), distance from perturbation at 20E, 40N in JRMS2006
-    r = great_circle_distance_lon_lat(PCEN[0], lon, PCEN[1], lat, constants.RADIUS, np)[:, :, None]
+    r = great_circle_distance_lon_lat(PCEN[0], lon, PCEN[1], lat, constants.RADIUS, np)[
+        :, :, None
+    ]
     r3d = np.repeat(r, u_component.shape[2], axis=2)
     near_perturbation = (r3d / R) ** 2.0 < 40.0
     # Equation(10) in JRMS2006 perturbation applied to u_component
@@ -264,7 +266,9 @@ def baroclinic_initialization(
         qvapor[:nx, :ny, :-1] = init_utils.specific_humidity(
             delp[slice_3d], peln[slice_3d], lat_agrid[slice_2d]
         )
-        pt[slice_3d] = init_utils.moisture_adjusted_temperature(pt[slice_3d], qvapor[slice_3d])
+        pt[slice_3d] = init_utils.moisture_adjusted_temperature(
+            pt[slice_3d], qvapor[slice_3d]
+        )
 
 
 def init_baroclinic_state(

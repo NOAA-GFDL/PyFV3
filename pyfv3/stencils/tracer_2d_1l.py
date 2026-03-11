@@ -1,4 +1,6 @@
-import math
+from typing import no_type_check
+
+import dace
 
 from ndsl import (
     Quantity,
@@ -7,6 +9,7 @@ from ndsl import (
     WrappedHaloUpdater,
     orchestrate,
 )
+from ndsl.comm.mpi import ReductionOperator
 from ndsl.constants import (
     I_DIM,
     I_INTERFACE_DIM,
@@ -15,13 +18,15 @@ from ndsl.constants import (
     K_DIM,
     N_HALO_DEFAULT,
 )
+from ndsl.dsl.dace.orchestration import dace_inhibitor
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
-from ndsl.dsl.gt4py import horizontal, interval, region
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from ndsl.dsl.gt4py import horizontal, int32, interval, region
+from ndsl.dsl.typing import FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import GridData
 from ndsl.typing import Communicator
 from pyfv3.stencils.fvtp2d import FiniteVolumeTransport
+from pyfv3.tracers import TracersType
 
 
 @gtfunction
@@ -322,7 +327,7 @@ class TracerAdvection:
 
     def __call__(
         self,
-        tracers: TracersType,
+        tracers: TracersType,  # type: ignore
         dp1,
         x_mass_flux,
         y_mass_flux,
@@ -507,11 +512,11 @@ class TracerCMax:
             ),
         )
         self._tmp_cmax = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
         )
         self._tmp_cmax_in_K = quantity_factory.zeros(
-            [Z_DIM],
+            [K_DIM],
             units="unknown",
         )
         self.max_over_column = 0

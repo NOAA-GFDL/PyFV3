@@ -1,7 +1,7 @@
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation, horizontal, interval, region  # noqa
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, I, J
 from ndsl.grid import GridData
 from ndsl.stencils import corners
 from pyfv3.stencils.d2a2c_vect import DGrid2AGrid2CGridVectors

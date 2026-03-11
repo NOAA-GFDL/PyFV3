@@ -1,12 +1,12 @@
+from f90nml import Namelist
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
+from pyFV3.stencils.map_single import MapSingle
 
 from ndsl import StencilFactory
-from f90nml import Namelist
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.dsl.typing import FloatField
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
-from pyFV3.stencils.map_single import MapSingle
 
 
 def rescale_delz_1(

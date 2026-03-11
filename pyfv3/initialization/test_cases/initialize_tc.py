@@ -568,14 +568,10 @@ def init_tc_state(
     numpy_state.w[:] = w
     state = DycoreState.init_from_numpy_arrays(
         numpy_state.__dict__,
-<<<<<<< HEAD:pyFV3/initialization/test_cases/initialize_tc.py
         quantity_factory=quantity_factory,
-        backend=sample_quantity.metadata.gt4py_backend,
-        tracer_list=["vapor", "liquid", "rain", "snow", "ice", "graupel", "cloud"],
-=======
-        sizer=quantity_factory.sizer,
         backend=sample_quantity.metadata.backend,
->>>>>>> NOAA/develop:pyfv3/initialization/test_cases/initialize_tc.py
+        tracer_list=["vapor", "liquid", "rain", "snow", "ice", "graupel", "cloud"],
+        sizer=quantity_factory.sizer,
     )
     state.tracers["vapor"].view[:] = qvapor
 

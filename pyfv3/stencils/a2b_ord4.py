@@ -3,7 +3,13 @@ from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, asin, computation, cos
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region, sin, sqrt
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from ndsl.dsl.typing import (
+    Float,
+    FloatField,
+    FloatFieldI64,
+    FloatFieldIJ,
+    FloatFieldIJ64,
+)
 from ndsl.grid import GridData
 from ndsl.stencils.basic_operations import copy
 

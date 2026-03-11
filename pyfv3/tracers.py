@@ -1,10 +1,9 @@
 from typing import TypeAlias
 
-from pyFV3.version import IS_GEOS
-
 from ndsl import QuantityFactory
 from ndsl.constants import X_DIM, Y_DIM, Z_DIM
 from ndsl.quantity.field_bundle import FieldBundle, FieldBundleType
+from pyfv3.version import IS_GEOS
 
 
 # Defauult maopping for common models
@@ -29,7 +28,7 @@ _default_mapping_PACE = {
 }
 
 
-TracersType: TypeAlias = FieldBundleType.T("Tracers")  # type: ignore
+TracersType: TypeAlias = FieldBundleType.T("Tracers")  # type: ignore # noqa
 
 
 def setup_tracers(

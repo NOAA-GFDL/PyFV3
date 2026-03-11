@@ -1,8 +1,9 @@
-from ndsl import StencilFactory
 from f90nml import Namelist
+from pyFV3.stencils.remapping import pe_pk_delp_peln
+
+from ndsl import StencilFactory
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
-from pyFV3.stencils.remapping import pe_pk_delp_peln
 
 
 class TranslatePE_pk_delp_peln(TranslateFortranData2Py):

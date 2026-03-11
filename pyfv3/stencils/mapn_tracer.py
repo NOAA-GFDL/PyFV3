@@ -1,5 +1,6 @@
-import ndsl.dsl.gt4py_utils as utils
-from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
+import dace
+
+from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import Float, FloatField
 from pyfv3.stencils.fillz import FillNegativeTracerValues
@@ -17,7 +18,7 @@ class MapNTracer:
         quantity_factory: QuantityFactory,
         kord: int,
         fill: bool,
-        tracers: TracersType,
+        tracers,
     ):
         orchestrate(
             obj=self,
@@ -61,7 +62,7 @@ class MapNTracer:
         pe1: FloatField,
         pe2: FloatField,
         dp2: FloatField,
-        tracers: TracersType,
+        tracers,
     ):
         """
         Remaps the tracer species onto the Eulerian grid
@@ -74,7 +75,7 @@ class MapNTracer:
             dp2 (in): Difference in pressure between Eulerian levels
             tracers (inout): tracers to be remapped
         """
-        for i_tracer in nounroll(range(tracers.shape[3])):
+        for i_tracer in dace.nounroll(range(tracers.shape[3])):
             if i_tracer != self._index_cloud:
                 self._map_single(
                     tracers.quantity.data[:, :, :, i_tracer], pe1, pe2, self._qs

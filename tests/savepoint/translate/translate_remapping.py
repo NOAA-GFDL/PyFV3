@@ -1,16 +1,18 @@
 from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import StencilFactory
+from ndsl import QuantityFactory, StencilFactory
 from ndsl.constants import K_DIM
+from ndsl.stencils.testing import Grid
 from pyfv3.stencils import LagrangianToEulerian
 from pyfv3.testing import TranslateDycoreFortranData2Py
+from pyfv3.tracers import setup_tracers
 
 
 class TranslateRemapping(TranslateDycoreFortranData2Py):
     def __init__(
         self,
-        grid,
+        grid: Grid,
         namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
@@ -97,10 +99,11 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
         self.near_zero = 3e-18
         self.ignore_near_zero_errors = {"q_con": True, "tracers": True}
         self.stencil_factory = stencil_factory
-        self._quantity_factory = QuantityFactory(
-            sizer=stencil_factory.grid_indexing._sizer,
+        self.quantity_factory = QuantityFactory(
+            sizer=grid.sizer,
             backend=stencil_factory.backend,
         )
+        self._are_tracers_setup = False
 
     def compute_from_storage(self, inputs):
         wsd_2d = utils.make_storage_from_shape(
@@ -108,21 +111,22 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
         )
         wsd_2d[:, :] = inputs["wsd"][:, :, 0]
         inputs["wsd"] = wsd_2d
-        tracers = Tracers.make_from_4D_array(
-            quantity_factory=self._quantity_factory,
-            tracer_mapping=[
-                "vapor",
-                "liquid",
-                "rain",
-                "ice",
-                "snow",
-                "graupel",
-                "qo3mr",
-                "qsgs_tke",
-                "cloud",
-            ],
-            tracer_data=inputs["tracers"],
-        )
+
+        if not self._are_tracers_setup:
+            self._are_tracers_setup = True
+            tracers = setup_tracers(
+                number_of_tracers=inputs["tracers"].shape[3],
+                quantity_factory=self.quantity_factory,
+                mappings={
+                    "vapor": 0,
+                    "liquid": 1,
+                    "rain": 3,
+                    "snow": 4,
+                    "ice": 2,
+                    "graupel": 5,
+                    "cloud": 6,
+                },
+            )
         inputs["last_step"] = bool(inputs["last_step"])
         pfull = self.grid.quantity_factory.zeros([K_DIM], units="Pa")
         pfull.data[:] = pfull.np.asarray(inputs.pop("pfull"))
@@ -138,5 +142,5 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
             exclude_tracers=["cloud"],
         )
         l_to_e_obj(**inputs)
-        inputs["tracers"] = tracers.as_4D_array()
+        inputs["tracers"] = tracers.quantity.data[:-1, :-1, :-1.0:-1]
         return inputs

@@ -1,9 +1,10 @@
-from ndsl import StencilFactory
 from f90nml import Namelist
+from pyFV3.mpi.mpp_sum import MPPGlobalSum
+
+from ndsl import StencilFactory
 from ndsl.stencils.testing import ParallelTranslate
 from ndsl.stencils.testing.grid import Grid
 from ndsl.typing import Communicator
-from pyFV3.mpi.mpp_sum import MPPGlobalSum
 
 
 class TranslateMpp_global_sum(ParallelTranslate):

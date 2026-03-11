@@ -6,10 +6,13 @@ from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation, interval
 from ndsl.dsl.typing import (  # noqa: F401
     Bool,
+    BoolField,
+    BoolFieldIJ,
     Float,
     FloatField,
     FloatFieldIJ,
     Int,
+    IntField,
     IntFieldIJ,
 )
 from ndsl.stencils.basic_operations import copy
@@ -97,15 +100,15 @@ class LagrangianContribution:
 
     def __call__(
         self,
-        q: FloatField,  # type: ignore
-        pe1: FloatField,  # type: ignore
-        pe2: FloatField,  # type: ignore
-        q4_1: FloatField,  # type: ignore
-        q4_2: FloatField,  # type: ignore
-        q4_3: FloatField,  # type: ignore
-        q4_4: FloatField,  # type: ignore
-        dp1: FloatField,  # type: ignore
-        lev: IntFieldIJ,  # type: ignore
+        q: FloatField,
+        pe1: FloatField,
+        pe2: FloatField,
+        q4_1: FloatField,
+        q4_2: FloatField,
+        q4_3: FloatField,
+        q4_4: FloatField,
+        dp1: FloatField,
+        lev: IntFieldIJ,
     ):
         self._lagrangian_contributions(
             q,
@@ -269,32 +272,32 @@ class LagrangianContributionInterpolated:
         )
 
         self._INDEX_LM1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="",
             dtype=Int,
         )
 
         self._INDEX_LP0 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="",
             dtype=Int,
         )
         self._km = stencil_factory.grid_indexing.domain[2]
         self._not_exit_loop = quantity_factory.zeros(
-            [X_DIM, Y_DIM], units="", dtype=bool
+            [I_DIM, J_DIM], units="", dtype=bool
         )
 
     def __call__(
         self,
-        q: FloatField,  # type: ignore
-        pe1: FloatField,  # type: ignore
-        pe2: FloatField,  # type: ignore
-        q4_1: FloatField,  # type: ignore
-        q4_2: FloatField,  # type: ignore
-        q4_3: FloatField,  # type: ignore
-        q4_4: FloatField,  # type: ignore
-        dp1: FloatField,  # type: ignore
-        lev: IntFieldIJ,  # type: ignore
+        q: FloatField,
+        pe1: FloatField,
+        pe2: FloatField,
+        q4_1: FloatField,
+        q4_2: FloatField,
+        q4_3: FloatField,
+        q4_4: FloatField,
+        dp1: FloatField,
+        lev: IntFieldIJ,
     ):
         self._lagrangian_contributions_interp(
             km=self._km,

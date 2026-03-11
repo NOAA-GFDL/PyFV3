@@ -1,9 +1,10 @@
-from ndsl import StencilFactory
 from f90nml import Namelist
-from ndsl.stencils.testing import TranslateFortranData2Py
-from ndsl.stencils.testing.grid import Grid
 from pyFV3.stencils.mapn_tracer import MapNTracer
 from pyFV3.tracers import setup_tracers
+
+from ndsl import StencilFactory
+from ndsl.stencils.testing import TranslateFortranData2Py
+from ndsl.stencils.testing.grid import Grid
 
 
 class TranslateMapN_Tracer_2d(TranslateFortranData2Py):
