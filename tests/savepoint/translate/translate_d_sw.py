@@ -242,7 +242,8 @@ class TranslateHeatDiss(TranslateDycoreFortranData2Py):
 
     def compute_from_storage(self, inputs):
         column_namelist = d_sw.get_column_namelist(
-            config=self.config, quantity_factory=self.grid.quantity_factory
+            config=self.config.d_grid_shallow_water,
+            quantity_factory=self.grid.quantity_factory,
         )
         # TODO add these to the serialized data or remove the test
         inputs["damp_w"] = column_namelist["damp_w"]
@@ -255,6 +256,9 @@ class TranslateHeatDiss(TranslateDycoreFortranData2Py):
             d_sw.heat_diss,
             origin=self.grid.compute_origin(),
             domain=self.grid.domain_shape_compute(),
+            externals={
+                "do_stochastic_ke_backscatter": self.config.do_skeb,
+            },
         )
         heat_diss_stencil(**inputs)
         return inputs
