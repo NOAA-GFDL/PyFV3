@@ -1,235 +1,235 @@
 from types import SimpleNamespace
 
 from f90nml import Namelist
+from pyFV3 import DynamicalCoreConfig
 from pyFV3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
 from pyFV3.tracers import TracersType, setup_tracers
 
 from ndsl import Quantity, StencilFactory
 from ndsl.constants import (
-    X_DIM,
-    X_INTERFACE_DIM,
-    Y_DIM,
-    Y_INTERFACE_DIM,
-    Z_DIM,
-    Z_INTERFACE_DIM,
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    K_INTERFACE_DIM,
 )
 from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
-from pyFV3 import DynamicalCoreConfig
 
 
 class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
     inputs = {
         "pe": {
             "name": "pe",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [I_DIM, J_DIM, K_INTERFACE_DIM],
             "units": "No Units",
         },
         "delp": {
             "name": "delp",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "delz": {
             "name": "delz",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "q_con": {
             "name": "q_con",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "pt": {
             "name": "pt",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "cappa": {
             "name": "cappa",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "ps": {
             "name": "ps",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "No Units",
         },
         "peln": {
             "name": "peln",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [I_DIM, J_DIM, K_INTERFACE_DIM],
             "units": "No Units",
         },
         "ak": {
             "name": "ak",
-            "dims": [Z_INTERFACE_DIM],
+            "dims": [K_INTERFACE_DIM],
             "units": "No Units",
         },
         "bk": {
             "name": "bk",
-            "dims": [Z_INTERFACE_DIM],
+            "dims": [K_INTERFACE_DIM],
             "units": "No Units",
         },
         "pk": {
             "name": "pk",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "pkz": {
             "name": "pkz",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "w": {
             "name": "w",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "u": {
             "name": "u",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "No Units",
         },
         "v": {
             "name": "v",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "mfy_R4": {
             "name": "mfy",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "cy_R4": {
             "name": "cy",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "mfx_R4": {
             "name": "mfx",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "cx_R4": {
             "name": "cx",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "phis": {
             "name": "phis",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "No Units",
         },
         "te_2d": {
             "name": "te_2d",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "No Units",
         },
         "wsd": {
             "name": "wsd",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "No Units",
         },
         "dp1": {
             "name": "dp1",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "pfull": {
             "name": "pfull",
-            "dims": [Z_DIM],
+            "dims": [K_DIM],
             "units": "No Units",
         },
     }
     outputs = {
         "pt": {
             "name": "pt",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "cappa": {
             "name": "cappa",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "delp": {
             "name": "delp",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "delz": {
             "name": "delz",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "w": {
             "name": "w",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "u": {
             "name": "u",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "No Units",
         },
         "v": {
             "name": "v",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "mfy_R4": {
             "name": "mfy",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "cy_R4": {
             "name": "cy",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "mfx_R4": {
             "name": "mfx",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "cx_R4": {
             "name": "cx",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "peln": {
             "name": "peln",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [I_DIM, J_DIM, K_INTERFACE_DIM],
             "units": "No Units",
         },
         "pe": {
             "name": "pe",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [I_DIM, J_DIM, K_INTERFACE_DIM],
             "units": "No Units",
         },
         "pk": {
             "name": "pk",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "pkz": {
             "name": "pkz",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "q_con": {
             "name": "q_con",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "dp1": {
             "name": "dp1",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "No Units",
         },
         "ps": {
             "name": "ps",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "No Units",
         },
     }

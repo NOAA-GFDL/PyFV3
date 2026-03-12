@@ -2,7 +2,7 @@ from f90nml import Namelist
 from pyFV3.stencils.tracer_2d_1l import TracerCMax
 
 from ndsl import Quantity, QuantityFactory, StencilFactory
-from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.stencils.testing import ParallelTranslate2Py
 
 
@@ -21,17 +21,17 @@ class TranslateTracerCMax(ParallelTranslate2Py):
     inputs = {
         "cx_R4": {
             "name": "cx_R4",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "unitless",
         },
         "cy_R4": {
             "name": "cy_R4",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "unitless",
         },
         "cmax": {
             "name": "cmaxgrid",
-            "dims": [Z_DIM],
+            "dims": [K_DIM],
             "units": "unitless",
         },
     }

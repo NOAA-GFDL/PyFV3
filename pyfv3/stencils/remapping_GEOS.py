@@ -1,10 +1,27 @@
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
-from pyFV3._config import RemappingConfig
-from pyFV3.mpi.sum import GlobalSum
-from pyFV3.stencils.map_single import MapSingle
-from pyFV3.stencils.mapn_tracer import MapNTracer
-from pyFV3.stencils.moist_cv import moist_pt_last_step
-from pyFV3.stencils.remapping import (
+
+from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl.comm.communicator import Communicator
+from ndsl.constants import (
+    CV_AIR,
+    GRAV,
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    K_INTERFACE_DIM,
+)
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldIJ64, FloatFieldK
+from ndsl.grid import GridData
+from ndsl.stencils.basic_operations import adjust_divide_stencil
+from pyfv3._config import RemappingConfig
+from pyfv3.mpi.sum import GlobalSum
+from pyfv3.stencils import moist_cv
+from pyfv3.stencils.map_single import MapSingle
+from pyfv3.stencils.mapn_tracer import MapNTracer
+from pyfv3.stencils.moist_cv import moist_pt_last_step
+from pyfv3.stencils.remapping import (
     CONSV_MIN,
     init_pe,
     moist_cv_pt_pressure,
@@ -14,27 +31,10 @@ from pyFV3.stencils.remapping import (
     pressures_mapu,
     pressures_mapv,
 )
-from pyFV3.stencils.saturation_adjustment import SatAdjust3d
-from pyFV3.stencils.scale_delz import rescale_delz_1, rescale_delz_2
-from pyFV3.stencils.w_fix_consrv_moment import W_fix_consrv_moment
-from pyFV3.tracers import TracersType
-
-from ndsl import QuantityFactory, StencilFactory, orchestrate
-from ndsl.comm.communicator import Communicator
-from ndsl.constants import (
-    CV_AIR,
-    GRAV,
-    X_DIM,
-    X_INTERFACE_DIM,
-    Y_DIM,
-    Y_INTERFACE_DIM,
-    Z_DIM,
-    Z_INTERFACE_DIM,
-)
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldIJ64, FloatFieldK
-from ndsl.grid import GridData
-from ndsl.stencils.basic_operations import adjust_divide_stencil
-from pyFV3.stencils import moist_cv
+from pyfv3.stencils.saturation_adjustment import SatAdjust3d
+from pyfv3.stencils.scale_delz import rescale_delz_1, rescale_delz_2
+from pyfv3.stencils.w_fix_consrv_moment import W_fix_consrv_moment
+from pyfv3.tracers import TracersType
 
 
 def _normalize_to_grid_stencil(
@@ -102,85 +102,85 @@ class LagrangianToEulerian_GEOS:
 
         # Quantities
         self._pe1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
         self._pe2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
         self._pe3 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
         self._dp2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="Pa",
             dtype=Float,
         )
         self._pn1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="Pa",
             dtype=Float,
         )
         self._pn2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="Pa",
             dtype=Float,
         )
         self._pe0 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
         self._pe3 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
 
         self._gz = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="m^2 s^-2",
             dtype=Float,
         )
         self._cvm = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._compute_performed = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="mask",
             dtype=bool,
         )
         self._w2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="temp W",
             dtype=Float,
         )
         self._pk2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="Pa",
             dtype=Float,
         )
 
         self._te_2d = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="Pa",
             dtype=Float,
         )
 
         self._zsum1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="Pa",
             dtype=Float,
         )
         self._phis = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="n/a",
             dtype=Float,
         )
@@ -217,7 +217,7 @@ class LagrangianToEulerian_GEOS:
             quantity_factory,
             self._kord_tm,
             mode=1,
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             interpolate_contribution=True,
         )
 
@@ -234,7 +234,7 @@ class LagrangianToEulerian_GEOS:
             quantity_factory,
             self._kord_wz,
             mode=-2,
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
         )
 
         self._map_single_delz = MapSingle(
@@ -242,7 +242,7 @@ class LagrangianToEulerian_GEOS:
             quantity_factory,
             self._kord_wz,
             mode=1,
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
         )
 
         self._moist_cv_pkz = stencil_factory.from_origin_domain(
@@ -262,7 +262,7 @@ class LagrangianToEulerian_GEOS:
             quantity_factory,
             self._kord_mt,
             mode=-1,
-            dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
         )
 
         self._pressures_mapv = stencil_factory.from_origin_domain(
@@ -276,7 +276,7 @@ class LagrangianToEulerian_GEOS:
             quantity_factory,
             self._kord_mt,
             mode=-1,
-            dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
         )
 
         self._saturation_adjustment = SatAdjust3d(

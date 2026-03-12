@@ -3,7 +3,7 @@ from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 from pyFV3.stencils.map_single import MapSingle
 
 from ndsl import StencilFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import FloatField
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
@@ -78,7 +78,7 @@ class TranslateMap1_PPM_delz(TranslateFortranData2Py):
         # mode / iv set to 1 from GEOS
         self.mode = 1
 
-        self.dims = [X_DIM, Y_DIM, Z_DIM]
+        self.dims = [I_DIM, J_DIM, K_DIM]
 
         self._rescale_delz_1 = stencil_factory.from_origin_domain(
             rescale_delz_1,
@@ -98,7 +98,7 @@ class TranslateMap1_PPM_delz(TranslateFortranData2Py):
             self.quantity_factory,
             inputs["kord_wz"],
             self.mode,
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
         )
 
         self._rescale_delz_1(

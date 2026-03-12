@@ -2,7 +2,7 @@ import numpy as np
 
 from ndsl import Quantity, QuantityFactory
 from ndsl.comm.communicator import Communicator, ReductionOperator
-from ndsl.constants import X_DIM, Y_DIM
+from ndsl.constants import I_DIM, J_DIM
 from ndsl.dsl.dace.orchestration import dace_inhibitor
 from ndsl.dsl.stencil import GridIndexing
 from ndsl.dsl.typing import Float
@@ -17,8 +17,8 @@ class GlobalSum:
         grid_indexing: GridIndexing = None,
     ) -> None:
         self._comm = communicator
-        # self._tmp_reduce = quantity_factory.empty(dims=[X_DIM, Y_DIM], units="n/a")
-        self._tmp_reduce = quantity_factory.zeros(dims=[X_DIM, Y_DIM], units="n/a")
+        # self._tmp_reduce = quantity_factory.empty(dims=[I_DIM, J_DIM], units="n/a")
+        self._tmp_reduce = quantity_factory.zeros(dims=[I_DIM, J_DIM], units="n/a")
         self._isc = grid_indexing.isc
         self._iec = grid_indexing.iec
         self._jsc = grid_indexing.jsc

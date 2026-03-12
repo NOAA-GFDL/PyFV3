@@ -3,7 +3,7 @@ from pyFV3.stencils.map_single import MapSingle
 from pyFV3.stencils.remapping import pe0_ptop_xmax, pressures_mapu
 
 from ndsl import StencilFactory
-from ndsl.constants import X_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
 
@@ -106,7 +106,7 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
 
         grid_indexing = stencil_factory.grid_indexing
 
-        self.dims = [X_DIM, Y_DIM, Z_DIM]
+        self.dims = [I_DIM, J_DIM, K_DIM]
 
         self._pressures_mapu = stencil_factory.from_origin_domain(
             pressures_mapu,
@@ -126,7 +126,7 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
             self.quantity_factory,
             inputs["kord_mt"],
             -1,
-            dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
         )
 
         self._pressures_mapu(

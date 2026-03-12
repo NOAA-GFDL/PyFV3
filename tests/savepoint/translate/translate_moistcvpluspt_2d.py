@@ -1,7 +1,7 @@
 from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 from ndsl import StencilFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.stencils.testing import TranslateFortranData2Py, pad_field_in_j
 from pyfv3.stencils import moist_cv
@@ -55,7 +55,7 @@ class MoistPT:
         )
 
         self._q_con = grid.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )

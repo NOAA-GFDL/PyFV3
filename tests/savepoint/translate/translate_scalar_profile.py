@@ -2,7 +2,7 @@ from f90nml import Namelist
 from pyFV3.stencils.remap_profile import RemapProfile
 
 from ndsl import StencilFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
 
@@ -104,7 +104,7 @@ class TranslateScalar_Profile(TranslateFortranData2Py):
             self.quantity_factory,
             self.kord,
             self.mode,
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
         )
 
     def compute_from_storage(self, inputs):

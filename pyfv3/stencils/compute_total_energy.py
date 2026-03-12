@@ -1,7 +1,7 @@
 from gt4py.cartesian.gtscript import BACKWARD, FORWARD, K, computation, interval
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import GRAV, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.constants import GRAV, I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from pyfv3._config import DynamicalCoreConfig
@@ -110,14 +110,14 @@ class ComputeTotalEnergy:
             )
 
         self._phyz = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="Unknown",
             dtype=Float,
         )
 
         self._compute_total_energy = stencil_factory.from_dims_halo(
             func=_compute_total_energy__stencil,
-            compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
         )
         self._rsin2 = grid_data.rsin2
         self._cosa_s = grid_data.cosa_s

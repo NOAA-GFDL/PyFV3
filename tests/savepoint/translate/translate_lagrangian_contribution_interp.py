@@ -2,7 +2,7 @@ from f90nml import Namelist
 from pyFV3.stencils.map_single import lagrangian_contributions_interp
 
 from ndsl import StencilFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import Bool, BoolFieldIJ, FloatField, Int, IntField, IntFieldIJ
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
@@ -62,9 +62,7 @@ class TranslateLagrangian_Contribution_Interp(TranslateFortranData2Py):
         super().__init__(grid, stencil_factory)
         self.stencil_factory = stencil_factory
         self.grid = grid
-        self.compute_func = test_Lagragian_Contribution_Interp(
-            self.stencil_factory, self.grid
-        )  # type: ignore
+        self.compute_func = test_Lagragian_Contribution_Interp(self.stencil_factory, self.grid)  # type: ignore
         self.quantity_factory = grid.quantity_factory
 
         self.in_vars["data_vars"] = {
@@ -130,25 +128,25 @@ class TranslateLagrangian_Contribution_Interp(TranslateFortranData2Py):
 
     def compute_from_storage(self, inputs):
         self._not_exit_loop = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="",
             dtype=Bool,
         )
 
         self._INDEX_LM1 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="",
             dtype=Int,
         )
 
         self._INDEX_LP0 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="",
             dtype=Int,
         )
 
         self._lev = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="",
             dtype=Int,
         )

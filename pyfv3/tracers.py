@@ -1,7 +1,7 @@
 from typing import TypeAlias
 
 from ndsl import QuantityFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.quantity.field_bundle import FieldBundle, FieldBundleType
 from pyfv3.version import IS_GEOS
 
@@ -41,7 +41,7 @@ def setup_tracers(
     FieldBundleType.register("Tracers", (number_of_tracers,))
 
     _unit = "g/kg"
-    _dims = [X_DIM, Y_DIM, Z_DIM, "tracers"]
+    _dims = [I_DIM, J_DIM, K_DIM, "tracers"]
 
     tracers_qty_factory = FieldBundle.extend_3D_quantity_factory(
         quantity_factory, {"tracers": number_of_tracers}

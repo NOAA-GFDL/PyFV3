@@ -1,7 +1,7 @@
 from typing import Optional
 
 import dace
-import np
+import numpy as np
 
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
