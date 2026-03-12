@@ -212,9 +212,7 @@ class GeosDycoreWrapper:
         )
 
         self.dycore_state = pyfv3.DycoreState.init_zeros(
-            quantity_factory=quantity_factory,
-            tracer_count=len(self._tracers_mapping),
-            backend=quantity_factory.backend,
+            quantity_factory=quantity_factory
         )
         self.dycore_state.bdt = self.dycore_config.dt_atmos
 
@@ -339,7 +337,7 @@ class GeosDycoreWrapper:
 
         # Collect performance of the timestep and write a json file for rank 0
         self.perf_collector.collect_performance()
-        for k, v in self.perf_collector.times_per_step[0].items():  # type: ignore
+        for k, v in self.perf_collector.times_per_step[0].items():
             if k not in timings.keys():
                 timings[k] = [v]  # type: ignore
             else:

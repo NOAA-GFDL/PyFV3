@@ -8,6 +8,7 @@ from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import dyn_core
+from pyfv3.tracers import setup_tracers
 
 
 class TranslateDynCore(ParallelTranslate2PyState):
@@ -148,10 +149,10 @@ class TranslateDynCore(ParallelTranslate2PyState):
         for k, v in inputs.items():
             if hasattr(v, "dtype"):
                 inputs_dtypes[k] = v.dtype
+        setup_tracers(1, self.grid.quantity_factory)  # No tracers used in acoustics
         state = DycoreState.init_zeros(
             quantity_factory=self.grid.quantity_factory,
             dtype_dict=inputs_dtypes,
-            tracer_count=1,  # No tracers used in acoustics
             allow_mismatch_float_precision=True,
         )
         wsd = self.grid.quantity_factory.zeros(
@@ -202,7 +203,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
             cyd=state.cyd,
             dpx=dpx,
             timestep=inputs["mdt"],
-            n_map=state.n_map,
+            n_map=inputs["n_map"],
         )
         # the "inputs" dict is not used to return, we construct a new dict based
         # on variables attached to `state`

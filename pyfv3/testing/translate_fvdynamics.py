@@ -2,6 +2,7 @@ from dataclasses import fields
 from datetime import timedelta
 from typing import Any
 
+import numpy as np
 import pytest
 from f90nml import Namelist
 
@@ -228,7 +229,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
 
         self.max_error = 1e-5
 
-        self.ignore_near_zero_errors = {}
+        self.ignore_near_zero_errors: dict[str, float | bool] = {}
         self.dycore: fv_dynamics.DynamicalCore | None = None
         self.stencil_factory = stencil_factory
         self._quantity_factory = QuantityFactory(
@@ -237,8 +238,8 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         )
         self.namelist: DynamicalCoreConfig = DynamicalCoreConfig.from_f90nml(namelist)
 
-    def state_from_inputs(self, inputs):
-        tracers = self._quantity_factory._numpy.empty(
+    def state_from_inputs(self, inputs: dict[str, np.ndarray]) -> DycoreState:
+        tracers = self._quantity_factory.empty(
             (
                 inputs["tracers"].shape[0] + 1,
                 inputs["tracers"].shape[1] + 1,

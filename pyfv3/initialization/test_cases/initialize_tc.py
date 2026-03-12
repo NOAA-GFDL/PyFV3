@@ -6,6 +6,7 @@ from ndsl.grid import GridData
 from ndsl.grid.gnomonic import great_circle_distance_lon_lat
 from pyfv3.dycore_state import DycoreState
 from pyfv3.initialization import init_utils
+from pyfv3.tracers import setup_tracers
 
 
 def _calculate_distance_from_tc_center(pe_v, ps_v, muv, calc, tc_properties):
@@ -566,12 +567,20 @@ def init_tc_state(
     numpy_state.v[:] = vd
     numpy_state.va[:] = va
     numpy_state.w[:] = w
+    tracers = {
+        "vapor": 0,
+        "liquid": 1,
+        "rain": 2,
+        "snow": 3,
+        "ice": 4,
+        "graupel": 5,
+        "cloud": 6,
+    }
+    setup_tracers(len(tracers), quantity_factory, tracers)
     state = DycoreState.init_from_numpy_arrays(
         numpy_state.__dict__,
-        quantity_factory=quantity_factory,
-        backend=sample_quantity.metadata.backend,
-        tracer_list=["vapor", "liquid", "rain", "snow", "ice", "graupel", "cloud"],
         sizer=quantity_factory.sizer,
+        quantity_factory=quantity_factory,
     )
     state.tracers["vapor"].view[:] = qvapor
 

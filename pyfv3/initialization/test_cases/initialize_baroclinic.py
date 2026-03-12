@@ -8,6 +8,7 @@ from ndsl.grid import GridData
 from ndsl.grid.gnomonic import great_circle_distance_lon_lat, lon_lat_midpoint
 from pyfv3.dycore_state import DycoreState
 from pyfv3.initialization import init_utils
+from pyfv3.tracers import setup_tracers
 
 
 # maximum windspeed amplitude - close to windspeed of zonal-mean time-mean
@@ -366,11 +367,20 @@ def init_baroclinic_state(
         moist_phys=moist_phys,
         make_nh=(not hydrostatic),
     )
+    tracers = {
+        "vapor": 0,
+        "liquid": 1,
+        "rain": 2,
+        "snow": 3,
+        "ice": 4,
+        "graupel": 5,
+        "cloud": 6,
+    }
+    setup_tracers(len(tracers), quantity_factory, tracers)
     state = DycoreState.init_from_numpy_arrays(
         numpy_state.__dict__,
+        sizer=quantity_factory.sizer,
         quantity_factory=quantity_factory,
-        backend=sample_quantity.backend,
-        tracer_list=["vapor", "liquid", "rain", "snow", "ice", "graupel", "cloud"],
     )
     state.tracers["vapor"].view[:] = numpy_state.qvapor[slice_3d]
 

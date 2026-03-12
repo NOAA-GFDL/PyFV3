@@ -20,7 +20,7 @@ from ndsl.dsl.typing import Float
 from ndsl.quantity.field_bundle import FieldBundle
 from ndsl.restart._legacy_restart import open_restart
 from ndsl.typing import Communicator
-from pyfv3.tracers import TracersType, setup_tracers
+from pyfv3.tracers import TracersType, make_tracers
 
 
 DEFAULT_TRACER_PROPERTIES = {
@@ -314,11 +314,12 @@ class DycoreState:
     def init_zeros(
         cls,
         quantity_factory: QuantityFactory,
-        tracer_count: int,
-        backend: Backend,
         dtype_dict: dict[str, type] | None = None,
-        allow_mismatch_float_precision: bool = False,
+        allow_mismatch_float_precision: bool = True,
     ) -> Self:
+        """Initialize the dynamics memory state to zero. Default to allow for
+        mixed precision as 32-bit dynamics requires it."""
+
         initial_storages = {}
         for _field in fields(cls):
             if "dims" in _field.metadata.keys():
@@ -333,10 +334,12 @@ class DycoreState:
                     allow_mismatch_float_precision=allow_mismatch_float_precision,
                 ).data
             elif _field.name == "tracers":
-                qty_factory_tracers = FieldBundle.extend_3D_quantity_factory(
-                    quantity_factory, {"tracers": tracer_count}
-                )
-                initial_storages[_field.name] = qty_factory_tracers.zeros(
+                if "tracers" not in quantity_factory.sizer.data_dimensions:
+                    raise ValueError(
+                        "[pyFV3] Tracers data dimensions undefined in Quantity Factory."
+                        "You need to register the tracers!"
+                    )
+                initial_storages[_field.name] = quantity_factory.zeros(
                     [I_DIM, J_DIM, K_DIM, "tracers"],
                     _field.metadata["units"],
                     dtype=Float,
@@ -344,7 +347,7 @@ class DycoreState:
         return cls.init_from_storages(
             storages=initial_storages,
             quantity_factory=quantity_factory,
-            backend=backend,
+            allow_mismatch_float_precision=allow_mismatch_float_precision,
         )
 
     @classmethod
@@ -352,8 +355,6 @@ class DycoreState:
         cls,
         dict_of_numpy_arrays: dict,
         sizer: GridSizer,
-        backend: Backend,
-        tracer_list: list[str],
         quantity_factory: QuantityFactory,
     ) -> Self:
         field_names = [_field.name for _field in fields(cls)]
@@ -372,20 +373,26 @@ class DycoreState:
                     _field.metadata["units"],
                     origin=quantity_factory.sizer.get_origin(dims),
                     extent=quantity_factory.sizer.get_extent(dims),
-                    backend=backend,
+                    backend=quantity_factory.backend,
                 )
-            elif issubclass(_field.type, TracersType):
-                if len(dict_of_numpy_arrays[_field.name]) != len(tracer_list):
+            elif isinstance(_field.type, type) and issubclass(_field.type, TracersType):
+                if "tracers" not in quantity_factory.sizer.data_dimensions:
+                    raise ValueError(
+                        "[pyFV3] Tracers data dimensions undefined in Quantity Factory."
+                        "You need to register the tracers!"
+                    )
+                quantity_factory.sizer.data_dimensions["tracers"]
+                if (
+                    len(dict_of_numpy_arrays[_field.name])
+                    != quantity_factory.sizer.data_dimensions["tracers"]
+                ):
                     raise ValueError(
                         "[pyfv3] DycoreState init:"
-                        f" tracer list size ({len(tracer_list)})"
+                        f" tracer list size ({quantity_factory.sizer.data_dimensions['tracers']})"
                         " doesn't match the inputs size"
                         f" ({len(dict_of_numpy_arrays[_field.name])})"
                     )
-                dict_state[_field.name] = Tracers.make(
-                    quantity_factory=quantity_factory,
-                    tracer_mapping=tracer_list,
-                )
+                dict_state[_field.name] = make_tracers(quantity_factory)
         state = cls(**dict_state)
         return state
 
@@ -396,10 +403,8 @@ class DycoreState:
         quantity_factory: QuantityFactory,
         bdt: float = 0.0,
         mdt: float = 0.0,
-        backend: Backend | None = None,
+        allow_mismatch_float_precision: bool = False,
     ) -> Self:
-        if not backend:
-            backend = Backend.python()
         inputs = {}
         for _field in fields(cls):
             if "dims" in _field.metadata.keys():
@@ -410,11 +415,12 @@ class DycoreState:
                     _field.metadata["units"],
                     origin=quantity_factory.sizer.get_origin(dims),
                     extent=quantity_factory.sizer.get_extent(dims),
-                    backend=backend,
+                    backend=quantity_factory.backend,
+                    allow_mismatch_float_precision=allow_mismatch_float_precision,
                 )
                 inputs[_field.name] = quantity
             elif "tracers" == _field.name:
-                tracers = setup_tracers(storages["tracers"].shape[3], quantity_factory)
+                tracers = make_tracers(quantity_factory)
                 tracers.quantity.data[:] = storages["tracers"][:]
                 inputs[_field.name] = tracers
 
@@ -436,8 +442,6 @@ class DycoreState:
         )
         new = cls.init_zeros(
             quantity_factory=quantity_factory,
-            tracer_count=len(DEFAULT_TRACER_PROPERTIES),
-            backend=backend,
         )
         new.pt.view[:] = new.pt.np.asarray(
             state_dict["air_temperature"].transpose(new.pt.dims).view[:]
@@ -497,7 +501,7 @@ class DycoreState:
 
     def _xr_dataarray_from_array(
         self, name: str, metadata: MappingProxyType[Any, Any], data: npt.ArrayLike
-    ):
+    ) -> xr.DataArray:
         dims = [f"{dim_name}_{name}" for dim_name in metadata["dims"]]
         return xr.DataArray(
             gt_utils.asarray(data),
@@ -512,7 +516,9 @@ class DycoreState:
     def xr_dataset(self) -> xr.Dataset:
         data_vars = {}
         for name, field_info in self.__dataclass_fields__.items():
-            if issubclass(field_info.type, Quantity):
+            if isinstance(field_info.type, type) and issubclass(
+                field_info.type, Quantity
+            ):
                 data_vars[name] = self._xr_dataarray_from_array(
                     name=name,
                     metadata=field_info.metadata,

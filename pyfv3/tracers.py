@@ -1,5 +1,3 @@
-from typing import TypeAlias
-
 from ndsl import QuantityFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.quantity.field_bundle import FieldBundle, FieldBundleType
@@ -28,25 +26,19 @@ _default_mapping_PACE = {
 }
 
 
-TracersType: TypeAlias = FieldBundleType.T("Tracers")  # type: ignore # noqa
+TracersType = FieldBundleType.T("Tracers")
+
+_mappings: dict[str, int] = {}
 
 
 def setup_tracers(
     number_of_tracers: int,
     quantity_factory: QuantityFactory,
     mappings: dict[str, int] | None = None,
-) -> FieldBundle:
-    """Setup a FieldBundle for tracers. Should be called only once."""
+) -> None:
+    global _mappings
 
     FieldBundleType.register("Tracers", (number_of_tracers,))
-
-    _unit = "g/kg"
-    _dims = [I_DIM, J_DIM, K_DIM, "tracers"]
-
-    tracers_qty_factory = FieldBundle.extend_3D_quantity_factory(
-        quantity_factory, {"tracers": number_of_tracers}
-    )
-    data = tracers_qty_factory.zeros(_dims, units=_unit)
 
     # Some default mappings for ease of use with commonly
     # run models
@@ -56,8 +48,17 @@ def setup_tracers(
         else:
             mappings = _default_mapping_PACE
 
-    return FieldBundle(
-        "Tracers",
-        quantity=data,
-        mapping=mappings,
-    )
+    _mappings = mappings
+    quantity_factory.add_data_dimensions({"tracers": number_of_tracers})
+
+
+def make_tracers(quantity_factory: QuantityFactory) -> FieldBundle:
+    """Setup a FieldBundle for tracers. Should be called only once."""
+    global _mappings  # noqa
+
+    _unit = "g/kg"
+    _dims = [I_DIM, J_DIM, K_DIM, "tracers"]
+
+    data = quantity_factory.zeros(_dims, units=_unit)
+
+    return FieldBundle("Tracers", quantity=data, mapping=_mappings)

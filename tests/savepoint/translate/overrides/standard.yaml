@@ -27,16 +27,16 @@ MapN_Tracer_2d:
     near_zero: 1e-17
     ignore_near_zero_errors:
       - qtracers
-  - backend: numpy
+  - backend: st:numpy:cpu:IJK
     max_error: 9e-9 # 48_6ranks
 
 NH_P_Grad:
-  max_error: 6e-11
+  - max_error: 6e-11
 
 Riem_Solver3:
   - backend: st:gt:gpu:KJI
     max_error: 5e-6
-  - backend: gt:cpu_ifirst
+  - backend: st:gt:cpu:KJI
     max_error: 5e-6
   - backend: st:dace:gpu:KJI
     max_error: 5e-6
