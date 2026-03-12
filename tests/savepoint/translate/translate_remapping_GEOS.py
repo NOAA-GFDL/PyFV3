@@ -1,9 +1,6 @@
 from types import SimpleNamespace
 
 from f90nml import Namelist
-from pyFV3 import DynamicalCoreConfig
-from pyFV3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
-from pyFV3.tracers import TracersType, setup_tracers
 
 from ndsl import Quantity, StencilFactory
 from ndsl.constants import (
@@ -16,6 +13,9 @@ from ndsl.constants import (
 )
 from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
+from pyfv3 import DynamicalCoreConfig
+from pyfv3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
+from pyfv3.tracers import TracersType, setup_tracers
 
 
 class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):

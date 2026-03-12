@@ -5,7 +5,7 @@ from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 
 
 # TODO merge with pe_halo? reuse partials?
-# NOTE: This is different from pyFV3.stencils.pe_halo.edge_pe
+# NOTE: This is different from pyfv3.stencils.pe_halo.edge_pe
 def edge_pe_update(
     pe: FloatFieldIJ, delp: FloatField, pk3: FloatField, ptop: Float, akap: Float
 ):

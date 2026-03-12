@@ -1,11 +1,11 @@
 from f90nml import Namelist
-from pyFV3.stencils.map_single import MapSingle
-from pyFV3.stencils.remapping import pressures_mapv
 
 from ndsl import StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
+from pyfv3.stencils.map_single import MapSingle
+from pyfv3.stencils.remapping import pressures_mapv
 
 
 class TranslatePressures_mapV(TranslateFortranData2Py):

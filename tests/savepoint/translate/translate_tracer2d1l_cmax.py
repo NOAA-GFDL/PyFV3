@@ -1,9 +1,9 @@
 from f90nml import Namelist
-from pyFV3.stencils.tracer_2d_1l import TracerCMax
 
 from ndsl import Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.stencils.testing import ParallelTranslate2Py
+from pyfv3.stencils.tracer_2d_1l import TracerCMax
 
 
 def _quantity_wrap(storage, dims, grid_indexing):

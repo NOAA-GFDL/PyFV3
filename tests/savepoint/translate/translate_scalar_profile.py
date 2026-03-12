@@ -1,10 +1,10 @@
 from f90nml import Namelist
-from pyFV3.stencils.remap_profile import RemapProfile
 
 from ndsl import StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
+from pyfv3.stencils.remap_profile import RemapProfile
 
 
 class TranslateScalar_Profile(TranslateFortranData2Py):

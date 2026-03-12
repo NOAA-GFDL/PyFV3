@@ -124,7 +124,7 @@ class GeosDycoreWrapper:
         # Check for water species configuration not handled by the interface
         if water_tracers_count != 6:
             raise NotImplementedError(
-                f"[pyFV3 Bridge] Bridge expect 6 water species, got {water_tracers_count}."
+                f"[pyfv3 Bridge] Bridge expect 6 water species, got {water_tracers_count}."
             )
 
         # Build the full tracer mapping by appending None to the expected tracer list
@@ -339,11 +339,11 @@ class GeosDycoreWrapper:
 
         # Collect performance of the timestep and write a json file for rank 0
         self.perf_collector.collect_performance()
-        for k, v in self.perf_collector.times_per_step[0].items():
+        for k, v in self.perf_collector.times_per_step[0].items():  # type: ignore
             if k not in timings.keys():
-                timings[k] = [v]
+                timings[k] = [v]  # type: ignore
             else:
-                timings[k].append(v)
+                timings[k].append(v)  # type: ignore
         self.perf_collector.clear()
 
         return self.output_dict, timings
@@ -528,7 +528,7 @@ class GeosDycoreWrapper:
 
         return output_dict
 
-    def _allocate_output_dir(self):
+    def _allocate_output_dir(self) -> None:
         if len(self.output_dict) != 0:
             return
         if self._fortran_mem_space != self._pace_mem_space:

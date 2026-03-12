@@ -1,8 +1,7 @@
-from pyFV3.stencils.remapping import pn2_pk_delp
-
 from ndsl import StencilFactory
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.stencils.testing import TranslateFortranData2Py
+from pyfv3.stencils.remapping import pn2_pk_delp
 
 
 class testClass:

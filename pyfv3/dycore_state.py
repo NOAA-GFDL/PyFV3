@@ -377,7 +377,7 @@ class DycoreState:
             elif issubclass(_field.type, TracersType):
                 if len(dict_of_numpy_arrays[_field.name]) != len(tracer_list):
                     raise ValueError(
-                        "[pyFV3] DycoreState init:"
+                        "[pyfv3] DycoreState init:"
                         f" tracer list size ({len(tracer_list)})"
                         " doesn't match the inputs size"
                         f" ({len(dict_of_numpy_arrays[_field.name])})"

@@ -526,7 +526,7 @@ class TracerCMax:
         if __debug__:
             if not isinstance(cmax, Quantity):
                 raise TypeError(
-                    f"[pyFV3][Tracer]: cmax must be a quantity, got {type(cmax)}"
+                    f"[pyfv3][Tracer]: cmax must be a quantity, got {type(cmax)}"
                 )
         cmax.data[:] = self._tmp_cmax.data.max(axis=0).max(axis=0)[:]
         self._comm.all_reduce_per_element_in_place(cmax, ReductionOperator.MAX)

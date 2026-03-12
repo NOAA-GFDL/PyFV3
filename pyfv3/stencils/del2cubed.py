@@ -90,7 +90,7 @@ class HyperdiffusionDamping:
     ):
         """
         Args:
-            grid: pyFV3 grid object
+            grid: pyfv3 grid object
         """
         orchestrate(obj=self, config=stencil_factory.config.dace_config)
         grid_indexing = stencil_factory.grid_indexing

@@ -1,6 +1,6 @@
 from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import TranslateFortranData2Py
-from pyFV3.stencils import moist_cv
+from pyfv3.stencils import moist_cv
 
 
 class TranslateMoistCVPlusPt_2d_last_step(TranslateFortranData2Py):
