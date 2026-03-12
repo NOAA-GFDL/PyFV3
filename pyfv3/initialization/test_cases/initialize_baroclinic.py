@@ -369,7 +369,7 @@ def init_baroclinic_state(
     state = DycoreState.init_from_numpy_arrays(
         numpy_state.__dict__,
         quantity_factory=quantity_factory,
-        backend=sample_quantity.metadata.backend,
+        backend=sample_quantity.backend,
         tracer_list=["vapor", "liquid", "rain", "snow", "ice", "graupel", "cloud"],
     )
     state.tracers["vapor"].view[:] = numpy_state.qvapor[slice_3d]

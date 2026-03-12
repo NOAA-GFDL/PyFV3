@@ -372,14 +372,11 @@ class MapSingle:
             dims=dims,
         )
 
-        if interpolate_contribution:
-            self._lagrangian_contributions = LagrangianContributionInterpolated(
-                stencil_factory, quantity_factory, dims
-            )
-        else:
-            self._lagrangian_contributions = LagrangianContribution(
-                stencil_factory, dims
-            )
+        self._lagrangian_contributions = (
+            LagrangianContributionInterpolated(stencil_factory, quantity_factory, dims)
+            if interpolate_contribution
+            else LagrangianContribution(stencil_factory, dims)
+        )
 
     def __call__(
         self,

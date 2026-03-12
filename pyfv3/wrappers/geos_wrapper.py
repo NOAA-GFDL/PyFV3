@@ -176,7 +176,7 @@ class GeosDycoreWrapper:
         metric_terms = MetricTerms(
             quantity_factory=quantity_factory,
             communicator=self.communicator,
-            eta_file=namelist["grid_config"]["config"]["eta_file"],  # type: ignore
+            eta_file=namelist["grid_config"]["config"]["eta_file"],
         )
         grid_data = GridData.new_from_metric_terms(metric_terms)
 
@@ -213,7 +213,8 @@ class GeosDycoreWrapper:
 
         self.dycore_state = pyfv3.DycoreState.init_zeros(
             quantity_factory=quantity_factory,
-            tracer_list=self._tracers_mapping,
+            tracer_count=len(self._tracers_mapping),
+            backend=quantity_factory.backend,
         )
         self.dycore_state.bdt = self.dycore_config.dt_atmos
 

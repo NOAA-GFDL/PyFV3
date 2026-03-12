@@ -327,7 +327,7 @@ class TracerAdvection:
 
     def __call__(
         self,
-        tracers: TracersType,  # type: ignore
+        tracers,
         dp1,
         x_mass_flux,
         y_mass_flux,

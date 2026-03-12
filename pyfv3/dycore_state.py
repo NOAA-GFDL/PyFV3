@@ -1,7 +1,9 @@
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field, fields
+from types import MappingProxyType
 from typing import Any, Self
 
+import numpy.typing as npt
 import xarray as xr
 
 import ndsl.dsl.gt4py_utils as gt_utils
@@ -315,7 +317,7 @@ class DycoreState:
         tracer_count: int,
         backend: Backend,
         dtype_dict: dict[str, type] | None = None,
-        allow_mismatch_float_precision=False,
+        allow_mismatch_float_precision: bool = False,
     ) -> Self:
         initial_storages = {}
         for _field in fields(cls):
@@ -493,7 +495,9 @@ class DycoreState:
 
         return new
 
-    def _xr_dataarray_from_quantity(self, name: str, metadata: dict[str, Any], data):
+    def _xr_dataarray_from_array(
+        self, name: str, metadata: MappingProxyType[Any, Any], data: npt.ArrayLike
+    ):
         dims = [f"{dim_name}_{name}" for dim_name in metadata["dims"]]
         return xr.DataArray(
             gt_utils.asarray(data),
@@ -509,13 +513,13 @@ class DycoreState:
         data_vars = {}
         for name, field_info in self.__dataclass_fields__.items():
             if issubclass(field_info.type, Quantity):
-                data_vars[name] = self._xr_dataarray_from_quantity(
+                data_vars[name] = self._xr_dataarray_from_array(
                     name=name,
                     metadata=field_info.metadata,
                     data=getattr(self, name).data,
                 )
             if isinstance(field_info.type, FieldBundle):
-                data_vars[name] = self._xr_dataarray_from_quantity(
+                data_vars[name] = self._xr_dataarray_from_array(
                     name=name,
                     metadata=field_info.metadata,
                     data=getattr(self, name).quantity.data,

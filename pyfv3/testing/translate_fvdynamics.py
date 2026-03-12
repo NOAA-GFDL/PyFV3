@@ -232,10 +232,10 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         self.dycore: fv_dynamics.DynamicalCore | None = None
         self.stencil_factory = stencil_factory
         self._quantity_factory = QuantityFactory(
-            sizer=stencil_factory.grid_indexing._sizer,
+            sizer=grid.sizer,
             backend=stencil_factory.backend,
         )
-        self.namelist: DynamicalCoreConfig = DynamicalCoreConfig.from_namelist(namelist)
+        self.namelist: DynamicalCoreConfig = DynamicalCoreConfig.from_f90nml(namelist)
 
     def state_from_inputs(self, inputs):
         tracers = self._quantity_factory._numpy.empty(

@@ -484,7 +484,6 @@ class LagrangianToEulerian:
             abs(config.kord_tr),
             fill=config.fill,
             tracers=tracers,
-            exclude_tracers=exclude_tracers,
         )
 
         self._map_single_w = MapSingle(

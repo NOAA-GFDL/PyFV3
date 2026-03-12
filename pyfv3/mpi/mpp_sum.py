@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from ndsl import Quantity, StencilFactory
@@ -5,7 +7,13 @@ from ndsl.comm.communicator import Communicator, ReductionOperator
 from ndsl.dsl.typing import Float
 
 
-def _increment_ints_faster(int_sum, pr, I_pr, r, max_mag_term):
+def _increment_ints_faster(
+    int_sum: np.ndarray,
+    pr: list[float],
+    I_pr: list[float],
+    r: float,
+    max_mag_term: float,
+) -> None:
     if (r >= 1e30) == r < 1e30:
         print("NaN_error")
         return
@@ -23,7 +31,13 @@ def _increment_ints_faster(int_sum, pr, I_pr, r, max_mag_term):
         int_sum[i] = int_sum[i] + sgn * ival
 
 
-def _carry_overflow(int_sum, prec, I_prec, prec_error):
+def _carry_overflow(
+    int_sum: np.ndarray,
+    prec: int,
+    I_prec: float,
+    prec_error: float,
+) -> bool:
+    overflow_error = False
     for i in range(len(int_sum) - 1, 0, -1):
         if abs(int_sum[i]) > prec:
             num_carry = int(int_sum[i] * I_prec)
@@ -31,9 +45,10 @@ def _carry_overflow(int_sum, prec, I_prec, prec_error):
             int_sum[i - 1] = int_sum[i - 1] + num_carry
     if abs(int_sum[0]) > prec_error:
         overflow_error = True
+    return overflow_error
 
 
-def _regularize_ints(int_sum, prec, I_prec):
+def _regularize_ints(int_sum: np.ndarray, prec: int, I_prec: float) -> None:
     for i in range(len(int_sum) - 1, 0, -1):
         if abs(int_sum[i]) > prec:
             num_carry = int(int_sum[i] * I_prec)
@@ -61,7 +76,7 @@ def _regularize_ints(int_sum, prec, I_prec):
                 int_sum[i - 1] = int_sum[i - 1] + 1
 
 
-def _ints_to_real(ints, pr):
+def _ints_to_real(ints: np.ndarray, pr: list[float]) -> float:
     r = 0.0
 
     for i in range(len(ints)):
@@ -80,14 +95,14 @@ class MPPGlobalSum:
             data=np.zeros((NUMINT), dtype=Float),
             dims=["K"],
             units="dunno",
-            gt4py_backend=stencil_factory.backend,
+            backend=stencil_factory.backend,
         )
 
         self._ints_sum_reduce = Quantity(
             data=np.zeros((NUMINT), dtype=Float),
             dims=["K"],
             units="dunno",
-            gt4py_backend=stencil_factory.backend,
+            backend=stencil_factory.backend,
         )
 
     def __call__(self, qty_to_sum: Quantity) -> Float:
@@ -115,7 +130,8 @@ class MPPGlobalSum:
                     self._ints_sum.data, pr, I_pr, qty_to_sum.field[i, j], mag_max_term
                 )
 
-        _carry_overflow(self._ints_sum.data, prec, I_prec, prec_error)
+        if not _carry_overflow(self._ints_sum.data, prec, I_prec, prec_error):
+            warnings.warn("Overflow in MPP sum", category=UserWarning, stacklevel=2)
 
         self._comm.all_reduce(
             self._ints_sum,

@@ -121,6 +121,8 @@ class AcousticDynamicsConfig:
     """
     riemann: RiemannConfig
     d_grid_shallow_water: DGridShallowWaterLagrangianDynamicsConfig
+    dz_min: float = 2.0
+    """Controls minimum thickness in NH solver"""
 
     @property
     def nord(self) -> int:

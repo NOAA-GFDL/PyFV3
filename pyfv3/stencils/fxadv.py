@@ -610,11 +610,6 @@ class FiniteVolumeFluxPrep:
             origin=origin,
             domain=domain,
         )
-        # self._set_nans = get_set_nan_func(
-        #     grid_indexing,
-        #     dims=[I_DIM, J_DIM, K_DIM],
-        #     n_halo=((2, 2), (2, 2)),
-        # )
 
     def __call__(
         self,
