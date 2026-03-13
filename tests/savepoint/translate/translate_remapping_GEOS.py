@@ -15,7 +15,7 @@ from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
 from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
-from pyfv3.tracers import TracersType, setup_tracers
+from pyfv3.tracers import TracersType, make_tracers, setup_tracers
 
 
 class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
@@ -368,7 +368,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         self.quantity_factory = grid.quantity_factory
 
         self.stencil_factory = stencil_factory
-        self.namelist = DynamicalCoreConfig.from_namelist(namelist)
+        self.config = DynamicalCoreConfig.from_f90nml(namelist)
         self.grid = grid
 
         self._are_tracers_setup = False
@@ -378,7 +378,9 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
     def compute_sequential(self, inputs_list, communicator_list):
         print("No serial test available")
 
-    def state_from_inputs(self, inputs: dict, tracers: TracersType) -> SimpleNamespace:
+    def state_from_inputs_and_tracers(
+        self, inputs: dict, tracers: TracersType
+    ) -> SimpleNamespace:
         input_storages = super().state_from_inputs(inputs)
         # Rename fluxes and courant numbers
         input_storages["mfx"] = input_storages.pop("mfx_R4")
@@ -409,23 +411,9 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         return outputs
 
     def compute_parallel(self, inputs, communicator):
-        # tracers_mapping = Tracers.blind_mapping_from_data(inputs["tracers"])
-        # tracers_mapping[0] = "vapor"
-        # tracers_mapping[1] = "liquid"
-        # tracers_mapping[2] = "rain"
-        # tracers_mapping[3] = "snow"
-        # tracers_mapping[4] = "ice"
-        # tracers_mapping[5] = "graupel"
-        # tracers_mapping[6] = "cloud"
-        # tracers = Tracers.make_from_4D_array(
-        #     self.quantity_factory,
-        #     tracers_mapping[0:7],
-        #     inputs["tracers"],
-        # )
-
         if not self._are_tracers_setup:
             self._are_tracers_setup = True
-            self._tracers = setup_tracers(
+            setup_tracers(
                 number_of_tracers=inputs["tracers"].shape[3],
                 quantity_factory=self.quantity_factory,
                 mappings={
@@ -439,15 +427,18 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 },
             )
 
+        self._tracers = make_tracers(self.quantity_factory)
         self._tracers.quantity.data[:-1, :-1, :-1, :] = inputs["tracers"]
+        inputs.pop("tracers")
+        self._base.in_vars["data_vars"].pop("tracers")
 
         inputs["te_2d"] = inputs["te_2d"].astype(Float)
-        state = self.state_from_inputs(inputs, self._tracers)
+        state = self.state_from_inputs_and_tracers(inputs, self._tracers)
 
         l_to_e = LagrangianToEulerian_GEOS(
             self.stencil_factory,
             self.quantity_factory,
-            DynamicalCoreConfig.from_namelist(self.namelist).remapping,
+            self.config.remapping,
             communicator,
             self.grid.grid_data,
             state.nq,

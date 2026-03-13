@@ -8,6 +8,7 @@ import f90nml
 import yaml
 from dacite import Config, from_dict
 
+from ndsl.constants import Float
 from ndsl.utils import f90nml_as_dict
 
 
@@ -121,7 +122,7 @@ class AcousticDynamicsConfig:
     """
     riemann: RiemannConfig
     d_grid_shallow_water: DGridShallowWaterLagrangianDynamicsConfig
-    dz_min: float = 2.0
+    dz_min: Float = Float(2.0)
     """Controls minimum thickness in NH solver"""
 
     @property

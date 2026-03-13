@@ -6,7 +6,7 @@ from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import Grid, ParallelTranslate
 from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils import FiniteVolumeTransport, TracerAdvection
-from pyfv3.tracers import setup_tracers
+from pyfv3.tracers import make_tracers, setup_tracers
 from pyfv3.utils.functional_validation import get_subset_func
 
 
@@ -49,10 +49,11 @@ class TranslateTracer2D1L(ParallelTranslate):
 
     def compute_parallel(self, inputs, communicator):
         self._base.make_storage_data_input_vars(inputs, dict_4d=False)
-        tracers = setup_tracers(
+        setup_tracers(
             number_of_tracers=inputs["tracers"].shape[3],
             quantity_factory=self._quantity_factory,
         )
+        tracers = make_tracers(self._quantity_factory)
         tracers.quantity.data[:] = inputs["tracers"][:]
         inputs.pop("tracers")
         inputs.pop("nq")  # Fortran NQ is intrinsic to Tracers (e.g Tracers.count)
