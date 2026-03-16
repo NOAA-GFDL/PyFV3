@@ -20,7 +20,6 @@ from ndsl.dsl.gt4py import (
 )
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.stencils.basic_operations import adjust_divide_stencil
-from ndsl.typing import Checkpointer
 from pyfv3._config import RemappingConfig
 from pyfv3.stencils import moist_cv
 from pyfv3.stencils.map_single import MapSingle
@@ -293,20 +292,16 @@ class LagrangianToEulerian:
         nq,
         pfull,
         tracers: dict[str, Quantity],
-        checkpointer: Checkpointer | None = None,
     ):
         orchestrate(
             obj=self,
             config=stencil_factory.config.dace_config,
             dace_compiletime_args=["tracers"],
         )
-        self._checkpointer = checkpointer
-        # this is only computed in init because Dace does not yet support
-        # this operation
-        self._call_checkpointer = checkpointer is not None
         grid_indexing = stencil_factory.grid_indexing
         if config.kord_tm >= 0:
             raise NotImplementedError("map ppm, untested mode where kord_tm >= 0")
+
         hydrostatic = config.hydrostatic
         if hydrostatic:
             raise NotImplementedError("Hydrostatic is not implemented")
