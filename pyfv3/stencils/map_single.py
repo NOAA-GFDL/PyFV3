@@ -91,14 +91,11 @@ class MapSingle:
         kord: int,
         mode: int,
         dims: Sequence[str],
-    ):
+    ) -> None:
         orchestrate(
             obj=self,
             config=stencil_factory.config.dace_config,
         )
-
-        # TODO: consider refactoring to take in origin and domain
-        grid_indexing = stencil_factory.grid_indexing
 
         def make_quantity():
             return quantity_factory.zeros(
@@ -142,14 +139,6 @@ class MapSingle:
             compute_dims=dims,
         )
 
-    @property
-    def i_extent(self):
-        return self._extents[0]
-
-    @property
-    def j_extent(self):
-        return self._extents[1]
-
     def __call__(
         self,
         q1: FloatField,
@@ -157,7 +146,7 @@ class MapSingle:
         pe2: FloatField,
         qs: Optional["FloatFieldIJ"] = None,
         qmin: Float = 0.0,
-    ):
+    ) -> None:
         """
         Compute x-flux using the PPM method.
 
@@ -203,4 +192,3 @@ class MapSingle:
             self._dp1,
             self._lev,
         )
-        return q1
