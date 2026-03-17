@@ -307,7 +307,6 @@ class DynamicalCore:
             nq=NQ,
             pfull=self._pfull,
             tracers=self.tracers,
-            checkpointer=checkpointer,
         )
 
         full_xyz_spec = quantity_factory.get_quantity_halo_spec(
