@@ -4,7 +4,7 @@ from typing import Optional
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation, interval
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntFieldIJ  # noqa: F401
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntFieldIJ
 from ndsl.stencils.basic_operations import copy
 from pyfv3.stencils.remap_profile import RemapProfile
 

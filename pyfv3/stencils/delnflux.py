@@ -285,7 +285,7 @@ class DelnFlux:
             d2: A damped copy of the q field (in)
             mass: Mass to weight the diffusive flux by (in)
         """
-        if self._no_compute is True:
+        if self._no_compute:
             return fx, fy
 
         # [DaCe] Optional d2 gets reduced to subset 0 in DaCe parsing leading to a

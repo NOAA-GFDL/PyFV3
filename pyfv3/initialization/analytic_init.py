@@ -90,7 +90,7 @@ def init_analytic_state(
 
     if analytic_init_case == AnalyticCase.rossby:
         # TODO sw_dynamics check is awkward here, and should be moved.
-        if sw_dynamics is False:
+        if not sw_dynamics:
             raise ValueError(
                 "Rossby initialization requires dynamical core config "
                 "sw_dynamics flag to be True."
