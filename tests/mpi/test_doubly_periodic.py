@@ -4,6 +4,7 @@ from typing import cast
 
 import pyfv3.initialization.test_cases.initialize_baroclinic as baroclinic_init
 from ndsl import (
+    Backend,
     CompilationConfig,
     CubedSphereCommunicator,
     GridIndexing,
@@ -21,7 +22,7 @@ from pyfv3 import DynamicalCore, DynamicalCoreConfig
 
 
 def test_dycore_runs_one_step() -> None:
-    backend = "numpy"
+    backend = Backend("st:numpy:cpu:IJK")
     layout = (3, 3)
     config = DynamicalCoreConfig(
         layout=layout,

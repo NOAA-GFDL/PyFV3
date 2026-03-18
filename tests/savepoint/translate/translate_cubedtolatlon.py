@@ -1,7 +1,7 @@
 from f90nml import Namelist
 
 from ndsl import Quantity, StencilFactory
-from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.stencils.c2l_ord import CubedToLatLon
 from ndsl.stencils.testing import ParallelTranslate2Py
 from pyfv3 import DynamicalCoreConfig
@@ -10,11 +10,11 @@ from pyfv3 import DynamicalCoreConfig
 class TranslateCubedToLatLon(ParallelTranslate2Py):
     inputs = {
         "u": {
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
         },
         "v": {
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
     }

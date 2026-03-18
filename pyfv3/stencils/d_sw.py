@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
@@ -672,7 +672,7 @@ def get_column_namelist(
     for name in all_names:
         # TODO: fill units information
         col[name] = quantity_factory.zeros(
-            dims=[Z_DIM],
+            dims=[K_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -691,7 +691,7 @@ def get_column_namelist(
     col["damp_w"].view[:] = col["damp_vt"].view[0]
     col["damp_t"].view[:] = col["damp_vt"].view[0]
     if (
-        col["d2_divg"].extent[col["d2_divg"].dims.index(Z_DIM)] == 1
+        col["d2_divg"].extent[col["d2_divg"].dims.index(K_DIM)] == 1
         or config.n_sponge < 0
     ):
         col["d2_divg"].view[0] = config.d2_bg
@@ -800,8 +800,7 @@ class DGridShallowWaterLagrangianDynamics:
         self._grid_type = config.grid_type
         if config.inline_q:
             raise NotImplementedError(
-                "D-Grid Shallow Water Lagrangian Dynamics (D_SW):"
-                " inline_q not implemented."
+                "D-Grid Shallow Water Lagrangian Dynamics (D_SW): inline_q not implemented."
             )
         if config.d_ext > 0:
             raise NotImplementedError(
@@ -834,13 +833,12 @@ class DGridShallowWaterLagrangianDynamics:
         self.hydrostatic = config.hydrostatic
         if self.hydrostatic:
             raise NotImplementedError(
-                "D-Grid Shallow Water Lagrangian Dynamics (D_SW):"
-                " Hydrostatic is not implemented"
+                "D-Grid Shallow Water Lagrangian Dynamics (D_SW): Hydrostatic is not implemented"
             )
 
         def make_quantity():
             return quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM],
+                [I_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=Float,
             )
@@ -940,14 +938,14 @@ class DGridShallowWaterLagrangianDynamics:
 
         self._apply_pt_delp_fluxes = stencil_factory.from_dims_halo(
             func=apply_pt_delp_fluxes_stencil_defn,
-            compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             externals={
                 "inline_q": config.inline_q,
             },
         )
         self._compute_kinetic_energy = stencil_factory.from_dims_halo(
             func=compute_kinetic_energy,
-            compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             externals={
                 "iord": config.hord_mt,
                 "jord": config.hord_mt,
@@ -958,19 +956,19 @@ class DGridShallowWaterLagrangianDynamics:
             },
         )
         self._apply_fluxes = stencil_factory.from_dims_halo(
-            func=apply_fluxes, compute_dims=[X_DIM, Y_DIM, Z_DIM]
+            func=apply_fluxes, compute_dims=[I_DIM, J_DIM, K_DIM]
         )
         self._flux_capacitor_stencil = stencil_factory.from_dims_halo(
             func=flux_capacitor,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
             compute_halos=(3, 3),
         )
         self._vort_differencing_stencil = stencil_factory.from_dims_halo(
             func=vort_differencing,
-            compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
         )
         self._u_and_v_from_ke_stencil = stencil_factory.from_dims_halo(
-            func=u_and_v_from_ke, compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM]
+            func=u_and_v_from_ke, compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM]
         )
 
         if config.do_f3d:
@@ -978,21 +976,21 @@ class DGridShallowWaterLagrangianDynamics:
 
         self._rel_vorticity_to_abs = stencil_factory.from_dims_halo(
             func=rel_vorticity_to_abs,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
             compute_halos=(3, 3),
         )
         self._adjust_w_and_qcon_stencil = stencil_factory.from_dims_halo(
             func=adjust_w_and_qcon,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._heat_diss_stencil = stencil_factory.from_dims_halo(
             func=heat_diss,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
         self._heat_source_from_vorticity_damping_stencil = (
             stencil_factory.from_dims_halo(
                 func=heat_source_from_vorticity_damping,
-                compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+                compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
                 externals={
                     "do_stochastic_ke_backscatter": config.do_skeb,
                     "d_con": config.d_con,
@@ -1004,17 +1002,17 @@ class DGridShallowWaterLagrangianDynamics:
             self._accumulate_heat_source_and_dissipation_estimate_stencil = (
                 stencil_factory.from_dims_halo(
                     func=accumulate_heat_source_and_dissipation_estimate,
-                    compute_dims=[X_DIM, Y_DIM, Z_DIM],
+                    compute_dims=[I_DIM, J_DIM, K_DIM],
                 )
             )
 
         self._compute_vorticity_stencil = stencil_factory.from_dims_halo(
             compute_vorticity,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
             compute_halos=(3, 3),
         )
         self._update_u_and_v_stencil = stencil_factory.from_dims_halo(
-            update_u_and_v, compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM]
+            update_u_and_v, compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM]
         )
         self._delnflux_damp_vt = delnflux.calc_damp(
             damp_c=self._column_namelist["damp_vt"],

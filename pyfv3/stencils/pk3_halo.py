@@ -1,5 +1,5 @@
 from ndsl import QuantityFactory, StencilFactory
-from ndsl.constants import X_DIM, Y_DIM
+from ndsl.constants import I_DIM, J_DIM
 from ndsl.dsl.gt4py import FORWARD, computation, horizontal, interval, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 
@@ -54,7 +54,7 @@ class PK3Halo:
             domain=domain,
         )
         self._pe_tmp = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )

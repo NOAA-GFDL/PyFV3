@@ -5,14 +5,14 @@ from typing import Any, Self
 import xarray as xr
 
 import ndsl.dsl.gt4py_utils as gt_utils
-from ndsl import GridSizer, Quantity, QuantityFactory
+from ndsl import Backend, GridSizer, Quantity, QuantityFactory
 from ndsl.constants import (
-    X_DIM,
-    X_INTERFACE_DIM,
-    Y_DIM,
-    Y_INTERFACE_DIM,
-    Z_DIM,
-    Z_INTERFACE_DIM,
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    K_INTERFACE_DIM,
 )
 from ndsl.dsl.typing import Float
 from ndsl.restart._legacy_restart import open_restart
@@ -24,7 +24,7 @@ class DycoreState:
     u: Quantity = field(
         metadata={
             "name": "x_wind",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
             "intent": "inout",
         }
@@ -32,7 +32,7 @@ class DycoreState:
     v: Quantity = field(
         metadata={
             "name": "y_wind",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
             "intent": "inout",
         }
@@ -40,7 +40,7 @@ class DycoreState:
     w: Quantity = field(
         metadata={
             "name": "vertical_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
             "intent": "inout",
         }
@@ -49,7 +49,7 @@ class DycoreState:
     ua: Quantity = field(
         metadata={
             "name": "eastward_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
             "intent": "inout",
         }
@@ -57,14 +57,14 @@ class DycoreState:
     va: Quantity = field(
         metadata={
             "name": "northward_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
         }
     )
     uc: Quantity = field(
         metadata={
             "name": "x_wind_on_c_grid",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
             "intent": "inout",
         }
@@ -72,7 +72,7 @@ class DycoreState:
     vc: Quantity = field(
         metadata={
             "name": "y_wind_on_c_grid",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
             "intent": "inout",
         }
@@ -80,7 +80,7 @@ class DycoreState:
     delp: Quantity = field(
         metadata={
             "name": "pressure_thickness_of_atmospheric_layer",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "Pa",
             "intent": "inout",
         }
@@ -88,7 +88,7 @@ class DycoreState:
     delz: Quantity = field(
         metadata={
             "name": "vertical_thickness_of_atmospheric_layer",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m",
             "intent": "inout",
         }
@@ -96,7 +96,7 @@ class DycoreState:
     ps: Quantity = field(
         metadata={
             "name": "surface_pressure",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "Pa",
             "intent": "inout",
         }
@@ -104,7 +104,7 @@ class DycoreState:
     pe: Quantity = field(
         metadata={
             "name": "interface_pressure",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [I_DIM, J_DIM, K_INTERFACE_DIM],
             "units": "Pa",
             "n_halo": 1,
             "intent": "inout",
@@ -113,7 +113,7 @@ class DycoreState:
     pt: Quantity = field(
         metadata={
             "name": "air_temperature",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "degK",
             "intent": "inout",
         }
@@ -122,9 +122,9 @@ class DycoreState:
         metadata={
             "name": "logarithm_of_interface_pressure",
             "dims": [
-                X_DIM,
-                Y_DIM,
-                Z_INTERFACE_DIM,
+                I_DIM,
+                J_DIM,
+                K_INTERFACE_DIM,
             ],
             "units": "ln(Pa)",
             "n_halo": 0,
@@ -134,7 +134,7 @@ class DycoreState:
     pk: Quantity = field(
         metadata={
             "name": "interface_pressure_raised_to_power_of_kappa",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [I_DIM, J_DIM, K_INTERFACE_DIM],
             "units": "unknown",
             "n_halo": 0,
             "intent": "inout",
@@ -143,7 +143,7 @@ class DycoreState:
     pkz: Quantity = field(
         metadata={
             "name": "layer_mean_pressure_raised_to_power_of_kappa",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "unknown",
             "n_halo": 0,
             "intent": "inout",
@@ -152,14 +152,14 @@ class DycoreState:
     qvapor: Quantity = field(
         metadata={
             "name": "specific_humidity",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         }
     )
     qliquid: Quantity = field(
         metadata={
             "name": "cloud_water_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
             "intent": "inout",
         }
@@ -167,7 +167,7 @@ class DycoreState:
     qice: Quantity = field(
         metadata={
             "name": "cloud_ice_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
             "intent": "inout",
         }
@@ -175,7 +175,7 @@ class DycoreState:
     qrain: Quantity = field(
         metadata={
             "name": "rain_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
             "intent": "inout",
         }
@@ -183,7 +183,7 @@ class DycoreState:
     qsnow: Quantity = field(
         metadata={
             "name": "snow_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
             "intent": "inout",
         }
@@ -191,7 +191,7 @@ class DycoreState:
     qgraupel: Quantity = field(
         metadata={
             "name": "graupel_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
             "intent": "inout",
         }
@@ -199,7 +199,7 @@ class DycoreState:
     qo3mr: Quantity = field(
         metadata={
             "name": "ozone_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
             "intent": "inout",
         }
@@ -207,7 +207,7 @@ class DycoreState:
     qsgs_tke: Quantity = field(
         metadata={
             "name": "turbulent_kinetic_energy",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m**2/s**2",
             "intent": "inout",
         }
@@ -215,7 +215,7 @@ class DycoreState:
     qcld: Quantity = field(
         metadata={
             "name": "cloud_fraction",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "",
             "intent": "inout",
         }
@@ -223,7 +223,7 @@ class DycoreState:
     q_con: Quantity = field(
         metadata={
             "name": "total_condensate_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
             "intent": "inout",
         }
@@ -231,7 +231,7 @@ class DycoreState:
     omga: Quantity = field(
         metadata={
             "name": "vertical_pressure_velocity",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "Pa/s",
             "intent": "inout",
         }
@@ -239,7 +239,7 @@ class DycoreState:
     mfxd: Quantity = field(
         metadata={
             "name": "accumulated_x_mass_flux",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "unknown",
             "n_halo": 0,
             "intent": "inout",
@@ -248,7 +248,7 @@ class DycoreState:
     mfyd: Quantity = field(
         metadata={
             "name": "accumulated_y_mass_flux",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "unknown",
             "n_halo": 0,
             "intent": "inout",
@@ -257,7 +257,7 @@ class DycoreState:
     cxd: Quantity = field(
         metadata={
             "name": "accumulated_x_courant_number",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "",
             "n_halo": (0, 3),
             "intent": "inout",
@@ -266,7 +266,7 @@ class DycoreState:
     cyd: Quantity = field(
         metadata={
             "name": "accumulated_y_courant_number",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "",
             "n_halo": (3, 0),
             "intent": "inout",
@@ -275,7 +275,7 @@ class DycoreState:
     diss_estd: Quantity = field(
         metadata={
             "name": "dissipation_estimate_from_heat_source",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "unknown",
             "n_halo": (3, 3),
             "intent": "inout",
@@ -289,7 +289,7 @@ class DycoreState:
         metadata={
             "name": "surface_geopotential",
             "units": "m^2 s^-2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "intent": "in",
         }
     )
@@ -328,7 +328,7 @@ class DycoreState:
 
     @classmethod
     def init_from_numpy_arrays(
-        cls, dict_of_numpy_arrays: dict, sizer: GridSizer, backend: str
+        cls, dict_of_numpy_arrays: dict, sizer: GridSizer, backend: Backend
     ) -> Self:
         field_names = [_field.name for _field in fields(cls)]
         for variable_name in dict_of_numpy_arrays.keys():
@@ -357,8 +357,10 @@ class DycoreState:
         sizer: GridSizer,
         bdt: float = 0.0,
         mdt: float = 0.0,
-        backend: str | None = None,
+        backend: Backend | None = None,
     ) -> Self:
+        if not backend:
+            backend = Backend.python()
         inputs = {}
         for _field in fields(cls):
             if "dims" in _field.metadata.keys():
@@ -473,47 +475,47 @@ class DycoreState:
 
 TRACER_PROPERTIES = {
     "specific_humidity": {
-        "dims": [Z_DIM, Y_DIM, X_DIM],
+        "dims": [K_DIM, J_DIM, I_DIM],
         "restart_name": "sphum",
         "units": "g/kg",
     },
     "cloud_liquid_water_mixing_ratio": {
-        "dims": [Z_DIM, Y_DIM, X_DIM],
+        "dims": [K_DIM, J_DIM, I_DIM],
         "restart_name": "liq_wat",
         "units": "g/kg",
     },
     "cloud_ice_mixing_ratio": {
-        "dims": [Z_DIM, Y_DIM, X_DIM],
+        "dims": [K_DIM, J_DIM, I_DIM],
         "restart_name": "ice_wat",
         "units": "g/kg",
     },
     "rain_mixing_ratio": {
-        "dims": [Z_DIM, Y_DIM, X_DIM],
+        "dims": [K_DIM, J_DIM, I_DIM],
         "restart_name": "rainwat",
         "units": "g/kg",
     },
     "snow_mixing_ratio": {
-        "dims": [Z_DIM, Y_DIM, X_DIM],
+        "dims": [K_DIM, J_DIM, I_DIM],
         "restart_name": "snowwat",
         "units": "g/kg",
     },
     "graupel_mixing_ratio": {
-        "dims": [Z_DIM, Y_DIM, X_DIM],
+        "dims": [K_DIM, J_DIM, I_DIM],
         "restart_name": "graupel",
         "units": "g/kg",
     },
     "ozone_mixing_ratio": {
-        "dims": [Z_DIM, Y_DIM, X_DIM],
+        "dims": [K_DIM, J_DIM, I_DIM],
         "restart_name": "o3mr",
         "units": "g/kg",
     },
     "turbulent_kinetic_energy": {
-        "dims": [Z_DIM, Y_DIM, X_DIM],
+        "dims": [K_DIM, J_DIM, I_DIM],
         "restart_name": "sgs_tke",
         "units": "g/kg",
     },
     "cloud_fraction": {
-        "dims": [Z_DIM, Y_DIM, X_DIM],
+        "dims": [K_DIM, J_DIM, I_DIM],
         "restart_name": "cld_amt",
         "units": "g/kg",
     },

@@ -2,7 +2,7 @@ from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, StencilFactory
-from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.stencils.testing import Grid, ParallelTranslate2PyState
 from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
@@ -13,39 +13,39 @@ from pyfv3.stencils import dyn_core
 class TranslateDynCore(ParallelTranslate2PyState):
     inputs = {
         "q_con": {
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "default",
         },
         "cappa": {
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "default",
         },
         "delp": {
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "default",
         },
         "pt": {
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "K",
         },
         "u": {
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
         },
         "v": {
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "uc": {
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "vc": {
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
         },
         "w": {
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
     }
@@ -145,7 +145,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
         self._base.make_storage_data_input_vars(inputs)
         state = DycoreState.init_zeros(quantity_factory=self.grid.quantity_factory)
         wsd: Quantity = self.grid.quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="unknown",
         )
         for name, value in inputs.items():
@@ -157,7 +157,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
             else:
                 setattr(state, name, value)
         phis: Quantity = self.grid.quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="m",
         )
         phis.data[:] = phis.np.asarray(inputs["phis"])

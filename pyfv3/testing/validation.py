@@ -5,7 +5,7 @@ import numpy as np
 
 import pyfv3.stencils.divergence_damping
 from ndsl import Quantity
-from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 
 
 def get_selective_class(
@@ -174,11 +174,11 @@ def enable_selective_validation():
     pyfv3.stencils.divergence_damping.DivergenceDamping = get_selective_class(
         pyfv3.stencils.divergence_damping.DivergenceDamping,
         {
-            "v_contra_dxc": get_domain_func([X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM]),
-            "vort": get_domain_func([X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM]),
+            "v_contra_dxc": get_domain_func([I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM]),
+            "vort": get_domain_func([I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM]),
         },  # must include both function argument and savepoint names
     )
-    cell_center_func = get_domain_func([X_DIM, Y_DIM, Z_DIM])
+    cell_center_func = get_domain_func([I_DIM, J_DIM, K_DIM])
     pyfv3.stencils.fv_dynamics.DynamicalCore = get_selective_class(
         pyfv3.stencils.fv_dynamics.DynamicalCore,
         {
@@ -186,10 +186,10 @@ def enable_selective_validation():
             "va": cell_center_func,
             "qcld": cell_center_func,
             "qice": cell_center_func,
-            "v": get_domain_func([X_INTERFACE_DIM, Y_DIM, Z_DIM]),
+            "v": get_domain_func([I_INTERFACE_DIM, J_DIM, K_DIM]),
             "qliquid": cell_center_func,
             "ua": cell_center_func,
             "q_con": cell_center_func,
-            "u": get_domain_func([X_DIM, Y_INTERFACE_DIM, Z_DIM]),
+            "u": get_domain_func([I_DIM, J_INTERFACE_DIM, K_DIM]),
         },
     )

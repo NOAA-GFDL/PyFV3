@@ -1,6 +1,6 @@
 import ndsl.constants as constants
 from ndsl import StencilFactory, orchestrate
-from ndsl.constants import X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, log, region, sin
@@ -151,7 +151,7 @@ class RayleighDamping:
         grid_indexing = stencil_factory.grid_indexing
         self._rf_cutoff = rf_cutoff
         origin, domain = grid_indexing.get_origin_domain(
-            [X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM]
+            [I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM]
         )
 
         ax_offsets = grid_indexing.axis_offsets(origin, domain)
