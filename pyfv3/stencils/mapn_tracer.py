@@ -78,5 +78,5 @@ class MapNTracer:
         for i, q in enumerate(utils.tracer_variables[0 : self._nq]):
             self._list_of_remap_objects[i](tracers[q], pe1, pe2, self._qs)
 
-        if self._fill_negative_tracers is True:
+        if self._fill_negative_tracers:
             self._fillz(dp2, tracers)
