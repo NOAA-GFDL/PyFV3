@@ -9,7 +9,8 @@ classifiers = [
   "Intended Audience :: Developers",
   "Natural Language :: English",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.11"
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12"
 ]
 dependencies = [
   "dacite",
@@ -23,7 +24,7 @@ license = "Apache-2.0"
 license-files = ["LICENSE.md"]
 name = "pyfv3"
 readme = "README.md"
-requires-python = ">=3.11,<3.12"
+requires-python = ">=3.11,<3.13"
 version = "0.2.0"
 
 [project.optional-dependencies]
@@ -42,12 +43,11 @@ extras = [
   "pyfv3[ndsl]",
   "pyfv3[test]"
 ]
-ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@2026.01.00"]
+ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@2026.02.00"]
 test = [
   "coverage",
   "pytest",
-  "pytest-subtests",
-  "serialbox"
+  "pytest-subtests"
 ]
 
 [project.urls]

@@ -3,7 +3,7 @@ from typing import Any, Dict
 from f90nml import Namelist
 
 from ndsl import StencilFactory, orchestrate
-from ndsl.constants import Z_DIM
+from ndsl.constants import K_DIM
 from pyfv3.stencils import DivergenceDamping
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
@@ -61,7 +61,7 @@ class TranslateA2B_Ord4(TranslateDycoreFortranData2Py):
         self.compute_obj = A2B_Ord4Compute(stencil_factory)
 
     def compute_from_storage(self, inputs):
-        nord_col = self.grid.quantity_factory.zeros(dims=[Z_DIM], units="unknown")
+        nord_col = self.grid.quantity_factory.zeros(dims=[K_DIM], units="unknown")
         nord_col.data[:] = nord_col.np.asarray(inputs.pop("nord_col"))
         divdamp = DivergenceDamping(
             self.stencil_factory,

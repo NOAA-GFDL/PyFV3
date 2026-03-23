@@ -25,12 +25,12 @@ from ndsl import (
 )
 from ndsl.checkpointer import NullCheckpointer
 from ndsl.constants import (
-    X_DIM,
-    X_INTERFACE_DIM,
-    Y_DIM,
-    Y_INTERFACE_DIM,
-    Z_DIM,
-    Z_INTERFACE_DIM,
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    K_INTERFACE_DIM,
 )
 from ndsl.dsl.dace.orchestration import dace_inhibitor
 from ndsl.dsl.gt4py import (
@@ -211,35 +211,35 @@ def dyncore_temporaries(
         # TODO: the dimensions of ut and vt may not be correct,
         #       because they are not used. double-check and correct as needed.
         temporaries[name] = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
     for name in ["gz", "pkc", "zh"]:
         temporaries[name] = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
             units="unknown",
             dtype=Float,
         )
     temporaries["divgd"] = quantity_factory.zeros(
-        dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+        dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
         units="unknown",
         dtype=Float,
     )
     temporaries["ws3"] = quantity_factory.zeros(
-        dims=[X_DIM, Y_DIM],
+        dims=[I_DIM, J_DIM],
         units="unknown",
         dtype=Float,
     )
     for name in ["crx", "xfx"]:
         temporaries[name] = quantity_factory.zeros(
-            dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
     for name in ["cry", "yfx"]:
         temporaries[name] = quantity_factory.zeros(
-            dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -272,27 +272,27 @@ class AcousticDynamics:
             # Define the memory specification required
             # Those can be re-used as they are read-only descriptors
             full_size_xyz_halo_spec = quantity_factory.get_quantity_halo_spec(
-                dims=[X_DIM, Y_DIM, Z_DIM],
+                dims=[I_DIM, J_DIM, K_DIM],
                 n_halo=grid_indexing.n_halo,
                 dtype=Float,
             )
             full_size_xyiz_halo_spec = quantity_factory.get_quantity_halo_spec(
-                dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+                dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
                 n_halo=grid_indexing.n_halo,
                 dtype=Float,
             )
             full_size_xiyz_halo_spec = quantity_factory.get_quantity_halo_spec(
-                dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+                dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
                 n_halo=grid_indexing.n_halo,
                 dtype=Float,
             )
             full_size_xyzi_halo_spec = quantity_factory.get_quantity_halo_spec(
-                dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
+                dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
                 n_halo=grid_indexing.n_halo,
                 dtype=Float,
             )
             full_size_xiyiz_halo_spec = quantity_factory.get_quantity_halo_spec(
-                dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+                dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
                 n_halo=grid_indexing.n_halo,
                 dtype=Float,
             )
@@ -354,7 +354,7 @@ class AcousticDynamics:
             )
             if grid_indexing.domain[0] == grid_indexing.domain[1]:
                 full_3Dfield_2pts_halo_spec = quantity_factory.get_quantity_halo_spec(
-                    dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
+                    dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
                     n_halo=2,
                     dtype=Float,
                 )
@@ -508,7 +508,7 @@ class AcousticDynamics:
             # then converted to lower dimensional
             self._dp_ref = grid_data.dp_ref
             self._zs = quantity_factory.zeros(
-                [X_DIM, Y_DIM],
+                [I_DIM, J_DIM],
                 units="m",
                 dtype=Float,
             )
@@ -534,7 +534,7 @@ class AcousticDynamics:
                 stencil_factory, quantity_factory=quantity_factory, p_fac=config.p_fac
             )
             origin, domain = grid_indexing.get_origin_domain(
-                [X_DIM, Y_DIM, Z_INTERFACE_DIM], halos=(2, 2)
+                [I_DIM, J_DIM, K_INTERFACE_DIM], halos=(2, 2)
             )
             self._compute_geopotential_stencil = stencil_factory.from_origin_domain(
                 compute_geopotential,

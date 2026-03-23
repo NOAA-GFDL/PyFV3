@@ -10,10 +10,10 @@ from ndsl.constants import (
     CP_VAP,
     CV_AIR,
     CV_VAP,
+    I_DIM,
+    J_DIM,
+    K_DIM,
     RDGAS,
-    X_DIM,
-    Y_DIM,
-    Z_DIM,
     ZVIR,
 )
 from ndsl.dsl.gt4py import BACKWARD, PARALLEL, computation
@@ -780,8 +780,7 @@ class DryConvectiveAdjustment:
     ):
         if hydrostatic:
             raise NotImplementedError(
-                "DryConvectiveAdjustment (fv_subgridz):"
-                " Hydrostatic is not implemented"
+                "DryConvectiveAdjustment (fv_subgridz): Hydrostatic is not implemented"
             )
         grid_indexing = stencil_factory.grid_indexing
         self._k_sponge = n_sponge
@@ -832,7 +831,7 @@ class DryConvectiveAdjustment:
         )
 
         def make_quantity():
-            return quantity_factory.zeros([X_DIM, Y_DIM, Z_DIM], units="unknown")
+            return quantity_factory.zeros([I_DIM, J_DIM, K_DIM], units="unknown")
 
         self._q0 = {}
         for tracername in utils.tracer_variables:

@@ -2,7 +2,7 @@ import typing
 
 import ndsl.constants as constants
 from ndsl import QuantityFactory, StencilFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval, log
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from pyfv3.stencils.sim1_solver import Sim1Solver
@@ -143,37 +143,37 @@ class NonhydrostaticVerticalSolverCGrid:
         domain = grid_indexing.domain_compute(add=(2, 2, 1))
 
         self._dm = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="kg",
             dtype=Float,
         )
         self._w = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="m/s",
             dtype=Float,
         )
         self._pem = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
         self._pe = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
         self._gm = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="",
             dtype=Float,
         )
         self._dz = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="m",
             dtype=Float,
         )
         self._pm = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="Pa",
             dtype=Float,
         )

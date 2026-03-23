@@ -1,5 +1,5 @@
 from ndsl import QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
@@ -144,7 +144,7 @@ class FiniteVolumeTransport:
 
         def make_quantity():
             return quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM],
+                [I_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=Float,
             )

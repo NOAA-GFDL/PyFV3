@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval
@@ -571,27 +571,27 @@ class RemapProfile:
         self._kord = kord
 
         self._gam = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._q = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
         self._q_bot = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
-        self._extm = quantity_factory.zeros([X_DIM, Y_DIM, Z_DIM], units="", dtype=bool)
-        self._ext5 = quantity_factory.zeros([X_DIM, Y_DIM, Z_DIM], units="", dtype=bool)
-        self._ext6 = quantity_factory.zeros([X_DIM, Y_DIM, Z_DIM], units="", dtype=bool)
+        self._extm = quantity_factory.zeros([I_DIM, J_DIM, K_DIM], units="", dtype=bool)
+        self._ext5 = quantity_factory.zeros([I_DIM, J_DIM, K_DIM], units="", dtype=bool)
+        self._ext6 = quantity_factory.zeros([I_DIM, J_DIM, K_DIM], units="", dtype=bool)
 
         self._set_initial_values = stencil_factory.from_dims_halo(
             func=set_initial_vals,
-            compute_dims=list(dims[:2]) + [Z_INTERFACE_DIM],
+            compute_dims=list(dims[:2]) + [K_INTERFACE_DIM],
             externals={"iv": iv, "kord": abs(kord)},
         )
 
