@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import numpy as np
 
 import ndsl.constants as constants
+from ndsl.comm.communicator import Communicator
 from ndsl.dsl.typing import Float
 from ndsl.grid.eta import SURFACE_PRESSURE, compute_eta, vertical_coordinate
 from ndsl.grid.gnomonic import (
@@ -387,31 +388,55 @@ def temperature(eta, eta_v, t_mean, lat):
 
 
 def hydro_eq(
-    km,
-    is_,
-    ie,
-    js,
-    je,
-    ps,
-    hs,
-    drym,
-    delp,
-    ak,
-    bk,
-    pt,
-    delz,
-    area,
-    ng,
-    mountain,
-    hydrostatic,
-    hybrid_z,
-    comm,
+    km: int,
+    is_: int,
+    ie: int,
+    js: int,
+    je: int,
+    ps: np.ndarray,
+    hs: np.ndarray,
+    drym: float,
+    delp: np.ndarray,
+    ak: np.ndarray,
+    bk: np.ndarray,
+    pt: np.ndarray,
+    delz: np.ndarray,
+    area: np.ndarray,
+    ng: int,
+    mountain: bool,
+    hydrostatic: bool,
+    hybrid_z: bool,
+    comm: Communicator,
 ):
+    """
+    Initializes atmospheric temperature and pressure hydrostatically.
+    
+    Args:
+        km (in): Number of model layers (non-interface k)
+        is_ (in): data start index in i
+        ie (in): data end index in i
+        js (in): data start index in j
+        je (in): data end index in j
+        ps (in): surface pressure [nx, ny]
+        hs (in): surface height [nx, ny]
+        drym (in): mass of dry air 
+        delp (inout): layer pressure thickness [nx, ny, nz]
+        ak: (in): ak pressure values [nz + 1]
+        bk (in): bk pressure values [nz + 1]
+        pt (inout): atmospheric potential temperature [nx, ny, nz]
+        delz (inout): layer thickness [nx, ny, nz]
+        area (in): grid area [nx, ny]
+        ng: number of halo cells
+        mountain: whether a mountain is present
+        hydrostatic: whether the model is hydrostatic
+        hybrid_z: True if using hybrid-z pressure levels, False if sigma
+        comm: CubedSphereCommunicator or TileCommunicator
+    """
     # ndsl_log.info('Initializing ATM hydrostatically')
     # ndsl_log.info('Initializing Earth')
 
-    gz = np.empty((ie, km + 1))
-    ph = np.empty((ie, km + 1))
+    gz = np.empty((ie, km+1))
+    ph = np.empty((ie, km+1))
     print(ph.shape)
 
     # Given p1 and z1 (250mb, 10km)
@@ -432,7 +457,8 @@ def hydro_eq(
 
     if mountain:
         raise NotImplementedError("hydro_eq: Mountain is not implemented")
-        """mslp = 100917.4
+        """
+        mslp = 100917.4
         for j in range(js, je):
             for i in range(is_, ie):
                 ps[i, j] = mslp * np.exp(
@@ -446,7 +472,8 @@ def hydro_eq(
 
         dps = drym - psm
         # ndsl_log.info(f'Computed mean ps={psm}')
-        # ndsl_log.info(f'Correction delta-ps={dps}')"""
+        # ndsl_log.info(f'Correction delta-ps={dps}')
+        """
     else:
         mslp = drym  # 1000.E2
         ps[is_:ie, js:je] = mslp
@@ -464,7 +491,7 @@ def hydro_eq(
             # ---------------
             # Hybrid Z
             # ---------------
-            for k in range(km - 1, 0, -1):  # k=km,2,-1
+            for k in range(km-1, 0, -1):  # k=km,2,-1
                 for i in range(is_, ie):
                     gz[i, k] = gz[i, k + 1] - delz[i, j, k] * constants.GRAV
             # Correct delz at the top:
@@ -490,11 +517,11 @@ def hydro_eq(
             # ---------------
             # Hybrid sigma-p
             # ---------------
-            for k in range(1, km):  # do k=2,km+1
+            for k in range(1, km+1):  # do k=2,km+1
                 for i in range(is_, ie):
                     ph[i, k] = ak[k] + bk[k] * ps[i, j]
 
-            for k in range(km - 1, 0, -1):  # k=km,2,-1
+            for k in range(km-1, 0, -1):  # k=km,2,-1
                 for i in range(is_, ie):
                     if ph[i, k] <= p1:
                         gz[i, k] = gz[i, k + 1] + (constants.RDGAS * t1) * np.log(

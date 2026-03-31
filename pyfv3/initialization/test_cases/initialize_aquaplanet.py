@@ -17,12 +17,14 @@ def init_aquaplanet_state(
     grid_data: GridData,
     quantity_factory: QuantityFactory,
     hydrostatic: bool,
+    moist_phys: bool,
     comm: CubedSphereCommunicator,
 ) -> DycoreState:
     sample_quantity = grid_data.lat
     field_shape = (*sample_quantity.field.shape[0:2], grid_data.ak.data.shape[0])
     data_shape = (*sample_quantity.data.shape[0:2], grid_data.ak.data.shape[0])
-    nx, ny, nz = init_utils.local_compute_size(data_shape)
+    nx, ny, npz = init_utils.local_compute_size(data_shape)
+    nz = npz - 1
     numpy_state = init_utils.empty_numpy_dycore_state(data_shape)
     isc, iec, jsc, jec = init_utils.local_compute_bounds(field_shape)
     print(isc, iec, jsc, jec)
@@ -46,8 +48,8 @@ def init_aquaplanet_state(
     numpy_state.delz[:] = 1.0e25
     numpy_state.phis[:] = 1.0e25
     numpy_state.ps[:] = SURFACE_PRESSURE
-    eta = np.zeros(nz)
-    eta_v = np.zeros(nz)
+    eta = np.zeros(npz)
+    eta_v = np.zeros(npz)
     islice, jslice, slice_3d, slice_2d = init_utils.compute_slices(nx, ny)
     # Slices with extra buffer points in the horizontal dimension
     # to accomodate averaging over shifted calculations on the grid
@@ -105,6 +107,20 @@ def init_aquaplanet_state(
         hydrostatic,
         hybrid_z,
         comm,
+    )
+
+    init_utils.p_var(
+        delp=numpy_state.delp[slice_3d],
+        delz=numpy_state.delz[slice_3d],
+        pt=numpy_state.pt[slice_3d],
+        ps=numpy_state.ps[slice_2d],
+        qvapor=numpy_state.qvapor[slice_3d],
+        pe=numpy_state.pe[slice_3d],
+        peln=numpy_state.peln[slice_3d],
+        pkz=numpy_state.pkz[slice_3d],
+        ptop=grid_data.ptop,
+        moist_phys=moist_phys,
+        make_nh=(not hydrostatic),
     )
 
     state = DycoreState.init_from_numpy_arrays(

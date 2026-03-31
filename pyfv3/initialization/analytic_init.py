@@ -91,6 +91,7 @@ def init_analytic_state(
                 grid_data=grid_data,
                 quantity_factory=quantity_factory,
                 hydrostatic=hydrostatic,
+                moist_phys=moist_phys,
                 comm=comm,
             )
         elif analytic_init_case == AnalyticCase.rossby:
