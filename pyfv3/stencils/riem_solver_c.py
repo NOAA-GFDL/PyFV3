@@ -259,6 +259,7 @@ class NonhydrostaticVerticalSolverCGrid:
             self._gm,
             self._pm,
             ptop,
+            grav_var,
         )
         self._sim1_solve(
             dt2,

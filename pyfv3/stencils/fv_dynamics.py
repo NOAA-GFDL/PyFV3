@@ -9,14 +9,14 @@ import pyfv3.stencils.wam as wam
 from ndsl import Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater
 from ndsl.checkpointer import NullCheckpointer
 from ndsl.comm.mpi import MPI
-from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM, KAPPA, NQ, ZVIR
+from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM, KAPPA, NQ, ZVIR, GRAV
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
 from ndsl.dsl.gt4py import PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log
 from ndsl.performance import Timer
-from ndsl.stencils.basic_operations import copy
+from ndsl.stencils.basic_operations import copy, set_value
 from ndsl.stencils.c2l_ord import CubedToLatLon
 from ndsl.typing import Checkpointer, Communicator
 from pyfv3._config import DynamicalCoreConfig

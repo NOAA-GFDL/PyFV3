@@ -297,7 +297,7 @@ class DycoreState:
         metadata={
             "name": "Interface gravity values",
             "units": "m s^-2",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [I_DIM, J_DIM, K_INTERFACE_DIM],
             "intent": "inout",
         }
     )
@@ -305,7 +305,7 @@ class DycoreState:
         metadata={
             "name": "variable gravity",
             "units": "m s^-2",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "intent": "inout",
         }
     )
@@ -313,7 +313,7 @@ class DycoreState:
         metadata={
             "name": "gas constant for dry air over variable gravity (RDGAS / grav_var) for Whole Atmosphere calculations",
             "units": "(J/kg/deg) / (m s^-2)",  # JK TODO: What are the units?
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "intent": "inout",
         }
     )
