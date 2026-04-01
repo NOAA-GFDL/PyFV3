@@ -15,7 +15,7 @@ classifiers = [
 dependencies = [
   "dacite",
   "f90nml>=1.1.0",
-  "numpy==1.26.4",
+  "numpy>=2",
   "pyyaml",
   "xarray"
 ]
@@ -43,7 +43,7 @@ extras = [
   "pyfv3[ndsl]",
   "pyfv3[test]"
 ]
-ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@2026.02.00"]
+ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@develop"]
 test = [
   "coverage",
   "pytest",
