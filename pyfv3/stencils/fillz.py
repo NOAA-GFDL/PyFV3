@@ -2,7 +2,7 @@ import typing
 
 import dace
 
-from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval, max, min
 from ndsl.dsl.typing import FloatField, FloatFieldIJ, Int, IntFieldIJ
