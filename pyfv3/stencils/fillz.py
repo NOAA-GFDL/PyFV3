@@ -110,7 +110,6 @@ class FillNegativeTracerValues(NDSLRuntime):
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
         nq: int,
-        tracers: dict[str, Quantity],
     ):
         super().__init__(stencil_factory)
 

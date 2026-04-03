@@ -291,7 +291,6 @@ class LagrangianToEulerian:
         area_64,
         nq,
         pfull,
-        tracers: dict[str, Quantity],
     ):
         orchestrate(
             obj=self,
@@ -405,7 +404,6 @@ class LagrangianToEulerian:
             abs(config.kord_tr),
             nq,
             fill=config.fill,
-            tracers=tracers,
         )
 
         self._map_single_w = MapSingle(
