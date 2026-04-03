@@ -3,7 +3,7 @@ import dace
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
-from ndsl.dsl.typing import Float, FloatField
+from ndsl.dsl.typing import FloatField
 from pyfv3.stencils.fillz import FillNegativeTracerValues
 from pyfv3.stencils.map_single import MapSingle
 
@@ -23,11 +23,8 @@ class MapNTracer(NDSLRuntime):
     ):
         super().__init__(stencil_factory)
         self._nq = int(nq)
-        self._qs = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="unknown",
-            dtype=Float,
-        )
+        self._qs = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._qs.data[:] = 0  # low boundary condition for RemapProfile
 
         self._map_single_parametrized_kord = MapSingle(
             stencil_factory,
