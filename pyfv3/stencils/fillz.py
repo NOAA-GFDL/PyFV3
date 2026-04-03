@@ -1,10 +1,11 @@
 import typing
 
-import ndsl.dsl.gt4py_utils as utils
-from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
+import dace
+
+from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval, max, min
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntFieldIJ
+from ndsl.dsl.typing import FloatField, FloatFieldIJ, Int, IntFieldIJ
 
 
 @typing.no_type_check
@@ -97,7 +98,7 @@ def fix_tracer(
             q = max(fac * dm / dp, 0.0)
 
 
-class FillNegativeTracerValues:
+class FillNegativeTracerValues(NDSLRuntime):
     """
     Fix tracer values to prevent negative masses.
 
@@ -111,11 +112,8 @@ class FillNegativeTracerValues:
         nq: int,
         tracers: dict[str, Quantity],
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            dace_compiletime_args=["tracers"],
-        )
+        super().__init__(stencil_factory)
+
         self._nq = int(nq)
         self._fix_tracer_stencil = stencil_factory.from_dims_halo(
             fix_tracer,
@@ -124,33 +122,24 @@ class FillNegativeTracerValues:
 
         # Setting initial value of upper_fix to zero is only needed for validation.
         # The values in the compute domain are set to zero in the stencil.
-        self._zfix = quantity_factory.zeros([I_DIM, J_DIM], units="unknown", dtype=int)
-        self._sum0 = quantity_factory.zeros(
-            [I_DIM, J_DIM],
-            units="unknown",
-            dtype=Float,
-        )
-        self._sum1 = quantity_factory.zeros(
-            [I_DIM, J_DIM],
-            units="unknown",
-            dtype=Float,
-        )
-
-        self._filtered_tracer_dict = {
-            name: tracers[name] for name in utils.tracer_variables[0 : self._nq]
-        }
+        self._zfix = self.make_local(quantity_factory, [I_DIM, J_DIM], dtype=Int)
+        self._zfix.data[:] = 0
+        self._sum0 = self.make_local(quantity_factory, [I_DIM, J_DIM])
+        self._sum0.data[:] = 0
+        self._sum1 = self.make_local(quantity_factory, [I_DIM, J_DIM])
+        self._sum1.data[:] = 0
 
     def __call__(
         self,
         dp2: FloatField,
-        tracers: dict[str, Quantity],
+        tracers: dace.compiletime, #dict[str, Quantity],
     ):
         """
         Args:
             dp2 (in): pressure thickness of atmospheric layer
             tracers (inout): tracers to fix negative masses in
         """
-        for tracer_name in self._filtered_tracer_dict.keys():
+        for tracer_name in tracers.keys():
             self._fix_tracer_stencil(
                 tracers[tracer_name],
                 dp2,
