@@ -1,12 +1,14 @@
+import dace
+
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
-from ndsl.dsl.typing import Float, FloatField
+from ndsl.dsl.typing import FloatField
 from pyfv3.stencils.fillz import FillNegativeTracerValues
 from pyfv3.stencils.map_single import MapSingle
 
 
-class MapNTracer:
+class MapNTracer(NDSLRuntime):
     """
     Fortran code is mapn_tracer, test class is MapN_Tracer_2d
     """
@@ -18,33 +20,27 @@ class MapNTracer:
         kord: int,
         nq: int,
         fill: bool,
-        tracers: dict[str, Quantity],
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            dace_compiletime_args=["tracers"],
-        )
+        super().__init__(stencil_factory)
         self._nq = int(nq)
-        self._qs = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="unknown",
-            dtype=Float,
+        self._qs = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._qs.data[:] = 0  # low boundary condition for RemapProfile
+
+        self._map_single_parametrized_kord = MapSingle(
+            stencil_factory,
+            quantity_factory,
+            kord,
+            0,
+            dims=[I_DIM, J_DIM, K_DIM],
         )
 
-        kord_tracer = [kord] * self._nq
-        kord_tracer[5] = 9  # qcld
-
-        self._list_of_remap_objects = [
-            MapSingle(
-                stencil_factory,
-                quantity_factory,
-                kord_tracer[i],
-                0,
-                dims=[I_DIM, J_DIM, K_DIM],
-            )
-            for i in range(len(kord_tracer))
-        ]
+        self._map_single_kord9 = MapSingle(
+            stencil_factory,
+            quantity_factory,
+            9,
+            0,
+            dims=[I_DIM, J_DIM, K_DIM],
+        )
 
         if fill:
             self._fill_negative_tracers = True
@@ -52,17 +48,18 @@ class MapNTracer:
                 stencil_factory,
                 quantity_factory,
                 self._nq,
-                tracers,
             )
         else:
             self._fill_negative_tracers = False
+
+        self._index_graupel = utils.tracer_variables.index("qgraupel")
 
     def __call__(
         self,
         pe1: FloatField,
         pe2: FloatField,
         dp2: FloatField,
-        tracers: dict[str, Quantity],
+        tracers: dace.compiletime,  # dict[str, Quantity]
     ):
         """
         Remaps the tracer species onto the Eulerian grid
@@ -75,8 +72,11 @@ class MapNTracer:
             dp2 (in): Difference in pressure between Eulerian levels
             tracers (inout): tracers to be remapped
         """
-        for i, q in enumerate(utils.tracer_variables[0 : self._nq]):
-            self._list_of_remap_objects[i](tracers[q], pe1, pe2, self._qs)
+        for i, q in enumerate(tracers.keys()):
+            if i != self._index_graupel:
+                self._map_single_parametrized_kord(tracers[q], pe1, pe2, self._qs)
+
+        self._map_single_kord9(tracers["qgraupel"], pe1, pe2, self._qs)
 
         if self._fill_negative_tracers:
             self._fillz(dp2, tracers)
