@@ -1,11 +1,9 @@
-import dace
-
-import ndsl.dsl.gt4py_utils as utils
 from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import FloatField
 from pyfv3.stencils.fillz import FillNegativeTracerValues
 from pyfv3.stencils.map_single import MapSingle
+from pyfv3.tracers import FVTracers
 
 
 class MapNTracer(NDSLRuntime):
@@ -45,21 +43,19 @@ class MapNTracer(NDSLRuntime):
         if fill:
             self._fill_negative_tracers = True
             self._fillz = FillNegativeTracerValues(
-                stencil_factory,
-                quantity_factory,
-                self._nq,
+                stencil_factory, quantity_factory, self._nq
             )
         else:
             self._fill_negative_tracers = False
 
-        self._index_graupel = utils.tracer_variables.index("qgraupel")
+        self._graupel = FVTracers.index("graupel")
 
     def __call__(
         self,
         pe1: FloatField,
         pe2: FloatField,
         dp2: FloatField,
-        tracers: dace.compiletime,  # dict[str, Quantity]
+        tracers: FVTracers,
     ):
         """
         Remaps the tracer species onto the Eulerian grid
@@ -72,11 +68,15 @@ class MapNTracer(NDSLRuntime):
             dp2 (in): Difference in pressure between Eulerian levels
             tracers (inout): tracers to be remapped
         """
-        for i, q in enumerate(tracers.keys()):
-            if i != self._index_graupel:
-                self._map_single_parametrized_kord(tracers[q], pe1, pe2, self._qs)
-
-        self._map_single_kord9(tracers["qgraupel"], pe1, pe2, self._qs)
+        for i_tracer in range(0, self._nq):
+            if i_tracer == self._graupel:
+                self._map_single_kord9(
+                    tracers.data[:, :, :, i_tracer], pe1, pe2, self._qs
+                )
+            else:
+                self._map_single_parametrized_kord(
+                    tracers.data[:, :, :, i_tracer], pe1, pe2, self._qs
+                )
 
         if self._fill_negative_tracers:
             self._fillz(dp2, tracers)

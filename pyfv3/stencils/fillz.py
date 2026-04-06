@@ -1,11 +1,10 @@
 import typing
 
-import dace
-
 from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval, max, min
 from ndsl.dsl.typing import FloatField, FloatFieldIJ, Int, IntFieldIJ
+from pyfv3.tracers import FVTracers
 
 
 @typing.no_type_check
@@ -131,16 +130,16 @@ class FillNegativeTracerValues(NDSLRuntime):
     def __call__(
         self,
         dp2: FloatField,
-        tracers: dace.compiletime,  # dict[str, Quantity],
+        tracers: FVTracers,
     ):
         """
         Args:
             dp2 (in): pressure thickness of atmospheric layer
             tracers (inout): tracers to fix negative masses in
         """
-        for tracer_name in tracers.keys():
+        for i_tracer in range(0, self._nq):
             self._fix_tracer_stencil(
-                tracers[tracer_name],
+                tracers.data[:, :, :, i_tracer],
                 dp2,
                 self._zfix,
                 self._sum0,

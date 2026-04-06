@@ -1,5 +1,3 @@
-import dace
-
 from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import (
     I_DIM,
@@ -28,6 +26,7 @@ from pyfv3.stencils.map_single import MapSingle
 from pyfv3.stencils.mapn_tracer import MapNTracer
 from pyfv3.stencils.moist_cv import moist_pt_func, moist_pt_last_step
 from pyfv3.stencils.saturation_adjustment import SatAdjust3d
+from pyfv3.tracers import FVTracers
 
 
 from gt4py.cartesian.gtscript import __INLINED  # isort:skip
@@ -517,7 +516,7 @@ class LagrangianToEulerian(NDSLRuntime):
 
     def __call__(
         self,
-        tracers: dace.compiletime,  # dict[str, Quantity],
+        tracers: FVTracers,
         pt: FloatField,
         delp: FloatField,
         delz: FloatField,
@@ -527,7 +526,6 @@ class LagrangianToEulerian(NDSLRuntime):
         w: FloatField,
         cappa: FloatField,
         q_con: FloatField,
-        q_cld: FloatField,
         pkz: FloatField,
         pk: FloatField,
         pe: FloatField,
@@ -561,7 +559,6 @@ class LagrangianToEulerian(NDSLRuntime):
             va (inout): A-grid y-velocity
             cappa (inout): Power to raise pressure to
             q_con (out): Total condensate mixing ratio
-            q_cld (out): Cloud fraction
             pkz (in): Layer mean pressure raised to the power of Kappa
             pk (out): Interface pressure raised to power of kappa, final acoustic value
             pe (in): Pressure at layer edges
@@ -592,12 +589,12 @@ class LagrangianToEulerian(NDSLRuntime):
         # pe2 is final Eulerian edge pressures
 
         self._moist_cv_pt_pressure(
-            tracers["qvapor"],
-            tracers["qliquid"],
-            tracers["qrain"],
-            tracers["qsnow"],
-            tracers["qice"],
-            tracers["qgraupel"],
+            tracers.data[:, :, :, FVTracers.index("vapor")],
+            tracers.data[:, :, :, FVTracers.index("liquid")],
+            tracers.data[:, :, :, FVTracers.index("rain")],
+            tracers.data[:, :, :, FVTracers.index("snow")],
+            tracers.data[:, :, :, FVTracers.index("ice")],
+            tracers.data[:, :, :, FVTracers.index("graupel")],
             q_con,
             pt,
             cappa,
@@ -632,12 +629,12 @@ class LagrangianToEulerian(NDSLRuntime):
         # it clear the outputs are not needed until then?
         # or, are its outputs actually used? can we delete this stencil call?
         self._moist_cv_pkz(
-            tracers["qvapor"],
-            tracers["qliquid"],
-            tracers["qrain"],
-            tracers["qsnow"],
-            tracers["qice"],
-            tracers["qgraupel"],
+            tracers.data[:, :, :, FVTracers.index("vapor")],
+            tracers.data[:, :, :, FVTracers.index("liquid")],
+            tracers.data[:, :, :, FVTracers.index("rain")],
+            tracers.data[:, :, :, FVTracers.index("snow")],
+            tracers.data[:, :, :, FVTracers.index("ice")],
+            tracers.data[:, :, :, FVTracers.index("graupel")],
             q_con,
             self._gz,
             self._cvm,
@@ -681,13 +678,13 @@ class LagrangianToEulerian(NDSLRuntime):
             fast_mp_consv = consv_te > CONSV_MIN
             self._saturation_adjustment(
                 dp1,
-                tracers["qvapor"],
-                tracers["qliquid"],
-                tracers["qice"],
-                tracers["qrain"],
-                tracers["qsnow"],
-                tracers["qgraupel"],
-                q_cld,
+                tracers.data[:, :, :, FVTracers.index("vapor")],
+                tracers.data[:, :, :, FVTracers.index("liquid")],
+                tracers.data[:, :, :, FVTracers.index("ice")],
+                tracers.data[:, :, :, FVTracers.index("rain")],
+                tracers.data[:, :, :, FVTracers.index("snow")],
+                tracers.data[:, :, :, FVTracers.index("graupel")],
+                tracers.data[:, :, :, FVTracers.index("cloud")],
                 hs,
                 peln,
                 delp,
@@ -709,12 +706,12 @@ class LagrangianToEulerian(NDSLRuntime):
             # to the physics, but if we're staying in dynamics we need
             # to keep it as the virtual potential temperature
             self._moist_cv_last_step_stencil(
-                tracers["qvapor"],
-                tracers["qliquid"],
-                tracers["qrain"],
-                tracers["qsnow"],
-                tracers["qice"],
-                tracers["qgraupel"],
+                tracers.data[:, :, :, FVTracers.index("vapor")],
+                tracers.data[:, :, :, FVTracers.index("liquid")],
+                tracers.data[:, :, :, FVTracers.index("rain")],
+                tracers.data[:, :, :, FVTracers.index("snow")],
+                tracers.data[:, :, :, FVTracers.index("ice")],
+                tracers.data[:, :, :, FVTracers.index("graupel")],
                 self._gz,
                 pt,
                 pkz,
