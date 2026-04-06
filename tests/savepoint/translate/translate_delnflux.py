@@ -1,7 +1,7 @@
 from f90nml import Namelist
 
 from ndsl import StencilFactory
-from ndsl.constants import Z_DIM
+from ndsl.constants import K_DIM
 from pyfv3.stencils import delnflux
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
@@ -31,9 +31,9 @@ class TranslateDelnFlux(TranslateDycoreFortranData2Py):
         if "mass" not in inputs:
             inputs["mass"] = None
         self.make_storage_data_input_vars(inputs)
-        nord_col = self.grid.quantity_factory.zeros(dims=[Z_DIM], units="unknown")
+        nord_col = self.grid.quantity_factory.zeros(dims=[K_DIM], units="unknown")
         nord_col.data[:] = nord_col.np.asarray(inputs.pop("nord_column"))
-        damp_c = self.grid.quantity_factory.zeros(dims=[Z_DIM], units="unknown")
+        damp_c = self.grid.quantity_factory.zeros(dims=[K_DIM], units="unknown")
         damp_c.data[:] = damp_c.np.asarray(inputs.pop("damp_c"))
         self.compute_func = delnflux.DelnFlux(  # type: ignore
             self.stencil_factory,

@@ -12,6 +12,10 @@ on:
         type: string
         default: ''
         required: false
+      python_version:
+        type: string
+        default: ''
+        required: false
   pull_request: # ... a PR is opened / updated
   merge_group: # ... the PR is added to the merge queue
   push:
@@ -29,39 +33,40 @@ jobs:
     env:
       DATA_PATH: ./test_data/8.1.3/c12_6ranks_standard/dycore
       DATA_URL: "https://portal.nccs.nasa.gov/datashare/astg/smt/pace-regression-data/8.1.3_c12_6ranks_standard.tar.gz"
+      python_default: '3.12'
 
     steps:
-      - name: Setup Python 3.11
-        uses: actions/setup-python@v5
+      - name: 'Setup Python ${{ inputs.python_version && inputs.python_version || env.python_default }}'
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: ${{ inputs.python_version && inputs.python_version || env.python_default }}
 
       - name: Install mpi (MPICH flavor)
         run: pip3 install mpich
 
       - name: External trigger Checkout pyFV3
-        if: ${{inputs.component_trigger}}
-        uses: actions/checkout@v5
+        if: ${{inputs.component_name}}
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
-          repository: noaa-gfdl/pyFV3
+          repository: NOAA-GFDL/pyFV3
           path: pyFV3
 
       - name: Checkout hash that triggered CI
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
           path: pyFV3/${{inputs.component_name}}
 
       - name: External trigger install NDSL packages
-        if: ${{inputs.component_trigger}}
+        if: ${{inputs.component_name}}
         run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
           cd NDSL && pip3 install . && cd ../
           pip3 install .[test]
 
       - name: Install pyFV3 packages
-        if: ${{ ! inputs.component_trigger }}
+        if: ${{ ! inputs.component_name }}
         run: |
           cd ${GITHUB_WORKSPACE}/pyFV3
           pip install .[ndsl,test]
@@ -70,7 +75,7 @@ jobs:
       # accessible from other PRs, see workflows/create_cache.yaml.
       - name: Restore test_data (if cached)
         id: cache-restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: ${{ env.DATA_PATH }}
           path: pyFV3/test_data
@@ -87,7 +92,7 @@ jobs:
           cd ${GITHUB_WORKSPACE}/pyFV3
           coverage run --rcfile=pyproject.toml -m pytest \
               -v -s --data_path=${{ env.DATA_PATH }} \
-              --backend=numpy \
+              --backend=st:numpy:cpu:IJK \
               --which_modules=FvTp2d \
               --threshold_overrides_file=./tests/savepoint/translate/overrides/standard.yaml \
               ./tests/savepoint
@@ -97,7 +102,7 @@ jobs:
           cd ${GITHUB_WORKSPACE}/pyFV3
           coverage run --rcfile=pyproject.toml -m pytest \
                -v -s --data_path=${{ env.DATA_PATH }} \
-               --backend=numpy \
+               --backend=st:numpy:cpu:IJK \
                --which_modules=D_SW \
                --threshold_overrides_file=./tests/savepoint/translate/overrides/standard.yaml \
                ./tests/savepoint
@@ -107,7 +112,7 @@ jobs:
           cd ${GITHUB_WORKSPACE}/pyFV3
           coverage run --rcfile=pyproject.toml -m pytest \
               -v -s --data_path=${{ env.DATA_PATH }} \
-              --backend=numpy \
+              --backend=st:numpy:cpu:IJK \
               --which_modules=Remapping \
               --threshold_overrides_file=./tests/savepoint/translate/overrides/standard.yaml \
               ./tests/savepoint
@@ -121,7 +126,7 @@ jobs:
           export NDSL_LOGLEVEL=Debug
           mpiexec -np 6 coverage run --rcfile=pyproject.toml -m mpi4py -m pytest \
             -v -s --data_path=${{ env.DATA_PATH }} \
-            --backend=dace:cpu \
+            --backend=orch:dace:cpu:KIJ \
             -m parallel \
             --which_rank=0 \
             --which_modules=DynCore \

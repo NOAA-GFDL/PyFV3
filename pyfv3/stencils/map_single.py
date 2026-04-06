@@ -2,9 +2,9 @@ from collections.abc import Sequence
 from typing import Optional
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation, interval
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntFieldIJ  # noqa: F401
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntFieldIJ
 from ndsl.stencils.basic_operations import copy
 from pyfv3.stencils.remap_profile import RemapProfile
 
@@ -91,18 +91,15 @@ class MapSingle:
         kord: int,
         mode: int,
         dims: Sequence[str],
-    ):
+    ) -> None:
         orchestrate(
             obj=self,
             config=stencil_factory.config.dace_config,
         )
 
-        # TODO: consider refactoring to take in origin and domain
-        grid_indexing = stencil_factory.grid_indexing
-
         def make_quantity():
             return quantity_factory.zeros(
-                [X_DIM, Y_DIM, Z_DIM],
+                [I_DIM, J_DIM, K_DIM],
                 units="unknown",
                 dtype=Float,
             )
@@ -113,11 +110,11 @@ class MapSingle:
         self._q4_3 = make_quantity()
         self._q4_4 = make_quantity()
         self._tmp_qs = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
-        self._lev = quantity_factory.zeros([X_DIM, Y_DIM], units="", dtype=int)
+        self._lev = quantity_factory.zeros([I_DIM, J_DIM], units="", dtype=int)
 
         self._copy_stencil = stencil_factory.from_dims_halo(
             copy,
@@ -142,14 +139,6 @@ class MapSingle:
             compute_dims=dims,
         )
 
-    @property
-    def i_extent(self):
-        return self._extents[0]
-
-    @property
-    def j_extent(self):
-        return self._extents[1]
-
     def __call__(
         self,
         q1: FloatField,
@@ -157,7 +146,7 @@ class MapSingle:
         pe2: FloatField,
         qs: Optional["FloatFieldIJ"] = None,
         qmin: Float = 0.0,
-    ):
+    ) -> None:
         """
         Compute x-flux using the PPM method.
 
@@ -203,4 +192,3 @@ class MapSingle:
             self._dp1,
             self._lev,
         )
-        return q1

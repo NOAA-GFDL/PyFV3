@@ -68,7 +68,7 @@ class TranslateFillCorners(TranslateDycoreFortranData2Py):
                 domain = (self.grid.nid + 1, self.grid.njd + 1, len(ki))
                 if inputs["dir"] == 1:
                     fill_corners = corners.FillCornersBGrid(
-                        "x",
+                        "i",
                         origin=origin,
                         domain=domain,
                         stencil_factory=self.stencil_factory,
@@ -79,7 +79,7 @@ class TranslateFillCorners(TranslateDycoreFortranData2Py):
                     )
                 elif inputs["dir"] == 2:
                     fill_corners = corners.FillCornersBGrid(
-                        "y",
+                        "j",
                         origin=origin,
                         domain=domain,
                         stencil_factory=self.stencil_factory,

@@ -3,7 +3,7 @@ import numpy as np
 import ndsl.stencils.basic_operations as basic
 import ndsl.stencils.corners as corners
 from ndsl import Quantity, QuantityFactory, StencilFactory
-from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
@@ -377,46 +377,46 @@ class DivergenceDamping:
 
         self._compute_u_contra_dyc = low_k_stencil_factory.from_dims_halo(
             compute_u_contra_dyc,
-            compute_dims=[X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
             compute_halos=(1, 0),
         )
 
         self._compute_v_contra_dxc = low_k_stencil_factory.from_dims_halo(
             compute_v_contra_dxc,
-            compute_dims=[X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
             compute_halos=(0, 1),
         )
 
         self._delpc_computation = low_k_stencil_factory.from_dims_halo(
             delpc_computation,
-            compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             compute_halos=(0, 0),
         )
 
         self.u_contra_dyc = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="m^2/s",
             dtype=Float,
         )
         self.v_contra_dxc = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="m^2/s",
             dtype=Float,
         )
 
         self._damping = low_k_stencil_factory.from_dims_halo(
             damping,
-            compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             compute_halos=(0, 0),
         )
 
         self._copy_computeplus = high_k_stencil_factory.from_dims_halo(
             func=basic.copy,
-            compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             compute_halos=(0, 0),
         )
         self.fill_corners_bgrid_x = corners.FillCornersBGrid(
-            direction="x",
+            direction="i",
             stencil_factory=high_k_stencil_factory,
         )
 
@@ -447,7 +447,7 @@ class DivergenceDamping:
         )
 
         self.fill_corners_bgrid_y = corners.FillCornersBGrid(
-            direction="y",
+            direction="j",
             stencil_factory=high_k_stencil_factory,
         )
 
@@ -460,7 +460,7 @@ class DivergenceDamping:
 
         self._fill_corners_dgrid_stencil = high_k_stencil_factory.from_dims_halo(
             func=corners.fill_corners_dgrid_defn,
-            compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             compute_halos=(self.grid_indexing.n_halo, self.grid_indexing.n_halo),
             skip_passes=("UnreachableStmtPruning",),
         )
@@ -475,7 +475,7 @@ class DivergenceDamping:
 
         self._set_value = high_k_stencil_factory.from_dims_halo(
             func=basic.set_value,
-            compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             compute_halos=(self.grid_indexing.n_halo, self.grid_indexing.n_halo),
         )
 
@@ -491,7 +491,7 @@ class DivergenceDamping:
             self._smagorinksy_diffusion_approx_stencil = (
                 high_k_stencil_factory.from_dims_halo(
                     func=smagorinsky_diffusion_approx,
-                    compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+                    compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
                     compute_halos=(0, 0),
                 )
             )
@@ -501,13 +501,13 @@ class DivergenceDamping:
                 externals={
                     "replace": False,
                 },
-                compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+                compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
                 compute_halos=(0, 0),
             )
 
         self._damping_nord_highorder_stencil = high_k_stencil_factory.from_dims_halo(
             func=damping_nord_highorder_stencil,
-            compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             compute_halos=(0, 0),
         )
 

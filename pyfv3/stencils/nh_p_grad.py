@@ -1,7 +1,7 @@
 import numpy as np
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import X_DIM, Y_DIM, Z_INTERFACE_DIM
+from ndsl.constants import I_DIM, J_DIM, K_INTERFACE_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
@@ -149,17 +149,16 @@ class NonHydrostaticPressureGradient:
             # Requires computing and carrying `peln1` see below on
             # top_level calculation
             raise NotImplementedError(
-                "Non Hydrostatic Pressure Gradient (nh_p_grad) with"
-                " `use_logp` is not implemented."
+                "Non Hydrostatic Pressure Gradient (nh_p_grad) with `use_logp` is not implemented."
             )
 
         self._tmp_wk = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="unknown",
             dtype=Float,
         )
         self._tmp_wk1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -169,7 +168,7 @@ class NonHydrostaticPressureGradient:
             quantity_factory=quantity_factory,
             grid_data=grid_data,
             grid_type=grid_type,
-            z_dim=Z_INTERFACE_DIM,
+            z_dim=K_INTERFACE_DIM,
             replace=True,
         )
         self.a2b_kbuffer = AGrid2BGridFourthOrder(
@@ -177,7 +176,7 @@ class NonHydrostaticPressureGradient:
             quantity_factory=quantity_factory,
             grid_data=grid_data,
             grid_type=grid_type,
-            z_dim=Z_INTERFACE_DIM,
+            z_dim=K_INTERFACE_DIM,
             replace=True,
         )
         self.a2b_kstandard = AGrid2BGridFourthOrder(

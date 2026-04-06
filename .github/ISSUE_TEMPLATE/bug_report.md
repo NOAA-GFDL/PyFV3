@@ -18,7 +18,7 @@ A clear and concise description of what you expected to happen.
 Describe the system environment, include:
 - OS: [e.g. RHEL 7.2]
 - NDSL Version
-- Backend used [e.g. dace:cpu]
+- Backend used [e.g. st:dace:cpu:KIJ]
 - Environment variables set
 - Compiler(s): Type and version [e.g. Intel 19.1]
 - MPI type, and version (e.g. MPICH, Cray MPI, openMPI)

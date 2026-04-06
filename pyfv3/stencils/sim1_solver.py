@@ -2,7 +2,7 @@ import typing
 
 import ndsl.constants as constants
 from ndsl import StencilFactory
-from ndsl.constants import X_DIM, Y_DIM, Z_INTERFACE_DIM
+from ndsl.constants import I_DIM, J_DIM, K_INTERFACE_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, exp, interval, log
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 
@@ -149,7 +149,7 @@ class Sim1Solver:
         self._pfac = p_fac
         self._compute_sim1_solve = stencil_factory.from_dims_halo(
             func=sim1_solver,
-            compute_dims=[X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            compute_dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
             compute_halos=(n_halo, n_halo, 0),
         )
 

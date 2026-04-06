@@ -4,6 +4,7 @@ from typing import cast
 
 import pyfv3.initialization.test_cases.initialize_baroclinic as baroclinic_init
 from ndsl import (
+    Backend,
     CompilationConfig,
     CubedSphereCommunicator,
     GridIndexing,
@@ -16,11 +17,12 @@ from ndsl import (
     TilePartitioner,
 )
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
+from ndsl.performance import NullTimer
 from pyfv3 import DynamicalCore, DynamicalCoreConfig
 
 
 def test_dycore_runs_one_step() -> None:
-    backend = "numpy"
+    backend = Backend("st:numpy:cpu:IJK")
     layout = (3, 3)
     config = DynamicalCoreConfig(
         layout=layout,
@@ -98,7 +100,7 @@ def test_dycore_runs_one_step() -> None:
     grid_indexing = GridIndexing.from_sizer_and_communicator(
         sizer=sizer, comm=communicator
     )
-    quantity_factory = QuantityFactory.from_backend(sizer=sizer, backend=backend)
+    quantity_factory = QuantityFactory(sizer=sizer, backend=backend)
     metric_terms = MetricTerms(
         quantity_factory=quantity_factory,
         communicator=communicator,
@@ -134,4 +136,4 @@ def test_dycore_runs_one_step() -> None:
     )
 
     # run one step
-    dycore.step_dynamics(state)
+    dycore.step_dynamics(state, NullTimer())

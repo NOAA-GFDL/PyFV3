@@ -2,7 +2,7 @@ import typing
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval, max, min
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntFieldIJ
 
@@ -119,19 +119,19 @@ class FillNegativeTracerValues:
         self._nq = int(nq)
         self._fix_tracer_stencil = stencil_factory.from_dims_halo(
             fix_tracer,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
         )
 
         # Setting initial value of upper_fix to zero is only needed for validation.
         # The values in the compute domain are set to zero in the stencil.
-        self._zfix = quantity_factory.zeros([X_DIM, Y_DIM], units="unknown", dtype=int)
+        self._zfix = quantity_factory.zeros([I_DIM, J_DIM], units="unknown", dtype=int)
         self._sum0 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
         self._sum1 = quantity_factory.zeros(
-            [X_DIM, Y_DIM],
+            [I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
