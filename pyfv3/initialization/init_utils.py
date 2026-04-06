@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import numpy as np
 
 import ndsl.constants as constants
+from ndsl.comm.communicator import Communicator
 from ndsl.dsl.typing import Float
 from ndsl.grid.eta import SURFACE_PRESSURE, compute_eta, vertical_coordinate
 from ndsl.grid.gnomonic import (
@@ -12,6 +13,7 @@ from ndsl.grid.gnomonic import (
     get_unit_vector_direction,
     lon_lat_midpoint,
 )
+from ndsl.logging import ndsl_log
 from pyfv3.dycore_state import DycoreState
 
 
@@ -250,6 +252,14 @@ def local_compute_size(data_array_shape):
     return nx, ny, nz
 
 
+def local_compute_bounds(data_array_shape):
+    isc = NHALO
+    iec = isc + data_array_shape[0]
+    jsc = NHALO
+    jec = jsc + data_array_shape[1]
+    return isc, iec, jsc, jec
+
+
 def local_coordinate_transformation(u_component, lon, grid_vector_component):
     """
     Transform the zonal wind component to the cubed sphere grid using a grid vector
@@ -375,3 +385,181 @@ def temperature(eta, eta_v, t_mean, lat):
         * constants.RADIUS
         * constants.OMEGA
     )
+
+
+def hydro_eq(
+    km: int,
+    is_: int,
+    ie: int,
+    js: int,
+    je: int,
+    ps: np.ndarray,
+    hs: np.ndarray,
+    drym: float,
+    delp: np.ndarray,
+    ak: np.ndarray,
+    bk: np.ndarray,
+    pt: np.ndarray,
+    delz: np.ndarray,
+    area: np.ndarray,
+    ng: int,
+    mountain: bool,
+    hydrostatic: bool,
+    hybrid_z: bool,
+    comm: Communicator,
+):
+    """
+    Initializes atmospheric temperature and pressure hydrostatically.
+
+    Args:
+        km (in): Number of model layers (non-interface k)
+        is_ (in): data start index in i
+        ie (in): data end index in i
+        js (in): data start index in j
+        je (in): data end index in j
+        ps (in): surface pressure [nx, ny]
+        hs (in): surface height [nx, ny]
+        drym (in): mass of dry air
+        delp (inout): layer pressure thickness [nx, ny, nz]
+        ak: (in): ak pressure values [nz + 1]
+        bk (in): bk pressure values [nz + 1]
+        pt (inout): atmospheric potential temperature [nx, ny, nz]
+        delz (inout): layer thickness [nx, ny, nz]
+        area (in): grid area [nx, ny]
+        ng: number of halo cells
+        mountain: whether a mountain is present
+        hydrostatic: whether the model is hydrostatic
+        hybrid_z: True if using hybrid-z pressure levels, False if sigma
+        comm: CubedSphereCommunicator or TileCommunicator
+    """
+    # ndsl_log.info('Initializing ATM hydrostatically')
+    # ndsl_log.info('Initializing Earth')
+
+    gz = np.empty((ie, km + 1))
+    ph = np.empty((ie, km + 1))
+    print(ph.shape)
+
+    # Given p1 and z1 (250mb, 10km)
+    p1 = 25000.0
+    z1 = 10.0e3 * constants.GRAV
+    t1 = 200.0
+    t0 = 300.0  # sea-level temp.
+    a0 = (t1 - t0) / z1 * 0.5
+    c0 = t0 / a0
+
+    if hybrid_z:
+        ptop = 100.0  # *** hardwired model top ***
+    else:
+        ptop = ak[0]
+
+    ztop = z1 + (constants.RDGAS * t1) * np.log(p1 / ptop)
+    # ndsl_log.info(f'ZTOP is computed as {ztop / constants.GRAV * 1.E-3}')
+
+    if mountain:
+        """
+        mslp = 100917.4
+        for j in range(js, je):
+            for i in range(is_, ie):
+                ps[i, j] = mslp * np.exp(
+                    -1./(a0 * constants.RDGAS) * hs[i, j] / (hs[i, j] + c0)
+                )
+
+        # this is the issue with Mountain:
+        psm = g_sum(
+            comm, ps[is_:ie, js:je], is_, ie, js, je, ng, area, 1, True
+        )
+
+        dps = drym - psm
+        # ndsl_log.info(f'Computed mean ps={psm}')
+        # ndsl_log.info(f'Correction delta-ps={dps}')
+        """
+        raise NotImplementedError("hydro_eq: Mountain is not implemented")
+    else:
+        mslp = drym  # 1000.E2
+        ps[is_:ie, js:je] = mslp
+        dps = 0.0
+
+    for j in range(js, je):
+        for i in range(is_, ie):
+            ps[i, j] = ps[i, j] + dps
+            gz[i, 0] = ztop
+            gz[i, km] = hs[i, j]
+            ph[i, 0] = ptop
+            ph[i, km] = ps[i, j]
+
+        if hybrid_z:
+            # ---------------
+            # Hybrid Z
+            # ---------------
+            for k in range(km - 1, 0, -1):  # k=km,2,-1
+                for i in range(is_, ie):
+                    gz[i, k] = gz[i, k + 1] - delz[i, j, k] * constants.GRAV
+            # Correct delz at the top:
+            for i in range(is_, ie):
+                delz[i, j, 0] = (gz[i, 1] - ztop) / constants.GRAV
+
+            for k in range(1, km):  # k=2,km
+                for i in range(is_, ie):
+                    if gz[i, k] >= z1:
+                        # Isothermal
+                        ph[i, k] = ptop * np.exp(
+                            (gz[i, 0] - gz[i, k]) / (constants.RDGAS * t1)
+                        )
+                    else:
+                        # Constant lapse rate region (troposphere)
+                        ph[i, k] = ps[i, j] * np.exp(
+                            -1.0
+                            / (a0 * constants.RDGAS)
+                            * (gz[i, k] - hs[i, j])
+                            / (gz[i, k] - hs[i, j] + c0)
+                        )
+        else:
+            # ---------------
+            # Hybrid sigma-p
+            # ---------------
+            for k in range(1, km + 1):  # do k=2,km+1
+                for i in range(is_, ie):
+                    ph[i, k] = ak[k] + bk[k] * ps[i, j]
+
+            for k in range(km - 1, 0, -1):  # k=km,2,-1
+                for i in range(is_, ie):
+                    if ph[i, k] <= p1:
+                        gz[i, k] = gz[i, k + 1] + (constants.RDGAS * t1) * np.log(
+                            ph[i, k + 1] / ph[i, k]
+                        )
+                    else:
+                        # Constant lapse rate region (troposphere)
+                        gz[i, k] = (
+                            c0
+                            / (1 + a0 * constants.RDGAS * np.log(ph[i, k] / ps[i, j]))
+                            + hs[i, j]
+                            - c0
+                        )  # model top
+            for i in range(is_, ie):
+                if ph[i, 0] <= p1:
+                    gz[i, 0] = gz[i, 1] + (constants.RDGAS * t1) * np.log(
+                        ph[i, 1] / ph[i, 0]
+                    )
+                else:
+                    gz[i, 0] = (hs[i, j] + c0) / (ph[i, 0] / ps[i, j]) ** (
+                        a0 * constants.RDGAS
+                    ) - c0
+            if not hydrostatic:
+                for k in range(km):
+                    for i in range(is_, ie):
+                        delz[i, j, k] = (gz[i, k + 1] - gz[i, k]) / constants.GRAV
+
+        # Convert geopotential to Temperature
+        for k in range(km):
+            for i in range(is_, ie):
+                pt[i, j, k] = (gz[i, k] - gz[i, k + 1]) / (
+                    constants.RDGAS * (np.log(ph[i, k + 1] / ph[i, k]))
+                )
+                pt[i, j, k] = max(t1, pt[i, j, k])
+                delp[i, j, k] = ph[i, k + 1] - ph[i, k]
+        if j == js:
+            i = is_
+            for k in range(km):
+                ndsl_log.info(
+                    f"{k}, {pt[i, j, k]}, {gz[i, k+1]}, {(gz[i, k]-gz[i, k+1])}, {ph[i, k]}"
+                )
