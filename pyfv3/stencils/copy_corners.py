@@ -1,8 +1,35 @@
-from ndsl import StencilFactory, orchestrate
+from functools import singledispatch
+
+import numpy as np
+
+from ndsl import Quantity, StencilFactory, orchestrate
 from ndsl.dsl.typing import FloatField
+from ndsl.optional_imports import cupy as cp
 
 
+@singledispatch
 def corner_copy_x(field_to_copy):
+    raise NotImplementedError(f"No CopyCorners for type {type(field_to_copy)}")
+
+
+if cp is not None:
+
+    @corner_copy_x.register(cp.ndarray)
+    def _corner_copy_x_cupy(field_to_copy: cp.ndarray):
+        _blind_copy_corners_x(field_to_copy)
+
+
+@corner_copy_x.register(np.ndarray)
+def _corner_copy_x_numpy(field_to_copy: np.ndarray):
+    _blind_copy_corners_x(field_to_copy)
+
+
+@corner_copy_x.register(Quantity)
+def _corner_copy_x_quantity(field_to_copy: Quantity):
+    _blind_copy_corners_x(field_to_copy.data)
+
+
+def _blind_copy_corners_x(field_to_copy):
     """Equivalent to the copy_corners_x functions in fortran.
 
     This is written to operate on plain ndarrarys and not use the GT4Py framework.
@@ -65,7 +92,29 @@ def corner_copy_x(field_to_copy):
     field_to_copy[-2, -4] = field_to_copy[-4, -7]
 
 
+@singledispatch
 def corner_copy_y(field_to_copy):
+    raise NotImplementedError(f"No CopyCorners for type {type(field_to_copy)}")
+
+
+if cp is not None:
+
+    @corner_copy_y.register(cp.ndarray)
+    def _corner_copy_y_cupy(field_to_copy: cp.ndarray):
+        _blind_copy_corners_y(field_to_copy)
+
+
+@corner_copy_y.register(np.ndarray)
+def _corner_copy_y_nupy(field_to_copy: np.ndarray):
+    _blind_copy_corners_y(field_to_copy)
+
+
+@corner_copy_y.register(Quantity)
+def _corner_copy_y_quantity(field_to_copy: Quantity):
+    _blind_copy_corners_y(field_to_copy.data)
+
+
+def _blind_copy_corners_y(field_to_copy):
     """Equivalent to the copy_corners_y functions in fortran.
 
     This is written to operate on plain ndarrarys and not use the GT4Py framework.
@@ -144,8 +193,10 @@ class CopyCornersX:
                 "Corner-Copy only implemented for exactly 3 Halo-Points"
             )
 
+        self._is_orch = stencil_factory.backend.is_orchestrated()
+
     def __call__(self, field: FloatField):
-        corner_copy_x(field)
+        corner_copy_x(field) if not self._is_orch else _blind_copy_corners_x(field)
 
 
 class CopyCornersY:
@@ -165,5 +216,7 @@ class CopyCornersY:
                 "Corner-Copy only implemented for exactly 3 Halo-Points"
             )
 
+        self._is_orch = stencil_factory.backend.is_orchestrated()
+
     def __call__(self, field: FloatField):
-        corner_copy_y(field)
+        corner_copy_y(field) if not self._is_orch else _blind_copy_corners_y(field)
