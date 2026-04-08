@@ -3,9 +3,14 @@ from datetime import timedelta
 
 from dace.frontend.python.interface import nounroll as dace_no_unroll
 
-import ndsl.dsl.gt4py_utils as utils
 import pyfv3.stencils.moist_cv as moist_cv
-from ndsl import Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater
+from ndsl import (
+    NDSLRuntime,
+    Quantity,
+    QuantityFactory,
+    StencilFactory,
+    WrappedHaloUpdater,
+)
 from ndsl.checkpointer import NullCheckpointer
 from ndsl.comm.mpi import MPI
 from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM, KAPPA, NQ, ZVIR
@@ -25,6 +30,7 @@ from pyfv3.stencils.del2cubed import HyperdiffusionDamping
 from pyfv3.stencils.dyn_core import AcousticDynamics
 from pyfv3.stencils.neg_adj3 import AdjustNegativeTracerMixingRatio
 from pyfv3.stencils.remapping import LagrangianToEulerian
+from pyfv3.tracers import FVTracers, FVTracersAxisName
 
 
 def pt_to_potential_density_pt(
@@ -81,7 +87,7 @@ def log_on_rank_0(message: str) -> None:
         ndsl_log.info(message)
 
 
-class DynamicalCore:
+class DynamicalCore(NDSLRuntime):
     """
     Corresponds to fv_dynamics in original Fortran sources.
     """
@@ -114,6 +120,8 @@ class DynamicalCore:
                 at specific points in model execution, such as testing against
                 reference data
         """
+        super().__init__(stencil_factory)
+
         orchestrate(
             obj=self,
             config=stencil_factory.config.dace_config,
@@ -133,6 +141,20 @@ class DynamicalCore:
             config=stencil_factory.config.dace_config,
             method_to_orchestrate="_compute",
             dace_compiletime_args=["state", "timer"],
+        )
+
+        orchestrate(
+            obj=self,
+            config=stencil_factory.config.dace_config,
+            method_to_orchestrate="_state_into_tracers",
+            dace_compiletime_args=["state"],
+        )
+
+        orchestrate(
+            obj=self,
+            config=stencil_factory.config.dace_config,
+            method_to_orchestrate="_tracers_into_state",
+            dace_compiletime_args=["state"],
         )
 
         orchestrate(
@@ -206,9 +228,9 @@ class DynamicalCore:
             hord=config.hord_tr,
         )
 
-        self.tracers = {}
-        for name in utils.tracer_variables[0:NQ]:
-            self.tracers[name] = state.__dict__[name]
+        self.tracers = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM, FVTracersAxisName]
+        )
 
         temporaries = fvdyn_temporaries(quantity_factory)
         self._te_2d = temporaries["te_2d"]
@@ -225,6 +247,7 @@ class DynamicalCore:
             self.grid_data,
             comm,
             self.tracers,
+            NQ,
         )
         self._ak = grid_data.ak
         self._bk = grid_data.bk
@@ -254,6 +277,11 @@ class DynamicalCore:
             copy,
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(),
+        )
+        self._copy_domain = stencil_factory.from_origin_domain(
+            copy,
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(),
         )
         self.acoustic_dynamics = AcousticDynamics(
             comm=comm,
@@ -342,7 +370,7 @@ class DynamicalCore:
                 va=state.va,
                 uc=state.uc,
                 vc=state.vc,
-                qvapor=state.qvapor,
+                qvapor=self.tracers.data[:, :, :, FVTracers.index("vapor")],
             )
 
     def _checkpoint_remapping_in(self, state: DycoreState) -> None:
@@ -429,6 +457,64 @@ class DynamicalCore:
         self._compute(state, timer)
         self._checkpoint_fvdynamics(state=state, tag="Out")
 
+    def _state_into_tracers(self, state: DycoreState) -> None:
+        self._copy_stencil(
+            state.qvapor, self.tracers.data[:, :, :, FVTracers.index("vapor")]
+        )
+        self._copy_stencil(
+            state.qliquid, self.tracers.data[:, :, :, FVTracers.index("liquid")]
+        )
+        self._copy_stencil(
+            state.qice, self.tracers.data[:, :, :, FVTracers.index("ice")]
+        )
+        self._copy_stencil(
+            state.qrain, self.tracers.data[:, :, :, FVTracers.index("rain")]
+        )
+        self._copy_stencil(
+            state.qsnow, self.tracers.data[:, :, :, FVTracers.index("snow")]
+        )
+        self._copy_stencil(
+            state.qgraupel, self.tracers.data[:, :, :, FVTracers.index("graupel")]
+        )
+        self._copy_stencil(
+            state.qo3mr, self.tracers.data[:, :, :, FVTracers.index("o3mr")]
+        )
+        self._copy_stencil(
+            state.qsgs_tke, self.tracers.data[:, :, :, FVTracers.index("sgs_tke")]
+        )
+        self._copy_stencil(
+            state.qcld, self.tracers.data[:, :, :, FVTracers.index("cloud")]
+        )
+
+    def _tracers_into_state(self, state: DycoreState) -> None:
+        self._copy_stencil(
+            self.tracers.data[:, :, :, FVTracers.index("vapor")], state.qvapor
+        )
+        self._copy_stencil(
+            self.tracers.data[:, :, :, FVTracers.index("liquid")], state.qliquid
+        )
+        self._copy_stencil(
+            self.tracers.data[:, :, :, FVTracers.index("ice")], state.qice
+        )
+        self._copy_stencil(
+            self.tracers.data[:, :, :, FVTracers.index("rain")], state.qrain
+        )
+        self._copy_stencil(
+            self.tracers.data[:, :, :, FVTracers.index("snow")], state.qsnow
+        )
+        self._copy_stencil(
+            self.tracers.data[:, :, :, FVTracers.index("graupel")], state.qgraupel
+        )
+        self._copy_stencil(
+            self.tracers.data[:, :, :, FVTracers.index("o3mr")], state.qo3mr
+        )
+        self._copy_stencil(
+            self.tracers.data[:, :, :, FVTracers.index("sgs_tke")], state.qsgs_tke
+        )
+        self._copy_stencil(
+            self.tracers.data[:, :, :, FVTracers.index("cloud")], state.qcld
+        )
+
     def compute_preamble(self, state: DycoreState) -> None:
         if self.config.hydrostatic:
             raise NotImplementedError("Hydrostatic is not implemented")
@@ -437,12 +523,12 @@ class DynamicalCore:
             log_on_rank_0("FV Setup")
 
         self._fv_setup_stencil(
-            state.qvapor,
-            state.qliquid,
-            state.qrain,
-            state.qsnow,
-            state.qice,
-            state.qgraupel,
+            self.tracers.data[:, :, :, FVTracers.index("vapor")],
+            self.tracers.data[:, :, :, FVTracers.index("liquid")],
+            self.tracers.data[:, :, :, FVTracers.index("rain")],
+            self.tracers.data[:, :, :, FVTracers.index("snow")],
+            self.tracers.data[:, :, :, FVTracers.index("ice")],
+            self.tracers.data[:, :, :, FVTracers.index("graupel")],
             state.q_con,
             self._cvm,
             state.pkz,
@@ -483,7 +569,8 @@ class DynamicalCore:
         self.step_dynamics(*args, **kwargs)
 
     def _compute(self, state: DycoreState, timer: Timer) -> None:
-        last_step = False
+        self._state_into_tracers(state)
+
         self.compute_preamble(state)
 
         for k_split in dace_no_unroll(range(self._k_split)):
@@ -544,11 +631,6 @@ class DynamicalCore:
                 with timer.clock("Remapping"):
                     self._checkpoint_remapping_in(state)
 
-                    # TODO: When NQ=9, we shouldn't need to pass qcld explicitly
-                    #       since it's in self.tracers. It should not be an issue since
-                    #       we don't have self.tracers & qcld computation at the same
-                    #       time
-                    #       When NQ=8, we do need qcld passed explicitely
                     self._lagrangian_to_eulerian_obj(
                         self.tracers,
                         state.pt,
@@ -560,7 +642,6 @@ class DynamicalCore:
                         state.w,
                         self._cappa,
                         state.q_con,
-                        state.qcld,
                         state.pkz,
                         state.pk,
                         state.pe,
@@ -602,13 +683,13 @@ class DynamicalCore:
         if __debug__:
             log_on_rank_0("Neg Adj 3")
         self._adjust_tracer_mixing_ratio(
-            state.qvapor,
-            state.qliquid,
-            state.qrain,
-            state.qsnow,
-            state.qice,
-            state.qgraupel,
-            state.qcld,
+            self.tracers.data[:, :, :, FVTracers.index("vapor")],
+            self.tracers.data[:, :, :, FVTracers.index("liquid")],
+            self.tracers.data[:, :, :, FVTracers.index("rain")],
+            self.tracers.data[:, :, :, FVTracers.index("snow")],
+            self.tracers.data[:, :, :, FVTracers.index("ice")],
+            self.tracers.data[:, :, :, FVTracers.index("graupel")],
+            self.tracers.data[:, :, :, FVTracers.index("cloud")],
             state.pt,
             state.delp,
         )
@@ -627,3 +708,5 @@ class DynamicalCore:
             state.ua,
             state.va,
         )
+
+        self._tracers_into_state(state)

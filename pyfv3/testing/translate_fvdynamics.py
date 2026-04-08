@@ -22,6 +22,7 @@ from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import fv_dynamics
+from pyfv3.tracers import default_ai2_tracers
 
 
 class TranslateFVDynamics(ParallelTranslateBaseSlicing):
@@ -281,12 +282,11 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         self.max_error = 1e-5
 
         self.ignore_near_zero_errors = {}
-        for qvar in utils.tracer_variables:
-            self.ignore_near_zero_errors[qvar] = True
         self.ignore_near_zero_errors["q_con"] = True
         self.dycore: fv_dynamics.DynamicalCore | None = None
         self.stencil_factory = stencil_factory
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
+        default_ai2_tracers(self.grid.quantity_factory)
 
     def state_from_inputs(self, inputs: dict) -> DycoreState:
         input_storages = super().state_from_inputs(inputs)

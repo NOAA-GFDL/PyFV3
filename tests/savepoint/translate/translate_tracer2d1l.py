@@ -85,7 +85,6 @@ class TranslateTracer2D1L(ParallelTranslate):
         inputs["mfyd"] = inputs.pop("y_mass_flux")
         inputs["cxd"] = inputs.pop("x_courant")
         inputs["cyd"] = inputs.pop("y_courant")
-        quantity_tracers.to_netcdf("tracers.nc4")
 
         inputs["tracers"] = quantity_tracers.field[:]
 

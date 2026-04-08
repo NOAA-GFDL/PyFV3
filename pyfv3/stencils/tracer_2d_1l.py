@@ -193,9 +193,11 @@ class TracerAdvection(NDSLRuntime):
         grid_indexing = stencil_factory.grid_indexing
         self.grid_indexing = grid_indexing  # needed for selective validation
         self.grid_data = grid_data
+        self._H = stencil_factory.grid_indexing.n_halo
         self._number_of_tracer_to_advect = number_of_tracer_to_advect or FVTracers.size(
             0
         )
+        self._number_of_tracers = FVTracers.size(0)
 
         self._x_area_flux = self.make_local(
             quantity_factory,
@@ -280,6 +282,21 @@ class TracerAdvection(NDSLRuntime):
             {"tracers": tracers},
             ["tracers"],
         )
+
+    def _halo_exchange_tracers(self, tracers: FVTracers):
+        self._tracers_halo_updater.update()
+
+        # We exchange all tracers - but some might not be advected.
+        # Therefore we reset their halo
+        # Dev NOTE: a better version would restrict the halo exchange. It's
+        #           possible but we need a partial buffer spec generation
+        if self._number_of_tracer_to_advect < self._number_of_tracers:
+            tracers.data[
+                self._H : -self._H,
+                self._H : -self._H,
+                :,
+                self._number_of_tracer_to_advect : self._number_of_tracers,
+            ] = Float(0)
 
     def __call__(
         self,
@@ -406,7 +423,8 @@ class TracerAdvection(NDSLRuntime):
                     dp2,
                 )
             if not last_call:
-                self._tracers_halo_updater.update()
+                self._halo_exchange_tracers(tracers)
+                # self._tracers_halo_updater.update()
                 # we can't use variable assignment to avoid a data copy
                 # because of current dace limitations
                 self._swap_dp(dp1, dp2)

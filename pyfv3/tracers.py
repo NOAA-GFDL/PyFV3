@@ -7,8 +7,18 @@ from ndsl.quantity.data_dimensions_field import DataDimensionsField, SparseNameM
 FVTracers = DataDimensionsField.declare()
 FVTracersAxisName = "fv_tracers"
 
-_EXPECTED_FV_TRACERS = ["vapor", "liquid", "rain", "ice", "snow", "graupel", "cloud"]
-"""Expected tracers for FV dynamics to be able to run"""
+_EXPECTED_FV_TRACERS = [
+    "vapor",
+    "liquid",
+    "rain",
+    "ice",
+    "snow",
+    "graupel",
+    "cloud",
+    "o3mr",
+    "sgs_tke",
+]
+"""Expected tracers for FV dynamics to be able to run in the current state."""
 
 
 def setup_fvtracers(
