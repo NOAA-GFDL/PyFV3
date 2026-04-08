@@ -23,8 +23,6 @@ class MapNTracer(NDSLRuntime):
     ):
         super().__init__(stencil_factory)
         self._nq = int(nq)
-        self._qs = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
-        self._qs.data[:] = 0  # low boundary condition for RemapProfile
 
         self._map_single_parametrized_kord = MapSingle(
             stencil_factory,
@@ -74,9 +72,9 @@ class MapNTracer(NDSLRuntime):
         """
         for i, q in enumerate(tracers.keys()):
             if i != self._index_graupel:
-                self._map_single_parametrized_kord(tracers[q], pe1, pe2, self._qs)
+                self._map_single_parametrized_kord(tracers[q], pe1, pe2)
 
-        self._map_single_kord9(tracers["qgraupel"], pe1, pe2, self._qs)
+        self._map_single_kord9(tracers["qgraupel"], pe1, pe2)
 
         if self._fill_negative_tracers:
             self._fillz(dp2, tracers)
