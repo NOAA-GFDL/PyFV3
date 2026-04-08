@@ -1,5 +1,6 @@
 from enum import Enum
 
+import pyfv3.initialization.test_cases.initialize_aquaplanet as aq
 import pyfv3.initialization.test_cases.initialize_baroclinic as bc
 import pyfv3.initialization.test_cases.initialize_rossby as rossby
 import pyfv3.initialization.test_cases.initialize_tc as tc
@@ -14,6 +15,7 @@ class AnalyticCase(Enum, metaclass=MetaEnumStr):
     baroclinic_steady = "baroclinic_steady"
     rossby = "rossby"
     tropicalcyclone = "tropicalcyclone"
+    aquaplanet = "aquaplanet"
 
 
 def init_analytic_state(
@@ -46,6 +48,7 @@ def init_analytic_state(
         AnalyticCase.baroclinic_steady,
         AnalyticCase.tropicalcyclone,
         AnalyticCase.rossby,
+        AnalyticCase.aquaplanet,
     ]
 
     if analytic_init_case not in spherical_cases:
@@ -85,6 +88,15 @@ def init_analytic_state(
             grid_data=grid_data,
             quantity_factory=quantity_factory,
             hydrostatic=hydrostatic,
+            comm=comm,
+        )
+
+    if analytic_init_case == AnalyticCase.aquaplanet:
+        return aq.init_aquaplanet_state(
+            grid_data=grid_data,
+            quantity_factory=quantity_factory,
+            hydrostatic=hydrostatic,
+            moist_phys=moist_phys,
             comm=comm,
         )
 

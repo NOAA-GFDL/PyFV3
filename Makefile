@@ -78,9 +78,10 @@ dev:
 	DEV=y $(MAKE) enter
 
 notebook:
+	$(VOLUMES) += -v $(CWD):/examples
 	CMD="jupyter notebook --ip 0.0.0.0 --no-browser --allow-root --notebook-dir=$(ROOT_DIR)/examples/notebook" \
 	DEV=y \
-	$(MAKE) enter
+	$(MAKE) dev
 
 get_test_data:
 	if [ ! -d $(TEST_DATA_LOC) ]; then \

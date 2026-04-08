@@ -10,7 +10,7 @@ on:
 
 jobs:
   pyshield_translate_tests:
-    uses: floriandeconinck/PySHiELD/.github/workflows/translate.yaml@update/numpy_2x
+    uses: NOAA-GFDL/PySHiELD/.github/workflows/translate.yaml@develop
     with:
       component_trigger: true
       component_name: pyFV3
