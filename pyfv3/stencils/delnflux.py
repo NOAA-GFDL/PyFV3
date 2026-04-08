@@ -468,7 +468,10 @@ class DelnFluxNoSG:
 
         self._fy_calc_stencil(q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord)
 
-        for n in range(self._nmax):
+        # Force unroll of the loop because list of object do not parse
+        # when unrolled
+        # -> https://github.com/spcl/dace/issues/2332
+        for n in dace.unroll(range(self._nmax)):
             self._d2_stencil[n](
                 fx=fx2,
                 fy=fy2,
