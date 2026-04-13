@@ -192,7 +192,6 @@ class CopyCornersX(NDSLRuntime):
             )
 
         self._is_orch = stencil_factory.backend.is_orchestrated()
-        print(f"CopyCornersX: {self._is_orch}")
 
     def _internal_corners_copy(self, field: FloatField):
         _blind_copy_corners_x(field) if self._is_orch else corner_copy_x(field)
@@ -221,7 +220,6 @@ class CopyCornersY(NDSLRuntime):
             )
 
         self._is_orch = stencil_factory.backend.is_orchestrated()
-        print(f"CopyCornersY: {self._is_orch}")
 
     def _internal_corners_copy(self, field: FloatField):
         _blind_copy_corners_y(field) if self._is_orch else corner_copy_y(field)

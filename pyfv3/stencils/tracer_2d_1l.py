@@ -424,7 +424,6 @@ class TracerAdvection(NDSLRuntime):
                 )
             if not last_call:
                 self._halo_exchange_tracers(tracers)
-                # self._tracers_halo_updater.update()
                 # we can't use variable assignment to avoid a data copy
                 # because of current dace limitations
                 self._swap_dp(dp1, dp2)
