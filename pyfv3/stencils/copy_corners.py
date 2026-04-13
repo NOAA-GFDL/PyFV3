@@ -1,8 +1,9 @@
 from functools import singledispatch
 
+import dace
 import numpy as np
 
-from ndsl import Quantity, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, Quantity, StencilFactory
 from ndsl.dsl.typing import FloatField
 from ndsl.optional_imports import cupy as cp
 
@@ -177,16 +178,13 @@ def _blind_copy_corners_y(field_to_copy):
     field_to_copy[-4, -2] = field_to_copy[-7, -4]
 
 
-class CopyCornersX:
+class CopyCornersX(NDSLRuntime):
     """
     Helper-class to copy corners corresponding to the fortran function copy_corners_x
     """
 
     def __init__(self, stencil_factory: StencilFactory) -> None:
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
 
         if stencil_factory.grid_indexing.n_halo != 3:
             raise NotImplementedError(
@@ -194,22 +192,28 @@ class CopyCornersX:
             )
 
         self._is_orch = stencil_factory.backend.is_orchestrated()
+        print(f"CopyCornersX: {self._is_orch}")
+
+    def _internal_corners_copy(self, field: FloatField):
+        _blind_copy_corners_x(field) if self._is_orch else corner_copy_x(field)
 
     def __call__(self, field: FloatField):
-        corner_copy_x(field) if not self._is_orch else _blind_copy_corners_x(field)
+        self._internal_corners_copy(field)
+
+    def nord(self, field: FloatField, nord: Quantity):
+        for k in dace.map[0 : nord.data.shape[0]]:
+            if nord.data[k] > 0:
+                self._internal_corners_copy(field[:, :, k])
 
 
-class CopyCornersY:
+class CopyCornersY(NDSLRuntime):
     """
     Helper-class to copy corners corresponding to the fortran function
     copy_corners_y
     """
 
     def __init__(self, stencil_factory: StencilFactory) -> None:
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
 
         if stencil_factory.grid_indexing.n_halo != 3:
             raise NotImplementedError(
@@ -217,6 +221,15 @@ class CopyCornersY:
             )
 
         self._is_orch = stencil_factory.backend.is_orchestrated()
+        print(f"CopyCornersY: {self._is_orch}")
+
+    def _internal_corners_copy(self, field: FloatField):
+        _blind_copy_corners_y(field) if self._is_orch else corner_copy_y(field)
 
     def __call__(self, field: FloatField):
-        corner_copy_y(field) if not self._is_orch else _blind_copy_corners_y(field)
+        self._internal_corners_copy(field)
+
+    def nord(self, field: FloatField, nord: Quantity):
+        for k in dace.map[0 : nord.data.shape[0]]:
+            if nord.data[k] > 0:
+                self._internal_corners_copy(field[:, :, k])
