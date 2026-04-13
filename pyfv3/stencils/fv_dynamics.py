@@ -1,8 +1,6 @@
 from collections.abc import Mapping
 from datetime import timedelta
 
-from dace.frontend.python.interface import nounroll as dace_no_unroll
-
 import pyfv3.stencils.moist_cv as moist_cv
 from ndsl import (
     NDSLRuntime,
@@ -573,7 +571,7 @@ class DynamicalCore(NDSLRuntime):
 
         self.compute_preamble(state)
 
-        for k_split in dace_no_unroll(range(self._k_split)):
+        for k_split in range(self._k_split):
             n_map = k_split + 1
             last_step = k_split == self._k_split - 1
             # TODO: why are we copying delp to dp1? what is dp1?

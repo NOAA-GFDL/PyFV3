@@ -1,7 +1,6 @@
 from collections.abc import Mapping
 
 import numpy as np
-from dace.frontend.python.interface import nounroll as dace_nounroll
 
 import ndsl.constants as constants
 import ndsl.stencils.basic_operations as basic
@@ -759,7 +758,7 @@ class AcousticDynamics:
         # called this because its timestep is usually limited by horizontal sound-wave
         # processes. Note this is often not the limiting factor near the poles, where
         # the speed of the polar night jets can exceed two-thirds of the speed of sound.
-        for it in dace_nounroll(range(n_split)):
+        for it in range(n_split):
             # the Lagrangian dynamics have two parts. First we advance the C-grid winds
             # by half a time step (c_sw). Then the C-grid winds are used to define
             # advective fluxes to advance the D-grid prognostic fields a full time step
