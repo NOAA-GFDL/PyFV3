@@ -21,8 +21,6 @@ class MapNTracer(NDSLRuntime):
     ):
         super().__init__(stencil_factory)
         self._nq = int(nq)
-        self._qs = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
-        self._qs.data[:] = 0  # low boundary condition for RemapProfile
 
         self._map_single_parametrized_kord = MapSingle(
             stencil_factory,
