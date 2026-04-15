@@ -226,8 +226,10 @@ class DynamicalCore(NDSLRuntime):
             hord=config.hord_tr,
         )
 
-        self.tracers = self.make_local(
-            quantity_factory, [I_DIM, J_DIM, K_DIM, FVTracersAxisName]
+        # This will become a proper DycoreState member. In the meantime, we keep it
+        # as a fully fledge Quantity
+        self.tracers = quantity_factory.zeros(
+            [I_DIM, J_DIM, K_DIM, FVTracersAxisName], ""
         )
 
         temporaries = fvdyn_temporaries(quantity_factory)
@@ -368,7 +370,7 @@ class DynamicalCore(NDSLRuntime):
                 va=state.va,
                 uc=state.uc,
                 vc=state.vc,
-                qvapor=self.tracers.data[:, :, :, FVTracers.index("vapor")],
+                qvapor=self.tracers[:, :, :, FVTracers.index("vapor")],
             )
 
     def _checkpoint_remapping_in(self, state: DycoreState) -> None:
@@ -456,62 +458,50 @@ class DynamicalCore(NDSLRuntime):
         self._checkpoint_fvdynamics(state=state, tag="Out")
 
     def _state_into_tracers(self, state: DycoreState) -> None:
+        """Copy the input values of the DycoreState into a contiguous 4D tracers array
+
+        Dev NOTE: true solution is to modify the DycoreState to accept a 4D field.
+        """
         self._copy_stencil(
-            state.qvapor, self.tracers.data[:, :, :, FVTracers.index("vapor")]
+            state.qvapor, self.tracers[:, :, :, FVTracers.index("vapor")]
         )
         self._copy_stencil(
-            state.qliquid, self.tracers.data[:, :, :, FVTracers.index("liquid")]
+            state.qliquid, self.tracers[:, :, :, FVTracers.index("liquid")]
         )
+        self._copy_stencil(state.qice, self.tracers[:, :, :, FVTracers.index("ice")])
+        self._copy_stencil(state.qrain, self.tracers[:, :, :, FVTracers.index("rain")])
+        self._copy_stencil(state.qsnow, self.tracers[:, :, :, FVTracers.index("snow")])
         self._copy_stencil(
-            state.qice, self.tracers.data[:, :, :, FVTracers.index("ice")]
+            state.qgraupel, self.tracers[:, :, :, FVTracers.index("graupel")]
         )
+        self._copy_stencil(state.qo3mr, self.tracers[:, :, :, FVTracers.index("o3mr")])
         self._copy_stencil(
-            state.qrain, self.tracers.data[:, :, :, FVTracers.index("rain")]
+            state.qsgs_tke, self.tracers[:, :, :, FVTracers.index("sgs_tke")]
         )
-        self._copy_stencil(
-            state.qsnow, self.tracers.data[:, :, :, FVTracers.index("snow")]
-        )
-        self._copy_stencil(
-            state.qgraupel, self.tracers.data[:, :, :, FVTracers.index("graupel")]
-        )
-        self._copy_stencil(
-            state.qo3mr, self.tracers.data[:, :, :, FVTracers.index("o3mr")]
-        )
-        self._copy_stencil(
-            state.qsgs_tke, self.tracers.data[:, :, :, FVTracers.index("sgs_tke")]
-        )
-        self._copy_stencil(
-            state.qcld, self.tracers.data[:, :, :, FVTracers.index("cloud")]
-        )
+        self._copy_stencil(state.qcld, self.tracers[:, :, :, FVTracers.index("cloud")])
 
     def _tracers_into_state(self, state: DycoreState) -> None:
+        """Copy back the input values the tracers array into split 3D buffers held by the state
+
+        Dev NOTE: true solution is to modify the DycoreState to accept a 4D field.
+        """
         self._copy_stencil(
-            self.tracers.data[:, :, :, FVTracers.index("vapor")], state.qvapor
+            self.tracers[:, :, :, FVTracers.index("vapor")], state.qvapor
         )
         self._copy_stencil(
-            self.tracers.data[:, :, :, FVTracers.index("liquid")], state.qliquid
+            self.tracers[:, :, :, FVTracers.index("liquid")], state.qliquid
         )
+        self._copy_stencil(self.tracers[:, :, :, FVTracers.index("ice")], state.qice)
+        self._copy_stencil(self.tracers[:, :, :, FVTracers.index("rain")], state.qrain)
+        self._copy_stencil(self.tracers[:, :, :, FVTracers.index("snow")], state.qsnow)
         self._copy_stencil(
-            self.tracers.data[:, :, :, FVTracers.index("ice")], state.qice
+            self.tracers[:, :, :, FVTracers.index("graupel")], state.qgraupel
         )
+        self._copy_stencil(self.tracers[:, :, :, FVTracers.index("o3mr")], state.qo3mr)
         self._copy_stencil(
-            self.tracers.data[:, :, :, FVTracers.index("rain")], state.qrain
+            self.tracers[:, :, :, FVTracers.index("sgs_tke")], state.qsgs_tke
         )
-        self._copy_stencil(
-            self.tracers.data[:, :, :, FVTracers.index("snow")], state.qsnow
-        )
-        self._copy_stencil(
-            self.tracers.data[:, :, :, FVTracers.index("graupel")], state.qgraupel
-        )
-        self._copy_stencil(
-            self.tracers.data[:, :, :, FVTracers.index("o3mr")], state.qo3mr
-        )
-        self._copy_stencil(
-            self.tracers.data[:, :, :, FVTracers.index("sgs_tke")], state.qsgs_tke
-        )
-        self._copy_stencil(
-            self.tracers.data[:, :, :, FVTracers.index("cloud")], state.qcld
-        )
+        self._copy_stencil(self.tracers[:, :, :, FVTracers.index("cloud")], state.qcld)
 
     def compute_preamble(self, state: DycoreState) -> None:
         if self.config.hydrostatic:
@@ -521,12 +511,12 @@ class DynamicalCore(NDSLRuntime):
             log_on_rank_0("FV Setup")
 
         self._fv_setup_stencil(
-            self.tracers.data[:, :, :, FVTracers.index("vapor")],
-            self.tracers.data[:, :, :, FVTracers.index("liquid")],
-            self.tracers.data[:, :, :, FVTracers.index("rain")],
-            self.tracers.data[:, :, :, FVTracers.index("snow")],
-            self.tracers.data[:, :, :, FVTracers.index("ice")],
-            self.tracers.data[:, :, :, FVTracers.index("graupel")],
+            self.tracers[:, :, :, FVTracers.index("vapor")],
+            self.tracers[:, :, :, FVTracers.index("liquid")],
+            self.tracers[:, :, :, FVTracers.index("rain")],
+            self.tracers[:, :, :, FVTracers.index("snow")],
+            self.tracers[:, :, :, FVTracers.index("ice")],
+            self.tracers[:, :, :, FVTracers.index("graupel")],
             state.q_con,
             self._cvm,
             state.pkz,
@@ -681,13 +671,13 @@ class DynamicalCore(NDSLRuntime):
         if __debug__:
             log_on_rank_0("Neg Adj 3")
         self._adjust_tracer_mixing_ratio(
-            self.tracers.data[:, :, :, FVTracers.index("vapor")],
-            self.tracers.data[:, :, :, FVTracers.index("liquid")],
-            self.tracers.data[:, :, :, FVTracers.index("rain")],
-            self.tracers.data[:, :, :, FVTracers.index("snow")],
-            self.tracers.data[:, :, :, FVTracers.index("ice")],
-            self.tracers.data[:, :, :, FVTracers.index("graupel")],
-            self.tracers.data[:, :, :, FVTracers.index("cloud")],
+            self.tracers[:, :, :, FVTracers.index("vapor")],
+            self.tracers[:, :, :, FVTracers.index("liquid")],
+            self.tracers[:, :, :, FVTracers.index("rain")],
+            self.tracers[:, :, :, FVTracers.index("snow")],
+            self.tracers[:, :, :, FVTracers.index("ice")],
+            self.tracers[:, :, :, FVTracers.index("graupel")],
+            self.tracers[:, :, :, FVTracers.index("cloud")],
             state.pt,
             state.delp,
         )

@@ -589,12 +589,12 @@ class LagrangianToEulerian(NDSLRuntime):
         # pe2 is final Eulerian edge pressures
 
         self._moist_cv_pt_pressure(
-            tracers.data[:, :, :, FVTracers.index("vapor")],
-            tracers.data[:, :, :, FVTracers.index("liquid")],
-            tracers.data[:, :, :, FVTracers.index("rain")],
-            tracers.data[:, :, :, FVTracers.index("snow")],
-            tracers.data[:, :, :, FVTracers.index("ice")],
-            tracers.data[:, :, :, FVTracers.index("graupel")],
+            tracers[:, :, :, FVTracers.index("vapor")],
+            tracers[:, :, :, FVTracers.index("liquid")],
+            tracers[:, :, :, FVTracers.index("rain")],
+            tracers[:, :, :, FVTracers.index("snow")],
+            tracers[:, :, :, FVTracers.index("ice")],
+            tracers[:, :, :, FVTracers.index("graupel")],
             q_con,
             pt,
             cappa,
@@ -629,12 +629,12 @@ class LagrangianToEulerian(NDSLRuntime):
         # it clear the outputs are not needed until then?
         # or, are its outputs actually used? can we delete this stencil call?
         self._moist_cv_pkz(
-            tracers.data[:, :, :, FVTracers.index("vapor")],
-            tracers.data[:, :, :, FVTracers.index("liquid")],
-            tracers.data[:, :, :, FVTracers.index("rain")],
-            tracers.data[:, :, :, FVTracers.index("snow")],
-            tracers.data[:, :, :, FVTracers.index("ice")],
-            tracers.data[:, :, :, FVTracers.index("graupel")],
+            tracers[:, :, :, FVTracers.index("vapor")],
+            tracers[:, :, :, FVTracers.index("liquid")],
+            tracers[:, :, :, FVTracers.index("rain")],
+            tracers[:, :, :, FVTracers.index("snow")],
+            tracers[:, :, :, FVTracers.index("ice")],
+            tracers[:, :, :, FVTracers.index("graupel")],
             q_con,
             self._gz,
             self._cvm,
@@ -678,13 +678,13 @@ class LagrangianToEulerian(NDSLRuntime):
             fast_mp_consv = consv_te > CONSV_MIN
             self._saturation_adjustment(
                 dp1,
-                tracers.data[:, :, :, FVTracers.index("vapor")],
-                tracers.data[:, :, :, FVTracers.index("liquid")],
-                tracers.data[:, :, :, FVTracers.index("ice")],
-                tracers.data[:, :, :, FVTracers.index("rain")],
-                tracers.data[:, :, :, FVTracers.index("snow")],
-                tracers.data[:, :, :, FVTracers.index("graupel")],
-                tracers.data[:, :, :, FVTracers.index("cloud")],
+                tracers[:, :, :, FVTracers.index("vapor")],
+                tracers[:, :, :, FVTracers.index("liquid")],
+                tracers[:, :, :, FVTracers.index("ice")],
+                tracers[:, :, :, FVTracers.index("rain")],
+                tracers[:, :, :, FVTracers.index("snow")],
+                tracers[:, :, :, FVTracers.index("graupel")],
+                tracers[:, :, :, FVTracers.index("cloud")],
                 hs,
                 peln,
                 delp,
@@ -706,12 +706,12 @@ class LagrangianToEulerian(NDSLRuntime):
             # to the physics, but if we're staying in dynamics we need
             # to keep it as the virtual potential temperature
             self._moist_cv_last_step_stencil(
-                tracers.data[:, :, :, FVTracers.index("vapor")],
-                tracers.data[:, :, :, FVTracers.index("liquid")],
-                tracers.data[:, :, :, FVTracers.index("rain")],
-                tracers.data[:, :, :, FVTracers.index("snow")],
-                tracers.data[:, :, :, FVTracers.index("ice")],
-                tracers.data[:, :, :, FVTracers.index("graupel")],
+                tracers[:, :, :, FVTracers.index("vapor")],
+                tracers[:, :, :, FVTracers.index("liquid")],
+                tracers[:, :, :, FVTracers.index("rain")],
+                tracers[:, :, :, FVTracers.index("snow")],
+                tracers[:, :, :, FVTracers.index("ice")],
+                tracers[:, :, :, FVTracers.index("graupel")],
                 self._gz,
                 pt,
                 pkz,

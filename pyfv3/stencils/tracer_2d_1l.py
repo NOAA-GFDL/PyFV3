@@ -287,16 +287,18 @@ class TracerAdvection(NDSLRuntime):
         self._tracers_halo_updater.update()
 
         # We exchange all tracers - but some might not be advected.
-        # Therefore we reset their halo
+        # Therefore we should reset their value.
         # Dev NOTE: a better version would restrict the halo exchange. It's
         #           possible but we need a partial buffer spec generation
-        if self._number_of_tracer_to_advect < self._number_of_tracers:
-            tracers.data[
-                self._H : -self._H,
-                self._H : -self._H,
-                :,
-                self._number_of_tracer_to_advect : self._number_of_tracers,
-            ] = Float(0)
+
+        # Temporary deactivate code as we look for a better solution
+        # if self._number_of_tracer_to_advect < self._number_of_tracers:
+        #     tracers.data[
+        #         self._H : -self._H,
+        #         self._H : -self._H,
+        #         :,
+        #         self._number_of_tracer_to_advect : self._number_of_tracers,
+        #     ] = Float(0)
 
     def __call__(
         self,
@@ -404,7 +406,7 @@ class TracerAdvection(NDSLRuntime):
             )
             for i_tracer in range(self._number_of_tracer_to_advect):
                 self.finite_volume_transport(
-                    tracers.data[:, :, :, i_tracer],
+                    tracers[:, :, :, i_tracer],
                     x_courant,
                     y_courant,
                     self._x_area_flux,
@@ -415,7 +417,7 @@ class TracerAdvection(NDSLRuntime):
                     y_mass_flux=y_mass_flux,
                 )
                 self._apply_tracer_flux(
-                    tracers.data[:, :, :, i_tracer],
+                    tracers[:, :, :, i_tracer],
                     dp1,
                     self._x_flux,
                     self._y_flux,

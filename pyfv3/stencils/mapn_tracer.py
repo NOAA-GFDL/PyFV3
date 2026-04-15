@@ -68,13 +68,9 @@ class MapNTracer(NDSLRuntime):
         """
         for i_tracer in range(0, self._nq):
             if i_tracer == self._graupel:
-                self._map_single_kord9(
-                    tracers.data[:, :, :, i_tracer], pe1, pe2, self._qs
-                )
+                self._map_single_kord9(tracers[:, :, :, i_tracer], pe1, pe2)
             else:
-                self._map_single_parametrized_kord(
-                    tracers.data[:, :, :, i_tracer], pe1, pe2, self._qs
-                )
+                self._map_single_parametrized_kord(tracers[:, :, :, i_tracer], pe1, pe2)
 
         if self._fill_negative_tracers:
             self._fillz(dp2, tracers)

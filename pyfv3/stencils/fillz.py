@@ -139,7 +139,7 @@ class FillNegativeTracerValues(NDSLRuntime):
         """
         for i_tracer in range(0, self._nq):
             self._fix_tracer_stencil(
-                tracers.data[:, :, :, i_tracer],
+                tracers[:, :, :, i_tracer],
                 dp2,
                 self._zfix,
                 self._sum0,

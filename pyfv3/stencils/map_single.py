@@ -101,8 +101,8 @@ class MapSingle(NDSLRuntime):
         self._lev = self.make_local(quantity_factory, [I_DIM, J_DIM], dtype=Int)
 
         # If the boundary condition is not given as an input, we use use a zero-reference
-        self._zero_qs = self.make_local(quantity_factory, [I_DIM, J_DIM])
-        self._zero_qs.data[:] = 0
+        # Therefore we CAN'T use make_local
+        self._zero_qs = quantity_factory.zeros([I_DIM, J_DIM], "")
 
         self._copy_stencil = stencil_factory.from_dims_halo(
             copy,
