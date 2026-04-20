@@ -10,13 +10,13 @@ import pyfv3.initialization.init_utils as init_utils
 import pyfv3.initialization.test_cases.initialize_baroclinic as baroclinic_init
 from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
 from ndsl.constants import (
+    N_HALO_DEFAULT,
     I_DIM,
     I_INTERFACE_DIM,
     J_DIM,
     J_INTERFACE_DIM,
     K_DIM,
     K_INTERFACE_DIM,
-    N_HALO_DEFAULT,
 )
 from ndsl.grid import GridData, MetricTerms
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
@@ -170,7 +170,8 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
 
     def compute_sequential(self, *args, **kwargs):
         pytest.skip(
-            f"{self.__class__} only has a mpirun implementation, not running in mock-parallel"
+            f"{self.__class__} only has a mpirun implementation, "
+            "not running in mock-parallel"
         )
 
     def outputs_from_state(self, state: DycoreState) -> dict:
@@ -238,7 +239,7 @@ def make_sliced_inputs_dict(inputs, slice_2d):
                 slices = slice_2d
             sliced_inputs[k] = inputs[k][slices]
         else:
-            sliced_inputs[k] = inputs[k]
+            sliced_inputs[k] = np.asarray(inputs[k])
     return sliced_inputs
 
 
@@ -313,10 +314,10 @@ class TranslateJablonowskiBaroclinic(TranslateDycoreFortranData2Py):
             "eta_v": {"istart": 0, "iend": 0, "jstart": 0, "jend": 0},
             "eta": {"istart": 0, "iend": 0, "jstart": 0, "jend": 0},
             "peln": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.jsd,
+                "jend": grid.jed,
                 "kend": grid.npz,
                 "kaxis": 1,
             },
@@ -329,7 +330,13 @@ class TranslateJablonowskiBaroclinic(TranslateDycoreFortranData2Py):
             "w": {},
             "pt": {},
             "phis": {},
-            "delz": {},
+            "delz": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz - 1,
+            },
             "qvapor": {},
         }
         self.ignore_near_zero_errors = {}
@@ -355,15 +362,16 @@ class TranslateJablonowskiBaroclinic(TranslateDycoreFortranData2Py):
             slice(self.grid.is_, self.grid.ie + 2),
             slice(self.grid.js, self.grid.je + 2),
         )
+
         grid_vars = {
-            "lon": self.grid.bgrid1.data[slice_2d],
-            "lat": self.grid.bgrid2.data[slice_2d],
-            "lon_agrid": self.grid.agrid1.data[slice_2d],
-            "lat_agrid": self.grid.agrid2.data[slice_2d],
-            "ee1": self.grid.ee1.data[slice_2d],
-            "ee2": self.grid.ee2.data[slice_2d],
-            "es1": self.grid.es1.data[slice_2d],
-            "ew2": self.grid.ew2.data[slice_2d],
+            "lon": np.asarray(self.grid.bgrid1.data)[slice_2d], # Convert from memoryview to numpy array for slicing
+            "lat": np.asarray(self.grid.bgrid2.data)[slice_2d],
+            "lon_agrid": np.asarray(self.grid.agrid1.data)[slice_2d],
+            "lat_agrid": np.asarray(self.grid.agrid2.data)[slice_2d],
+            "ee1": np.asarray(self.grid.ee1.data)[slice_2d],
+            "ee2": np.asarray(self.grid.ee2.data)[slice_2d],
+            "es1": np.asarray(self.grid.es1.data)[slice_2d],
+            "ew2": np.asarray(self.grid.ew2.data)[slice_2d],
         }
         inputs["w"][:] = 1e30
         inputs["delz"][:] = 1e30
@@ -435,5 +443,88 @@ class TranslatePVarAuxiliaryPressureVars(TranslateDycoreFortranData2Py):
             **sliced_inputs,
             moist_phys=self.config.moist_phys,
             make_nh=(not self.config.hydrostatic),
+        )
+        return self.slice_output(inputs)
+
+class TranslateAquaplanet(TranslateDycoreFortranData2Py):
+    """ Translate the Fortran initialization for the aquaplanet test case to Python.
+        TODO: Modified by Claude Haiku 4.5 to setup the init_utils.hydro_eq call; currently be evaluated.   """
+    def __init__(
+        self,
+        grid,
+        namelist: Namelist,
+        stencil_factory: StencilFactory,
+    ):
+        super().__init__(grid, namelist, stencil_factory)
+        self.in_vars["data_vars"] = {
+            "delp": {},
+        }
+        self.in_vars["parameters"] = []
+
+        self.out_vars = {
+            "u": grid.y3d_domain_dict(),
+            "v": grid.x3d_domain_dict(),
+            "w": {},
+            "ps": {"kstart": grid.npz, "kend": grid.npz},
+            "phis": {},
+            "pt": {},
+            "delp": {},
+            "delz": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz,
+            },
+        }
+        self.ignore_near_zero_errors = {}
+        self.max_error = 1e-13
+        self.stencil_factory = stencil_factory
+
+    def compute(self, inputs):
+        self.make_storage_data_input_vars(inputs)
+        # Convert to numpy arrays, ensuring memoryview objects are converted
+        for k, v in inputs.items():
+            inputs[k] = np.asarray(v.data)[:]
+
+        full_shape = self.grid.domain_shape_full(add=(1, 1, 1))
+
+        # Initialize output arrays
+        inputs["ps"] = np.zeros(full_shape[0:2])
+        inputs["phis"] = np.zeros(full_shape[0:2])
+        inputs["pt"] = np.zeros(full_shape)
+        inputs["delz"] = np.zeros(full_shape)
+
+        # Initialize wind fields to zero (Aquaplanet has no initial winds)
+        inputs["u"] = np.zeros(full_shape)
+        inputs["v"] = np.zeros(full_shape)
+        inputs["w"] = np.zeros(full_shape)
+
+        # Get grid data as numpy arrays, converting from memoryview
+        ak = np.asarray(self.grid.ak.data)[:]
+        bk = np.asarray(self.grid.bk.data)[:]
+        area = np.asarray(self.grid.area.data)[:]
+
+        # Call hydro_eq with correct parameters
+        init_utils.hydro_eq(
+            km=self.grid.npz,
+            is_=self.grid.is_,
+            ie=self.grid.ie,
+            js=self.grid.js,
+            je=self.grid.je,
+            ps=inputs["ps"],
+            hs=inputs["phis"],
+            drym=1.0e5,
+            delp=inputs["delp"],
+            ak=ak,
+            bk=bk,
+            pt=inputs["pt"],
+            delz=inputs["delz"],
+            area=area,
+            ng=N_HALO_DEFAULT,
+            mountain=False,
+            hydrostatic=self.config.hydrostatic,
+            hybrid_z=not self.config.hydrostatic,
+            comm=None,  # Pass None for serial execution
         )
         return self.slice_output(inputs)

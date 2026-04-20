@@ -61,6 +61,7 @@ from .translate_init_case import (
     TranslateInitPreJab,
     TranslateJablonowskiBaroclinic,
     TranslatePVarAuxiliaryPressureVars,
+    TranslateAquaplanet,
 )
 from .translate_last_step import TranslateLastStep
 from .translate_moistcvpluspkz_2d import TranslateMoistCVPlusPkz_2d
