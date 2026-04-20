@@ -286,7 +286,6 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         self.dycore: fv_dynamics.DynamicalCore | None = None
         self.stencil_factory = stencil_factory
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
-        default_ai2_tracers(self.grid.quantity_factory)
 
     def state_from_inputs(self, inputs: dict) -> DycoreState:
         input_storages = super().state_from_inputs(inputs)
@@ -322,6 +321,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         return state, grid_data
 
     def compute_parallel(self, inputs: dict, communicator: Communicator) -> dict:
+        default_ai2_tracers(self.grid.quantity_factory)
         state, grid_data = self.prepare_data(inputs)
         self.dycore = fv_dynamics.DynamicalCore(
             comm=communicator,

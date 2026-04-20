@@ -42,14 +42,14 @@ class TranslateTracer2D1L(ParallelTranslate):
             n_halo=((0, 0), (0, 0)),
         )
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
-
-        default_ai2_tracers(self.grid.quantity_factory)
+        self.quantity_factory = grid.quantity_factory
 
     def collect_input_data(self, serializer, savepoint):
         input_data = self._base.collect_input_data(serializer, savepoint)
         return input_data
 
     def compute_parallel(self, inputs, communicator):
+        default_ai2_tracers(self.quantity_factory)
         self._base.make_storage_data_input_vars(inputs)
 
         quantity_tracers = self.grid.quantity_factory.from_array(

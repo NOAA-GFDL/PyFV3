@@ -34,14 +34,14 @@ class TranslateFillz(TranslateDycoreFortranData2Py):
         self.max_error = 1e-13
         self.ignore_near_zero_errors = {"q2tracers": True}
         self.stencil_factory = stencil_factory
-
-        default_ai2_tracers(grid.quantity_factory)
+        self.quantity_factory = grid.quantity_factory
 
     def make_storage_data_input_vars(
         self,
         inputs,
         storage_vars=None,
     ) -> None:
+        default_ai2_tracers(self.quantity_factory)
         if storage_vars is None:
             storage_vars = self.storage_vars()
         info = storage_vars["dp2"]
