@@ -228,6 +228,11 @@ class DynamicalCore(NDSLRuntime):
 
         # This will become a proper DycoreState member. In the meantime, we keep it
         # as a fully fledge Quantity
+        if FVTracersAxisName not in quantity_factory.sizer.data_dimensions:
+            raise RuntimeError(
+                "FV Dynamics requires FVTracers to be registered - see `pyfv3.tracers`"
+            )
+
         self.tracers = quantity_factory.zeros(
             [I_DIM, J_DIM, K_DIM, FVTracersAxisName], ""
         )
