@@ -1,3 +1,5 @@
+from fparser.one.block_statements import Value
+
 from ndsl import QuantityFactory
 from ndsl.dsl.gt4py_utils import run_once
 from ndsl.dsl.typing import Float
@@ -34,13 +36,20 @@ def setup_fvtracers(
             f"Given {name_mapping}."
         )
 
-    quantity_factory.add_data_dimensions({FVTracersAxisName: tracer_count})
-    DataDimensionsField.register(
-        FVTracers, quantity_factory, [FVTracersAxisName], name_mapping, dtype=Float
-    )
+    if FVTracersAxisName not in quantity_factory.sizer.data_dimensions:
+        quantity_factory.add_data_dimensions({FVTracersAxisName: tracer_count})
+    elif quantity_factory.sizer.data_dimensions[FVTracersAxisName] != tracer_count:
+        raise ValueError(
+            f"FV Tracers re-setup with {tracer_count} differs "
+            f"from previous registering with {quantity_factory.sizer.data_dimensions[FVTracersAxisName]}"
+        )
+
+    if not DataDimensionsField.exists("FVTracers"):
+        DataDimensionsField.register(
+            FVTracers, quantity_factory, [FVTracersAxisName], name_mapping, dtype=Float
+        )
 
 
-@run_once
 def default_ai2_tracers(quantity_factory: QuantityFactory) -> None:
     """Default FV Tracers setup for the AI2 dataset & code"""
     ai2_tracers = {

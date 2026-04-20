@@ -99,28 +99,28 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
         self.near_zero = 3e-18
         self.ignore_near_zero_errors = {"q_con": True, "tracers": True}
         self.stencil_factory = stencil_factory
-
-        default_ai2_tracers(grid.quantity_factory)
+        self.quantity_factory = grid.quantity_factory
 
     def compute_from_storage(self, inputs):
+        default_ai2_tracers(self.quantity_factory)
         wsd_2d = utils.make_storage_from_shape(
             inputs["wsd"].shape[0:2], backend=self.stencil_factory.backend
         )
         wsd_2d[:, :] = inputs["wsd"][:, :, 0]
         inputs["wsd"] = wsd_2d
         inputs["last_step"] = bool(inputs["last_step"])
-        pfull = self.grid.quantity_factory.zeros([K_DIM], units="Pa")
-        pfull.data[:] = pfull.np.asarray(inputs.pop("pfull"))
+        pfull = self.quantity_factory.zeros([K_DIM], units="Pa")
+        pfull[:] = pfull.np.asarray(inputs.pop("pfull"))
 
         # Tracers
-        quantity_tracers = self.grid.quantity_factory.from_array(
+        quantity_tracers = self.quantity_factory.from_array(
             inputs["tracers"], [I_DIM, J_DIM, K_DIM, FVTracersAxisName], "n/a"
         )
         inputs["tracers"] = quantity_tracers
 
         lagrangian_to_eulerian = LagrangianToEulerian(
             self.stencil_factory,
-            quantity_factory=self.grid.quantity_factory,
+            quantity_factory=self.quantity_factory,
             config=self.config.remapping,
             area_64=self.grid.area_64,
             nq=inputs.pop("nq"),
@@ -130,7 +130,7 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
         lagrangian_to_eulerian(**inputs)
 
         if not self.stencil_factory.backend.is_fortran_aligned():
-            inputs["tracers"] = quantity_tracers.data[:-1, :-1, :-1, :]
+            inputs["tracers"] = quantity_tracers[:-1, :-1, :-1, :]
         else:
             inputs["tracers"] = quantity_tracers.data
         return inputs

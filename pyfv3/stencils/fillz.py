@@ -121,11 +121,11 @@ class FillNegativeTracerValues(NDSLRuntime):
         # Setting initial value of upper_fix to zero is only needed for validation.
         # The values in the compute domain are set to zero in the stencil.
         self._zfix = self.make_local(quantity_factory, [I_DIM, J_DIM], dtype=Int)
-        self._zfix.data[:] = 0
+        self._zfix[:] = 0
         self._sum0 = self.make_local(quantity_factory, [I_DIM, J_DIM])
-        self._sum0.data[:] = 0
+        self._sum0[:] = 0
         self._sum1 = self.make_local(quantity_factory, [I_DIM, J_DIM])
-        self._sum1.data[:] = 0
+        self._sum1[:] = 0
 
     def __call__(
         self,
