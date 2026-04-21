@@ -487,7 +487,7 @@ class AcousticDynamics:
         self._ws3 = temporaries["ws3"]
 
         if not config.hydrostatic:
-            self._pk3.data[:] = HUGE_R
+            self._pk3[:] = HUGE_R
 
         column_namelist = d_sw.get_column_namelist(
             config.d_grid_shallow_water, quantity_factory=quantity_factory
@@ -501,7 +501,7 @@ class AcousticDynamics:
                 units="m",
                 dtype=Float,
             )
-            self._zs.data[:] = self._zs.np.asarray(
+            self._zs[:] = self._zs.np.asarray(
                 phis.data / constants.GRAV, dtype=self._zs.data.dtype
             )
 
