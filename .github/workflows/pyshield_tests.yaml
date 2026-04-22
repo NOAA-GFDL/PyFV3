@@ -10,7 +10,7 @@ on:
 
 jobs:
   pyshield_translate_tests:
-    uses: FlorianDeconinck/PySHiELD/.github/workflows/translate.yaml@feature/data_dimension_fields
+    uses: FlorianDeconinck/PySHiELD/.github/workflows/translate.yaml@update/ndsl_without_tracers_list
     with:
       component_trigger: true
       component_name: pyFV3
