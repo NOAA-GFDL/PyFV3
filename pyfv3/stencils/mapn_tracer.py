@@ -17,7 +17,6 @@ class MapNTracer(NDSLRuntime):
         quantity_factory: QuantityFactory,
         kord: int,
         fill: bool,
-        tracers,
     ):
         super().__init__(stencil_factory)
         self._nq = FVTracers.size(0)

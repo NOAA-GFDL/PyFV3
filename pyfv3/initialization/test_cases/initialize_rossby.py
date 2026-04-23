@@ -13,7 +13,7 @@ from ndsl.dsl.typing import Float
 from ndsl.grid import GridData
 from pyfv3.dycore_state import DycoreState
 from pyfv3.initialization import init_utils
-from pyfv3.tracers import setup_tracers
+from pyfv3.tracers import default_GEOS_tracers
 
 
 NHALO = constants.N_HALO_DEFAULT
@@ -201,11 +201,10 @@ def init_rossby_state(
     _init_for_rossby(numpy_state, grid_data, shape)
     _postinit_for_all_sw(numpy_state)
 
-    setup_tracers(1, quantity_factory)
+    default_GEOS_tracers(quantity_factory)
     state = DycoreState.init_from_numpy_arrays(
         numpy_state.__dict__,
-        sizer=quantity_factory.sizer,
-        quantity_factory=quantity_factory,
+        quantity_factory,
     )
 
     comm.halo_update(state.phis, n_points=NHALO)

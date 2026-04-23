@@ -15,7 +15,7 @@ from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
 from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
-from pyfv3.tracers import TracersType, make_tracers, setup_tracers
+from pyfv3.tracers import FVTracers, FVTracersAxisName, setup_fvtracers
 
 
 class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
@@ -379,7 +379,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         print("No serial test available")
 
     def state_from_inputs_and_tracers(
-        self, inputs: dict, tracers: TracersType
+        self, inputs: dict, tracers: FVTracers
     ) -> SimpleNamespace:
         input_storages = super().state_from_inputs(inputs)
         # Rename fluxes and courant numbers
@@ -413,10 +413,10 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
     def compute_parallel(self, inputs, communicator):
         if not self._are_tracers_setup:
             self._are_tracers_setup = True
-            setup_tracers(
-                number_of_tracers=inputs["tracers"].shape[3],
-                quantity_factory=self.quantity_factory,
-                mappings={
+            setup_fvtracers(
+                self.quantity_factory,
+                inputs["tracers"].shape[3],
+                {
                     "vapor": 0,
                     "liquid": 1,
                     "rain": 3,
@@ -427,8 +427,9 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
                 },
             )
 
-        self._tracers = make_tracers(self.quantity_factory)
-        self._tracers.quantity.data[:-1, :-1, :-1, :] = inputs["tracers"]
+        self._tracers = self.quantity_factory.empty(
+            [I_DIM, J_DIM, K_DIM, FVTracersAxisName], ""
+        )[:-1, :-1, :-1, :] = inputs["tracers"][:]
         inputs.pop("tracers")
         self._base.in_vars["data_vars"].pop("tracers")
 

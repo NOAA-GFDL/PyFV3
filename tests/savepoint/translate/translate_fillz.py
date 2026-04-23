@@ -41,7 +41,7 @@ class TranslateFillz(TranslateDycoreFortranData2Py):
         inputs,
         storage_vars=None,
     ) -> None:
-        default_ai2_tracers(self.quantity_factory)
+        default_GEOS_tracers(self.quantity_factory)
         if storage_vars is None:
             storage_vars = self.storage_vars()
         info = storage_vars["dp2"]

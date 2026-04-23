@@ -461,7 +461,6 @@ class DynamicalCore(NDSLRuntime):
                 grid_data=grid_data,
                 nq=NQ,
                 pfull=self._pfull,
-                tracers=state.tracers,
                 adiabatic=config.adiabatic,
             )
 
@@ -472,7 +471,6 @@ class DynamicalCore(NDSLRuntime):
                 config=config.remapping,
                 area_64=grid_data.area_64,
                 pfull=self._pfull,
-                tracers=state.tracers,
             )
 
         full_xyz_spec = quantity_factory.get_quantity_halo_spec(

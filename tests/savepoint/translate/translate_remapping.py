@@ -124,7 +124,6 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
             config=self.config.remapping,
             area_64=self.grid.area_64,
             pfull=pfull,
-            tracers=inputs["tracers"],
         )
 
         lagrangian_to_eulerian(**inputs)

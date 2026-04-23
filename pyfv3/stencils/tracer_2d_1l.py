@@ -1,7 +1,13 @@
 from typing import no_type_check
 
+from ndsl import (
+    NDSLRuntime,
+    Quantity,
+    QuantityFactory,
+    StencilFactory,
+    WrappedHaloUpdater,
+)
 from ndsl.comm.mpi import ReductionOperator
-from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater
 from ndsl.constants import (
     I_DIM,
     I_INTERFACE_DIM,
@@ -14,7 +20,7 @@ from ndsl.dsl.dace.orchestration import dace_inhibitor
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, int32, interval, region
-from ndsl.dsl.typing import FloatField, FloatFieldIJ, FloatFieldK
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import GridData
 from ndsl.typing import Communicator
 from pyfv3.stencils.fvtp2d import FiniteVolumeTransport

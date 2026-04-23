@@ -356,7 +356,6 @@ class LagrangianToEulerian(NDSLRuntime):
         config: RemappingConfig,
         area_64,
         pfull,
-        tracers,
     ):
         super().__init__(stencil_factory)
 
@@ -482,7 +481,6 @@ class LagrangianToEulerian(NDSLRuntime):
             quantity_factory,
             abs(config.kord_tr),
             fill=config.fill,
-            tracers=tracers,
         )
 
         self._map_single_w = MapSingle(

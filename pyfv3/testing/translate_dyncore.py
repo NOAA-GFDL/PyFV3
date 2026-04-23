@@ -8,7 +8,7 @@ from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import dyn_core
-from pyfv3.tracers import setup_tracers
+from pyfv3.tracers import default_GEOS_tracers
 
 
 class TranslateDynCore(ParallelTranslate2PyState):
@@ -129,6 +129,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def compute_parallel(self, inputs: dict, communicator: Communicator) -> dict:
+        default_GEOS_tracers(self.grid.quantity_factory)
         # ak, bk, and phis are numpy arrays at this point and
         #   must be converted into gt4py storages
         for name in ("ak", "bk", "phis"):
@@ -149,7 +150,6 @@ class TranslateDynCore(ParallelTranslate2PyState):
         for k, v in inputs.items():
             if hasattr(v, "dtype"):
                 inputs_dtypes[k] = v.dtype
-        setup_tracers(1, self.grid.quantity_factory)  # No tracers used in acoustics
         state = DycoreState.init_zeros(
             quantity_factory=self.grid.quantity_factory,
             dtype_dict=inputs_dtypes,

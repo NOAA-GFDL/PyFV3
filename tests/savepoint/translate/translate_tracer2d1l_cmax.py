@@ -1,20 +1,9 @@
 from f90nml import Namelist
 
-from ndsl import Quantity, QuantityFactory, StencilFactory
+from ndsl import QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.stencils.testing import ParallelTranslate2Py
 from pyfv3.stencils.tracer_2d_1l import TracerCMax
-
-
-def _quantity_wrap(storage, dims, grid_indexing):
-    origin, extent = grid_indexing.get_origin_domain(dims)
-    return Quantity(
-        storage,
-        dims=dims,
-        units="unknown",
-        origin=origin,
-        extent=extent,
-    )
 
 
 class TranslateTracerCMax(ParallelTranslate2Py):
@@ -53,8 +42,8 @@ class TranslateTracerCMax(ParallelTranslate2Py):
         }
         self._stencil_factory = stencil_factory
         self._grid_data = grid
-        self._quantity_factory = QuantityFactory.from_backend(
-            sizer=stencil_factory.grid_indexing._sizer,
+        self._quantity_factory = QuantityFactory(
+            grid.sizer,
             backend=stencil_factory.backend,
         )
 
@@ -66,20 +55,18 @@ class TranslateTracerCMax(ParallelTranslate2Py):
             grid_data=self._grid_data,
             comm=communicator,
         )
-        cx_quantity = _quantity_wrap(
-            inputs["cx_R4"],
-            self.inputs["cx_R4"]["dims"],
-            self.grid.grid_indexing,
+        cx_quantity = self._quantity_factory.from_array(
+            inputs["cx_R4"], self.inputs["cx_R4"]["dims"], ""
         )
-        cy_quantity = _quantity_wrap(
+        cy_quantity = self._quantity_factory.from_array(
             inputs["cy_R4"],
             self.inputs["cy_R4"]["dims"],
-            self.grid.grid_indexing,
+            "",
         )
-        cmax_quantity = _quantity_wrap(
+        cmax_quantity = self._quantity_factory.from_array(
             inputs["cmax"],
             self.inputs["cmax"]["dims"],
-            self.grid.grid_indexing,
+            "",
         )
         tracer_cmax(
             cx=cx_quantity,

@@ -125,8 +125,7 @@ def init_aquaplanet_state(
 
     state = DycoreState.init_from_numpy_arrays(
         numpy_state.__dict__,
-        sizer=quantity_factory.sizer,
-        backend=sample_quantity.metadata.backend,
+        quantity_factory,
     )
 
     comm.halo_update(state.phis, n_points=NHALO)

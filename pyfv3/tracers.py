@@ -14,10 +14,19 @@ _EXPECTED_FV_TRACERS = [
     "snow",
     "graupel",
     "cloud",
-    "o3mr",
-    "sgs_tke",
 ]
 """Expected tracers for FV dynamics to be able to run in the current state."""
+
+GEOS_tracers_mapping = {
+    "vapor": 0,
+    "liquid": 1,
+    "ice": 2,
+    "rain": 3,
+    "snow": 4,
+    "graupel": 5,
+    "cloud": 6,
+}
+"""Default mapping for liquid tracers for GEOS"""
 
 
 def setup_fvtracers(
@@ -64,13 +73,7 @@ def default_ai2_tracers(quantity_factory: QuantityFactory) -> None:
 
 
 def default_GEOS_tracers(quantity_factory: QuantityFactory) -> None:
-    GEOS_tracers = {
-        "vapor": 0,
-        "liquid": 1,
-        "ice": 2,
-        "rain": 3,
-        "snow": 4,
-        "graupel": 5,
-        "cloud": 6,
-    }
-    setup_fvtracers(quantity_factory, len(GEOS_tracers.keys()), GEOS_tracers)
+    """Default FV Tracers setup for the GEOS dataset & code"""
+    setup_fvtracers(
+        quantity_factory, len(GEOS_tracers_mapping.keys()), GEOS_tracers_mapping
+    )

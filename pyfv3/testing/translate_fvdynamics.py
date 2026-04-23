@@ -7,7 +7,7 @@ import pytest
 from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import FieldBundle, Quantity, QuantityFactory, StencilFactory
+from ndsl import Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import (
     I_DIM,
     I_INTERFACE_DIM,

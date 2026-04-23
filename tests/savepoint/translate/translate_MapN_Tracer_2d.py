@@ -1,10 +1,11 @@
 from f90nml import Namelist
 
 from ndsl import StencilFactory
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
 from pyfv3.stencils.mapn_tracer import MapNTracer
-from pyfv3.tracers import setup_tracers
+from pyfv3.tracers import FVTracersAxisName, GEOS_tracers_mapping, setup_fvtracers
 
 
 class TranslateMapN_Tracer_2d(TranslateFortranData2Py):
@@ -53,27 +54,21 @@ class TranslateMapN_Tracer_2d(TranslateFortranData2Py):
 
         self.fill = True
 
-        self._are_tracers_setup = False
-
         self._tracers = None
 
     def compute_from_storage(self, inputs):
-        if not self._are_tracers_setup:
-            self._are_tracers_setup = True
-            self._tracers = setup_tracers(
-                number_of_tracers=inputs["qtracers"].shape[3],
-                quantity_factory=self.quantity_factory,
-                # mappings={"cloud": 6},
-            )
-            # tracers.quantity.data[:-1, :-1, :-1, :] = inputs["qtracers"]
-        self._tracers.quantity.data = inputs["qtracers"]
+        setup_fvtracers(
+            self.quantity_factory, inputs["qtracers"].shape[3], GEOS_tracers_mapping
+        )
+        self._tracers = self.quantity_factory.from_array(
+            inputs["qtracers"], [I_DIM, J_DIM, K_DIM, FVTracersAxisName], ""
+        )
 
         self._compute_func = MapNTracer(
             self.stencil_factory,
             self.quantity_factory,
             abs(self.kord),
             fill=self.fill,
-            tracers=self._tracers,
         )
 
         self._compute_func(

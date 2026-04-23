@@ -34,7 +34,7 @@ from pyfv3.stencils.remapping import (
 from pyfv3.stencils.saturation_adjustment import SatAdjust3d
 from pyfv3.stencils.scale_delz import rescale_delz_1, rescale_delz_2
 from pyfv3.stencils.w_fix_consrv_moment import W_fix_consrv_moment
-from pyfv3.tracers import TracersType
+from pyfv3.tracers import FVTracers
 
 
 def _normalize_to_grid_stencil(
@@ -61,7 +61,6 @@ class LagrangianToEulerian_GEOS:
         grid_data: GridData,
         nq,
         pfull,
-        tracers: TracersType,
         adiabatic: bool,
     ):
         orchestrate(
@@ -226,7 +225,6 @@ class LagrangianToEulerian_GEOS:
             quantity_factory,
             kord=abs(config.kord_tr),
             fill=config.fill,
-            tracers=tracers,
         )
 
         self._map_single_w = MapSingle(
@@ -357,7 +355,7 @@ class LagrangianToEulerian_GEOS:
 
     def __call__(
         self,
-        tracers: TracersType,
+        tracers: FVTracers,  # ty: ignore[invalid-type-form]
         pt: FloatField,
         delp: FloatField,
         delz: FloatField,
