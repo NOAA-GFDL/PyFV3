@@ -27,6 +27,10 @@ class MapSingleFactory:
         key_tuple = (kord, mode, (I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM))
         if key_tuple not in self._object_pool:
             self._object_pool[key_tuple] = MapSingle(
-                self.stencil_factory, self.quantity_factory, *key_tuple
+                self.stencil_factory,
+                self.quantity_factory,
+                key_tuple[0],
+                key_tuple[1],
+                list(key_tuple[2]),
             )
         return self._object_pool[key_tuple](*args, **kwargs)

@@ -23,6 +23,7 @@ from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import fv_dynamics
+from pyfv3.tracers import default_ai2_tracers
 
 
 class TranslateFVDynamics(ParallelTranslateBaseSlicing):
@@ -288,6 +289,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         return state, grid_data
 
     def compute_parallel(self, inputs: dict, communicator: Communicator) -> dict:
+        default_ai2_tracers(self.grid.quantity_factory)
         state, grid_data = self.prepare_data(inputs)
         self.dycore = fv_dynamics.DynamicalCore(
             comm=communicator,
@@ -313,11 +315,9 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         storages = {}
         for name, _properties in self.outputs.items():
             if name in ["mfxd_FV", "mfyd_FV", "cxd_FV", "cyd_FV"]:
-                storages[name] = state[name[:-3]].data
-            elif isinstance(state[name], FieldBundle):
-                storages[name] = state[name].quantity.data
+                storages[name] = state[name[:-3]]._data
             elif isinstance(state[name], Quantity):
-                storages[name] = state[name].data
+                storages[name] = state[name]._data
             elif len(self.outputs[name]["dims"]) > 0:
                 storages[name] = state[name]  # assume it's a storage
             else:

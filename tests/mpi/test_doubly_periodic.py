@@ -19,6 +19,7 @@ from ndsl import (
 from ndsl.grid import DampingCoefficients, GridData, MetricTerms
 from ndsl.performance import NullTimer
 from pyfv3 import DynamicalCore, DynamicalCoreConfig
+from pyfv3.tracers import default_ai2_tracers
 
 
 def test_dycore_runs_one_step() -> None:
@@ -122,6 +123,8 @@ def test_dycore_runs_one_step() -> None:
         config=stencil_config,
         grid_indexing=grid_indexing,
     )
+
+    default_ai2_tracers(quantity_factory)
 
     dycore = DynamicalCore(
         comm=communicator,

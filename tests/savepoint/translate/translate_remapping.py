@@ -1,12 +1,12 @@
 from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import QuantityFactory, StencilFactory
-from ndsl.constants import K_DIM
+from ndsl import StencilFactory
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import Grid
 from pyfv3.stencils import LagrangianToEulerian
 from pyfv3.testing import TranslateDycoreFortranData2Py
-from pyfv3.tracers import setup_tracers
+from pyfv3.tracers import FVTracersAxisName, default_ai2_tracers
 
 
 class TranslateRemapping(TranslateDycoreFortranData2Py):
@@ -99,47 +99,38 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
         self.near_zero = 3e-18
         self.ignore_near_zero_errors = {"q_con": True, "tracers": True}
         self.stencil_factory = stencil_factory
-        self.quantity_factory = QuantityFactory(
-            sizer=grid.sizer,
-            backend=stencil_factory.backend,
-        )
-        self._are_tracers_setup = False
+        self.quantity_factory = grid.quantity_factory
 
     def compute_from_storage(self, inputs):
+        default_ai2_tracers(self.quantity_factory)
         wsd_2d = utils.make_storage_from_shape(
             inputs["wsd"].shape[0:2], backend=self.stencil_factory.backend
         )
         wsd_2d[:, :] = inputs["wsd"][:, :, 0]
         inputs["wsd"] = wsd_2d
-
-        if not self._are_tracers_setup:
-            self._are_tracers_setup = True
-            tracers = setup_tracers(
-                number_of_tracers=inputs["tracers"].shape[3],
-                quantity_factory=self.quantity_factory,
-                mappings={
-                    "vapor": 0,
-                    "liquid": 1,
-                    "rain": 3,
-                    "snow": 4,
-                    "ice": 2,
-                    "graupel": 5,
-                    "cloud": 6,
-                },
-            )
         inputs["last_step"] = bool(inputs["last_step"])
-        pfull = self.grid.quantity_factory.zeros([K_DIM], units="Pa")
-        pfull.data[:] = pfull.np.asarray(inputs.pop("pfull"))
-        inputs.pop("nq")
-        inputs["tracers"] = tracers
-        l_to_e_obj = LagrangianToEulerian(
+        pfull = self.quantity_factory.zeros([K_DIM], units="Pa")
+        pfull[:] = pfull.np.asarray(inputs.pop("pfull"))
+
+        # Tracers
+        quantity_tracers = self.quantity_factory.from_array(
+            inputs["tracers"], [I_DIM, J_DIM, K_DIM, FVTracersAxisName], "n/a"
+        )
+        inputs["tracers"] = quantity_tracers
+
+        lagrangian_to_eulerian = LagrangianToEulerian(
             self.stencil_factory,
-            quantity_factory=self.grid.quantity_factory,
+            quantity_factory=self.quantity_factory,
             config=self.config.remapping,
             area_64=self.grid.area_64,
             pfull=pfull,
             tracers=inputs["tracers"],
         )
-        l_to_e_obj(**inputs)
-        inputs["tracers"] = tracers.quantity.data[:-1, :-1, :-1.0:-1]
+
+        lagrangian_to_eulerian(**inputs)
+
+        if not self.stencil_factory.backend.is_fortran_aligned():
+            inputs["tracers"] = quantity_tracers[:-1, :-1, :-1, :]
+        else:
+            inputs["tracers"] = quantity_tracers.data
         return inputs

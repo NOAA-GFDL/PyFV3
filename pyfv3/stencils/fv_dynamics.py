@@ -1,10 +1,14 @@
 from collections.abc import Mapping
 from datetime import timedelta
 
-from dace.frontend.python.interface import nounroll as dace_no_unroll
-
 import pyfv3.stencils.moist_cv as moist_cv
-from ndsl import Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater
+from ndsl import (
+    NDSLRuntime,
+    Quantity,
+    QuantityFactory,
+    StencilFactory,
+    WrappedHaloUpdater,
+)
 from ndsl.comm.mpi import MPI
 from ndsl.constants import (
     I_DIM,
@@ -42,6 +46,7 @@ from pyfv3.stencils.dyn_core import AcousticDynamics
 from pyfv3.stencils.neg_adj3 import AdjustNegativeTracerMixingRatio
 from pyfv3.stencils.remapping import LagrangianToEulerian
 from pyfv3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
+from pyfv3.tracers import FVTracers, FVTracersAxisName
 from pyfv3.version import IS_GEOS
 
 
@@ -223,7 +228,7 @@ def log_on_rank_0(message: str) -> None:
         ndsl_log.info(message)
 
 
-class DynamicalCore:
+class DynamicalCore(NDSLRuntime):
     """
     Corresponds to fv_dynamics in original Fortran sources.
     """
@@ -255,6 +260,8 @@ class DynamicalCore:
                 and Remapping schemes
             timestep: model timestep
         """
+        super().__init__(stencil_factory)
+
         orchestrate(
             obj=self,
             config=stencil_factory.config.dace_config,
@@ -341,6 +348,11 @@ class DynamicalCore:
             hord=config.hord_tr,
         )
 
+        if FVTracersAxisName not in quantity_factory.sizer.data_dimensions:
+            raise RuntimeError(
+                "FV Dynamics requires FVTracers to be registered - see `pyfv3.tracers`"
+            )
+
         temporaries = fvdyn_temporaries(quantity_factory)
         self._te0_2d = temporaries["te0_2d"]
         self._wsd = temporaries["wsd"]
@@ -384,6 +396,11 @@ class DynamicalCore:
             copy,
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(),
+        )
+        self._copy_domain = stencil_factory.from_origin_domain(
+            copy,
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(),
         )
         self.acoustic_dynamics = AcousticDynamics(
             comm=comm,
@@ -558,12 +575,12 @@ class DynamicalCore:
         self._set_value(state.cyd, Float(0.0))
 
         self._fv_setup_stencil(
-            state.tracers.vapor,
-            state.tracers.liquid,
-            state.tracers.rain,
-            state.tracers.snow,
-            state.tracers.ice,
-            state.tracers.graupel,
+            state.tracers[:, :, :, FVTracers.index("vapor")],
+            state.tracers[:, :, :, FVTracers.index("liquid")],
+            state.tracers[:, :, :, FVTracers.index("rain")],
+            state.tracers[:, :, :, FVTracers.index("snow")],
+            state.tracers[:, :, :, FVTracers.index("ice")],
+            state.tracers[:, :, :, FVTracers.index("graupel")],
             state.q_con,
             self._cvm,
             state.pkz,
@@ -633,10 +650,11 @@ class DynamicalCore:
         self.step_dynamics(*args, **kwargs)
 
     def _compute(self, state: DycoreState, timer: Timer) -> None:
-        last_step = False
+        self._state_into_tracers(state)
+
         self.compute_preamble(state)
 
-        for k_split in dace_no_unroll(range(self._k_split)):
+        for k_split in range(self._k_split):
             n_map = k_split + 1
             last_step = k_split == self._k_split - 1
             # TODO: why are we copying delp to dp1? what is dp1?
@@ -797,13 +815,13 @@ class DynamicalCore:
         if __debug__:
             log_on_rank_0("Neg Adj 3")
         self._adjust_tracer_mixing_ratio(
-            state.tracers.vapor,
-            state.tracers.liquid,
-            state.tracers.rain,
-            state.tracers.snow,
-            state.tracers.ice,
-            state.tracers.graupel,
-            state.tracers.cloud,
+            self.tracers[:, :, :, FVTracers.index("vapor")],
+            self.tracers[:, :, :, FVTracers.index("liquid")],
+            self.tracers[:, :, :, FVTracers.index("rain")],
+            self.tracers[:, :, :, FVTracers.index("snow")],
+            self.tracers[:, :, :, FVTracers.index("ice")],
+            self.tracers[:, :, :, FVTracers.index("graupel")],
+            self.tracers[:, :, :, FVTracers.index("cloud")],
             state.pt,
             state.delp,
         )
@@ -822,3 +840,5 @@ class DynamicalCore:
             state.ua,
             state.va,
         )
+
+        self._tracers_into_state(state)

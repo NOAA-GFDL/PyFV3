@@ -1,10 +1,9 @@
-import dace
-
 from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import FloatField
 from pyfv3.stencils.fillz import FillNegativeTracerValues
 from pyfv3.stencils.map_single import MapSingle
+from pyfv3.tracers import FVTracers
 
 
 class MapNTracer(NDSLRuntime):
@@ -21,7 +20,7 @@ class MapNTracer(NDSLRuntime):
         tracers,
     ):
         super().__init__(stencil_factory)
-        self._nq = int(tracers.shape[3])
+        self._nq = FVTracers.size(0)
 
         self._map_single_parametrized_kord = MapSingle(
             stencil_factory,
@@ -42,21 +41,19 @@ class MapNTracer(NDSLRuntime):
         if fill:
             self._fill_negative_tracers = True
             self._fillz = FillNegativeTracerValues(
-                stencil_factory,
-                quantity_factory,
-                self._nq,
+                stencil_factory, quantity_factory, self._nq
             )
         else:
             self._fill_negative_tracers = False
 
-        self._index_cloud = tracers.index("cloud")
+        self._index_cloud = FVTracers.index("cloud")
 
     def __call__(
         self,
         pe1: FloatField,
         pe2: FloatField,
         dp2: FloatField,
-        tracers,
+        tracers: FVTracers,
     ):
         """
         Remaps the tracer species onto the Eulerian grid
@@ -69,12 +66,11 @@ class MapNTracer(NDSLRuntime):
             dp2 (in): Difference in pressure between Eulerian levels
             tracers (inout): tracers to be remapped
         """
-        for i_tracer in dace.nounroll(range(tracers.shape[3])):
-            if i_tracer != self._index_cloud:
-                self._map_single(
-                    tracers.quantity.data[:, :, :, i_tracer], pe1, pe2, self._qs
-                )
-        self._map_single_kord9(tracers.cloud, pe1, pe2, self._qs)
+        for i_tracer in range(0, self._nq):
+            if i_tracer == self._index_cloud:
+                self._map_single_kord9(tracers[:, :, :, i_tracer], pe1, pe2)
+            else:
+                self._map_single_parametrized_kord(tracers[:, :, :, i_tracer], pe1, pe2)
 
         if self._fill_negative_tracers:
             self._fillz(dp2, tracers)

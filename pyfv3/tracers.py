@@ -1,64 +1,76 @@
 from ndsl import QuantityFactory
-from ndsl.constants import I_DIM, J_DIM, K_DIM
-from ndsl.quantity.field_bundle import FieldBundle, FieldBundleType
-from pyfv3.version import IS_GEOS
+from ndsl.dsl.typing import Float
+from ndsl.quantity.data_dimensions_field import DataDimensionsField, SparseNameMapping
 
 
-# Defauult maopping for common models
-_default_mapping_GEOS = {
-    "vapor": 0,
-    "liquid": 1,
-    "ice": 2,
-    "rain": 3,
-    "snow": 4,
-    "graupel": 5,
-    "cloud": 6,
-}
-_default_mapping_PACE = {
-    "vapor": 0,
-    "liquid": 1,
-    "rain": 2,
-    "ice": 3,
-    "snow": 4,
-    "graupel": 5,
-    "om3r": 6,
-    "cloud": 7,
-}
+FVTracers = DataDimensionsField.declare()
+FVTracersAxisName = "fv_tracers"
+
+_EXPECTED_FV_TRACERS = [
+    "vapor",
+    "liquid",
+    "rain",
+    "ice",
+    "snow",
+    "graupel",
+    "cloud",
+    "o3mr",
+    "sgs_tke",
+]
+"""Expected tracers for FV dynamics to be able to run in the current state."""
 
 
-TracersType = FieldBundleType.T("Tracers")
-
-_mappings: dict[str, int] = {}
-
-
-def setup_tracers(
-    number_of_tracers: int,
+def setup_fvtracers(
     quantity_factory: QuantityFactory,
-    mappings: dict[str, int] | None = None,
+    tracer_count: int,
+    name_mapping: SparseNameMapping,
 ) -> None:
-    global _mappings
+    """Setup FV Tracers and sparse mapping to call tracer by name"""
 
-    FieldBundleType.register("Tracers", (number_of_tracers,))
+    if not all(tracer in name_mapping for tracer in _EXPECTED_FV_TRACERS):
+        raise ValueError(
+            f"FV Tracers requires name mapping for all of the follwoing {_EXPECTED_FV_TRACERS}."
+            f"Given {name_mapping}."
+        )
 
-    # Some default mappings for ease of use with commonly
-    # run models
-    if mappings is None:
-        if IS_GEOS:
-            mappings = _default_mapping_GEOS
-        else:
-            mappings = _default_mapping_PACE
+    if FVTracersAxisName not in quantity_factory.sizer.data_dimensions:
+        quantity_factory.add_data_dimensions({FVTracersAxisName: tracer_count})
+    elif quantity_factory.sizer.data_dimensions[FVTracersAxisName] != tracer_count:
+        raise ValueError(
+            f"FV Tracers re-setup with {tracer_count} differs "
+            f"from previous registering with {quantity_factory.sizer.data_dimensions[FVTracersAxisName]}"
+        )
 
-    _mappings = mappings
-    quantity_factory.add_data_dimensions({"tracers": number_of_tracers})
+    if not DataDimensionsField.exists("FVTracers"):
+        DataDimensionsField.register(
+            FVTracers, quantity_factory, [FVTracersAxisName], name_mapping, dtype=Float
+        )
 
 
-def make_tracers(quantity_factory: QuantityFactory) -> FieldBundle:
-    """Setup a FieldBundle for tracers. Should be called only once."""
-    global _mappings  # noqa
+def default_ai2_tracers(quantity_factory: QuantityFactory) -> None:
+    """Default FV Tracers setup for the AI2 dataset & code"""
+    ai2_tracers = {
+        "vapor": 0,
+        "liquid": 1,
+        "rain": 2,
+        "ice": 3,
+        "snow": 4,
+        "graupel": 5,
+        "o3mr": 6,
+        "sgs_tke": 7,
+        "cloud": 8,
+    }
+    setup_fvtracers(quantity_factory, len(ai2_tracers.keys()), ai2_tracers)
 
-    _unit = "g/kg"
-    _dims = [I_DIM, J_DIM, K_DIM, "tracers"]
 
-    data = quantity_factory.zeros(_dims, units=_unit)
-
-    return FieldBundle("Tracers", quantity=data, mapping=_mappings)
+def default_GEOS_tracers(quantity_factory: QuantityFactory) -> None:
+    GEOS_tracers = {
+        "vapor": 0,
+        "liquid": 1,
+        "ice": 2,
+        "rain": 3,
+        "snow": 4,
+        "graupel": 5,
+        "cloud": 6,
+    }
+    setup_fvtracers(quantity_factory, len(GEOS_tracers.keys()), GEOS_tracers)

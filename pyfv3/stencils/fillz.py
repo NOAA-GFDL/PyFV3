@@ -1,10 +1,10 @@
-import dace
 from typing_extensions import no_type_check
 
 from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval, max, min
 from ndsl.dsl.typing import FloatField, FloatFieldIJ, Int, IntFieldIJ
+from pyfv3.tracers import FVTracers
 
 
 @no_type_check
@@ -121,25 +121,25 @@ class FillNegativeTracerValues(NDSLRuntime):
         # Setting initial value of upper_fix to zero is only needed for validation.
         # The values in the compute domain are set to zero in the stencil.
         self._zfix = self.make_local(quantity_factory, [I_DIM, J_DIM], dtype=Int)
-        self._zfix.data[:] = 0
+        self._zfix[:] = 0
         self._sum0 = self.make_local(quantity_factory, [I_DIM, J_DIM])
-        self._sum0.data[:] = 0
+        self._sum0[:] = 0
         self._sum1 = self.make_local(quantity_factory, [I_DIM, J_DIM])
-        self._sum1.data[:] = 0
+        self._sum1[:] = 0
 
     def __call__(
         self,
         dp2: FloatField,
-        tracers,
+        tracers: FVTracers,
     ):
         """
         Args:
             dp2 (in): pressure thickness of atmospheric layer
             tracers (inout): tracers to fix negative masses in
         """
-        for i_tracer in dace.nounroll(range(tracers.shape[3])):
+        for i_tracer in range(0, self._nq):
             self._fix_tracer_stencil(
-                tracers.quantity.data[:, :, :, i_tracer],
+                tracers[:, :, :, i_tracer],
                 dp2,
                 self._zfix,
                 self._sum0,

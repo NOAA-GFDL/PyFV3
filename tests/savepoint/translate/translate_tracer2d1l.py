@@ -1,12 +1,12 @@
 import pytest
 from f90nml import Namelist
 
-from ndsl import QuantityFactory, StencilFactory
+from ndsl import StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import Grid, ParallelTranslate
 from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils import FiniteVolumeTransport, TracerAdvection
-from pyfv3.tracers import make_tracers, setup_tracers
+from pyfv3.tracers import FVTracersAxisName, default_ai2_tracers
 from pyfv3.utils.functional_validation import get_subset_func
 
 
@@ -46,17 +46,18 @@ class TranslateTracer2D1L(ParallelTranslate):
             n_halo=((0, 0), (0, 0)),
         )
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
+        self.quantity_factory = grid.quantity_factory
 
     def compute_parallel(self, inputs, communicator):
-        self._base.make_storage_data_input_vars(inputs, dict_4d=False)
-        setup_tracers(
-            number_of_tracers=inputs["tracers"].shape[3],
-            quantity_factory=self._quantity_factory,
+        default_ai2_tracers(self.quantity_factory)
+        self._base.make_storage_data_input_vars(inputs)
+
+        quantity_tracers = self.grid.quantity_factory.from_array(
+            inputs["tracers"], [I_DIM, J_DIM, K_DIM, FVTracersAxisName], "n/a"
         )
-        tracers = make_tracers(self._quantity_factory)
-        tracers.quantity.data[:] = inputs["tracers"][:]
-        inputs.pop("tracers")
-        inputs.pop("nq")  # Fortran NQ is intrinsic to Tracers (e.g Tracers.count)
+        inputs["tracers"] = quantity_tracers
+        nq = int(inputs.pop("nq"))
+
         transport = FiniteVolumeTransport(
             stencil_factory=self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
@@ -72,22 +73,22 @@ class TranslateTracer2D1L(ParallelTranslate):
             transport,
             self.grid.grid_data,
             communicator,
-            tracers,
-            update_mass_courant=False,
+            inputs["tracers"],
+            nq,
         )
-        inputs["x_mass_flux"] = inputs.pop("mfxd_R4")
-        inputs["y_mass_flux"] = inputs.pop("mfyd_R4")
-        inputs["x_courant"] = inputs.pop("cxd_R4")
-        inputs["y_courant"] = inputs.pop("cyd_R4")
-        self.tracer_advection(tracers=tracers, **inputs)
-        inputs["mfxd_R4"] = inputs.pop("x_mass_flux")
-        inputs["mfyd_R4"] = inputs.pop("y_mass_flux")
-        inputs["cxd_R4"] = inputs.pop("x_courant")
-        inputs["cyd_R4"] = inputs.pop("y_courant")
-        inputs["tracers"] = tracers.quantity.field
+        inputs["x_mass_flux"] = inputs.pop("mfxd")
+        inputs["y_mass_flux"] = inputs.pop("mfyd")
+        inputs["x_courant"] = inputs.pop("cxd")
+        inputs["y_courant"] = inputs.pop("cyd")
+        self.tracer_advection(**inputs)
+        inputs["mfxd"] = inputs.pop("x_mass_flux")
+        inputs["mfyd"] = inputs.pop("y_mass_flux")
+        inputs["cxd"] = inputs.pop("x_courant")
+        inputs["cyd"] = inputs.pop("y_courant")
+
+        inputs["tracers"] = quantity_tracers.field[:]
+
         outputs = self._base.slice_output(inputs)
-        # outputs["tracers"] = self.subset_output("tracers", outputs["tracers"])
-        # outputs["tracers"] = tracers.quantity.field[:]
         return outputs
 
     def compute_sequential(self, inputs_list, communicator_list):
