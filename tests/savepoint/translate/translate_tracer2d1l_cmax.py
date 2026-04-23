@@ -73,4 +73,5 @@ class TranslateTracerCMax(ParallelTranslate2Py):
             cy=cy_quantity,
             cmax=cmax_quantity,
         )
+        inputs["cmax"] = cmax_quantity[:]
         return self._base.slice_output(inputs)

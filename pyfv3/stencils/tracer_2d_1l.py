@@ -526,24 +526,23 @@ class TracerCMax(NDSLRuntime):
                 grid_indexing.domain[2] - cmax_atmospheric_level_split,
             ),
         )
+        # When turned into a Local - orchestration decides that
+        # cmax_low and high are no longer used and skip all code
+        # :⚠️ This must be a Quantity for now
         self._tmp_cmax = quantity_factory.zeros(
             [I_DIM, J_DIM, K_DIM],
-            units="unknown",
-        )
-        self._tmp_cmax_in_K = quantity_factory.zeros(
-            [K_DIM],
             units="unknown",
         )
         self.max_over_column = 0
 
     @dace_inhibitor
-    def _reduce(self, cmax: Quantity):
+    def _reduce(self, cmax):
         if __debug__:
             if not isinstance(cmax, Quantity):
                 raise TypeError(
                     f"[pyfv3][Tracer]: cmax must be a quantity, got {type(cmax)}"
                 )
-        cmax.data[:] = self._tmp_cmax.data.max(axis=0).max(axis=0)[:]
+        cmax[:] = self._tmp_cmax[:].max(axis=0).max(axis=0)[:]
         self._comm.all_reduce_per_element_in_place(cmax, ReductionOperator.MAX)
         self.max_over_column = cmax.field.max()
 
