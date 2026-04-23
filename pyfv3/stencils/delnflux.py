@@ -295,7 +295,7 @@ class DelnFlux:
             d2 (in): A damped copy of the q field
             mass (in): Mass to weight the diffusive flux by
         """
-        if self._no_compute is True:
+        if self._no_compute:
             return fx, fy
 
         # [DaCe] Optional d2 gets reduced to subset 0 in DaCe parsing leading to a
@@ -497,7 +497,10 @@ class DelnFluxNoSG:
             nord=self._nord,
         )
 
-        for n in range(self._nmax):
+        # Force unroll of the loop because list of object do not parse
+        # when unrolled
+        # -> https://github.com/spcl/dace/issues/2332
+        for n in dace.unroll(range(self._nmax)):
             self._d2_stencil[n](
                 fx=fx2,
                 fy=fy2,

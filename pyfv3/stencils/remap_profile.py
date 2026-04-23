@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
@@ -535,7 +535,7 @@ def set_interpolation_coefficients(
             a4_1, a4_2, a4_3, a4_4 = posdef_constraint_iv1(a4_1, a4_2, a4_3, a4_4)
 
 
-class RemapProfile:
+class RemapProfile(NDSLRuntime):
     """
     This corresponds to the cs_profile routine in FV3
     """
@@ -558,10 +558,7 @@ class RemapProfile:
             iv: ???
             dims: dimensions on which to operate on inputs
         """
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
 
         if kord > 10:
             raise NotImplementedError(
@@ -570,24 +567,19 @@ class RemapProfile:
 
         self._kord = kord
 
-        self._gam = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="unknown",
-            dtype=Float,
+        self._gam = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._q = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._q_bot = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+
+        self._extm = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM], dtype=bool
         )
-        self._q = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="unknown",
-            dtype=Float,
+        self._ext5 = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM], dtype=bool
         )
-        self._q_bot = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="unknown",
-            dtype=Float,
+        self._ext6 = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM], dtype=bool
         )
-        self._extm = quantity_factory.zeros([I_DIM, J_DIM, K_DIM], units="", dtype=bool)
-        self._ext5 = quantity_factory.zeros([I_DIM, J_DIM, K_DIM], units="", dtype=bool)
-        self._ext6 = quantity_factory.zeros([I_DIM, J_DIM, K_DIM], units="", dtype=bool)
 
         self._set_initial_values = stencil_factory.from_dims_halo(
             func=set_initial_vals,

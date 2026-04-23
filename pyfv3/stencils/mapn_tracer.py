@@ -1,13 +1,13 @@
 import dace
 
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
-from ndsl.dsl.typing import Float, FloatField
+from ndsl.dsl.typing import FloatField
 from pyfv3.stencils.fillz import FillNegativeTracerValues
 from pyfv3.stencils.map_single import MapSingle
 
 
-class MapNTracer:
+class MapNTracer(NDSLRuntime):
     """
     Fortran code is mapn_tracer, test class is MapN_Tracer_2d
     """
@@ -20,24 +20,17 @@ class MapNTracer:
         fill: bool,
         tracers,
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            dace_compiletime_args=["tracers"],
-        )
-        self._qs = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="unknown",
-            dtype=Float,
-        )
+        super().__init__(stencil_factory)
+        self._nq = int(tracers.shape[3])
 
-        self._map_single = MapSingle(
+        self._map_single_parametrized_kord = MapSingle(
             stencil_factory,
             quantity_factory,
             kord,
             0,
             dims=[I_DIM, J_DIM, K_DIM],
         )
+
         self._map_single_kord9 = MapSingle(
             stencil_factory,
             quantity_factory,
@@ -51,6 +44,7 @@ class MapNTracer:
             self._fillz = FillNegativeTracerValues(
                 stencil_factory,
                 quantity_factory,
+                self._nq,
             )
         else:
             self._fill_negative_tracers = False
@@ -82,5 +76,5 @@ class MapNTracer:
                 )
         self._map_single_kord9(tracers.cloud, pe1, pe2, self._qs)
 
-        if self._fill_negative_tracers is True:
+        if self._fill_negative_tracers:
             self._fillz(dp2, tracers)

@@ -1,6 +1,4 @@
-from typing import no_type_check
-
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import (
     I_DIM,
     I_INTERFACE_DIM,
@@ -22,7 +20,6 @@ from ndsl.dsl.gt4py import (
 )
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.stencils.basic_operations import adjust_divide_stencil
-from ndsl.typing import Checkpointer
 from pyfv3._config import RemappingConfig
 from pyfv3.stencils import moist_cv
 from pyfv3.stencils.map_single import MapSingle
@@ -346,7 +343,7 @@ def pe_pk_delp_peln(
             peln = pn2
 
 
-class LagrangianToEulerian:
+class LagrangianToEulerian(NDSLRuntime):
     """
     Fortran name is Lagrangian_to_Eulerian
     """
@@ -359,21 +356,13 @@ class LagrangianToEulerian:
         area_64,
         pfull,
         tracers,
-        exclude_tracers: list[str],
-        checkpointer: Checkpointer | None = None,
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            dace_compiletime_args=["tracers"],
-        )
-        self._checkpointer = checkpointer
-        # this is only computed in init because Dace does not yet support
-        # this operation
-        self._call_checkpointer = checkpointer is not None
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         if config.kord_tm >= 0:
             raise NotImplementedError("map ppm, untested mode where kord_tm >= 0")
+
         hydrostatic = config.hydrostatic
         if hydrostatic:
             raise NotImplementedError("Hydrostatic is not implemented")
@@ -386,48 +375,57 @@ class LagrangianToEulerian:
             grid_indexing.domain[2] + 1,
         )
 
-        self._pe1 = quantity_factory.zeros(
+        self._pe1 = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
-        self._pe2 = quantity_factory.zeros(
+        self._pe2 = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
-        self._pe3 = quantity_factory.zeros(
+        self._pe3 = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
-        self._dp2 = quantity_factory.zeros(
+        self._dp2 = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="Pa",
             dtype=Float,
         )
-        self._pn2 = quantity_factory.zeros(
+        self._pn2 = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="Pa",
             dtype=Float,
         )
-        self._pe0 = quantity_factory.zeros(
+        self._pe0 = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
-        self._pe3 = quantity_factory.zeros(
+        self._pe3 = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
 
-        self._gz = quantity_factory.zeros(
+        self._gz = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="m^2 s^-2",
             dtype=Float,
         )
-        self._cvm = quantity_factory.zeros(
+        self._cvm = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
@@ -587,7 +585,6 @@ class LagrangianToEulerian:
             domain=grid_indexing.domain_compute(),
         )
 
-    @no_type_check
     def __call__(
         self,
         tracers,

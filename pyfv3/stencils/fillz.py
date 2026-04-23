@@ -1,10 +1,10 @@
 import dace
 from typing_extensions import no_type_check
 
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval, max, min
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, Int, IntFieldIJ
+from ndsl.dsl.typing import FloatField, FloatFieldIJ, Int, IntFieldIJ
 
 
 @no_type_check
@@ -97,7 +97,7 @@ def fix_tracer(
             q = max(fac * dm / dp, 0.0)
 
 
-class FillNegativeTracerValues:
+class FillNegativeTracerValues(NDSLRuntime):
     """
     Fix tracer values to prevent negative masses.
 
@@ -108,12 +108,11 @@ class FillNegativeTracerValues:
         self,
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
+        nq: int,
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            dace_compiletime_args=["tracers"],
-        )
+        super().__init__(stencil_factory)
+
+        self._nq = int(nq)
         self._fix_tracer_stencil = stencil_factory.from_dims_halo(
             fix_tracer,
             compute_dims=[I_DIM, J_DIM, K_DIM],
@@ -121,17 +120,12 @@ class FillNegativeTracerValues:
 
         # Setting initial value of upper_fix to zero is only needed for validation.
         # The values in the compute domain are set to zero in the stencil.
-        self._zfix = quantity_factory.zeros([I_DIM, J_DIM], units="unknown", dtype=Int)
-        self._sum0 = quantity_factory.zeros(
-            [I_DIM, J_DIM],
-            units="unknown",
-            dtype=Float,
-        )
-        self._sum1 = quantity_factory.zeros(
-            [I_DIM, J_DIM],
-            units="unknown",
-            dtype=Float,
-        )
+        self._zfix = self.make_local(quantity_factory, [I_DIM, J_DIM], dtype=Int)
+        self._zfix.data[:] = 0
+        self._sum0 = self.make_local(quantity_factory, [I_DIM, J_DIM])
+        self._sum0.data[:] = 0
+        self._sum1 = self.make_local(quantity_factory, [I_DIM, J_DIM])
+        self._sum1.data[:] = 0
 
     def __call__(
         self,

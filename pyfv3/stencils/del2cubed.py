@@ -1,3 +1,4 @@
+import dace
 import numpy as np
 
 from ndsl import QuantityFactory, StencilFactory, orchestrate
@@ -176,7 +177,10 @@ class HyperdiffusionDamping:
             cd: Damping coefficient
         """
 
-        for n in range(self._ntimes):
+        # Force unroll of the loop because list of object do not parse
+        # when unrolled
+        # -> https://github.com/spcl/dace/issues/2332
+        for n in dace.unroll(range(self._ntimes)):
             nt = self._ntimes - (n + 1)
 
             # Fill in appropriate corner values

@@ -139,7 +139,6 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
             area_64=self.grid.area_64,
             pfull=pfull,
             tracers=inputs["tracers"],
-            exclude_tracers=["cloud"],
         )
         l_to_e_obj(**inputs)
         inputs["tracers"] = tracers.quantity.data[:-1, :-1, :-1.0:-1]

@@ -109,7 +109,7 @@ Tracer2D1L:
   - backend: st:dace:gpu:KJI
     ignore_near_zero_errors:
       tracers: 1e-9
-  - backend: gt:cpu_ifirst
+  - backend: st:gt:cpu:KJI
     ignore_near_zero_errors:
       tracers: 1e-15
 
