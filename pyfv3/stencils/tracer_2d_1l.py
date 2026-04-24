@@ -536,7 +536,8 @@ class TracerCMax(NDSLRuntime):
         )
         # When turned into a Local - orchestration decides that
         # cmax_low and high are no longer used and skip all code
-        # :⚠️ This must be a Quantity for now
+        # -> https://github.com/NOAA-GFDL/NDSL/issues/444
+        # ⚠️ This must be a Quantity for now ⚠️
         self._tmp_cmax = quantity_factory.zeros(
             [I_DIM, J_DIM, K_DIM],
             units="unknown",
