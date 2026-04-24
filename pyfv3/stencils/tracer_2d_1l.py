@@ -311,6 +311,14 @@ class TracerAdvection(NDSLRuntime):
         )
         self.finite_volume_transport: FiniteVolumeTransport = transport
 
+        # Setup tracer courant max reduction calculation
+        self._compute_cmax = TracerCMax(
+            stencil_factory=stencil_factory,
+            quantity_factory=quantity_factory,
+            grid_data=grid_data,
+            comm=comm,
+        )
+
         # Setup halo updater for tracers
         tracer_halo_spec = quantity_factory.get_quantity_halo_spec(
             dims=[I_DIM, J_DIM, K_DIM, FVTracersAxisName],

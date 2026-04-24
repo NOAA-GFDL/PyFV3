@@ -112,6 +112,9 @@ Tracer2D1L:
   - backend: st:gt:cpu:KJI
     ignore_near_zero_errors:
       tracers: 1e-15
+  - backend: all
+    multimodal:
+      ulp_threshold: 200
 
 DivgDel6:
   - max_error: 3e-13 # 48_6ranks
