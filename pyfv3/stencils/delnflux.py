@@ -15,7 +15,7 @@ from pyfv3.stencils.copy_corners import CopyCornersX, CopyCornersY
 
 
 def calc_damp(damp_c: Quantity, da_min: Float, nord: Quantity) -> Quantity:
-    if damp_c.dims != nord.dims or damp_c.data.shape != nord.data.shape:
+    if damp_c.dims != nord.dims or damp_c.shape != nord.shape:
         raise NotImplementedError(
             "current implementation requires damp_c and nord to have identical data shape and dims"
         )
@@ -23,7 +23,7 @@ def calc_damp(damp_c: Quantity, da_min: Float, nord: Quantity) -> Quantity:
     # with downcasting behavior of array * scalar in numpy
     # We then reproduce the proper casting so `calc_damp` is a 32-bit float
     data = np.power(
-        (damp_c.data.astype(np.float64) * da_min), (nord.data + 1), dtype=np.float64
+        (damp_c[:].astype(np.float64) * da_min), (nord[:] + 1), dtype=np.float64
     ).astype(Float)
     return Quantity(
         data=data,

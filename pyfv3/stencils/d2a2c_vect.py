@@ -3,7 +3,7 @@ from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, get_precision
+from ndsl.dsl.typing import NDSL_GLOBAL_PRECISION, Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from ndsl.stencils import corners
 from pyfv3.stencils.a2b_ord4 import a1, a2, lagrange_x_func, lagrange_y_func
@@ -418,7 +418,7 @@ class DGrid2AGrid2CGridVectors:
         self._sin_sg4 = grid_data.sin_sg4
         self._grid_type = grid_type
 
-        self._big_number = Float(1e30) if get_precision() == 64 else Float(1e8)
+        self._big_number = Float(1e30) if NDSL_GLOBAL_PRECISION == 64 else Float(1e8)
         nx = grid_indexing.iec + 1  # grid.npx + 2
         ny = grid_indexing.jec + 1  # grid.npy + 2
         i1 = grid_indexing.isc - 1
