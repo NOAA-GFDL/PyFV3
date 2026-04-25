@@ -123,11 +123,15 @@ class MPPGlobalSum:
         mag_max_term = 0.0
 
         # Note: This loop range in i and j are for the TBC test case.
-        self._ints_sum.data[:] = 0
+        self._ints_sum[:] = 0
         for j in range(qty_to_sum.field.shape[1]):
             for i in range(qty_to_sum.field.shape[0]):
                 _increment_ints_faster(
-                    self._ints_sum.data, pr, I_pr, qty_to_sum.field[i, j], mag_max_term
+                    self._ints_sum.data[:],
+                    pr,
+                    I_pr,
+                    qty_to_sum.field[i, j],
+                    mag_max_term,
                 )
 
         if not _carry_overflow(self._ints_sum.data, prec, I_prec, prec_error):

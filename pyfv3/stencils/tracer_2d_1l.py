@@ -265,6 +265,10 @@ class TracerAdvection(NDSLRuntime):
             [I_DIM, J_DIM, K_DIM],
             units="Pa",
         )
+        # The `TracerCMax` system expects a Quantity to be
+        # able to do `.field.max` on it. Giving it a Local
+        # would lead to orchestration passing a numpy.array
+        # ⚠️ This must be a Quantity for now ⚠️
         self._cmax = quantity_factory.zeros(
             [K_DIM],
             units="unitless",

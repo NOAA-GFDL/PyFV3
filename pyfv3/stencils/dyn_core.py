@@ -503,9 +503,7 @@ class AcousticDynamics:
                 units="m",
                 dtype=Float,
             )
-            self._zs[:] = self._zs.np.asarray(
-                phis.data * constants.RGRAV, dtype=self._zs.data.dtype
-            )
+            self._zs.field[:] = phis.field[:] * constants.RGRAV
 
             self.update_height_on_d_grid = updatedzd.UpdateHeightOnDGrid(
                 stencil_factory,

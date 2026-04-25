@@ -28,17 +28,13 @@ class GlobalSum:
     def __call__(self, qty_to_sum: Quantity) -> Float:
         assert len(qty_to_sum.field.shape) == 2  # Code handle only 2D quantity
         self._comm.all_reduce(qty_to_sum, ReductionOperator.SUM, self._tmp_reduce)
-        if isinstance(self._tmp_reduce.data, np.ndarray):
+        if isinstance(self._tmp_reduce[:], np.ndarray):
             return np.sum(
-                self._tmp_reduce.data[
-                    self._isc : self._iec + 1, self._jsc : self._jec + 1
-                ]
+                self._tmp_reduce[self._isc : self._iec + 1, self._jsc : self._jec + 1]
             )
-        elif isinstance(self._tmp_reduce.data, cp.ndarray) and cp is not None:
+        elif isinstance(self._tmp_reduce[:], cp.ndarray) and cp is not None:
             return cp.sum(
-                self._tmp_reduce.data[
-                    self._isc : self._iec + 1, self._jsc : self._jec + 1
-                ]
+                self._tmp_reduce[self._isc : self._iec + 1, self._jsc : self._jec + 1]
             )
         else:
             raise TypeError("Unsupported array type for reduction result.")

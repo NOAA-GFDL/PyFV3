@@ -1,6 +1,6 @@
 from gt4py.cartesian.gtscript import FORWARD, computation, interval
 
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.comm.communicator import Communicator
 from ndsl.constants import (
     CV_AIR,
@@ -45,7 +45,7 @@ def _normalize_to_grid_stencil(
         zsum_2d = zsum_2d * area
 
 
-class LagrangianToEulerian_GEOS:
+class LagrangianToEulerian_GEOS(NDSLRuntime):
     """
     GEOS v11.4.2 remapping - derived from original fvcore.
 
@@ -63,11 +63,8 @@ class LagrangianToEulerian_GEOS:
         pfull,
         adiabatic: bool,
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            dace_compiletime_args=["tracers"],
-        )
+        super().__init__(stencil_factory)
+
         self._comm = comm
         self._stencil_factory = stencil_factory
         grid_indexing = stencil_factory.grid_indexing
@@ -431,12 +428,12 @@ class LagrangianToEulerian_GEOS:
         # Build remapping profiles
         self._init_pe(pe, self._pe1, self._pe2, ptop)
         self._moist_cv_pt_pressure(
-            qvapor=tracers.vapor,
-            qliquid=tracers.liquid,
-            qrain=tracers.rain,
-            qsnow=tracers.snow,
-            qice=tracers.ice,
-            qgraupel=tracers.graupel,
+            qvapor=tracers[:, :, :, FVTracers.index("vapor")],
+            qliquid=tracers[:, :, :, FVTracers.index("liquid")],
+            qrain=tracers[:, :, :, FVTracers.index("rain")],
+            qsnow=tracers[:, :, :, FVTracers.index("snow")],
+            qice=tracers[:, :, :, FVTracers.index("ice")],
+            qgraupel=tracers[:, :, :, FVTracers.index("graupel")],
             q_con=q_con,
             pt=pt,
             cappa=cappa,
@@ -516,12 +513,12 @@ class LagrangianToEulerian_GEOS:
         )
 
         self._moist_cv_pkz(
-            qvapor=tracers.vapor,
-            qliquid=tracers.liquid,
-            qrain=tracers.rain,
-            qsnow=tracers.snow,
-            qice=tracers.ice,
-            qgraupel=tracers.graupel,
+            qvapor=tracers[:, :, :, FVTracers.index("vapor")],
+            qliquid=tracers[:, :, :, FVTracers.index("liquid")],
+            qrain=tracers[:, :, :, FVTracers.index("rain")],
+            qsnow=tracers[:, :, :, FVTracers.index("snow")],
+            qice=tracers[:, :, :, FVTracers.index("ice")],
+            qgraupel=tracers[:, :, :, FVTracers.index("graupel")],
             pkz=pkz,
             pt=pt,
             cappa=cappa,
@@ -534,12 +531,12 @@ class LagrangianToEulerian_GEOS:
         if last_step:
             if consv_te > CONSV_MIN:
                 self._moist_cv_te(
-                    qvapor=tracers.vapor,
-                    qliquid=tracers.liquid,
-                    qrain=tracers.rain,
-                    qsnow=tracers.snow,
-                    qice=tracers.ice,
-                    qgraupel=tracers.graupel,
+                    qvapor=tracers[:, :, :, FVTracers.index("vapor")],
+                    qliquid=tracers[:, :, :, FVTracers.index("liquid")],
+                    qrain=tracers[:, :, :, FVTracers.index("rain")],
+                    qsnow=tracers[:, :, :, FVTracers.index("snow")],
+                    qice=tracers[:, :, :, FVTracers.index("ice")],
+                    qgraupel=tracers[:, :, :, FVTracers.index("graupel")],
                     u=u,
                     v=v,
                     w=w,
@@ -583,13 +580,13 @@ class LagrangianToEulerian_GEOS:
             fast_mp_consv = consv_te > CONSV_MIN
             self._saturation_adjustment(
                 dp1,
-                tracers.vapor,
-                tracers.liquid,
-                tracers.ice,
-                tracers.rain,
-                tracers.snow,
-                tracers.graupel,
-                tracers.cloud,
+                tracers[:, :, :, FVTracers.index("vapor")],
+                tracers[:, :, :, FVTracers.index("liquid")],
+                tracers[:, :, :, FVTracers.index("ice")],
+                tracers[:, :, :, FVTracers.index("rain")],
+                tracers[:, :, :, FVTracers.index("snow")],
+                tracers[:, :, :, FVTracers.index("graupel")],
+                tracers[:, :, :, FVTracers.index("cloud")],
                 hs,
                 peln,
                 delp,
@@ -611,12 +608,12 @@ class LagrangianToEulerian_GEOS:
             # to the physics, but if we're staying in dynamics we need
             # to keep it as the virtual potential temperature
             self._moist_cv_last_step_stencil(
-                qvapor=tracers.vapor,
-                qliquid=tracers.liquid,
-                qrain=tracers.rain,
-                qsnow=tracers.snow,
-                qice=tracers.ice,
-                qgraupel=tracers.graupel,
+                qvapor=tracers[:, :, :, FVTracers.index("vapor")],
+                qliquid=tracers[:, :, :, FVTracers.index("liquid")],
+                qrain=tracers[:, :, :, FVTracers.index("rain")],
+                qsnow=tracers[:, :, :, FVTracers.index("snow")],
+                qice=tracers[:, :, :, FVTracers.index("ice")],
+                qgraupel=tracers[:, :, :, FVTracers.index("graupel")],
                 pt=pt,
                 pkz=pkz,
                 dtmp=dtmp,
@@ -624,11 +621,11 @@ class LagrangianToEulerian_GEOS:
             )
             self._fill_cond(
                 q_con=q_con,
-                qliquid=tracers.liquid,
-                qrain=tracers.rain,
-                qsnow=tracers.snow,
-                qice=tracers.ice,
-                qgraupel=tracers.graupel,
+                qliquid=tracers[:, :, :, FVTracers.index("liquid")],
+                qrain=tracers[:, :, :, FVTracers.index("rain")],
+                qsnow=tracers[:, :, :, FVTracers.index("snow")],
+                qice=tracers[:, :, :, FVTracers.index("ice")],
+                qgraupel=tracers[:, :, :, FVTracers.index("graupel")],
             )
         else:
             # converts virtual temperature back to virtual potential temperature

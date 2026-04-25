@@ -243,7 +243,6 @@ class DynamicalCore(NDSLRuntime):
         config: DynamicalCoreConfig,
         phis: Quantity,
         state: DycoreState,
-        exclude_tracers: list[str],
         timestep: timedelta,
     ):
         """
@@ -315,7 +314,7 @@ class DynamicalCore(NDSLRuntime):
             "graupel",
             "cloud",
         ]
-        if not all(n in state.tracers._indexer.keys() for n in required_tracers):
+        if not all(n in FVTracers.mapping.keys() for n in required_tracers):
             raise NotImplementedError(
                 "Dynamical core (fv_dynamics):"
                 " missing required tracers. Dynamics requires:\n"
@@ -533,10 +532,15 @@ class DynamicalCore(NDSLRuntime):
             units="unknown",
             dtype=Float,
         )
-        self._set_value = stencil_factory.from_origin_domain(
+        self._set_value_I_interface = stencil_factory.from_origin_domain(
             func=set_value,
             origin=grid_indexing.origin_compute(),
-            domain=grid_indexing.domain_compute(add=(1, 1, 0)),
+            domain=grid_indexing.domain_compute(add=(1, 0, 0)),
+        )
+        self._set_value_J_interface = stencil_factory.from_origin_domain(
+            func=set_value,
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(add=(0, 1, 0)),
         )
         self._increment = stencil_factory.from_origin_domain(
             func=_increment_stencil,
@@ -567,10 +571,10 @@ class DynamicalCore(NDSLRuntime):
             log_on_rank_0("FV Setup")
 
         # Reset fluxes
-        self._set_value(state.mfxd, Float(0.0))
-        self._set_value(state.mfyd, Float(0.0))
-        self._set_value(state.cxd, Float(0.0))
-        self._set_value(state.cyd, Float(0.0))
+        self._set_value_I_interface(state.mfxd, Float(0.0))
+        self._set_value_I_interface(state.cxd, Float(0.0))
+        self._set_value_J_interface(state.mfyd, Float(0.0))
+        self._set_value_J_interface(state.cyd, Float(0.0))
 
         self._fv_setup_stencil(
             state.tracers[:, :, :, FVTracers.index("vapor")],
@@ -648,8 +652,6 @@ class DynamicalCore(NDSLRuntime):
         self.step_dynamics(*args, **kwargs)
 
     def _compute(self, state: DycoreState, timer: Timer) -> None:
-        self._state_into_tracers(state)
-
         self.compute_preamble(state)
 
         for k_split in range(self._k_split):
@@ -813,13 +815,13 @@ class DynamicalCore(NDSLRuntime):
         if __debug__:
             log_on_rank_0("Neg Adj 3")
         self._adjust_tracer_mixing_ratio(
-            self.tracers[:, :, :, FVTracers.index("vapor")],
-            self.tracers[:, :, :, FVTracers.index("liquid")],
-            self.tracers[:, :, :, FVTracers.index("rain")],
-            self.tracers[:, :, :, FVTracers.index("snow")],
-            self.tracers[:, :, :, FVTracers.index("ice")],
-            self.tracers[:, :, :, FVTracers.index("graupel")],
-            self.tracers[:, :, :, FVTracers.index("cloud")],
+            state.tracers[:, :, :, FVTracers.index("vapor")],
+            state.tracers[:, :, :, FVTracers.index("liquid")],
+            state.tracers[:, :, :, FVTracers.index("rain")],
+            state.tracers[:, :, :, FVTracers.index("snow")],
+            state.tracers[:, :, :, FVTracers.index("ice")],
+            state.tracers[:, :, :, FVTracers.index("graupel")],
+            state.tracers[:, :, :, FVTracers.index("cloud")],
             state.pt,
             state.delp,
         )
@@ -838,5 +840,3 @@ class DynamicalCore(NDSLRuntime):
             state.ua,
             state.va,
         )
-
-        self._tracers_into_state(state)

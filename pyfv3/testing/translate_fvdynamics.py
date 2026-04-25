@@ -7,7 +7,7 @@ import pytest
 from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Quantity, QuantityFactory, StencilFactory
+from ndsl import Quantity, StencilFactory
 from ndsl.constants import (
     I_DIM,
     I_INTERFACE_DIM,
@@ -23,7 +23,7 @@ from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import fv_dynamics
-from pyfv3.tracers import default_ai2_tracers
+from pyfv3.tracers import FVTracersAxisName, GEOS_tracers_mapping, setup_fvtracers
 
 
 class TranslateFVDynamics(ParallelTranslateBaseSlicing):
@@ -164,10 +164,10 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         },
         "bdt": {"dims": []},
         "ptop": {"dims": []},
+        "tracers": {"dims": [I_DIM, J_DIM, K_DIM, FVTracersAxisName], "units": "kg/g"},
     }
 
     outputs = inputs.copy()
-    outputs["tracers"] = {}
 
     for name in ("bdt", "ak", "bk", "ptop", "ua"):
         outputs.pop(name)
@@ -233,24 +233,10 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         self.ignore_near_zero_errors: dict[str, float | bool] = {}
         self.dycore: fv_dynamics.DynamicalCore | None = None
         self.stencil_factory = stencil_factory
-        self._quantity_factory = QuantityFactory(
-            sizer=grid.sizer,
-            backend=stencil_factory.backend,
-        )
-        self.namelist: DynamicalCoreConfig = DynamicalCoreConfig.from_f90nml(namelist)
+        self.config: DynamicalCoreConfig = DynamicalCoreConfig.from_f90nml(namelist)
 
     def state_from_inputs(self, inputs: dict[str, np.ndarray]) -> DycoreState:
-        tracers = self._quantity_factory.empty(
-            (
-                inputs["tracers"].shape[0] + 1,
-                inputs["tracers"].shape[1] + 1,
-                inputs["tracers"].shape[2] + 1,
-                inputs["tracers"].shape[3],
-            )
-        )
-        tracers[:-1, :-1, :-1, :] = inputs.pop("tracers")
         input_storages = super().state_from_inputs(inputs)
-        input_storages["tracers"] = tracers
         # Move fluxes and courant numbers
         input_storages["mfxd"] = input_storages.pop("mfxd_FV")
         input_storages["mfyd"] = input_storages.pop("mfyd_FV")
@@ -266,7 +252,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
             del input_storages[name]
         state = DycoreState.init_from_storages(
             storages=input_storages,
-            quantity_factory=self._quantity_factory,
+            quantity_factory=self.grid.quantity_factory,
         )
         return state
 
@@ -289,7 +275,9 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         return state, grid_data
 
     def compute_parallel(self, inputs: dict, communicator: Communicator) -> dict:
-        default_ai2_tracers(self.grid.quantity_factory)
+        setup_fvtracers(
+            self.grid.quantity_factory, inputs["tracers"].shape[3], GEOS_tracers_mapping
+        )
         state, grid_data = self.prepare_data(inputs)
         self.dycore = fv_dynamics.DynamicalCore(
             comm=communicator,
@@ -300,7 +288,6 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
             config=self.config,
             phis=state.phis,
             state=state,
-            exclude_tracers=["cloud"],
             timestep=timedelta(seconds=float(inputs["bdt"])),
         )
         self.dycore.step_dynamics(state, NullTimer())

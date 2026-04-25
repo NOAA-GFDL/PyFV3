@@ -1,11 +1,12 @@
 from gt4py.cartesian.gtscript import BACKWARD, FORWARD, K, computation, interval
 
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import GRAV, I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.stencils.moist_cv import moist_cv_nwat6_fn
+from pyfv3.tracers import FVTracers
 
 
 def _compute_total_energy__stencil(
@@ -81,7 +82,7 @@ def _compute_total_energy__stencil(
         )
 
 
-class ComputeTotalEnergy:
+class ComputeTotalEnergy(NDSLRuntime):
     """Compute total energy performs the FV3-consistent
     computation of the global total energy.
 
@@ -94,11 +95,8 @@ class ComputeTotalEnergy:
         quantity_factory: QuantityFactory,
         grid_data: GridData,
     ) -> None:
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            dace_compiletime_args=["tracers"],
-        )
+        super().__init__(stencil_factory)
+
         if config.hydrostatic:
             raise NotImplementedError(
                 "Dynamics (Compute Total Energy):  hydrostatic option is not implemented."
@@ -132,7 +130,7 @@ class ComputeTotalEnergy:
         u: FloatField,
         v: FloatField,
         w: FloatField,
-        tracers,
+        tracers: FVTracers,
         te_2d: FloatFieldIJ,
     ) -> None:
         self._compute_total_energy(
@@ -144,12 +142,12 @@ class ComputeTotalEnergy:
             u=u,
             v=v,
             w=w,
-            qvapor=tracers.vapor,
-            qliquid=tracers.liquid,
-            qrain=tracers.rain,
-            qsnow=tracers.snow,
-            qice=tracers.ice,
-            qgraupel=tracers.graupel,
+            qvapor=tracers[:, :, :, FVTracers.index("vapor")],
+            qliquid=tracers[:, :, :, FVTracers.index("liquid")],
+            qrain=tracers[:, :, :, FVTracers.index("rain")],
+            qsnow=tracers[:, :, :, FVTracers.index("snow")],
+            qice=tracers[:, :, :, FVTracers.index("ice")],
+            qgraupel=tracers[:, :, :, FVTracers.index("graupel")],
             rsin2=self._rsin2,
             cosa_s=self._cosa_s,
             phyz=self._phyz,

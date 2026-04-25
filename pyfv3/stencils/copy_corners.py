@@ -200,8 +200,8 @@ class CopyCornersX(NDSLRuntime):
         self._internal_corners_copy(field)
 
     def nord(self, field: FloatField, nord: Quantity):
-        for k in dace.map[0 : nord.data.shape[0]]:
-            if nord.data[k] > 0:
+        for k in dace.map[0 : nord.shape[0]]:
+            if nord[k] > 0:
                 self._internal_corners_copy(field[:, :, k])
 
 
@@ -228,6 +228,6 @@ class CopyCornersY(NDSLRuntime):
         self._internal_corners_copy(field)
 
     def nord(self, field: FloatField, nord: Quantity):
-        for k in dace.map[0 : nord.data.shape[0]]:
-            if nord.data[k] > 0:
+        for k in dace.map[0 : nord.shape[0]]:
+            if nord[k] > 0:
                 self._internal_corners_copy(field[:, :, k])

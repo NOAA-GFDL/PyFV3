@@ -377,10 +377,13 @@ class DycoreState:
     ) -> Self:
         inputs = {}
         for _field in fields(cls):
-            if "dims" in _field.metadata.keys():
+            if "dims" in _field.metadata:
                 dims = _field.metadata["dims"]
+                storage = storages[_field.name]
+                if isinstance(storage, Quantity):
+                    storage = storage[:]
                 quantity = Quantity(
-                    storages[_field.name],
+                    storage,
                     dims,
                     _field.metadata["units"],
                     origin=quantity_factory.sizer.get_origin(dims),
