@@ -406,7 +406,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             else:
                 outputs[name] = state[name]  # scalar
         # Put tracers
-        storages["tracers"] = state["tracers"].quantity.data[:-1, :-1, :-1, :]
+        storages["tracers"] = state["tracers"][:-1, :-1, :-1, :]
         outputs.update(self._base.slice_output(storages))
         return outputs
 
@@ -429,7 +429,8 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
 
         self._tracers = self.quantity_factory.empty(
             [I_DIM, J_DIM, K_DIM, FVTracersAxisName], ""
-        )[:-1, :-1, :-1, :] = inputs["tracers"][:]
+        )
+        self._tracers[:-1, :-1, :-1, :] = inputs["tracers"][:]
         inputs.pop("tracers")
         self._base.in_vars["data_vars"].pop("tracers")
 
@@ -444,8 +445,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             self.grid.grid_data,
             state.nq,
             state.pfull,
-            state.tracers,
-            DynamicalCoreConfig.adiabatic,
+            self.config.adiabatic,
         )
 
         l_to_e(
