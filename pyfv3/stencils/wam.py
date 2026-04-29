@@ -1,5 +1,5 @@
 from ndsl import StencilFactory
-from ndsl.constants import GRAV, RADIUS, RDGAS, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM
+from ndsl.constants import GRAV, RADIUS, RDGAS, I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval
