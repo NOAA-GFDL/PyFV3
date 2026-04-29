@@ -322,7 +322,6 @@ class DynamicalCore:
             area_64=grid_data.area_64,
             nq=NQ,
             pfull=self._pfull,
-            tracers=self.tracers,
         )
 
         full_xyz_spec = quantity_factory.get_quantity_halo_spec(
