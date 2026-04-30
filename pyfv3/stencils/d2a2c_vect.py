@@ -1,4 +1,4 @@
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
@@ -384,7 +384,7 @@ def edge_interpolate4_y(va, dya):
     )
 
 
-class DGrid2AGrid2CGridVectors:
+class DGrid2AGrid2CGridVectors(NDSLRuntime):
     """
     Fortran name d2a2c_vect
     """
@@ -398,10 +398,10 @@ class DGrid2AGrid2CGridVectors:
         grid_type: int,
         dord4: bool,
     ):
+        super().__init__(stencil_factory)
+
         if grid_type not in [0, 4]:
             raise NotImplementedError(f"unimplemented grid_type {grid_type}")
-
-        orchestrate(obj=self, config=stencil_factory.config.dace_config)
 
         grid_indexing = stencil_factory.grid_indexing
         self._cosa_s = grid_data.cosa_s

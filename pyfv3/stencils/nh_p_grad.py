@@ -1,6 +1,6 @@
 import numpy as np
 
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_INTERFACE_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
@@ -112,7 +112,7 @@ def calc_v(
         ) * rdy
 
 
-class NonHydrostaticPressureGradient:
+class NonHydrostaticPressureGradient(NDSLRuntime):
     """
     Apply nonhydrostatic pressure gradient force in the horizontal.
 
@@ -131,10 +131,7 @@ class NonHydrostaticPressureGradient:
         grid_type: int,
         use_logp: bool,
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
 
         grid_indexing = stencil_factory.grid_indexing
         self.orig = grid_indexing.origin_compute()

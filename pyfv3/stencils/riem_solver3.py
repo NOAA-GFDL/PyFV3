@@ -3,7 +3,7 @@ import typing
 import numpy as np
 
 import ndsl.constants as constants
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, exp, interval, log
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
@@ -137,7 +137,7 @@ def finalize(
             zh = zh[0, 0, 1] - dz
 
 
-class NonhydrostaticVerticalSolver:
+class NonhydrostaticVerticalSolver(NDSLRuntime):
     """
     Fortran subroutine Riem_Solver3
 
@@ -153,17 +153,14 @@ class NonhydrostaticVerticalSolver:
         quantity_factory: QuantityFactory,
         config: RiemannConfig,
     ):
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         self._sim1_solve = Sim1Solver(
             stencil_factory,
             Float(config.p_fac),
             n_halo=0,
         )
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
-
         if config.a_imp <= 0.999:
             raise NotImplementedError("a_imp <= 0.999 is not implemented")
 

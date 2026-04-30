@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 
+import dace
 import numpy as np
 
 import ndsl.constants as constants
@@ -13,11 +14,11 @@ import pyfv3.stencils.updatedzc as updatedzc
 import pyfv3.stencils.updatedzd as updatedzd
 from ndsl import (
     GridIndexing,
+    NDSLRuntime,
     Quantity,
     QuantityFactory,
     StencilFactory,
     WrappedHaloUpdater,
-    orchestrate,
 )
 from ndsl.constants import (
     I_DIM,
@@ -266,7 +267,7 @@ def dyncore_temporaries(
     return temporaries
 
 
-class AcousticDynamics:
+class AcousticDynamics(NDSLRuntime):
     """
     Fortran name is dyn_core
     Performs the Lagrangian acoustic dynamics described by Lin 2004
@@ -429,11 +430,7 @@ class AcousticDynamics:
             pfull: atmospheric Eulerian grid reference pressure (Pa)
             phis: surface geopotential height
         """
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            dace_compiletime_args=["state"],
-        )
+        super().__init__(stencil_factory)
 
         grid_indexing = stencil_factory.grid_indexing
         self.config = config
@@ -656,7 +653,7 @@ class AcousticDynamics:
 
     def __call__(
         self,
-        state: DycoreState,
+        state: dace.compiletime,  # ToDo: remove when DycoreState becomes a ndsl.State
         mfxd,
         mfyd,
         cxd,

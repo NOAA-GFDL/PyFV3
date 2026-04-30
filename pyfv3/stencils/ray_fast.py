@@ -1,7 +1,7 @@
 import numpy as np
 
 import ndsl.constants as constants
-from ndsl import StencilFactory, orchestrate
+from ndsl import NDSLRuntime, StencilFactory
 from ndsl.boilerplate import get_factories_single_tile
 from ndsl.constants import (
     I_DIM,
@@ -152,7 +152,7 @@ def ray_fast_wind_compute(
                     w *= rf
 
 
-class RayleighDamping:
+class RayleighDamping(NDSLRuntime):
     """
     Apply Rayleigh damping (for tau > 0).
 
@@ -173,7 +173,8 @@ class RayleighDamping:
         tau: Float,
         hydrostatic: bool,
     ):
-        orchestrate(obj=self, config=stencil_factory.config.dace_config)
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         self._rf_cutoff = Float(rf_cutoff)
         origin, domain = grid_indexing.get_origin_domain(

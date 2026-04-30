@@ -1,4 +1,4 @@
-from ndsl import Quantity, QuantityFactory, StencilFactory
+from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
@@ -123,7 +123,7 @@ def compute_gz_ws(
         gz = gz if gz > gz_kp1 else gz_kp1
 
 
-class UpdateGeopotentialHeightOnCGrid:
+class UpdateGeopotentialHeightOnCGrid(NDSLRuntime):
     def __init__(
         self,
         stencil_factory: StencilFactory,
@@ -137,6 +137,7 @@ class UpdateGeopotentialHeightOnCGrid:
         Args:
             dz_min: controls minimum thickness in NH solver
         """
+        super().__init__(stencil_factory)
 
         grid_indexing = stencil_factory.grid_indexing
         self._area = area

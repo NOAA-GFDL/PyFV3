@@ -1,4 +1,4 @@
-from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation, horizontal, interval, region  # noqa
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, I, J
@@ -494,7 +494,7 @@ def update_y_velocity(
         velocity_c = velocity_c - tmp_flux * flux + rdyc * (ke[0, -1, 0] - ke)
 
 
-class CGridShallowWaterDynamics:
+class CGridShallowWaterDynamics(NDSLRuntime):
     """
     Fortran name is c_sw
     """
@@ -508,7 +508,8 @@ class CGridShallowWaterDynamics:
         grid_type: int,
         nord: int,
     ):
-        orchestrate(obj=self, config=stencil_factory.config.dace_config)
+        super().__init__(stencil_factory)
+
         self.grid_data = grid_data
         self._dord4 = True
         self._fC = self.grid_data.fC

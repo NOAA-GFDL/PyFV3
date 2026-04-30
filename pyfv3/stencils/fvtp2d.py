@@ -1,4 +1,4 @@
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
@@ -115,7 +115,7 @@ def final_fluxes(
             )
 
 
-class FiniteVolumeTransport:
+class FiniteVolumeTransport(NDSLRuntime):
     """
     Equivalent of Fortran FV3 subroutine fv_tp_2d, done in 3 dimensions.
     Tested on serialized data with FvTp2d
@@ -133,10 +133,7 @@ class FiniteVolumeTransport:
         nord=None,
         damp_c=None,
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
 
         # use a shorter alias for grid_indexing here to avoid very verbose lines
         idx = stencil_factory.grid_indexing

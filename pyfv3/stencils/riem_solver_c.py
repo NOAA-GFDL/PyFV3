@@ -1,7 +1,7 @@
 import typing
 
 import ndsl.constants as constants
-from ndsl import QuantityFactory, StencilFactory
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval, log
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
@@ -114,7 +114,7 @@ def finalize(
             gz = gz[0, 0, 1] - dz * constants.GRAV
 
 
-class NonhydrostaticVerticalSolverCGrid:
+class NonhydrostaticVerticalSolverCGrid(NDSLRuntime):
     """
     Fortran subroutine Riem_Solver_C
 
@@ -132,6 +132,8 @@ class NonhydrostaticVerticalSolverCGrid:
         quantity_factory: QuantityFactory,
         p_fac: Float,
     ):
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         origin = grid_indexing.origin_compute(add=(-1, -1, 0))
         domain = grid_indexing.domain_compute(add=(2, 2, 1))

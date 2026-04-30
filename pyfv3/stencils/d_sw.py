@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 
-from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, I, J, computation
 from ndsl.dsl.gt4py import function as gtfunction
@@ -717,16 +717,16 @@ def get_column_namelist(
 
     # Check that the format of nord_col is N 0's then non-zero values
     # all the way to the top.
-    # Check upper values are all the same.
-    non_zero_k = -1
-    non_zero_v = -1
-    for k, v in enumerate(col["nord_v"].view[:]):
+    # Non-zeros values are all the same.
+    first_non_zero_index = -1
+    first_non_zero_value = -1
+    for i, v in enumerate(col["nord_v"].view[:]):
         if v != 0:
-            non_zero_k = k
-            non_zero_v = v
+            first_non_zero_index = i
+            first_non_zero_value = v
             break
-    for v in range(non_zero_k, col["nord_v"].view.extent[0]):
-        if col["nord_v"].view[v] != non_zero_v:
+    for v in range(first_non_zero_index, col["nord_v"].view.extent[0]):
+        if col["nord_v"].view[v] != first_non_zero_value:
             raise RuntimeError(
                 f"D_SW.column is not homogeneous in values: {col['nord_v'].view[:]}"
             )
@@ -770,7 +770,7 @@ def interpolate_uc_vc_to_cell_corners(
     return ub, vb
 
 
-class DGridShallowWaterLagrangianDynamics:
+class DGridShallowWaterLagrangianDynamics(NDSLRuntime):
     """
     Fortran name is the d_sw subroutine
     """
@@ -786,7 +786,8 @@ class DGridShallowWaterLagrangianDynamics:
         stretched_grid: bool,
         config: DGridShallowWaterLagrangianDynamicsConfig,
     ):
-        orchestrate(obj=self, config=stencil_factory.config.dace_config)
+        super().__init__(stencil_factory)
+
         self.grid_data = grid_data
         self._f0 = self.grid_data.fC_agrid
         self._d_con = config.d_con

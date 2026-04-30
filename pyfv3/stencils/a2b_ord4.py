@@ -1,4 +1,4 @@
-from ndsl import GridIndexing, QuantityFactory, StencilFactory, orchestrate
+from ndsl import GridIndexing, NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, asin, computation, cos
 from ndsl.dsl.gt4py import function as gtfunction
@@ -528,7 +528,7 @@ def doubly_periodic_a2b_ord4_stencil(qout: FloatField, qin: FloatField):
         qout = doubly_periodic_a2b_ord4(qin)
 
 
-class AGrid2BGridFourthOrder:
+class AGrid2BGridFourthOrder(NDSLRuntime):
     """
     Fortran name is a2b_ord4, test module is A2B_Ord4
     """
@@ -549,7 +549,8 @@ class AGrid2BGridFourthOrder:
             z_dim: defines whether vertical dimension is centered or staggered
             replace: boolean, update qin to the B grid as well
         """
-        orchestrate(obj=self, config=stencil_factory.config.dace_config)
+        super().__init__(stencil_factory)
+
         if grid_type != 0 and grid_type != 4:
             raise RuntimeError(
                 "A-Grid to B-Grid 4th order (a2b_ord4):"

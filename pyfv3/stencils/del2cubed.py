@@ -1,7 +1,7 @@
 import dace
 import numpy as np
 
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation, horizontal, interval, region
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
@@ -76,7 +76,7 @@ def update_q(
         q += cd * rarea * (fx - fx[1, 0, 0] + fy - fy[0, 1, 0])
 
 
-class HyperdiffusionDamping:
+class HyperdiffusionDamping(NDSLRuntime):
     """
     Fortran name is del2_cubed
     """
@@ -93,7 +93,8 @@ class HyperdiffusionDamping:
         Args:
             grid: pyfv3 grid object
         """
-        orchestrate(obj=self, config=stencil_factory.config.dace_config)
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         self._del6_u = damping_coefficients.del6_u
         self._del6_v = damping_coefficients.del6_v

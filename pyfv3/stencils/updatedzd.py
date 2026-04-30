@@ -1,4 +1,4 @@
-from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import (
     I_DIM,
     I_INTERFACE_DIM,
@@ -199,7 +199,7 @@ def cubic_spline_interpolation_from_layer_center_to_interfaces(
         q_interface -= gamma * q_interface[0, 0, 1]
 
 
-class UpdateHeightOnDGrid:
+class UpdateHeightOnDGrid(NDSLRuntime):
     """
     Fortran name is updatedzd.
     """
@@ -226,10 +226,8 @@ class UpdateHeightOnDGrid:
             dz_min (in): controls minimum thickness in NH solver
             column_namelist
         """
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         self.grid_indexing = grid_indexing
         self._area = grid_data.area

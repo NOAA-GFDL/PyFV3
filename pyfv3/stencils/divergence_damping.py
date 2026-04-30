@@ -3,9 +3,9 @@ import numpy as np
 
 import ndsl.stencils.basic_operations as basic
 import ndsl.stencils.corners as corners
-from ndsl import Quantity, QuantityFactory, StencilFactory
+from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
-from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
+from ndsl.dsl.dace.orchestration import dace_inhibitor
 from ndsl.dsl.gt4py import PARALLEL, computation, float32
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region, sqrt
@@ -328,7 +328,7 @@ def smag_corner(
         smag_c = dt * sqrt(shear**2 + smag_c_t**2)
 
 
-class DivergenceDamping:
+class DivergenceDamping(NDSLRuntime):
     """
     A large section in Fortran's d_sw that applies divergence damping
     """
@@ -348,10 +348,8 @@ class DivergenceDamping:
         nord_col: Quantity,
         d2_bg: FloatFieldK,
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
+
         self.grid_indexing = stencil_factory.grid_indexing
         if nested:
             raise NotImplementedError("Divergence Damping: nested not implemented.")
