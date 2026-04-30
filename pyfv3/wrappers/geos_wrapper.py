@@ -10,6 +10,7 @@ from gt4py.cartesian.config import build_settings as gt_build_settings
 from mpi4py import MPI
 
 import pyfv3
+from pyfv3.tracers import default_ai2_tracers
 from ndsl import (
     Backend,
     CompilationConfig,
@@ -193,6 +194,7 @@ class GeosDycoreWrapper:
 
         damping_coefficients = DampingCoefficients.new_from_metric_terms(metric_terms)
 
+        default_ai2_tracers(quantity_factory)
         with StencilBackendCompilerOverride(MPI.COMM_WORLD, stencil_config.dace_config):
             self.dynamical_core = pyfv3.DynamicalCore(
                 comm=self.communicator,
