@@ -1,4 +1,4 @@
-from ndsl import StencilFactory, orchestrate
+from ndsl import NDSLRuntime, StencilFactory
 from ndsl.dsl.gt4py import PARALLEL, compile_assert, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
@@ -297,7 +297,7 @@ def compute_y_flux(
             yflux = get_flux_ord8plus(q, courant, bl, br)
 
 
-class YPiecewiseParabolic:
+class YPiecewiseParabolic(NDSLRuntime):
     """
     Fortran name is yppm
 
@@ -338,7 +338,7 @@ class YPiecewiseParabolic:
         #           scheme as described above with compiler-time `jord` conditional to
         #           direct the code
 
-        orchestrate(obj=self, config=stencil_factory.config.dace_config)
+        super().__init__(stencil_factory)
         # Arguments come from:
         # namelist.grid_type
         # grid.dya
