@@ -44,7 +44,7 @@ extras = [
   "pyfv3[ndsl]",
   "pyfv3[test]"
 ]
-ndsl = ["ndsl @ git+https://github.com/FlorianDeconinck/NDSL.git@feature/data_dimnesion_fields"]
+ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@develop"]
 test = [
   "coverage",
   "pytest",
