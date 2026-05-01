@@ -1,12 +1,12 @@
 import numpy as np
 from f90nml import Namelist
 
-import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import pad_field_in_j
-from ndsl.utils import safe_assign_array
 from pyfv3.stencils import fillz
 from pyfv3.testing import TranslateDycoreFortranData2Py
+from pyfv3.tracers import FVTracersAxisName, default_ai2_tracers
 
 
 class TranslateFillz(TranslateDycoreFortranData2Py):
@@ -34,18 +34,25 @@ class TranslateFillz(TranslateDycoreFortranData2Py):
         self.max_error = 1e-13
         self.ignore_near_zero_errors = {"q2tracers": True}
         self.stencil_factory = stencil_factory
+        self.quantity_factory = grid.quantity_factory
 
-    def make_storage_data_input_vars(self, inputs, storage_vars=None):
+    def make_storage_data_input_vars(
+        self,
+        inputs,
+        storage_vars=None,
+    ) -> None:
+        default_ai2_tracers(self.quantity_factory)
         if storage_vars is None:
             storage_vars = self.storage_vars()
         info = storage_vars["dp2"]
         inputs["dp2"] = self.make_storage_data(
             np.squeeze(inputs["dp2"]), istart=info["istart"], axis=info["axis"]
         )
+
         inputs["tracers"] = {}
         info = storage_vars["q2tracers"]
         for i in range(int(inputs["nq"])):
-            inputs["tracers"][utils.tracer_variables[i]] = self.make_storage_data(
+            inputs["tracers"][i] = self.make_storage_data(
                 np.squeeze(inputs["q2tracers"][:, :, i]),
                 istart=info["istart"],
                 axis=info["axis"],
@@ -61,28 +68,36 @@ class TranslateFillz(TranslateDycoreFortranData2Py):
                         value, self.grid.njd, backend=self.stencil_factory.backend
                     )
                 )
-        for name, value in tuple(inputs["tracers"].items()):
+        quantity_tracers = self.grid.quantity_factory.empty(
+            [I_DIM, J_DIM, K_DIM, FVTracersAxisName], "n/a"
+        )
+        for i_tracer, value in tuple(inputs["tracers"].items()):
             if hasattr(value, "shape") and len(value.shape) > 1 and value.shape[1] == 1:
-                inputs["tracers"][name] = self.make_storage_data(
+                quantity_tracers.data[:, :, :, i_tracer] = self.make_storage_data(
                     pad_field_in_j(
                         value, self.grid.njd, backend=self.stencil_factory.backend
                     )
                 )
+        inputs["tracers"] = quantity_tracers
+
         run_fillz = fillz.FillNegativeTracerValues(
             self.stencil_factory,
             self.grid.quantity_factory,
             inputs.pop("nq"),
-            inputs["tracers"],
         )
         run_fillz(**inputs)
+
         ds = self.grid.default_domain_dict()
         ds.update(self.out_vars["q2tracers"])
-        tracers = np.zeros((self.grid.nic, self.grid.npz, len(inputs["tracers"])))
-        for varname, data in inputs["tracers"].items():
-            index = utils.tracer_variables.index(varname)
-            data[self.grid.slice_dict(ds)]
-            safe_assign_array(
-                tracers[:, :, index], np.squeeze(data[self.grid.slice_dict(ds)])
-            )
-        out = {"q2tracers": tracers}
+
+        if self.stencil_factory.backend.is_fortran_aligned():
+            offset = None
+        else:
+            offset = -1
+
+        out = {
+            "q2tracers": quantity_tracers.data[
+                ds["istart"] : ds["iend"] + 1, ds["jstart"], : ds["kend"] + 1, :offset
+            ]
+        }
         return out

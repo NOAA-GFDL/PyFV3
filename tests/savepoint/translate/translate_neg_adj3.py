@@ -2,7 +2,6 @@ from typing import Any, Dict
 
 from f90nml import Namelist
 
-import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
 from pyfv3.stencils import AdjustNegativeTracerMixingRatio
 from pyfv3.testing import TranslateDycoreFortranData2Py
@@ -40,8 +39,6 @@ class TranslateNeg_Adj3(TranslateDycoreFortranData2Py):
             "qcld": {},
             # "pt": {},
         }
-        for qvar in utils.tracer_variables:
-            self.ignore_near_zero_errors[qvar] = True
         self.stencil_factory = stencil_factory
 
     def compute(self, inputs):

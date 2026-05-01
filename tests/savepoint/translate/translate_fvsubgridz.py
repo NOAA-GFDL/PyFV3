@@ -2,7 +2,6 @@ from types import SimpleNamespace
 
 from f90nml import Namelist
 
-import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
@@ -176,8 +175,6 @@ class TranslateFVSubgridZ(ParallelTranslateBaseSlicing):
             self._base.out_vars.pop(var)
 
         self.ignore_near_zero_errors = {}
-        for qvar in utils.tracer_variables:
-            self.ignore_near_zero_errors[qvar] = True
         self.stencil_factory = stencil_factory
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
 

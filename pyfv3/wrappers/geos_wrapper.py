@@ -33,6 +33,7 @@ from ndsl.grid import DampingCoefficients, GridData, MetricTerms
 from ndsl.logging import ndsl_log
 from ndsl.optional_imports import cupy as cp
 from ndsl.utils import safe_assign_array
+from pyfv3.tracers import default_ai2_tracers
 
 
 class StencilBackendCompilerOverride:
@@ -193,6 +194,7 @@ class GeosDycoreWrapper:
 
         damping_coefficients = DampingCoefficients.new_from_metric_terms(metric_terms)
 
+        default_ai2_tracers(quantity_factory)
         with StencilBackendCompilerOverride(MPI.COMM_WORLD, stencil_config.dace_config):
             self.dynamical_core = pyfv3.DynamicalCore(
                 comm=self.communicator,
