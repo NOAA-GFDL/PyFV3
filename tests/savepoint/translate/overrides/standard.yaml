@@ -158,7 +158,7 @@ UtilVectors:
   - max_error: 2e-10 # 48_6ranks
 
 FVDynamics:
-  - backend: numpy
+  - backend: all
     multimodal:
       ulp_threshold: 100
 
