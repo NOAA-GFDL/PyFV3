@@ -500,7 +500,9 @@ class AcousticDynamics(NDSLRuntime):
                 units="m",
                 dtype=Float,
             )
-            self._zs.field[:] = phis.field[:] * constants.RGRAV
+            # Fortran reads in _all_ data - including potentially
+            # unitialized (HUGE_R) edges and corner values!
+            self._zs[:] = phis[:] * constants.RGRAV
 
             self.update_height_on_d_grid = updatedzd.UpdateHeightOnDGrid(
                 stencil_factory,
