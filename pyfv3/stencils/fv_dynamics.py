@@ -638,16 +638,6 @@ class DynamicalCore(NDSLRuntime):
 
         self.dry_mass_control.reset(pe=state.pe)
 
-        if __debug__:
-            log_on_rank_0("Adjust pt")
-
-        self._pt_to_potential_density_pt(
-            state.pkz,
-            self._dp_initial,
-            state.q_con,
-            state.pt,
-        )
-
     def __call__(self, *args, **kwargs) -> None:
         self.step_dynamics(*args, **kwargs)
 
