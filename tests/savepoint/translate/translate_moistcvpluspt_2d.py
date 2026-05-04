@@ -86,7 +86,7 @@ class MoistPT:
 
 class TranslateMoistCVPlusPt_2d(TranslateFortranData2Py):
     def __init__(self, grid, namelist, stencil_factory):
-        super().__init__(grid, namelist, stencil_factory)
+        super().__init__(grid, stencil_factory)
         self.stencil_factory = stencil_factory
         self.compute_func = MoistPT(stencil_factory, self.grid)  # type: ignore
         self.in_vars["data_vars"] = {

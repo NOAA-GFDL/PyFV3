@@ -1,7 +1,6 @@
 from collections.abc import Mapping
 
 import numpy as np
-from dace.frontend.python.interface import nounroll as dace_nounroll
 
 import ndsl.constants as constants
 import ndsl.stencils.basic_operations as basic
@@ -488,7 +487,7 @@ class AcousticDynamics:
         self._ws3 = temporaries["ws3"]
 
         if not config.hydrostatic:
-            self._pk3.data[:] = HUGE_R
+            self._pk3[:] = HUGE_R
 
         column_namelist = d_sw.get_column_namelist(
             config.d_grid_shallow_water, quantity_factory=quantity_factory
@@ -502,7 +501,7 @@ class AcousticDynamics:
                 units="m",
                 dtype=Float,
             )
-            self._zs.data[:] = self._zs.np.asarray(
+            self._zs[:] = self._zs.np.asarray(
                 phis.data / constants.GRAV, dtype=self._zs.data.dtype
             )
 
@@ -759,7 +758,7 @@ class AcousticDynamics:
         # called this because its timestep is usually limited by horizontal sound-wave
         # processes. Note this is often not the limiting factor near the poles, where
         # the speed of the polar night jets can exceed two-thirds of the speed of sound.
-        for it in dace_nounroll(range(n_split)):
+        for it in range(n_split):
             # the Lagrangian dynamics have two parts. First we advance the C-grid winds
             # by half a time step (c_sw). Then the C-grid winds are used to define
             # advective fluxes to advance the D-grid prognostic fields a full time step

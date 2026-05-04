@@ -1,8 +1,36 @@
-from ndsl import StencilFactory, orchestrate
+from functools import singledispatch
+
+import dace
+import numpy as np
+
+from ndsl import NDSLRuntime, Quantity, StencilFactory
 from ndsl.dsl.typing import FloatField
+from ndsl.optional_imports import cupy as cp
 
 
+@singledispatch
 def corner_copy_x(field_to_copy):
+    raise NotImplementedError(f"No CopyCorners for type {type(field_to_copy)}")
+
+
+if cp is not None:
+
+    @corner_copy_x.register(cp.ndarray)
+    def _corner_copy_x_cupy(field_to_copy: cp.ndarray):
+        _blind_copy_corners_x(field_to_copy)
+
+
+@corner_copy_x.register(np.ndarray)
+def _corner_copy_x_numpy(field_to_copy: np.ndarray):
+    _blind_copy_corners_x(field_to_copy)
+
+
+@corner_copy_x.register(Quantity)
+def _corner_copy_x_quantity(field_to_copy: Quantity):
+    _blind_copy_corners_x(field_to_copy.data)
+
+
+def _blind_copy_corners_x(field_to_copy):
     """Equivalent to the copy_corners_x functions in fortran.
 
     This is written to operate on plain ndarrarys and not use the GT4Py framework.
@@ -65,7 +93,29 @@ def corner_copy_x(field_to_copy):
     field_to_copy[-2, -4] = field_to_copy[-4, -7]
 
 
+@singledispatch
 def corner_copy_y(field_to_copy):
+    raise NotImplementedError(f"No CopyCorners for type {type(field_to_copy)}")
+
+
+if cp is not None:
+
+    @corner_copy_y.register(cp.ndarray)
+    def _corner_copy_y_cupy(field_to_copy: cp.ndarray):
+        _blind_copy_corners_y(field_to_copy)
+
+
+@corner_copy_y.register(np.ndarray)
+def _corner_copy_y_nupy(field_to_copy: np.ndarray):
+    _blind_copy_corners_y(field_to_copy)
+
+
+@corner_copy_y.register(Quantity)
+def _corner_copy_y_quantity(field_to_copy: Quantity):
+    _blind_copy_corners_y(field_to_copy.data)
+
+
+def _blind_copy_corners_y(field_to_copy):
     """Equivalent to the copy_corners_y functions in fortran.
 
     This is written to operate on plain ndarrarys and not use the GT4Py framework.
@@ -128,42 +178,56 @@ def corner_copy_y(field_to_copy):
     field_to_copy[-4, -2] = field_to_copy[-7, -4]
 
 
-class CopyCornersX:
+class CopyCornersX(NDSLRuntime):
     """
     Helper-class to copy corners corresponding to the fortran function copy_corners_x
     """
 
     def __init__(self, stencil_factory: StencilFactory) -> None:
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
 
         if stencil_factory.grid_indexing.n_halo != 3:
             raise NotImplementedError(
                 "Corner-Copy only implemented for exactly 3 Halo-Points"
             )
 
+        self._is_orch = stencil_factory.backend.is_orchestrated()
+
+    def _internal_corners_copy(self, field: FloatField):
+        _blind_copy_corners_x(field) if self._is_orch else corner_copy_x(field)
+
     def __call__(self, field: FloatField):
-        corner_copy_x(field)
+        self._internal_corners_copy(field)
+
+    def nord(self, field: FloatField, nord: Quantity):
+        for k in dace.map[0 : nord.data.shape[0]]:
+            if nord.data[k] > 0:
+                self._internal_corners_copy(field[:, :, k])
 
 
-class CopyCornersY:
+class CopyCornersY(NDSLRuntime):
     """
     Helper-class to copy corners corresponding to the fortran function
     copy_corners_y
     """
 
     def __init__(self, stencil_factory: StencilFactory) -> None:
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
 
         if stencil_factory.grid_indexing.n_halo != 3:
             raise NotImplementedError(
                 "Corner-Copy only implemented for exactly 3 Halo-Points"
             )
 
+        self._is_orch = stencil_factory.backend.is_orchestrated()
+
+    def _internal_corners_copy(self, field: FloatField):
+        _blind_copy_corners_y(field) if self._is_orch else corner_copy_y(field)
+
     def __call__(self, field: FloatField):
-        corner_copy_y(field)
+        self._internal_corners_copy(field)
+
+    def nord(self, field: FloatField, nord: Quantity):
+        for k in dace.map[0 : nord.data.shape[0]]:
+            if nord.data[k] > 0:
+                self._internal_corners_copy(field[:, :, k])
