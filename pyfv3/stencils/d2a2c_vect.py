@@ -1,5 +1,5 @@
 from ndsl import QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import X_DIM, Y_DIM, Z_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
@@ -449,12 +449,12 @@ class DGrid2AGrid2CGridVectors:
             jlast = grid_indexing.jec + 2
 
         self._utmp = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="m/s",
             dtype=Float,
         )
         self._vtmp = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="m/s",
             dtype=Float,
         )
@@ -486,7 +486,7 @@ class DGrid2AGrid2CGridVectors:
 
         self._set_tmps = stencil_factory.from_dims_halo(
             func=set_tmps,
-            compute_dims=[X_DIM, Y_DIM, Z_DIM],
+            compute_dims=[I_DIM, J_DIM, K_DIM],
             compute_halos=(3, 3),
         )
 
@@ -514,7 +514,7 @@ class DGrid2AGrid2CGridVectors:
             self._avg_box = stencil_factory.from_dims_halo(
                 func=avg_box,
                 externals={"D2A2C_AVG_OFFSET": d2a2c_avg_offset},
-                compute_dims=[X_DIM, Y_DIM, Z_DIM],
+                compute_dims=[I_DIM, J_DIM, K_DIM],
                 compute_halos=(3, 3),
             )
 

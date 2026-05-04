@@ -3,7 +3,7 @@ from typing import Optional
 import dace
 
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import X_DIM, X_INTERFACE_DIM, Y_DIM, Y_INTERFACE_DIM, Z_DIM
+from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
@@ -16,8 +16,7 @@ from pyfv3.stencils.copy_corners import corner_copy_x, corner_copy_y
 def calc_damp(damp_c: Quantity, da_min: Float, nord: Quantity) -> Quantity:
     if damp_c.dims != nord.dims or damp_c.data.shape != nord.data.shape:
         raise NotImplementedError(
-            "current implementation requires damp_c and nord to have "
-            "identical data shape and dims"
+            "current implementation requires damp_c and nord to have identical data shape and dims"
         )
     data = (damp_c.data * da_min) ** (nord.data + 1)
     return Quantity(
@@ -238,27 +237,27 @@ class DelnFlux:
         self._origin = grid_indexing.origin_full()
 
         self._fx2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="undefined",
             dtype=Float,
         )
         self._fy2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="undefined",
             dtype=Float,
         )
         self._d2 = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
+            [I_DIM, J_DIM, K_DIM],
             units="undefined",
             dtype=Float,
         )
 
         self._add_diffusive_stencil = stencil_factory.from_dims_halo(
             func=add_diffusive_component,
-            compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM],
+            compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
         )
         self._diffusive_damp_stencil = stencil_factory.from_dims_halo(
-            func=diffusive_damp, compute_dims=[X_INTERFACE_DIM, Y_INTERFACE_DIM, Z_DIM]
+            func=diffusive_damp, compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM]
         )
 
         self._damp = calc_damp(
@@ -286,7 +285,7 @@ class DelnFlux:
             d2: A damped copy of the q field (in)
             mass: Mass to weight the diffusive flux by (in)
         """
-        if self._no_compute is True:
+        if self._no_compute:
             return fx, fy
 
         # [DaCe] Optional d2 gets reduced to subset 0 in DaCe parsing leading to a

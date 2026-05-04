@@ -7,15 +7,11 @@ from argparse import ArgumentParser, Namespace
 
 import f90nml
 import gt4py.cartesian.config
+from mpi4py import MPI
 
-from ndsl import LocalComm
+from ndsl import Backend, LocalComm
 from pyfv3 import DynamicalCoreConfig
 
-
-try:
-    from mpi4py import MPI
-except ImportError:
-    MPI = None
 
 local = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, local)
@@ -35,7 +31,7 @@ def parse_args() -> Namespace:
         "backend",
         type=str,
         action="store",
-        help="gt4py backend to use",
+        help="backend to use",
     )
     parser.add_argument(
         "target_dir",
@@ -69,17 +65,16 @@ if __name__ == "__main__":
         top_tile_rank = global_rank + size * iteration
         if top_tile_rank < sub_tiles:
             mpi_comm = LocalComm(
-                rank=top_tile_rank,
-                total_ranks=6 * sub_tiles,
-                buffer_dict={}
+                rank=top_tile_rank, total_ranks=6 * sub_tiles, buffer_dict={}
             )
             gt4py.cartesian.config.cache_settings["dir_name"] = os.environ.get(
                 "GT_CACHE_ROOT", f".gt_cache_{mpi_comm.Get_rank():06}"
             )
+            backend = Backend(args.backend)
             dycore, dycore_args, stencil_factory = setup_dycore(
                 dycore_config,
                 mpi_comm,
-                args.backend,
+                backend,
                 is_baroclinic_test_case,
                 args.data_dir,
             )

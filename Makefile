@@ -29,7 +29,7 @@ BUILD_FLAGS ?=
 VOLUMES ?=
 
 ifeq ($(DEV), y)
-	VOLUMES += -v $(CWD):/pyfv3
+	VOLUMES += -v $(CWD):/pyFV3
 endif
 
 TEST_DATA_TARFILE = $(TEST_DATA_VERSION)_$(TEST_CONFIG)_$(TEST_TYPE).tar.gz

@@ -405,7 +405,7 @@ def _initialize_wind_dgrid(
 def _interpolate_winds_dgrid_agrid(grid_data, ud, vd, tc_properties, shape):
     ua = np.zeros(shape)
     va = np.zeros(shape)
-    if tc_properties["vort"] is True:
+    if tc_properties["vort"]:
         ua[:, :-1, :] = (
             0.5
             * (

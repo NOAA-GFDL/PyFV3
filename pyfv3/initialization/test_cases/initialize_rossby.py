@@ -189,7 +189,7 @@ def init_rossby_state(
         DycoreState
     """
 
-    # TODO: Check sw_dunamics is True (https://github.com/NOAA-GFDL/PyFV3/pull/50)
+    # TODO: Check sw_dynamics is True (https://github.com/NOAA-GFDL/PyFV3/pull/50)
     #       May require a change to pass a config here in order to check.
 
     sample_quantity = grid_data.lat

@@ -2,13 +2,13 @@ from f90nml import Namelist
 
 from ndsl import StencilFactory
 from ndsl.constants import (
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    K_INTERFACE_DIM,
     N_HALO_DEFAULT,
-    X_DIM,
-    X_INTERFACE_DIM,
-    Y_DIM,
-    Y_INTERFACE_DIM,
-    Z_DIM,
-    Z_INTERFACE_DIM,
 )
 from ndsl.logging import ndsl_log
 from ndsl.stencils.testing import ParallelTranslate
@@ -18,7 +18,7 @@ class TranslateHaloUpdate(ParallelTranslate):
     inputs = {
         "array": {
             "name": "air_temperature",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "degK",
             "n_halo": N_HALO_DEFAULT,
         }
@@ -27,7 +27,7 @@ class TranslateHaloUpdate(ParallelTranslate):
     outputs = {
         "array": {
             "name": "air_temperature",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "degK",
             "n_halo": N_HALO_DEFAULT,
         }
@@ -70,7 +70,7 @@ class TranslateHaloUpdate_2(TranslateHaloUpdate):
     inputs = {
         "array2": {
             "name": "height_on_interface_levels",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [I_DIM, J_DIM, K_INTERFACE_DIM],
             "units": "m",
             "n_halo": N_HALO_DEFAULT,
         }
@@ -79,7 +79,7 @@ class TranslateHaloUpdate_2(TranslateHaloUpdate):
     outputs = {
         "array2": {
             "name": "height_on_interface_levels",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [I_DIM, J_DIM, K_INTERFACE_DIM],
             "units": "m",
             "n_halo": N_HALO_DEFAULT,
         }
@@ -92,7 +92,7 @@ class TranslateMPPUpdateDomains(TranslateHaloUpdate):
     inputs = {
         "update_arr": {
             "name": "z_wind_as_tendency_of_pressure",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "Pa/s",
             "n_halo": N_HALO_DEFAULT,
         }
@@ -101,7 +101,7 @@ class TranslateMPPUpdateDomains(TranslateHaloUpdate):
     outputs = {
         "update_arr": {
             "name": "z_wind_as_tendency_of_pressure",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "Pa/s",
             "n_halo": N_HALO_DEFAULT,
         }
@@ -114,13 +114,13 @@ class TranslateHaloVectorUpdate(ParallelTranslate):
     inputs = {
         "array_u": {
             "name": "x_wind_on_c_grid",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
             "n_halo": N_HALO_DEFAULT,
         },
         "array_v": {
             "name": "y_wind_on_c_grid",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
             "n_halo": N_HALO_DEFAULT,
         },
@@ -129,13 +129,13 @@ class TranslateHaloVectorUpdate(ParallelTranslate):
     outputs = {
         "array_u": {
             "name": "x_wind_on_c_grid",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
             "n_halo": N_HALO_DEFAULT,
         },
         "array_v": {
             "name": "y_wind_on_c_grid",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
             "n_halo": N_HALO_DEFAULT,
         },
@@ -184,13 +184,13 @@ class TranslateMPPBoundaryAdjust(ParallelTranslate):
     inputs = {
         "u": {
             "name": "x_wind_on_d_grid",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
             "n_halo": N_HALO_DEFAULT,
         },
         "v": {
             "name": "y_wind_on_d_grid",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
             "n_halo": N_HALO_DEFAULT,
         },
@@ -199,13 +199,13 @@ class TranslateMPPBoundaryAdjust(ParallelTranslate):
     outputs = {
         "u": {
             "name": "x_wind_on_d_grid",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
             "n_halo": N_HALO_DEFAULT,
         },
         "v": {
             "name": "y_wind_on_d_grid",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
             "n_halo": N_HALO_DEFAULT,
         },

@@ -2,7 +2,7 @@
 
 # FV3core
 
-FV3core is a Python version, using GridTools GT4Py with CPU and GPU backend options, of the FV3 dynamical core (fv3gfs-fortran repo).
+FV3core is a Python version, using NDSL with CPU and GPU backend options, of the FV3 dynamical core (fv3gfs-fortran repo).
 The code here includes regression test data of computation units coming from serialized output from the Fortran model generated using the `GridTools/serialbox` framework.
 
 As of January 10, 2021 this documentation is outdated in that it was written when we had fv3core as its own single repository. Some functionality, such as linting, has been moved to the top level but may still be described in this document as occuring inside the fv3core folder.
@@ -133,7 +133,7 @@ All of the make endpoints involved running tests can be prefixed with the `TEST_
 
 * `--data_path` - path to where you have the `Generator*.dat` and `*.json` serialization regression data. Defaults to current directory.
 
-* `--backend` - which backend to use for the computation. Options: `[numpy, gt:cpu_ifirst, gt:cpu_first, gt:gpu, cuda]`. Defaults to `numpy`.
+* `--backend` - which backend to use for the computation. Defaults to `st:numpy:cpu:IJK`.
 * `--python_regression` - Run the tests that have Python based regression data. Only applies to running parallel tests (savepoint_tests_mpi)
 Pytest provides a lot of options, which you can see by `pytest --help`. Here are some
 common options for our tests, which you can add to `TEST_ARGS`:

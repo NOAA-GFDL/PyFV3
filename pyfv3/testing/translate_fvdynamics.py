@@ -7,18 +7,18 @@ from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, StencilFactory
-from ndsl.comm import Comm
 from ndsl.constants import (
-    X_DIM,
-    X_INTERFACE_DIM,
-    Y_DIM,
-    Y_INTERFACE_DIM,
-    Z_DIM,
-    Z_INTERFACE_DIM,
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    K_INTERFACE_DIM,
 )
 from ndsl.grid import GridData
 from ndsl.performance import NullTimer
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
+from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import fv_dynamics
@@ -29,180 +29,180 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
     inputs: dict[str, Any] = {
         "q_con": {
             "name": "total_condensate_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "delp": {
             "name": "pressure_thickness_of_atmospheric_layer",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "Pa",
         },
         "delz": {
             "name": "vertical_thickness_of_atmospheric_layer",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m",
         },
         "ps": {
             "name": "surface_pressure",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
             "units": "Pa",
         },
         "pe": {
             "name": "interface_pressure",
-            "dims": [X_DIM, Z_INTERFACE_DIM, Y_DIM],
+            "dims": [I_DIM, K_INTERFACE_DIM, J_DIM],
             "units": "Pa",
             "n_halo": 1,
         },
         "ak": {
             "name": "atmosphere_hybrid_a_coordinate",
-            "dims": [Z_INTERFACE_DIM],
+            "dims": [K_INTERFACE_DIM],
             "units": "Pa",
         },
         "bk": {
             "name": "atmosphere_hybrid_b_coordinate",
-            "dims": [Z_INTERFACE_DIM],
+            "dims": [K_INTERFACE_DIM],
             "units": "",
         },
         "pk": {
             "name": "interface_pressure_raised_to_power_of_kappa",
             "units": "unknown",
-            "dims": [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            "dims": [I_DIM, J_DIM, K_INTERFACE_DIM],
             "n_halo": 0,
         },
         "pkz": {
             "name": "layer_mean_pressure_raised_to_power_of_kappa",
             "units": "unknown",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "n_halo": 0,
         },
         "peln": {
             "name": "logarithm_of_interface_pressure",
             "units": "ln(Pa)",
-            "dims": [X_DIM, Z_INTERFACE_DIM, Y_DIM],
+            "dims": [I_DIM, K_INTERFACE_DIM, J_DIM],
             "n_halo": 0,
         },
         "mfxd": {
             "name": "accumulated_x_mass_flux",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "unknown",
             "n_halo": 0,
         },
         "mfyd": {
             "name": "accumulated_y_mass_flux",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "unknown",
             "n_halo": 0,
         },
         "cxd": {
             "name": "accumulated_x_courant_number",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "",
             "n_halo": (0, 3),
         },
         "cyd": {
             "name": "accumulated_y_courant_number",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "",
             "n_halo": (3, 0),
         },
         "diss_estd": {
             "name": "dissipation_estimate_from_heat_source",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "unknown",
         },
         "pt": {
             "name": "air_temperature",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "degK",
         },
         "u": {
             "name": "x_wind",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
         },
         "v": {
             "name": "y_wind",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "ua": {
             "name": "eastward_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "va": {
             "name": "northward_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "uc": {
             "name": "x_wind_on_c_grid",
-            "dims": [X_INTERFACE_DIM, Y_DIM, Z_DIM],
+            "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "vc": {
             "name": "y_wind_on_c_grid",
-            "dims": [X_DIM, Y_INTERFACE_DIM, Z_DIM],
+            "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "m/s",
         },
         "w": {
             "name": "vertical_wind",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m/s",
         },
         "phis": {
             "name": "surface_geopotential",
             "units": "m^2 s^-2",
-            "dims": [X_DIM, Y_DIM],
+            "dims": [I_DIM, J_DIM],
         },
         "qvapor": {
             "name": "specific_humidity",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "qliquid": {
             "name": "cloud_water_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "qice": {
             "name": "cloud_ice_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "qrain": {
             "name": "rain_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "qsnow": {
             "name": "snow_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "qgraupel": {
             "name": "graupel_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "qo3mr": {
             "name": "ozone_mixing_ratio",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "kg/kg",
         },
         "qsgs_tke": {
             "name": "turbulent_kinetic_energy",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "m**2/s**2",
         },
         "qcld": {
             "name": "cloud_fraction",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "",
         },
         "omga": {
             "name": "vertical_pressure_velocity",
-            "dims": [X_DIM, Y_DIM, Z_DIM],
+            "dims": [I_DIM, J_DIM, K_DIM],
             "units": "Pa/s",
         },
         "bdt": {"dims": []},
@@ -299,7 +299,9 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         for name in to_delete:
             del input_storages[name]
 
-        return DycoreState.init_from_storages(input_storages, sizer=self.grid.sizer)
+        return DycoreState.init_from_storages(
+            input_storages, sizer=self.grid.sizer, backend=self.stencil_factory.backend
+        )
 
     def prepare_data(self, inputs: dict) -> tuple[DycoreState, GridData]:
         for name in ("ak", "bk"):
@@ -319,7 +321,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         state = self.state_from_inputs(inputs)
         return state, grid_data
 
-    def compute_parallel(self, inputs: dict, communicator: Comm) -> dict:
+    def compute_parallel(self, inputs: dict, communicator: Communicator) -> dict:
         state, grid_data = self.prepare_data(inputs)
         self.dycore = fv_dynamics.DynamicalCore(
             comm=communicator,
@@ -339,6 +341,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
     def outputs_from_state(self, state: DycoreState) -> dict:
         if len(self.outputs) == 0:
             return {}
+
         outputs = {}
         storages = {}
         for name, _properties in self.outputs.items():
@@ -353,6 +356,5 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
 
     def compute_sequential(self, *args: Any, **kwargs: dict) -> None:
         pytest.skip(
-            f"{self.__class__} only has a mpirun implementation, "
-            "not running in mock-parallel"
+            f"{self.__class__} only has a mpirun implementation, not running in mock-parallel"
         )

@@ -8,13 +8,13 @@ import pyfv3.stencils.moist_cv as moist_cv
 from ndsl import Quantity, QuantityFactory, StencilFactory, WrappedHaloUpdater
 from ndsl.checkpointer import NullCheckpointer
 from ndsl.comm.mpi import MPI
-from ndsl.constants import KAPPA, NQ, X_DIM, Y_DIM, Z_DIM, Z_INTERFACE_DIM, ZVIR
+from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM, KAPPA, NQ, ZVIR
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
 from ndsl.dsl.gt4py import PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log
-from ndsl.performance import NullTimer, Timer
+from ndsl.performance import Timer
 from ndsl.stencils.basic_operations import copy
 from ndsl.stencils.c2l_ord import CubedToLatLon
 from ndsl.typing import Checkpointer, Communicator
@@ -55,20 +55,18 @@ def omega_from_w(delp: FloatField, delz: FloatField, w: FloatField, omega: Float
         omega = delp / delz * w
 
 
-def fvdyn_temporaries(
-    quantity_factory: QuantityFactory,
-) -> Mapping[str, Quantity]:
+def fvdyn_temporaries(quantity_factory: QuantityFactory) -> Mapping[str, Quantity]:
     tmps = {}
     for name in ["te_2d", "te0_2d", "wsd"]:
         quantity = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM],
+            dims=[I_DIM, J_DIM],
             units="unknown",
             dtype=Float,
         )
         tmps[name] = quantity
     for name in ["dp1", "cvm"]:
         quantity = quantity_factory.zeros(
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
@@ -77,10 +75,10 @@ def fvdyn_temporaries(
 
 
 @dace_inhibitor
-def log_on_rank_0(msg: str):
+def log_on_rank_0(message: str) -> None:
     """Print when rank is 0 - outside of DaCe critical path"""
     if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
-        ndsl_log.info(msg)
+        ndsl_log.info(message)
 
 
 class DynamicalCore:
@@ -100,7 +98,7 @@ class DynamicalCore:
         state: DycoreState,
         timestep: timedelta,
         checkpointer: Checkpointer | None = None,
-    ):
+    ) -> None:
         """
         Args:
             comm: object for cubed sphere or tile inter-process communication
@@ -127,7 +125,7 @@ class DynamicalCore:
             obj=self,
             config=stencil_factory.config.dace_config,
             method_to_orchestrate="compute_preamble",
-            dace_compiletime_args=["state", "is_root_rank"],
+            dace_compiletime_args=["state"],
         )
 
         orchestrate(
@@ -174,23 +172,18 @@ class DynamicalCore:
         )
         if timestep == timedelta(seconds=0):
             raise RuntimeError(
-                "Bad dynamical core configuration:"
-                " the atmospheric timestep is 0 seconds!"
+                "Bad dynamical core configuration: the atmospheric timestep is 0 seconds!"
             )
         # nested and stretched_grid are options in the Fortran code which we
         # have not implemented, so they are hard-coded here.
         self.call_checkpointer = checkpointer is not None
-        if checkpointer is None:
-            self.checkpointer: Checkpointer = NullCheckpointer()
-        else:
-            self.checkpointer = checkpointer
+        self.checkpointer = NullCheckpointer() if checkpointer is None else checkpointer
         nested = False
         stretched_grid = False
         grid_indexing = stencil_factory.grid_indexing
         if not config.moist_phys:
             raise NotImplementedError(
-                "Dynamical core (fv_dynamics):"
-                " fvsetup is only implemented for moist_phys=true."
+                "Dynamical core (fv_dynamics): fvsetup is only implemented for moist_phys=true."
             )
         if config.nwat != 6:
             raise NotImplementedError(
@@ -297,8 +290,7 @@ class DynamicalCore:
 
         if not (not self.config.inline_q and NQ != 0):
             raise NotImplementedError(
-                "Dynamical core (fv_dynamics):"
-                "tracer_2d not implemented. z_tracer available"
+                "Dynamical core (fv_dynamics):tracer_2d not implemented. z_tracer available"
             )
         self._adjust_tracer_mixing_ratio = AdjustNegativeTracerMixingRatio(
             stencil_factory,
@@ -315,11 +307,10 @@ class DynamicalCore:
             nq=NQ,
             pfull=self._pfull,
             tracers=self.tracers,
-            checkpointer=checkpointer,
         )
 
         full_xyz_spec = quantity_factory.get_quantity_halo_spec(
-            dims=[X_DIM, Y_DIM, Z_DIM],
+            dims=[I_DIM, J_DIM, K_DIM],
             n_halo=grid_indexing.n_halo,
             dtype=Float,
         )
@@ -336,7 +327,7 @@ class DynamicalCore:
     def _get_da_min(self) -> float:
         return self._da_min
 
-    def _checkpoint_fvdynamics(self, state: DycoreState, tag: str):
+    def _checkpoint_fvdynamics(self, state: DycoreState, tag: str) -> None:
         if self.call_checkpointer:
             self.checkpointer(
                 f"FVDynamics-{tag}",
@@ -355,10 +346,7 @@ class DynamicalCore:
                 qvapor=state.qvapor,
             )
 
-    def _checkpoint_remapping_in(
-        self,
-        state: DycoreState,
-    ):
+    def _checkpoint_remapping_in(self, state: DycoreState) -> None:
         if self.call_checkpointer:
             self.checkpointer(
                 "Remapping-In",
@@ -366,7 +354,7 @@ class DynamicalCore:
                 delp=state.delp,
                 delz=state.delz,
                 peln=state.peln.transpose(
-                    [X_DIM, Z_INTERFACE_DIM, Y_DIM]
+                    [I_DIM, K_INTERFACE_DIM, J_DIM]
                 ),  # [x, z, y] fortran data
                 u=state.u,
                 v=state.v,
@@ -376,7 +364,7 @@ class DynamicalCore:
                 cappa=self._cappa,
                 pk=state.pk,
                 pe=state.pe.transpose(
-                    [X_DIM, Z_INTERFACE_DIM, Y_DIM]
+                    [I_DIM, K_INTERFACE_DIM, J_DIM]
                 ),  # [x, z, y] fortran data
                 phis=state.phis,
                 te_2d=self._te0_2d,
@@ -386,10 +374,7 @@ class DynamicalCore:
                 dp1=self._dp_initial,
             )
 
-    def _checkpoint_remapping_out(
-        self,
-        state: DycoreState,
-    ):
+    def _checkpoint_remapping_out(self, state: DycoreState) -> None:
         if self.call_checkpointer:
             self.checkpointer(
                 "Remapping-Out",
@@ -397,7 +382,7 @@ class DynamicalCore:
                 delp=state.delp,
                 delz=state.delz,
                 peln=state.peln.transpose(
-                    [X_DIM, Z_INTERFACE_DIM, Y_DIM]
+                    [I_DIM, K_INTERFACE_DIM, J_DIM]
                 ),  # [x, z, y] fortran data
                 u=state.u,
                 v=state.v,
@@ -406,15 +391,12 @@ class DynamicalCore:
                 pkz=state.pkz,
                 pk=state.pk,
                 pe=state.pe.transpose(
-                    [X_DIM, Z_INTERFACE_DIM, Y_DIM]
+                    [I_DIM, K_INTERFACE_DIM, J_DIM]
                 ),  # [x, z, y] fortran data
                 dp1=self._dp_initial,
             )
 
-    def _checkpoint_tracer_advection_in(
-        self,
-        state: DycoreState,
-    ):
+    def _checkpoint_tracer_advection_in(self, state: DycoreState) -> None:
         if self.call_checkpointer:
             self.checkpointer(
                 "Tracer2D1L-In",
@@ -425,10 +407,7 @@ class DynamicalCore:
                 cyd=state.cyd,
             )
 
-    def _checkpoint_tracer_advection_out(
-        self,
-        state: DycoreState,
-    ):
+    def _checkpoint_tracer_advection_out(self, state: DycoreState) -> None:
         if self.call_checkpointer:
             self.checkpointer(
                 "Tracer2D1L-Out",
@@ -439,11 +418,7 @@ class DynamicalCore:
                 cyd=state.cyd,
             )
 
-    def step_dynamics(
-        self,
-        state: DycoreState,
-        timer: Timer | None = None,
-    ):
+    def step_dynamics(self, state: DycoreState, timer: Timer) -> None:
         """
         Step the model state forward by one timestep.
 
@@ -451,16 +426,14 @@ class DynamicalCore:
             state: model prognostic state and inputs
             timer: keep time of model sections
         """
-        if timer is None:
-            timer = NullTimer()
-
         self._checkpoint_fvdynamics(state=state, tag="In")
         self._compute(state, timer)
         self._checkpoint_fvdynamics(state=state, tag="Out")
 
-    def compute_preamble(self, state: DycoreState, is_root_rank: bool):
+    def compute_preamble(self, state: DycoreState) -> None:
         if self.config.hydrostatic:
             raise NotImplementedError("Hydrostatic is not implemented")
+
         if __debug__:
             log_on_rank_0("FV Setup")
 
@@ -494,28 +467,25 @@ class DynamicalCore:
 
         if self.config.adiabatic and self.config.kord_tm > 0:
             raise NotImplementedError(
-                "Dynamical Core (fv_dynamics): Adiabatic with positive kord_tm"
-                " is not implemented."
-            )
-        else:
-            if __debug__:
-                log_on_rank_0("Adjust pt")
-            self._pt_to_potential_density_pt(
-                state.pkz,
-                self._dp_initial,
-                state.q_con,
-                state.pt,
+                "Dynamical Core (fv_dynamics): Adiabatic with positive kord_tm is not implemented."
             )
 
-    def __call__(self, *args, **kwargs):
-        return self.step_dynamics(*args, **kwargs)
+        if __debug__:
+            log_on_rank_0("Adjust pt")
 
-    def _compute(self, state: DycoreState, timer: Timer):
-        last_step = False
-        self.compute_preamble(
-            state,
-            is_root_rank=self.comm_rank == 0,
+        self._pt_to_potential_density_pt(
+            state.pkz,
+            self._dp_initial,
+            state.q_con,
+            state.pt,
         )
+
+    def __call__(self, *args, **kwargs) -> None:
+        self.step_dynamics(*args, **kwargs)
+
+    def _compute(self, state: DycoreState, timer: Timer) -> None:
+        last_step = False
+        self.compute_preamble(state)
 
         for k_split in dace_no_unroll(range(self._k_split)):
             n_map = k_split + 1
@@ -525,17 +495,21 @@ class DynamicalCore:
                 state.delp,
                 self._dp_initial,
             )
+
             if __debug__:
                 log_on_rank_0("DynCore")
+
             with timer.clock("DynCore"):
                 self.acoustic_dynamics(
                     state,
                     timestep=self._timestep / self._k_split,
                     n_map=n_map,
                 )
+
             if self.config.z_tracer:
                 if __debug__:
                     log_on_rank_0("TracerAdvection")
+
                 with timer.clock("TracerAdvection"):
                     self._checkpoint_tracer_advection_in(state)
                     self.tracer_advection(
@@ -567,6 +541,7 @@ class DynamicalCore:
                 # "surface" array
                 if __debug__:
                     log_on_rank_0("Remapping")
+
                 with timer.clock("Remapping"):
                     self._checkpoint_remapping_in(state)
 

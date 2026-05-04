@@ -9,12 +9,13 @@ classifiers = [
   "Intended Audience :: Developers",
   "Natural Language :: English",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.11"
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12"
 ]
 dependencies = [
   "dacite",
   "f90nml>=1.1.0",
-  "numpy==1.26.4",
+  "numpy>=2",
   "pyyaml",
   "xarray"
 ]
@@ -46,8 +47,7 @@ ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@develop"]
 test = [
   "coverage",
   "pytest",
-  "pytest-subtests",
-  "serialbox"
+  "pytest-subtests"
 ]
 
 [project.urls]

@@ -1,12 +1,12 @@
 import ndsl.constants as constants
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import (
-    X_DIM,
-    X_INTERFACE_DIM,
-    Y_DIM,
-    Y_INTERFACE_DIM,
-    Z_DIM,
-    Z_INTERFACE_DIM,
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    K_INTERFACE_DIM,
 )
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
@@ -134,17 +134,17 @@ def cubic_spline_interpolation_constants(
         gamma: interpolation constant on mid levels
     """
     gk = quantity_factory.zeros(
-        [Z_DIM],
+        [K_DIM],
         units="",
         dtype=Float,
     )
     beta = quantity_factory.zeros(
-        [Z_DIM],
+        [K_DIM],
         units="",
         dtype=Float,
     )
     gamma = quantity_factory.zeros(
-        [Z_DIM],
+        [K_DIM],
         units="",
         dtype=Float,
     )
@@ -261,47 +261,47 @@ class UpdateHeightOnDGrid:
 
     def _allocate_temporary_storages(self, quantity_factory: QuantityFactory):
         self._crx_interface = quantity_factory.zeros(
-            [X_INTERFACE_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_INTERFACE_DIM, J_DIM, K_INTERFACE_DIM],
             "",
             dtype=Float,
         )
         self._cry_interface = quantity_factory.zeros(
-            [X_DIM, Y_INTERFACE_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_INTERFACE_DIM, K_INTERFACE_DIM],
             "",
             dtype=Float,
         )
         self._x_area_flux_interface = quantity_factory.zeros(
-            [X_INTERFACE_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_INTERFACE_DIM, J_DIM, K_INTERFACE_DIM],
             "m^2",
             dtype=Float,
         )
         self._y_area_flux_interface = quantity_factory.zeros(
-            [X_DIM, Y_INTERFACE_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_INTERFACE_DIM, K_INTERFACE_DIM],
             "m^2",
             dtype=Float,
         )
         self._wk = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             "unknown",
             dtype=Float,
         )
         self._height_x_diffusive_flux = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             "unknown",
             dtype=Float,
         )
         self._height_y_diffusive_flux = quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_DIM, K_INTERFACE_DIM],
             "unknown",
             dtype=Float,
         )
         self._fx = quantity_factory.zeros(
-            [X_INTERFACE_DIM, Y_DIM, Z_INTERFACE_DIM],
+            [I_INTERFACE_DIM, J_DIM, K_INTERFACE_DIM],
             "unknown",
             dtype=Float,
         )
         self._fy = quantity_factory.zeros(
-            [X_DIM, Y_INTERFACE_DIM, Z_INTERFACE_DIM],
+            [I_DIM, J_INTERFACE_DIM, K_INTERFACE_DIM],
             "unknown",
             dtype=Float,
         )

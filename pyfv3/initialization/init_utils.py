@@ -410,7 +410,7 @@ def hydro_eq(
 ):
     """
     Initializes atmospheric temperature and pressure hydrostatically.
-    
+
     Args:
         km (in): Number of model layers (non-interface k)
         is_ (in): data start index in i
@@ -419,7 +419,7 @@ def hydro_eq(
         je (in): data end index in j
         ps (in): surface pressure [nx, ny]
         hs (in): surface height [nx, ny]
-        drym (in): mass of dry air 
+        drym (in): mass of dry air
         delp (inout): layer pressure thickness [nx, ny, nz]
         ak: (in): ak pressure values [nz + 1]
         bk (in): bk pressure values [nz + 1]
@@ -435,8 +435,8 @@ def hydro_eq(
     # ndsl_log.info('Initializing ATM hydrostatically')
     # ndsl_log.info('Initializing Earth')
 
-    gz = np.empty((ie, km+1))
-    ph = np.empty((ie, km+1))
+    gz = np.empty((ie, km + 1))
+    ph = np.empty((ie, km + 1))
     # print(ph.shape)
 
     # Given p1 and z1 (250mb, 10km)
@@ -456,7 +456,6 @@ def hydro_eq(
     # ndsl_log.info(f'ZTOP is computed as {ztop / constants.GRAV * 1.E-3}')
 
     if mountain:
-        raise NotImplementedError("hydro_eq: Mountain is not implemented")
         """
         mslp = 100917.4
         for j in range(js, je):
@@ -474,6 +473,7 @@ def hydro_eq(
         # ndsl_log.info(f'Computed mean ps={psm}')
         # ndsl_log.info(f'Correction delta-ps={dps}')
         """
+        raise NotImplementedError("hydro_eq: Mountain is not implemented")
     else:
         mslp = drym  # 1000.E2
         ps[is_:ie, js:je] = mslp
@@ -491,7 +491,7 @@ def hydro_eq(
             # ---------------
             # Hybrid Z
             # ---------------
-            for k in range(km-1, 0, -1):  # k=km,2,-1
+            for k in range(km - 1, 0, -1):  # k=km,2,-1
                 for i in range(is_, ie):
                     gz[i, k] = gz[i, k + 1] - delz[i, j, k] * constants.GRAV
             # Correct delz at the top:
@@ -517,11 +517,11 @@ def hydro_eq(
             # ---------------
             # Hybrid sigma-p
             # ---------------
-            for k in range(1, km+1):  # do k=2,km+1
+            for k in range(1, km + 1):  # do k=2,km+1
                 for i in range(is_, ie):
                     ph[i, k] = ak[k] + bk[k] * ps[i, j]
 
-            for k in range(km-1, 0, -1):  # k=km,2,-1
+            for k in range(km - 1, 0, -1):  # k=km,2,-1
                 for i in range(is_, ie):
                     if ph[i, k] <= p1:
                         gz[i, k] = gz[i, k + 1] + (constants.RDGAS * t1) * np.log(
