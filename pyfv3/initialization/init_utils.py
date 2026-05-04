@@ -437,7 +437,7 @@ def hydro_eq(
 
     gz = np.empty((ie, km+1))
     ph = np.empty((ie, km+1))
-    print(ph.shape)
+    # print(ph.shape)
 
     # Given p1 and z1 (250mb, 10km)
     p1 = 25000.0

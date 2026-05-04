@@ -348,7 +348,7 @@ class DynamicalCore:
                 # this can be re-enabled if no longer comparing to Fortran, if the
                 # Fortran is updated to match the Python, or if the checkpointer
                 # can check only the compute domain values
-                # ua=state.ua,
+                ua=state.ua,
                 va=state.va,
                 uc=state.uc,
                 vc=state.vc,

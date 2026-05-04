@@ -27,8 +27,8 @@ def init_aquaplanet_state(
     nz = npz - 1
     numpy_state = init_utils.empty_numpy_dycore_state(data_shape)
     isc, iec, jsc, jec = init_utils.local_compute_bounds(field_shape)
-    print(isc, iec, jsc, jec)
-    print(nx, ny, nz)
+    # print(isc, iec, jsc, jec)
+    # print(nx, ny, nz)
 
     hybrid_z = False
 
@@ -86,7 +86,7 @@ def init_aquaplanet_state(
         numpy_state.w[:] = 0.0
 
     numpy_state.phis[:] = 0.0
-    print(numpy_state.ps.shape)
+    # print(numpy_state.ps.shape)
     init_utils.hydro_eq(
         nz,
         isc,
