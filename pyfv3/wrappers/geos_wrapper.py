@@ -272,6 +272,16 @@ class GeosDycoreWrapper:
                 timer=self.perf_collector.timestep_timer,
             )
 
+    def _collect_timings(self, timings: dict[str, list[float]]) -> None:
+        """Collect performance of the timestep"""
+        self.perf_collector.collect_performance()
+        for k, v in self.perf_collector.times_per_step[0].items():
+            if k not in timings.keys():
+                timings[k] = [v]
+            else:
+                timings[k].append(v)
+        self.perf_collector.clear()
+
     def __call__(
         self,
         timings: dict[str, list[float]],
@@ -334,14 +344,7 @@ class GeosDycoreWrapper:
         with self.perf_collector.timestep_timer.clock("dycore-to-numpy"):
             self.output_dict = self._prep_outputs_for_geos()
 
-        # Collect performance of the timestep and write a json file for rank 0
-        self.perf_collector.collect_performance()
-        for k, v in self.perf_collector.times_per_step[0].items():
-            if k not in timings.keys():
-                timings[k] = [v]  # type: ignore
-            else:
-                timings[k].append(v)  # type: ignore
-        self.perf_collector.clear()
+        self._collect_timings(timings)
 
         return self.output_dict, timings
 
