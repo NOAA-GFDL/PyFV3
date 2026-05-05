@@ -3,6 +3,7 @@ from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, exp
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval, log
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from pyfv3.tracers import FVTracers
 
 
 from gt4py.cartesian.gtscript import __INLINED  # isort:skip
@@ -27,6 +28,13 @@ def moist_cvm(qvapor, gz, ql, qs):
 
 
 @gtfunction
+def moist_cv_nwat0_fn():
+    gz = 0
+    cvm = constants.CV_AIR
+    return cvm, gz
+
+
+@gtfunction
 def moist_cv_nwat6_fn(
     qvapor: FloatField,
     qliquid: FloatField,
@@ -44,7 +52,7 @@ def moist_cv_nwat6_fn(
 
 
 @gtfunction
-def moist_pt_func(
+def moist_pt_func_nwat6(
     qvapor: FloatField,
     qliquid: FloatField,
     qrain: FloatField,
@@ -68,6 +76,23 @@ def moist_pt_func(
 
 
 @gtfunction
+def moist_pt_func_nwat0(
+    qvapor: FloatField,
+    q_con: FloatField,
+    pt: FloatField,
+    cappa: FloatField,
+    delp: FloatField,
+    delz: FloatField,
+    r_vir: Float,
+):
+    cvm, gz = moist_cv_nwat0_fn()
+    q_con = gz
+    cappa = set_cappa(qvapor, cvm, r_vir)
+    pt = pt * exp(cappa / (1.0 - cappa) * log(constants.RDG * delp / delz * pt))
+    return cvm, gz, q_con, cappa, pt
+
+
+@gtfunction
 def last_pt(
     pt: FloatField,
     dtmp: Float,
@@ -80,12 +105,7 @@ def last_pt(
 
 
 def moist_pt_last_step(
-    qvapor: FloatField,
-    qliquid: FloatField,
-    qrain: FloatField,
-    qsnow: FloatField,
-    qice: FloatField,
-    qgraupel: FloatField,
+    tracers: FVTracers,
     pt: FloatField,
     pkz: FloatField,
     dtmp: Float,
@@ -104,17 +124,21 @@ def moist_pt_last_step(
         dtmp (in):
         r_vir (in):
     """
+    from __externals__ import i_graupel, i_ice, i_liquid, i_rain, i_snow, i_vapor, nwat
+
     with computation(PARALLEL), interval(...):
-        # if nwat == 2:
-        #    gz = qliquid if qliquid > 0. else 0.
-        #    qv = qvapor if qvapor > 0. else 0.
-        #    pt = last_pt(pt, dtmp, pkz, gz, qv, r_vir)
-        # elif nwat == 6:
-        gz = qliquid + qrain + qice + qsnow + qgraupel
-        pt = last_pt(pt, dtmp, pkz, gz, qvapor, r_vir)
-        # else:
-        #    cvm, gz = moist_cv_nwat6_fn(qvapor, qliquid, qrain, qsnow, qice, qgraupel)
-        #    pt = last_pt(pt, dtmp, pkz, gz, qvapor, zvir)
+        if __INLINED(nwat == 0):
+            _cvm, gz = moist_cv_nwat0_fn()
+        elif __INLINED(nwat == 6):
+            _cvm, gz = moist_cv_nwat6_fn(
+                tracers.A[i_vapor],
+                tracers.A[i_liquid],
+                tracers.A[i_rain],
+                tracers.A[i_snow],
+                tracers.A[i_ice],
+                tracers.A[i_graupel],
+            )
+        pt = last_pt(pt, dtmp, pkz, gz, tracers.A[i_vapor], r_vir)
 
 
 @gtfunction
@@ -124,12 +148,7 @@ def compute_pkz_func(delp, delz, pt, cappa):
 
 
 def moist_pkz(
-    qvapor: FloatField,
-    qliquid: FloatField,
-    qrain: FloatField,
-    qsnow: FloatField,
-    qice: FloatField,
-    qgraupel: FloatField,
+    tracers: FVTracers,
     pkz: FloatField,
     pt: FloatField,
     cappa: FloatField,
@@ -152,23 +171,28 @@ def moist_pkz(
         delz (in):
         r_vir (in):
     """
+    from __externals__ import i_graupel, i_ice, i_liquid, i_rain, i_snow, i_vapor, nwat
+
     # TODO: What is happening with q_con and gz here?
     with computation(PARALLEL), interval(...):
-        cvm, gz = moist_cv_nwat6_fn(
-            qvapor, qliquid, qrain, qsnow, qice, qgraupel
-        )  # if (nwat == 6) else moist_cv_default_fn(constants.CV_AIR)
-        # q_con[0, 0, 0] = gz
-        cappa = set_cappa(qvapor, cvm, r_vir)
+        if __INLINED(nwat == 0):
+            cvm, _gz = moist_cv_nwat0_fn()
+        elif __INLINED(nwat == 6):
+            cvm, _gz = moist_cv_nwat6_fn(
+                tracers.A[i_vapor],
+                tracers.A[i_liquid],
+                tracers.A[i_rain],
+                tracers.A[i_snow],
+                tracers.A[i_ice],
+                tracers.A[i_graupel],
+            )
+
+        cappa = set_cappa(tracers.A[i_vapor], cvm, r_vir)
         pkz = compute_pkz_func(delp, delz, pt, cappa)
 
 
 def moist_te(
-    qvapor: FloatField,
-    qliquid: FloatField,
-    qrain: FloatField,
-    qsnow: FloatField,
-    qice: FloatField,
-    qgraupel: FloatField,
+    tracers: FVTracers,
     u: FloatField,
     v: FloatField,
     w: FloatField,
@@ -184,12 +208,7 @@ def moist_te(
 ):
     """
     Args:
-        qvapor (in):
-        qliquid (in):
-        qrain (in):
-        qsnow (in):
-        qice (in):
-        qgraupel (in):
+        tracers (in):
         u (in):
         v (in):
         w (in):
@@ -201,13 +220,25 @@ def moist_te(
         cosa_s (in):
         hs (in):
     """
+    from __externals__ import i_graupel, i_ice, i_liquid, i_rain, i_snow, i_vapor, nwat
+
     with computation(FORWARD), interval(-1, None):
         te = 0.0
         phis = hs
     with computation(BACKWARD), interval(0, -1):
         phis = phis[0, 0, 1] - grav * delz
     with computation(FORWARD), interval(0, -1):
-        cvm, _gz = moist_cv_nwat6_fn(qvapor, qliquid, qrain, qsnow, qice, qgraupel)
+        if __INLINED(nwat == 0):
+            cvm, _gz = moist_cv_nwat0_fn()
+        elif __INLINED(nwat == 6):
+            cvm, _gz = moist_cv_nwat6_fn(
+                tracers.A[i_vapor],
+                tracers.A[i_liquid],
+                tracers.A[i_rain],
+                tracers.A[i_snow],
+                tracers.A[i_ice],
+                tracers.A[i_graupel],
+            )
 
         te = te + delp * (
             cvm * pt
@@ -247,33 +278,31 @@ def te_zsum(
 
 def cond_output(
     q_con: FloatField,
-    qliquid: FloatField,
-    qrain: FloatField,
-    qsnow: FloatField,
-    qice: FloatField,
-    qgraupel: FloatField,
+    tracers: FVTracers,
 ):
+    from __externals__ import i_graupel, i_ice, i_liquid, i_rain, i_snow
+
     with computation(PARALLEL), interval(...):
         q_con = 0.0
-        if qliquid > 0.0:
-            q_con = q_con + qliquid
-        if qice > 0.0:
-            q_con = q_con + qice
-        if qrain > 0.0:
-            q_con = q_con + qrain
-        if qsnow > 0.0:
-            q_con = q_con + qsnow
-        if qgraupel > 0.0:
-            q_con = q_con + qgraupel
+        if __INLINED(i_liquid > 0):
+            if tracers.A[i_liquid] > 0.0:
+                q_con = q_con + tracers.A[i_liquid]
+        if __INLINED(i_ice > 0):
+            if tracers.A[i_ice] > 0.0:
+                q_con = q_con + tracers.A[i_ice]
+        if __INLINED(i_rain > 0):
+            if tracers.A[i_rain] > 0.0:
+                q_con = q_con + tracers.A[i_rain]
+        if __INLINED(i_snow > 0):
+            if tracers.A[i_snow] > 0.0:
+                q_con = q_con + tracers.A[i_snow]
+        if __INLINED(i_graupel > 0):
+            if tracers.A[i_graupel] > 0.0:
+                q_con = q_con + tracers.A[i_graupel]
 
 
 def fv_setup(
-    qvapor: FloatField,
-    qliquid: FloatField,
-    qrain: FloatField,
-    qsnow: FloatField,
-    qice: FloatField,
-    qgraupel: FloatField,
+    tracers: FVTracers,
     q_con: FloatField,
     cvm: FloatField,
     pkz: FloatField,
@@ -306,13 +335,30 @@ def fv_setup(
 
     # TODO: what is being set up here, and how? update docstring
     with computation(PARALLEL), interval(...):
-        from __externals__ import moist_phys
+        from __externals__ import (
+            i_graupel,
+            i_ice,
+            i_liquid,
+            i_rain,
+            i_snow,
+            i_vapor,
+            moist_phys,
+            nwat,
+        )
 
         if __INLINED(moist_phys):
-            cvm, q_con = moist_cv_nwat6_fn(
-                qvapor, qliquid, qrain, qsnow, qice, qgraupel
-            )  # if (nwat == 6) else moist_cv_default_fn(constants.CV_AIR)
-            dp1 = constants.ZVIR * qvapor
+            if __INLINED(nwat == 0):
+                cvm, q_con = moist_cv_nwat0_fn()
+            elif __INLINED(nwat == 6):
+                cvm, q_con = moist_cv_nwat6_fn(
+                    tracers.A[i_vapor],
+                    tracers.A[i_liquid],
+                    tracers.A[i_rain],
+                    tracers.A[i_snow],
+                    tracers.A[i_ice],
+                    tracers.A[i_graupel],
+                )  # if (nwat == 6) else moist_cv_default_fn(constants.CV_AIR)
+            dp1 = constants.ZVIR * tracers.A[i_vapor]
             cappa = constants.RDGAS / (constants.RDGAS + cvm / (1.0 + dp1))
             pkz = exp(
                 cappa

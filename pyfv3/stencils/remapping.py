@@ -24,10 +24,16 @@ from pyfv3._config import RemappingConfig
 from pyfv3.stencils import moist_cv
 from pyfv3.stencils.map_single import MapSingle
 from pyfv3.stencils.mapn_tracer import MapNTracer
-from pyfv3.stencils.moist_cv import moist_pt_func, moist_pt_last_step
+from pyfv3.stencils.moist_cv import (
+    moist_pt_func_nwat0,
+    moist_pt_func_nwat6,
+    moist_pt_last_step,
+)
 from pyfv3.stencils.saturation_adjustment import SatAdjust3d
 from pyfv3.tracers import FVTracers
 
+
+from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 # TODO: Should this be set here or in global_constants?
 CONSV_MIN = 0.001
@@ -77,12 +83,7 @@ def undo_delz_adjust_and_copy_peln(
 # TODO: some of the intermediate values here are not really output
 # values, and can be refactored into stencil temporaries (e.g. cvm)
 def moist_cv_pt_pressure(
-    qvapor: FloatField,
-    qliquid: FloatField,
-    qrain: FloatField,
-    qsnow: FloatField,
-    qice: FloatField,
-    qgraupel: FloatField,
+    tracers: FVTracers,
     q_con: FloatField,
     pt: FloatField,
     cappa: FloatField,
@@ -127,28 +128,36 @@ def moist_cv_pt_pressure(
         r_vir (in):
     """
 
+    from __externals__ import i_graupel, i_ice, i_liquid, i_rain, i_snow, i_vapor, nwat
+
     # moist_cv.moist_pt
     with computation(PARALLEL), interval(0, -1):
-        # if __INLINED(kord_tm < 0):
         if remap_t:
-            cvm, gz, q_con, cappa, pt = moist_pt_func(
-                qvapor,
-                qliquid,
-                qrain,
-                qsnow,
-                qice,
-                qgraupel,
-                q_con,
-                pt,
-                cappa,
-                delp,
-                delz,
-                r_vir,
-            )
-        # NOTE : GEOS does not perform the delz computation at this location
-        # # delz_adjust
-        # if __INLINED(not hydrostatic):
-        #     delz = -delz / delp
+            if __INLINED(nwat == 0):
+                cvm, gz, q_con, cappa, pt = moist_pt_func_nwat0(
+                    tracers.A[i_vapor],
+                    q_con,
+                    pt,
+                    cappa,
+                    delp,
+                    delz,
+                    r_vir,
+                )
+            elif __INLINED(nwat == 6):
+                cvm, gz, q_con, cappa, pt = moist_pt_func_nwat6(
+                    tracers.A[i_vapor],
+                    tracers.A[i_liquid],
+                    tracers.A[i_rain],
+                    tracers.A[i_ice],
+                    tracers.A[i_snow],
+                    tracers.A[i_graupel],
+                    q_con,
+                    pt,
+                    cappa,
+                    delp,
+                    delz,
+                    r_vir,
+                )
 
     # pressure_updates
     with computation(FORWARD):
@@ -169,11 +178,6 @@ def moist_cv_pt_pressure(
             pn1 = peln
     with computation(BACKWARD), interval(0, -1):
         dp2 = pe2[0, 0, 1] - pe2
-
-    # # NOTE : GEOS doesn't perform the delp calcuation at this location
-    # # copy_stencil
-    # # with computation(PARALLEL), interval(0, -1):
-    # #     delp = dp2
 
 
 def pn2_pk_delp(
@@ -356,6 +360,7 @@ class LagrangianToEulerian(NDSLRuntime):
         config: RemappingConfig,
         area_64,
         pfull,
+        nwat: int = 0,
     ):
         super().__init__(stencil_factory)
 
@@ -366,6 +371,12 @@ class LagrangianToEulerian(NDSLRuntime):
         hydrostatic = config.hydrostatic
         if hydrostatic:
             raise NotImplementedError("Hydrostatic is not implemented")
+
+        if nwat != 6:
+            raise NotImplementedError(
+                "Only 6 water species is implemented for the legacy Remapping,"
+                f" {nwat} were requested."
+            )
 
         self._t_min = 184.0
         # do_omega = hydrostatic and last_step # TODO pull into inputs
@@ -454,10 +465,20 @@ class LagrangianToEulerian(NDSLRuntime):
             init_pe, origin=grid_indexing.origin_compute(), domain=self._domain_jextra
         )
 
+        water_species_externals = {
+            "nwat": nwat,
+            "i_vapor": FVTracers.index("vapor"),
+            "i_liquid": FVTracers.index("liquid") if self.nwat == 6 else -1,
+            "i_rain": FVTracers.index("rain") if self.nwat == 6 else -1,
+            "i_ice": FVTracers.index("ice") if self.nwat == 6 else -1,
+            "i_snow": FVTracers.index("snow") if self.nwat == 6 else -1,
+            "i_graupel": FVTracers.index("graupel") if self.nwat == 6 else -1,
+        }
+
         self._moist_cv_pt_pressure = stencil_factory.from_origin_domain(
             moist_cv_pt_pressure,
             # externals={"kord_tm": config.kord_tm, "hydrostatic": hydrostatic},
-            externals={"hydrostatic": hydrostatic},
+            externals=water_species_externals,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(add=(0, 0, 1)),
         )
@@ -513,6 +534,7 @@ class LagrangianToEulerian(NDSLRuntime):
             moist_cv.moist_pkz,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
+            externals=water_species_externals,
         )
 
         self._pressures_mapu = stencil_factory.from_origin_domain(
@@ -564,9 +586,10 @@ class LagrangianToEulerian(NDSLRuntime):
             domain=grid_indexing.domain_compute(),
         )
 
-        self._saturation_adjustment = SatAdjust3d(
-            stencil_factory, config.sat_adjust, area_64, self.kmp
-        )
+        if self._do_sat_adjust:
+            self._saturation_adjustment = SatAdjust3d(
+                stencil_factory, config.sat_adjust, area_64, self.kmp, nwat=nwat
+            )
 
         self._moist_cv_last_step_stencil = stencil_factory.from_origin_domain(
             moist_pt_last_step,
@@ -576,6 +599,7 @@ class LagrangianToEulerian(NDSLRuntime):
                 grid_indexing.domain[1],
                 grid_indexing.domain[2] + 1,
             ),
+            externals=water_species_externals,
         )
 
         self._basic_adjust_divide_stencil = stencil_factory.from_origin_domain(
@@ -659,12 +683,7 @@ class LagrangianToEulerian(NDSLRuntime):
         # pe2 is final Eulerian edge pressures
 
         self._moist_cv_pt_pressure(
-            tracers[:, :, :, FVTracers.index("vapor")],
-            tracers[:, :, :, FVTracers.index("liquid")],
-            tracers[:, :, :, FVTracers.index("rain")],
-            tracers[:, :, :, FVTracers.index("snow")],
-            tracers[:, :, :, FVTracers.index("ice")],
-            tracers[:, :, :, FVTracers.index("graupel")],
+            tracers,
             q_con,
             pt,
             cappa,
@@ -702,12 +721,7 @@ class LagrangianToEulerian(NDSLRuntime):
         # it clear the outputs are not needed until then?
         # or, are its outputs actually used? can we delete this stencil call?
         self._moist_cv_pkz(
-            tracers[:, :, :, FVTracers.index("vapor")],
-            tracers[:, :, :, FVTracers.index("liquid")],
-            tracers[:, :, :, FVTracers.index("rain")],
-            tracers[:, :, :, FVTracers.index("snow")],
-            tracers[:, :, :, FVTracers.index("ice")],
-            tracers[:, :, :, FVTracers.index("graupel")],
+            tracers,
             q_con,
             self._gz,
             self._cvm,
@@ -779,12 +793,7 @@ class LagrangianToEulerian(NDSLRuntime):
             # to the physics, but if we're staying in dynamics we need
             # to keep it as the virtual potential temperature
             self._moist_cv_last_step_stencil(
-                tracers[:, :, :, FVTracers.index("vapor")],
-                tracers[:, :, :, FVTracers.index("liquid")],
-                tracers[:, :, :, FVTracers.index("rain")],
-                tracers[:, :, :, FVTracers.index("snow")],
-                tracers[:, :, :, FVTracers.index("ice")],
-                tracers[:, :, :, FVTracers.index("graupel")],
+                tracers,
                 self._gz,
                 pt,
                 pkz,

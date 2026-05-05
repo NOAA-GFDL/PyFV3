@@ -22,7 +22,7 @@ def moist_pt(
     r_vir: Float,
 ):
     with computation(PARALLEL), interval(...):
-        cvm, gz, q_con, cappa, pt = moist_cv.moist_pt_func(
+        cvm, gz, q_con, cappa, pt = moist_cv.moist_pt_func_nwat6(
             qvapor,
             qliquid,
             qrain,

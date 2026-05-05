@@ -295,11 +295,11 @@ class DynamicalCore(NDSLRuntime):
             raise NotImplementedError(
                 "Dynamical core (fv_dynamics): fvsetup is only implemented for moist_phys=true."
             )
-        if config.nwat != 6:
+        if config.nwat not in [0, 6]:
             raise NotImplementedError(
                 "Dynamical core (fv_dynamics):"
                 f" nwat=={config.nwat} is not implemented."
-                " Only nwat=6 has been implemented."
+                " Only nwat=0 or 6 has been implemented."
             )
 
         # Implemented dynamics options require those tracers to be present at minima
@@ -377,6 +377,14 @@ class DynamicalCore(NDSLRuntime):
             externals={
                 "nwat": self.config.nwat,
                 "moist_phys": self.config.moist_phys,
+                "i_vapor": FVTracers.index("vapor"),
+                "i_liquid": FVTracers.index("liquid") if self.config.nwat == 6 else -1,
+                "i_rain": FVTracers.index("rain") if self.config.nwat == 6 else -1,
+                "i_ice": FVTracers.index("ice") if self.config.nwat == 6 else -1,
+                "i_snow": FVTracers.index("snow") if self.config.nwat == 6 else -1,
+                "i_graupel": (
+                    FVTracers.index("graupel") if self.config.nwat == 6 else -1
+                ),
             },
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
@@ -458,9 +466,9 @@ class DynamicalCore(NDSLRuntime):
                 config=config.remapping,
                 comm=comm,
                 grid_data=grid_data,
-                nq=NQ,
                 pfull=self._pfull,
                 adiabatic=config.adiabatic,
+                nwat=self.config.nwat,
             )
 
         else:
@@ -470,6 +478,7 @@ class DynamicalCore(NDSLRuntime):
                 config=config.remapping,
                 area_64=grid_data.area_64,
                 pfull=self._pfull,
+                nwat=self.config.nwat,
             )
 
         full_xyz_spec = quantity_factory.get_quantity_halo_spec(
@@ -577,12 +586,7 @@ class DynamicalCore(NDSLRuntime):
         self._set_value_J_interface(state.cyd, Float(0.0))
 
         self._fv_setup_stencil(
-            state.tracers[:, :, :, FVTracers.index("vapor")],
-            state.tracers[:, :, :, FVTracers.index("liquid")],
-            state.tracers[:, :, :, FVTracers.index("rain")],
-            state.tracers[:, :, :, FVTracers.index("snow")],
-            state.tracers[:, :, :, FVTracers.index("ice")],
-            state.tracers[:, :, :, FVTracers.index("graupel")],
+            state.tracers,
             state.q_con,
             self._cvm,
             state.pkz,
@@ -802,19 +806,20 @@ class DynamicalCore(NDSLRuntime):
                         self._omega_halo_updater.update()
                         self._hyperdiffusion(state.omga, Float(0.18) * self._da_min)
 
-        if __debug__:
-            log_on_rank_0("Neg Adj 3")
-        self._adjust_tracer_mixing_ratio(
-            state.tracers[:, :, :, FVTracers.index("vapor")],
-            state.tracers[:, :, :, FVTracers.index("liquid")],
-            state.tracers[:, :, :, FVTracers.index("rain")],
-            state.tracers[:, :, :, FVTracers.index("snow")],
-            state.tracers[:, :, :, FVTracers.index("ice")],
-            state.tracers[:, :, :, FVTracers.index("graupel")],
-            state.tracers[:, :, :, FVTracers.index("cloud")],
-            state.pt,
-            state.delp,
-        )
+        if self.config.nwat >= 6:
+            if __debug__:
+                log_on_rank_0("Neg Adj 3")
+            self._adjust_tracer_mixing_ratio(
+                state.tracers[:, :, :, FVTracers.index("vapor")],
+                state.tracers[:, :, :, FVTracers.index("liquid")],
+                state.tracers[:, :, :, FVTracers.index("rain")],
+                state.tracers[:, :, :, FVTracers.index("snow")],
+                state.tracers[:, :, :, FVTracers.index("ice")],
+                state.tracers[:, :, :, FVTracers.index("graupel")],
+                state.tracers[:, :, :, FVTracers.index("cloud")],
+                state.pt,
+                state.delp,
+            )
 
         if __debug__:
             log_on_rank_0("CubedToLatLon")

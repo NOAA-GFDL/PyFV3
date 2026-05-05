@@ -59,9 +59,9 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
         config: RemappingConfig,
         comm: Communicator,
         grid_data: GridData,
-        nq,
         pfull,
         adiabatic: bool,
+        nwat: int,
     ):
         super().__init__(stencil_factory)
 
@@ -70,15 +70,15 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
         grid_indexing = stencil_factory.grid_indexing
 
         # Configuration
-        hydrostatic = config.hydrostatic
-        if hydrostatic:
+        self._hydrostatic = config.hydrostatic
+        if self._hydrostatic:
             raise NotImplementedError("Hydrostatic is not implemented")
 
         if adiabatic:
             raise NotImplementedError("Adiabatic is not implemented")
 
         self._t_min = Float(184.0)
-        self._nq = nq
+        self.nwat = nwat
         self._w_max = Float(90.0)
         self._w_min = Float(-60.0)
         self._area_64 = grid_data.area_64
@@ -95,6 +95,11 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
                 self.kmp = k
                 break
         # do_omega = hydrostatic and last_step # TODO pull into inputs
+
+        if self.nwat not in [0, 6]:
+            raise NotImplementedError(
+                f"Remapping: {self.nwat} water species, only 0 and 6 implemented"
+            )
 
         # Quantities
         self._pe1 = quantity_factory.zeros(
@@ -182,6 +187,15 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
         )
 
         # Stencils
+        water_species_externals = {
+            "nwat": self.nwat,
+            "i_vapor": FVTracers.index("vapor"),
+            "i_liquid": FVTracers.index("liquid") if self.nwat == 6 else -1,
+            "i_rain": FVTracers.index("rain") if self.nwat == 6 else -1,
+            "i_ice": FVTracers.index("ice") if self.nwat == 6 else -1,
+            "i_snow": FVTracers.index("snow") if self.nwat == 6 else -1,
+            "i_graupel": FVTracers.index("graupel") if self.nwat == 6 else -1,
+        }
 
         self._global_sum = GlobalSum(
             communicator=comm,
@@ -197,7 +211,7 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
 
         self._moist_cv_pt_pressure = stencil_factory.from_origin_domain(
             moist_cv_pt_pressure,
-            externals={"hydrostatic": hydrostatic},
+            externals=water_species_externals,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(add=(0, 0, 1)),
         )
@@ -244,6 +258,7 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
             moist_cv.moist_pkz,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
+            externals=water_species_externals,
         )
 
         self._pressures_mapu = stencil_factory.from_origin_domain(
@@ -274,9 +289,14 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
             dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
         )
 
-        self._saturation_adjustment = SatAdjust3d(
-            stencil_factory, config.sat_adjust, self._area_64, self.kmp
-        )
+        if self._do_sat_adjust:
+            self._saturation_adjustment = SatAdjust3d(
+                stencil_factory,
+                config.sat_adjust,
+                self._area_64,
+                self.kmp,
+                nwat=self.nwat,
+            )
 
         self._moist_cv_last_step_stencil = stencil_factory.from_origin_domain(
             moist_pt_last_step,
@@ -286,12 +306,14 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
                 grid_indexing.domain[1],
                 grid_indexing.domain[2] + 1,
             ),
+            externals=water_species_externals,
         )
 
         self._fill_cond = stencil_factory.from_origin_domain(
             moist_cv.cond_output,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
+            externals=water_species_externals,
         )
 
         self._adjust_divide = stencil_factory.from_origin_domain(
@@ -336,6 +358,7 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
             moist_cv.moist_te,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(add=(0, 0, 1)),
+            externals=water_species_externals,
         )
 
         self._te_zsum = stencil_factory.from_origin_domain(
@@ -428,12 +451,7 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
         # Build remapping profiles
         self._init_pe(pe, self._pe1, self._pe2, ptop)
         self._moist_cv_pt_pressure(
-            qvapor=tracers[:, :, :, FVTracers.index("vapor")],
-            qliquid=tracers[:, :, :, FVTracers.index("liquid")],
-            qrain=tracers[:, :, :, FVTracers.index("rain")],
-            qsnow=tracers[:, :, :, FVTracers.index("snow")],
-            qice=tracers[:, :, :, FVTracers.index("ice")],
-            qgraupel=tracers[:, :, :, FVTracers.index("graupel")],
+            tracers,
             q_con=q_con,
             pt=pt,
             cappa=cappa,
@@ -513,12 +531,7 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
         )
 
         self._moist_cv_pkz(
-            qvapor=tracers[:, :, :, FVTracers.index("vapor")],
-            qliquid=tracers[:, :, :, FVTracers.index("liquid")],
-            qrain=tracers[:, :, :, FVTracers.index("rain")],
-            qsnow=tracers[:, :, :, FVTracers.index("snow")],
-            qice=tracers[:, :, :, FVTracers.index("ice")],
-            qgraupel=tracers[:, :, :, FVTracers.index("graupel")],
+            tracers=tracers,
             pkz=pkz,
             pt=pt,
             cappa=cappa,
@@ -531,12 +544,7 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
         if last_step:
             if consv_te > CONSV_MIN:
                 self._moist_cv_te(
-                    qvapor=tracers[:, :, :, FVTracers.index("vapor")],
-                    qliquid=tracers[:, :, :, FVTracers.index("liquid")],
-                    qrain=tracers[:, :, :, FVTracers.index("rain")],
-                    qsnow=tracers[:, :, :, FVTracers.index("snow")],
-                    qice=tracers[:, :, :, FVTracers.index("ice")],
-                    qgraupel=tracers[:, :, :, FVTracers.index("graupel")],
+                    tracers=tracers,
                     u=u,
                     v=v,
                     w=w,
@@ -604,29 +612,25 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
             )
 
         if last_step and not self._adiabatic:
-            # on the last step, we need the regular temperature to send
-            # to the physics, but if we're staying in dynamics we need
-            # to keep it as the virtual potential temperature
-            self._moist_cv_last_step_stencil(
-                qvapor=tracers[:, :, :, FVTracers.index("vapor")],
-                qliquid=tracers[:, :, :, FVTracers.index("liquid")],
-                qrain=tracers[:, :, :, FVTracers.index("rain")],
-                qsnow=tracers[:, :, :, FVTracers.index("snow")],
-                qice=tracers[:, :, :, FVTracers.index("ice")],
-                qgraupel=tracers[:, :, :, FVTracers.index("graupel")],
-                pt=pt,
-                pkz=pkz,
-                dtmp=dtmp,
-                r_vir=zvir,
-            )
-            self._fill_cond(
-                q_con=q_con,
-                qliquid=tracers[:, :, :, FVTracers.index("liquid")],
-                qrain=tracers[:, :, :, FVTracers.index("rain")],
-                qsnow=tracers[:, :, :, FVTracers.index("snow")],
-                qice=tracers[:, :, :, FVTracers.index("ice")],
-                qgraupel=tracers[:, :, :, FVTracers.index("graupel")],
-            )
+            if not self._hydrostatic:
+                # on the last step, we need the regular temperature to send
+                # to the physics, but if we're staying in dynamics we need
+                # to keep it as the virtual potential temperature
+                self._moist_cv_last_step_stencil(
+                    tracers=tracers,
+                    pt=pt,
+                    pkz=pkz,
+                    dtmp=dtmp,
+                    r_vir=zvir,
+                )
+                self._fill_cond(
+                    q_con=q_con,
+                    tracers=tracers,
+                )
+            else:
+                raise NotImplementedError(
+                    "Remapping: last step output temperatur for non hydrostatic case"
+                )
         else:
             # converts virtual temperature back to virtual potential temperature
             self._adjust_divide(pkz, pt)

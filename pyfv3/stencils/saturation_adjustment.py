@@ -935,8 +935,18 @@ def satadjust(
 
 class SatAdjust3d:
     def __init__(
-        self, stencil_factory: StencilFactory, config: SatAdjustConfig, area_64, kmp
+        self,
+        stencil_factory: StencilFactory,
+        config: SatAdjustConfig,
+        area_64,
+        kmp,
+        nwat: int,
     ):
+        if nwat != 6:
+            raise NotImplementedError(
+                "Saturation adjustement is only implemented for 6 water species"
+            )
+
         grid_indexing = stencil_factory.grid_indexing
         self._config = config
         self._area_64 = area_64

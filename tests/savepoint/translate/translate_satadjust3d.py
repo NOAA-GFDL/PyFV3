@@ -71,6 +71,7 @@ class TranslateSatAdjust3d(TranslateDycoreFortranData2Py):
             self.config.sat_adjust,
             self.grid.area_64,
             int(inputs["kmp"]),
+            nwat=self.config.nwat,
         )
         satadjust3d_obj(**inputs)
         return inputs

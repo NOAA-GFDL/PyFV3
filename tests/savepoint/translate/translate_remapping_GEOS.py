@@ -443,9 +443,9 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
             self.config.remapping,
             communicator,
             self.grid.grid_data,
-            state.nq,
             state.pfull,
             self.config.adiabatic,
+            self.config.nwat,
         )
 
         l_to_e(

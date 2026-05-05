@@ -229,7 +229,6 @@ class GeosDycoreWrapper:
                 timestep=timedelta(seconds=self.dycore_state.bdt),
                 phis=self.dycore_state.phis,
                 state=self.dycore_state,
-                exclude_tracers=[],
             )
 
         is_gpu_backend = self.backend.is_gpu_backend()
