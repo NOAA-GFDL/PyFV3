@@ -45,6 +45,8 @@ def get_advection_mask(bl, b0, br):
 
     if __INLINED(mord == 5):
         smt5 = bl * br < 0
+    elif __INLINED(mord == -5):
+        compile_assert(False)
     else:
         smt5 = (3.0 * abs(b0)) < abs(bl - br)
         # Fix edge issues
@@ -333,6 +335,10 @@ class XPiecewiseParabolic(NDSLRuntime):
         origin: Index3D,
         domain: Index3D,
     ):
+        # Dev note: this could be rewrote to split monotonic and not, or per-type of
+        #           scheme as described above with compiler-time `iord` conditional to
+        #           direct the code
+
         super().__init__(stencil_factory)
 
         # Arguments come from:

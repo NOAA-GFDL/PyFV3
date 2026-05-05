@@ -339,6 +339,7 @@ class YPiecewiseParabolic(NDSLRuntime):
         #           direct the code
 
         super().__init__(stencil_factory)
+
         # Arguments come from:
         # namelist.grid_type
         # grid.dya
