@@ -319,7 +319,7 @@ class YPiecewiseParabolic(NDSLRuntime):
     Undocumented values implemented in Fortran: 7, 10, 11, 12, 13.
 
     The code below is capable of:
-        - Cube-sphere grid (no doubly periodic)
+        - FV3-sphere grid (no single-tile periodic grid)
         - `jord` == 8 for monotonic behaviors OR
         - `jord` 5, 6
         - `jord` must be positive

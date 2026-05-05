@@ -301,7 +301,6 @@ class XPiecewiseParabolic(NDSLRuntime):
     """
     Fortran name is xppm
 
-
     `iord` is `hord_dp` which is hord for `δp`, `δz`, where:
 
     `δp`: Total air mass (including vapor and condensates)
@@ -320,7 +319,7 @@ class XPiecewiseParabolic(NDSLRuntime):
     Undocumented values implemented in Fortran: 7, 10, 11, 12, 13.
 
     The code below is capable of:
-        - Cube-sphere grid (no doubly periodic)
+        - FV3-sphere grid (no single-tile periodic grid)
         - `iord` == 8 for monotonic behaviors OR
         - `iord` 5, 6
         - `iord` must be positive
@@ -344,6 +343,7 @@ class XPiecewiseParabolic(NDSLRuntime):
         # Arguments come from:
         # namelist.grid_type
         # grid.dxa
+
         available_grid_options = [0, 4]
         if grid_type not in available_grid_options:
             raise NotImplementedError(
