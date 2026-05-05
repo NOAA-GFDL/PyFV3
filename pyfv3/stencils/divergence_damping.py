@@ -661,13 +661,12 @@ class DivergenceDamping(NDSLRuntime):
                 self.v_contra_dxc,
             )
 
-            da_min_c = self._damping_coefficients.da_min_c
             self._damping(
                 delpc,
                 damped_rel_vort_bgrid,
                 ke,
                 self._d2_bg_column,
-                da_min_c,
+                self._damping_coefficients.da_min_c,
                 self._dddmp,
                 dt,
             )
@@ -726,12 +725,11 @@ class DivergenceDamping(NDSLRuntime):
                     abs(dt),
                 )
 
-        da_min = self._damping_coefficients.da_min
         if self._stretched_grid:
             # reference https://github.com/NOAA-GFDL/GFDL_atmos_cubed_sphere/blob/main/model/sw_core.F90#L1422 # noqa: E501
-            dd8 = Float(da_min * np.power(self._d4_bg, (self._nonzero_nord + 1)))
+            dd8 = Float(self._damping_coefficients.da_min * np.power(self._d4_bg, (self._nonzero_nord + 1)))
         else:
-            dd8 = np.power((da_min_c * self._d4_bg), (self._nonzero_nord + 1)).astype(
+            dd8 = np.power((self._damping_coefficients.da_min_c * self._d4_bg), (self._nonzero_nord + 1)).astype(
                 Float
             )
 
@@ -741,7 +739,7 @@ class DivergenceDamping(NDSLRuntime):
             delpc,
             divg_d,
             self._d2_bg_column,
-            da_min_c,
+            self._damping_coefficients.da_min_c,
             self._dddmp,
             dd8,
         )
