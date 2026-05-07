@@ -1,4 +1,4 @@
-from ndsl import StencilFactory, orchestrate
+from ndsl import NDSLRuntime, StencilFactory
 from ndsl.dsl.typing import FloatField
 
 
@@ -128,17 +128,13 @@ def corner_copy_y(field_to_copy):
     field_to_copy[-4, -2] = field_to_copy[-7, -4]
 
 
-class CopyCornersX:
+class CopyCornersX(NDSLRuntime):
     """
     Helper-class to copy corners corresponding to the fortran function copy_corners_x
     """
 
     def __init__(self, stencil_factory: StencilFactory) -> None:
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
-
+        super().__init__(stencil_factory)
         if stencil_factory.grid_indexing.n_halo != 3:
             raise NotImplementedError(
                 "Corner-Copy only implemented for exactly 3 Halo-Points"
@@ -148,18 +144,14 @@ class CopyCornersX:
         corner_copy_x(field)
 
 
-class CopyCornersY:
+class CopyCornersY(NDSLRuntime):
     """
     Helper-class to copy corners corresponding to the fortran function
     copy_corners_y
     """
 
     def __init__(self, stencil_factory: StencilFactory) -> None:
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
-
+        super().__init__(stencil_factory)
         if stencil_factory.grid_indexing.n_halo != 3:
             raise NotImplementedError(
                 "Corner-Copy only implemented for exactly 3 Halo-Points"

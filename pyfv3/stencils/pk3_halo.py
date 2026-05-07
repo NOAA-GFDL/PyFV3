@@ -1,4 +1,4 @@
-from ndsl import QuantityFactory, StencilFactory
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM
 from ndsl.dsl.gt4py import FORWARD, computation, exp, horizontal, interval, log, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
@@ -31,7 +31,7 @@ def edge_pe_update(
                 pk3 = exp(akap * log(pe))
 
 
-class PK3Halo:
+class PK3Halo(NDSLRuntime):
     """
     Fortran name is pk3_halo
     """
@@ -41,6 +41,8 @@ class PK3Halo:
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
     ):
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         origin = grid_indexing.origin_full()
         domain = grid_indexing.domain_full(add=(0, 0, 1))

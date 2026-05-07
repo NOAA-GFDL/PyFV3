@@ -1,7 +1,7 @@
 import math
 
 import ndsl.constants as constants
-from ndsl import StencilFactory
+from ndsl import NDSLRuntime, StencilFactory
 from ndsl.dsl.gt4py import PARALLEL, computation, exp, floor
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval, log
@@ -933,7 +933,7 @@ def satadjust(
             pkz = compute_pkz_func(dp, delz, pt, cappa)
 
 
-class SatAdjust3d:
+class SatAdjust3d(NDSLRuntime):
     def __init__(
         self,
         stencil_factory: StencilFactory,
@@ -942,6 +942,8 @@ class SatAdjust3d:
         kmp,
         nwat: int,
     ):
+        super().__init__(stencil_factory)
+
         if nwat != 6:
             raise NotImplementedError(
                 "Saturation adjustement is only implemented for 6 water species"

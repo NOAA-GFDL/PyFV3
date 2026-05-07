@@ -1,5 +1,5 @@
 import ndsl.constants as constants
-from ndsl import QuantityFactory, StencilFactory
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
@@ -312,7 +312,7 @@ def fix_water_vapor_k_loop(i, j, kbot, qvapor, dp):
 """
 
 
-class AdjustNegativeTracerMixingRatio:
+class AdjustNegativeTracerMixingRatio(NDSLRuntime):
     """Adjust tracer mixing ratios to fix negative values
 
     Named neg_adj3 in fortran
@@ -338,6 +338,8 @@ class AdjustNegativeTracerMixingRatio:
         check_negative: bool,
         hydrostatic: bool,
     ):
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         self._sum1 = quantity_factory.zeros(
             [I_DIM, J_DIM],

@@ -1,4 +1,4 @@
-from ndsl import StencilFactory, orchestrate
+from ndsl import NDSLRuntime, StencilFactory
 from ndsl.dsl.gt4py import PARALLEL, computation, horizontal, interval, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
@@ -519,7 +519,7 @@ def fxadv_fluxes_stencil(
                 y_area_flux = dx * tmp * sin_sg2
 
 
-class FiniteVolumeFluxPrep:
+class FiniteVolumeFluxPrep(NDSLRuntime):
     """
     A large section of code near the beginning of Fortran's d_sw subroutine
     Known in this repo as FxAdv,
@@ -531,10 +531,8 @@ class FiniteVolumeFluxPrep:
         grid_data: GridData,
         grid_type: int,
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         self._grid_type = grid_type
         self._tile_interior = not (
