@@ -148,10 +148,18 @@ class FiniteVolumeTransport(NDSLRuntime):
 
         self._q_advected_y = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._q_advected_x = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
-        self._q_x_advected_mean = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
-        self._q_y_advected_mean = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
-        self._q_advected_x_y_advected_mean = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
-        self._q_advected_y_x_advected_mean = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._q_x_advected_mean = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
+        self._q_y_advected_mean = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
+        self._q_advected_x_y_advected_mean = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
+        self._q_advected_y_x_advected_mean = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
         self._nord = nord
         self._damp_c = damp_c
         ord_outer = hord
@@ -223,7 +231,6 @@ class FiniteVolumeTransport(NDSLRuntime):
             origin=idx.origin_compute(),
             domain=idx.domain_compute(add=(1, 1, 1)),
         )
-
 
     def __call__(
         self,

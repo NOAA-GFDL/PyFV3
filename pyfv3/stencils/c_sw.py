@@ -1,4 +1,4 @@
-from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation, horizontal, interval, region  # noqa
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, I, J
@@ -548,20 +548,13 @@ class CGridShallowWaterDynamics(NDSLRuntime):
             dord4=self._dord4,
         )
 
-        def make_quantity() -> Quantity:
-            return quantity_factory.zeros(
-                [I_DIM, J_DIM, K_DIM],
-                units="unknown",
-                dtype=Float,
-            )
-
         # TODO: double-check the dimensions on these, they may be incorrect
         # as they are only documentation and not used by the code
-        self._tmp_ke = make_quantity()
-        self._tmp_vort = make_quantity()
-        self._tmp_fx = make_quantity()
-        self._tmp_fx1 = make_quantity()
-        self._tmp_fx2 = make_quantity()
+        self._tmp_ke = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_vort = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_fx = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_fx1 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_fx2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
 
         if nord > 0:
             self._divergence_corner = stencil_factory.from_dims_halo(

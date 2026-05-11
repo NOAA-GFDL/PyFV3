@@ -138,41 +138,17 @@ class NonhydrostaticVerticalSolverCGrid(NDSLRuntime):
         origin = grid_indexing.origin_compute(add=(-1, -1, 0))
         domain = grid_indexing.domain_compute(add=(2, 2, 1))
 
-        self._dm = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="kg",
-            dtype=Float,
+        self._dm = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM], units="kg")
+        self._w = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM], units="m/s")
+        self._pem = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM], units="Pa"
         )
-        self._w = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="m/s",
-            dtype=Float,
+        self._pe = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM], units="Pa"
         )
-        self._pem = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-        self._pe = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-        self._gm = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="",
-            dtype=Float,
-        )
-        self._dz = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="m",
-            dtype=Float,
-        )
-        self._pm = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="Pa",
-            dtype=Float,
-        )
+        self._gm = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM], units="")
+        self._dz = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM], units="m")
+        self._pm = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM], units="Pa")
 
         self._precompute_stencil = stencil_factory.from_origin_domain(
             precompute,

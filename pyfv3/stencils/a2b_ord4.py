@@ -576,22 +576,16 @@ class AGrid2BGridFourthOrder(NDSLRuntime):
             self._edge_s = grid_data.edge_s
             self._edge_n = grid_data.edge_n
 
-            self._tmp_qx = quantity_factory.zeros(
-                dims=[I_INTERFACE_DIM, J_DIM, z_dim],
-                units="unknown",
-                dtype=Float,
+            self._tmp_qx = self.make_local(
+                quantity_factory, [I_INTERFACE_DIM, J_DIM, z_dim]
             )
-            self._tmp_qy = quantity_factory.zeros(
-                dims=[I_DIM, J_INTERFACE_DIM, z_dim],
-                units="unknown",
-                dtype=Float,
+            self._tmp_qy = self.make_local(
+                quantity_factory, [I_DIM, J_INTERFACE_DIM, z_dim]
             )
             # TODO: the dimensions of tmp_qout_edges may not be correct, verify
             # with Lucas and either update the code or remove this comment
-            self._tmp_qout_edges = quantity_factory.zeros(
-                dims=[I_DIM, J_DIM, z_dim],
-                units="unknown",
-                dtype=Float,
+            self._tmp_qout_edges = self.make_local(
+                quantity_factory, [I_DIM, J_DIM, z_dim]
             )
 
             _, (z_domain,) = self._idx.get_origin_domain([z_dim])

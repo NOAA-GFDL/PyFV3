@@ -164,38 +164,34 @@ class NonhydrostaticVerticalSolver(NDSLRuntime):
         if config.a_imp <= 0.999:
             raise NotImplementedError("a_imp <= 0.999 is not implemented")
 
-        self._delta_mass = quantity_factory.zeros(
+        self._delta_mass = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="kg",
-            dtype=Float,
         )
-        self._tmp_pe_init = quantity_factory.zeros(
+        self._tmp_pe_init = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
-            dtype=Float,
         )
-        self._p_gas = quantity_factory.zeros(
+        self._p_gas = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="Pa",
-            dtype=Float,
         )
-        self._p_interface = quantity_factory.zeros(
+        self._p_interface = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
-            dtype=Float,
         )
-        self._log_p_interface = quantity_factory.zeros(
+        self._log_p_interface = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="log(Pa)",
-            dtype=Float,
         )
 
         # gamma parameter is (cp/cv)
-        self._gamma = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="",
-            dtype=Float,
-        )
+        self._gamma = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
 
         riemorigin = grid_indexing.origin_compute()
         domain = grid_indexing.domain_compute(add=(0, 0, 1))

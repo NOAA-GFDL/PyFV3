@@ -154,42 +154,26 @@ class UpdateGeopotentialHeightOnCGrid(NDSLRuntime):
             units=dp_ref.units,
             dtype=Float,
         )
-        self._dp_ref.view[:] = dp_ref.view[:]
-        self._gz_x = quantity_factory.zeros(
+        self._dp_ref.field[:] = dp_ref.field[:]
+        self._gz_x = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="m**2/s**2",
-            dtype=Float,
         )
-        self._gz_y = quantity_factory.zeros(
+        self._gz_y = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="m**2/s**2",
-            dtype=Float,
         )
-        self._gz_filled = quantity_factory.zeros(
+        self._gz_filled = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="m**2/s**2",
-            dtype=Float,
         )
-        self._xfx = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="unknown",
-            dtype=Float,
-        )
-        self._yfx = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="unknown",
-            dtype=Float,
-        )
-        self._fx = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="unknown",
-            dtype=Float,
-        )
-        self._fy = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="unknown",
-            dtype=Float,
-        )
+        self._xfx = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._yfx = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._fx = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._fy = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         full_origin = grid_indexing.origin_full()
         full_domain = grid_indexing.domain_full(add=(0, 0, 1))
         self._double_copy_stencil = stencil_factory.from_origin_domain(

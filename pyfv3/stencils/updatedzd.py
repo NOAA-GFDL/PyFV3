@@ -238,7 +238,7 @@ class UpdateHeightOnDGrid(NDSLRuntime):
             )
         self._dz_min = dz_min
         self._dp_ref = grid_data.dp_ref
-        self._allocate_temporary_storages(quantity_factory)
+        self._make_locals(quantity_factory)
         self._gk, self._beta, self._gamma = cubic_spline_interpolation_constants(
             dp0=grid_data.dp_ref, quantity_factory=quantity_factory
         )
@@ -269,51 +269,37 @@ class UpdateHeightOnDGrid(NDSLRuntime):
             domain=grid_indexing.domain_compute(add=(0, 0, 1)),
         )
 
-    def _allocate_temporary_storages(self, quantity_factory: QuantityFactory):
-        self._crx_interface = quantity_factory.zeros(
+    def _make_locals(self, quantity_factory: QuantityFactory):
+        """Allocate all Locals on `self`"""
+
+        self._crx_interface = self.make_local(
+            quantity_factory, [I_INTERFACE_DIM, J_DIM, K_INTERFACE_DIM]
+        )
+        self._cry_interface = self.make_local(
+            quantity_factory, [I_DIM, J_INTERFACE_DIM, K_INTERFACE_DIM]
+        )
+        self._x_area_flux_interface = self.make_local(
+            quantity_factory,
             [I_INTERFACE_DIM, J_DIM, K_INTERFACE_DIM],
-            "",
-            dtype=Float,
+            units="m^2",
         )
-        self._cry_interface = quantity_factory.zeros(
+        self._y_area_flux_interface = self.make_local(
+            quantity_factory,
             [I_DIM, J_INTERFACE_DIM, K_INTERFACE_DIM],
-            "",
-            dtype=Float,
+            units="m^2",
         )
-        self._x_area_flux_interface = quantity_factory.zeros(
-            [I_INTERFACE_DIM, J_DIM, K_INTERFACE_DIM],
-            "m^2",
-            dtype=Float,
+        self._wk = self.make_local(quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM])
+        self._height_x_diffusive_flux = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM]
         )
-        self._y_area_flux_interface = quantity_factory.zeros(
-            [I_DIM, J_INTERFACE_DIM, K_INTERFACE_DIM],
-            "m^2",
-            dtype=Float,
+        self._height_y_diffusive_flux = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM]
         )
-        self._wk = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            "unknown",
-            dtype=Float,
+        self._fx = self.make_local(
+            quantity_factory, [I_INTERFACE_DIM, J_DIM, K_INTERFACE_DIM]
         )
-        self._height_x_diffusive_flux = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            "unknown",
-            dtype=Float,
-        )
-        self._height_y_diffusive_flux = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            "unknown",
-            dtype=Float,
-        )
-        self._fx = quantity_factory.zeros(
-            [I_INTERFACE_DIM, J_DIM, K_INTERFACE_DIM],
-            "unknown",
-            dtype=Float,
-        )
-        self._fy = quantity_factory.zeros(
-            [I_DIM, J_INTERFACE_DIM, K_INTERFACE_DIM],
-            "unknown",
-            dtype=Float,
+        self._fy = self.make_local(
+            quantity_factory, [I_DIM, J_INTERFACE_DIM, K_INTERFACE_DIM]
         )
 
     def __call__(

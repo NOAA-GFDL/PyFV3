@@ -1,14 +1,11 @@
 from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
-from ndsl.constants import I_DIM, J_DIM
 from ndsl.dsl.gt4py import FORWARD, computation, exp, horizontal, interval, log, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 
 
 # TODO merge with pe_halo? reuse partials?
 # NOTE: This is different from pyfv3.stencils.pe_halo.edge_pe
-def edge_pe_update(
-    pe: FloatFieldIJ, delp: FloatField, pk3: FloatField, ptop: Float, akap: Float
-):
+def edge_pe_update(delp: FloatField, pk3: FloatField, ptop: Float, akap: Float):
     from __externals__ import local_ie, local_is, local_je, local_js
 
     with computation(FORWARD):
@@ -19,7 +16,8 @@ def edge_pe_update(
                 region[local_is - 2 : local_ie + 3, local_js - 2 : local_js],
                 region[local_is - 2 : local_ie + 3, local_je + 1 : local_je + 3],
             ):
-                pe = ptop
+                pe: FloatFieldIJ = ptop
+
         with interval(1, None):
             with horizontal(
                 region[local_is - 2 : local_is, local_js : local_je + 1],
@@ -27,6 +25,7 @@ def edge_pe_update(
                 region[local_is - 2 : local_ie + 3, local_js - 2 : local_js],
                 region[local_is - 2 : local_ie + 3, local_je + 1 : local_je + 3],
             ):
+
                 pe = pe + delp[0, 0, -1]
                 pk3 = exp(akap * log(pe))
 
@@ -55,11 +54,6 @@ class PK3Halo(NDSLRuntime):
             origin=origin,
             domain=domain,
         )
-        self._pe_tmp = quantity_factory.zeros(
-            [I_DIM, J_DIM],
-            units="unknown",
-            dtype=Float,
-        )
 
     def __call__(self, pk3: FloatField, delp: FloatField, ptop: Float, akap: Float):
         """Update pressure raised to the kappa (pk3) in halo region.
@@ -70,4 +64,4 @@ class PK3Halo(NDSLRuntime):
             ptop: The pressure level at the top of atmosphere
             akap: Poisson constant (KAPPA)
         """
-        self._edge_pe_update(self._pe_tmp, delp, pk3, ptop, akap)
+        self._edge_pe_update(delp, pk3, ptop, akap)

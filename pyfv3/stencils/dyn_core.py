@@ -220,10 +220,7 @@ def dyncore_temporaries(
     for name in [
         "ut",
         "vt",
-        "gz",
-        "zh",
         "pem",
-        "pkc",
         "pk3",
         "heat_source",
         "cappa",
@@ -434,6 +431,7 @@ class AcousticDynamics(NDSLRuntime):
 
         grid_indexing = stencil_factory.grid_indexing
         self.config = config
+        self.hydrostatic = config.hydrostatic
         if config.d_ext != 0:
             raise RuntimeError("Acoustics (dyn_core): d_ext != 0 is not implemented")
         if config.beta != 0:
@@ -466,27 +464,9 @@ class AcousticDynamics(NDSLRuntime):
         )
         self._akap = Float(constants.KAPPA)
 
-        temporaries = dyncore_temporaries(quantity_factory)
-        self._heat_source = temporaries["heat_source"]
-        self._divgd = temporaries["divgd"]
-        self._gz = temporaries["gz"]
-        self._pkc = temporaries["pkc"]
-        self._zh = temporaries["zh"]
-        self.cappa = temporaries["cappa"]
-        self._ut = temporaries["ut"]
-        self._vt = temporaries["vt"]
-        self._pem = temporaries["pem"]
-        self._pk3 = temporaries["pk3"]
-        self._crx = temporaries["crx"]
-        self._cry = temporaries["cry"]
-        self._xfx = temporaries["xfx"]
-        self._yfx = temporaries["yfx"]
-        self._ws3 = temporaries["ws3"]
-        self._dpx = temporaries["dpx"]
-
-        if not config.hydrostatic:
-            self._pk3[:] = HUGE_R
-        self._gz[:] = HUGE_R
+        # Locals
+        self._make_locals(quantity_factory)
+        self._make_persistent_temporaries(quantity_factory)
 
         column_namelist = d_sw.get_column_namelist(
             config.d_grid_shallow_water, quantity_factory=quantity_factory
@@ -646,12 +626,52 @@ class AcousticDynamics(NDSLRuntime):
             quantity_factory,
             state,
             cappa=self.cappa,
-            gz=self._gz,
-            zh=self._zh,
-            divgd=self._divgd,
-            heat_source=self._heat_source,
-            pkc=self._pkc,
+            gz=self.gz,
+            zh=self.zh,
+            divgd=self.divgd,
+            heat_source=self.heat_source,
+            pkc=self.pkc,
         )
+
+    def _make_persistent_temporaries(
+        self,
+        quantity_factory: QuantityFactory,
+    ):
+        """Define should memory that should be Local - but due to un-covered
+        use case for orchestration (halo exchange, etc.) they are kept persistent."""
+
+        self.heat_source = quantity_factory.zeros([I_DIM, J_DIM, K_DIM], "")
+        self.cappa = quantity_factory.zeros([I_DIM, J_DIM, K_DIM], "")
+
+        self.gz = quantity_factory.zeros([I_DIM, J_DIM, K_INTERFACE_DIM], "")
+        self.pkc = quantity_factory.zeros([I_DIM, J_DIM, K_INTERFACE_DIM], "")
+        self.zh = quantity_factory.zeros([I_DIM, J_DIM, K_INTERFACE_DIM], "")
+
+        self.divgd = quantity_factory.zeros(
+            [I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM], ""
+        )
+
+    def _make_locals(
+        self,
+        quantity_factory: QuantityFactory,
+    ):
+        """Make Local accssible on `self`"""
+
+        # TODO: the dimensions of ut and vt may not be correct,
+        #       because they are not used. double-check and correct as needed.
+        self._ut = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._vt = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._pem = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._pk3 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._dpx = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+
+        self._ws3 = self.make_local(quantity_factory, [I_DIM, J_DIM])
+
+        self._crx = self.make_local(quantity_factory, [I_INTERFACE_DIM, J_DIM, K_DIM])
+        self._xfx = self.make_local(quantity_factory, [I_INTERFACE_DIM, J_DIM, K_DIM])
+
+        self._cry = self.make_local(quantity_factory, [I_DIM, J_INTERFACE_DIM, K_DIM])
+        self._yfx = self.make_local(quantity_factory, [I_DIM, J_INTERFACE_DIM, K_DIM])
 
     def __call__(
         self,
@@ -683,10 +703,14 @@ class AcousticDynamics(NDSLRuntime):
             mfyd,
             cxd,
             cyd,
-            self._heat_source,
+            self.heat_source,
             state.diss_estd,
             n_map == 1,
         )
+
+        if not self.hydrostatic:
+            self._pk3[:] = HUGE_R
+        self.gz[:] = HUGE_R
 
         # "acoustic" loop
         # called this because its timestep is usually limited by horizontal sound-wave
@@ -712,7 +736,7 @@ class AcousticDynamics(NDSLRuntime):
                     self._gz_from_surface_height_and_thickness(
                         self._zs,
                         state.delz,
-                        self._gz,
+                        self.gz,
                     )
                     self._halo_updaters.gz.start()
             if it == 0:
@@ -743,7 +767,7 @@ class AcousticDynamics(NDSLRuntime):
                 state.va,
                 self._ut,
                 self._vt,
-                self._divgd,
+                self.divgd,
                 state.omga,
                 dt2,
             )
@@ -759,20 +783,20 @@ class AcousticDynamics(NDSLRuntime):
                 if it == 0:
                     self._halo_updaters.gz.wait()
                     self._copy_stencil(
-                        self._gz,
-                        self._zh,
+                        self.gz,
+                        self.zh,
                     )
                 else:
                     self._copy_stencil(
-                        self._zh,
-                        self._gz,
+                        self.zh,
+                        self.gz,
                     )
             if not self.config.hydrostatic:
                 self.update_geopotential_height_on_c_grid(
                     zs=self._zs,
                     ut=self._ut,
                     vt=self._vt,
-                    gz=self._gz,
+                    gz=self.gz,
                     ws=self._ws3,
                     dt=dt2,
                 )
@@ -792,8 +816,8 @@ class AcousticDynamics(NDSLRuntime):
                     ptc=self.cgrid_shallow_water_lagrangian_dynamics.ptc,
                     q_con=state.q_con,
                     delpc=self.cgrid_shallow_water_lagrangian_dynamics.delpc,
-                    gz=self._gz,
-                    pef=self._pkc,
+                    gz=self.gz,
+                    pef=self.pkc,
                     w3=state.omga,
                 )
 
@@ -801,16 +825,16 @@ class AcousticDynamics(NDSLRuntime):
                 rdxc=self.grid_data.rdxc,
                 uc=state.uc,
                 delpc=self.cgrid_shallow_water_lagrangian_dynamics.delpc,
-                pkc=self._pkc,
-                gz=self._gz,
+                pkc=self.pkc,
+                gz=self.gz,
                 dt2=dt2,
             )
             self._p_grad_c_y(
                 rdyc=self.grid_data.rdyc,
                 vc=state.vc,
                 delpc=self.cgrid_shallow_water_lagrangian_dynamics.delpc,
-                pkc=self._pkc,
-                gz=self._gz,
+                pkc=self.pkc,
+                gz=self.gz,
                 dt2=dt2,
             )
 
@@ -831,7 +855,7 @@ class AcousticDynamics(NDSLRuntime):
                 vc=state.vc,
                 ua=state.ua,
                 va=state.va,
-                divgd=self._divgd,
+                divgd=self.divgd,
                 mfx=mfxd,
                 mfy=mfyd,
                 cx=cxd,
@@ -842,8 +866,8 @@ class AcousticDynamics(NDSLRuntime):
                 xfx=self._xfx,
                 yfx=self._yfx,
                 q_con=state.q_con,
-                zh=self._zh,
-                heat_source=self._heat_source,
+                zh=self.zh,
+                heat_source=self.heat_source,
                 diss_est=state.diss_estd,
                 dt=dt_acoustic_substep,
             )
@@ -862,7 +886,7 @@ class AcousticDynamics(NDSLRuntime):
                 # without explicit arg names, numpy does not run
                 self.update_height_on_d_grid(
                     surface_height=self._zs,
-                    height=self._zh,
+                    height=self.zh,
                     courant_number_x=self._crx,
                     courant_number_y=self._cry,
                     x_area_flux=self._xfx,
@@ -881,9 +905,9 @@ class AcousticDynamics(NDSLRuntime):
                     q_con=state.q_con,
                     delp=state.delp,
                     pt=state.pt,
-                    zh=self._zh,
+                    zh=self.zh,
                     p=state.pe,
-                    ppe=self._pkc,
+                    ppe=self.pkc,
                     pk3=self._pk3,
                     pk=state.pk,
                     log_p_interface=state.peln,
@@ -904,16 +928,16 @@ class AcousticDynamics(NDSLRuntime):
             if not self.config.hydrostatic:
                 self._halo_updaters.zh.wait()
                 self._compute_geopotential_stencil(
-                    self._zh,
-                    self._gz,
+                    self.zh,
+                    self.gz,
                 )
                 self._halo_updaters.pkc.wait()
 
                 self.nonhydrostatic_pressure_gradient(
                     u=state.u,
                     v=state.v,
-                    pp=self._pkc,
-                    gz=self._gz,
+                    pp=self.pkc,
+                    gz=self.gz,
                     pk3=self._pk3,
                     delp=state.delp,
                     dt=dt_acoustic_substep,
@@ -950,7 +974,7 @@ class AcousticDynamics(NDSLRuntime):
             # we want to diffuse the heat source from damping before we apply it,
             # so that we don't reinforce the same grid-scale patterns we're trying
             # to damp
-            self._hyperdiffusion(self._heat_source, cd)
+            self._hyperdiffusion(self.heat_source, cd)
             if not self.config.hydrostatic:
                 delt_time_factor = np.abs(
                     dt_acoustic_substep * Float(self.config.delt_max),
@@ -963,7 +987,7 @@ class AcousticDynamics(NDSLRuntime):
                     state.delp,
                     state.delz,
                     self.cappa,
-                    self._heat_source,
+                    self.heat_source,
                     state.pt,
                     delt_time_factor,
                 )

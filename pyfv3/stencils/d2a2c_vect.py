@@ -457,15 +457,15 @@ class DGrid2AGrid2CGridVectors(NDSLRuntime):
             jfirst = grid_indexing.jsc - 1
             jlast = grid_indexing.jec + 2
 
-        self._utmp = quantity_factory.zeros(
+        self._utmp = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="m/s",
-            dtype=Float,
         )
-        self._vtmp = quantity_factory.zeros(
+        self._vtmp = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="m/s",
-            dtype=Float,
         )
 
         if (grid_type < 3) and (not nested):
@@ -511,9 +511,6 @@ class DGrid2AGrid2CGridVectors(NDSLRuntime):
             domain=(ie2 - is2 + 1, je2 - js2 + 1, grid_indexing.domain[2]),
         )
 
-        origin = grid_indexing.origin_full()
-        domain = grid_indexing.domain_full()
-        ax_offsets = grid_indexing.axis_offsets(origin, domain)
         if npt == 0:
             d2a2c_avg_offset = -1
         else:

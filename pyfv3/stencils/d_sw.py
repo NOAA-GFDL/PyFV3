@@ -838,9 +838,15 @@ class DGridShallowWaterLagrangianDynamics(NDSLRuntime):
         self._tmp_diss_e = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._vort_x_delta = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._vort_y_delta = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
-        self._dt_kinetic_energy_on_cell_corners = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
-        self._abs_vorticity_agrid = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
-        self._damped_rel_vorticity_agrid = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._dt_kinetic_energy_on_cell_corners = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
+        self._abs_vorticity_agrid = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
+        self._damped_rel_vorticity_agrid = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
         self._uc_contra = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._vc_contra = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._tmp_ut = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
@@ -852,7 +858,9 @@ class DGridShallowWaterLagrangianDynamics(NDSLRuntime):
         self._tmp_dw = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._tmp_wk = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._vorticity_agrid = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
-        self._vorticity_bgrid_damped = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._vorticity_bgrid_damped = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
         self._tmp_fx2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._tmp_fy2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._column_namelist = column_namelist

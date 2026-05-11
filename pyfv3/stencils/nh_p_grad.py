@@ -149,15 +149,11 @@ class NonHydrostaticPressureGradient(NDSLRuntime):
                 "Non Hydrostatic Pressure Gradient (nh_p_grad) with `use_logp` is not implemented."
             )
 
-        self._tmp_wk = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            units="unknown",
-            dtype=Float,
+        self._tmp_wk = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM]
         )
-        self._tmp_wk1 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            units="unknown",
-            dtype=Float,
+        self._tmp_wk1 = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM]
         )
 
         self.a2b_k1 = AGrid2BGridFourthOrder(

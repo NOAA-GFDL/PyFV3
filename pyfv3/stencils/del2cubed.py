@@ -5,7 +5,7 @@ from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation, horizontal, interval, region
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, cast_to_index3d
+from ndsl.dsl.typing import FloatField, FloatFieldIJ, cast_to_index3d
 from ndsl.grid import DampingCoefficients
 from ndsl.stencils.basic_operations import copy
 from pyfv3.stencils.copy_corners import CopyCornersX, CopyCornersY
@@ -102,21 +102,9 @@ class HyperdiffusionDamping(NDSLRuntime):
 
         # the units of these temporaries are relative to the input units,
         # so they are undefined
-        self._fx = quantity_factory.zeros(
-            dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
-            units="undefined",
-            dtype=Float,
-        )
-        self._fy = quantity_factory.zeros(
-            dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
-            units="undefined",
-            dtype=Float,
-        )
-        self._q = quantity_factory.zeros(
-            dims=[I_DIM, J_DIM, K_DIM],
-            units="undefined",
-            dtype=Float,
-        )
+        self._fx = self.make_local(quantity_factory, [I_INTERFACE_DIM, J_DIM, K_DIM])
+        self._fy = self.make_local(quantity_factory, [I_DIM, J_INTERFACE_DIM, K_DIM])
+        self._q = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
 
         self._corner_fill = stencil_factory.from_dims_halo(
             func=corner_fill,

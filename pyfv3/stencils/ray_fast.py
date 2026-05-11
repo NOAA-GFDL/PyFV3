@@ -262,6 +262,6 @@ class RayleighDamping(NDSLRuntime):
             w=w,
             delta_p_ref=dp,
             pfull=pfull,
-            rf=self._damping_increment.field[0, 0, :],
+            rf=self._damping_increment[0, 0, :],
             rf_cutoff_nudge=rf_cutoff_nudge,
         )
