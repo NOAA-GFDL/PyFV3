@@ -833,34 +833,28 @@ class DGridShallowWaterLagrangianDynamics(NDSLRuntime):
                 "D-Grid Shallow Water Lagrangian Dynamics (D_SW): Hydrostatic is not implemented"
             )
 
-        def make_quantity():
-            return quantity_factory.zeros(
-                [I_DIM, J_DIM, K_DIM],
-                units="unknown",
-                dtype=Float,
-            )
-
-        self._tmp_heat_s = make_quantity()
-        self._tmp_diss_e = make_quantity()
-        self._vort_x_delta = make_quantity()
-        self._vort_y_delta = make_quantity()
-        self._dt_kinetic_energy_on_cell_corners = make_quantity()
-        self._abs_vorticity_agrid = make_quantity()
-        self._damped_rel_vorticity_agrid = make_quantity()
-        self._uc_contra = make_quantity()
-        self._vc_contra = make_quantity()
-        self._tmp_ut = make_quantity()
-        self._tmp_vt = make_quantity()
-        self._tmp_fx = make_quantity()
-        self._tmp_fy = make_quantity()
-        self._tmp_gx = make_quantity()
-        self._tmp_gy = make_quantity()
-        self._tmp_dw = make_quantity()
-        self._tmp_wk = make_quantity()
-        self._vorticity_agrid = make_quantity()
-        self._vorticity_bgrid_damped = make_quantity()
-        self._tmp_fx2 = make_quantity()
-        self._tmp_fy2 = make_quantity()
+        # locals
+        self._tmp_heat_s = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_diss_e = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._vort_x_delta = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._vort_y_delta = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._dt_kinetic_energy_on_cell_corners = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._abs_vorticity_agrid = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._damped_rel_vorticity_agrid = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._uc_contra = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._vc_contra = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_ut = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_vt = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_fx = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_fy = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_gx = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_gy = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_dw = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_wk = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._vorticity_agrid = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._vorticity_bgrid_damped = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_fx2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_fy2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._column_namelist = column_namelist
 
         self.delnflux_nosg_w = DelnFluxNoSG(

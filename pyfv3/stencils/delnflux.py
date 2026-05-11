@@ -227,21 +227,9 @@ class DelnFlux(NDSLRuntime):
         nk = grid_indexing.domain[2]
         self._origin = grid_indexing.origin_full()
 
-        self._fx2 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="undefined",
-            dtype=Float,
-        )
-        self._fy2 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="undefined",
-            dtype=Float,
-        )
-        self._d2 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="undefined",
-            dtype=Float,
-        )
+        self._fx2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._fy2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._d2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
 
         self._add_diffusive_stencil = stencil_factory.from_dims_halo(
             func=add_diffusive_component,
