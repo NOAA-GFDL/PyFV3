@@ -1,6 +1,5 @@
 import ndsl.constants as constants
 from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
-from ndsl.constants import I_DIM, J_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval
@@ -134,18 +133,16 @@ def fix_neg_water(
         # no GFS_PHYS compiler flag -- additional saturation adjustment calculations!
 
 
-def fillq(q: FloatField, dp: FloatField, sum1: FloatFieldIJ, sum2: FloatFieldIJ):
+def fillq(q: FloatField, dp: FloatField):
     """
     Args:
-        q (inout):
+        q (inout): Tracers
         dp (in):
-        sum1 (out):
-        sum2 (out):
     """
-    with computation(FORWARD), interval(...):
+    with computation(FORWARD), interval(0, 1):
         # reset accumulating fields
-        sum1 = 0.0
-        sum2 = 0.0
+        sum1: FloatFieldIJ = 0.0
+        sum2: FloatFieldIJ = 0.0
     with computation(FORWARD), interval(...):
         if q > 0:
             sum1 = sum1 + q * dp
@@ -341,16 +338,6 @@ class AdjustNegativeTracerMixingRatio(NDSLRuntime):
         super().__init__(stencil_factory)
 
         grid_indexing = stencil_factory.grid_indexing
-        self._sum1 = quantity_factory.zeros(
-            [I_DIM, J_DIM],
-            units="unknown",
-            dtype=Float,
-        )
-        self._sum2 = quantity_factory.zeros(
-            [I_DIM, J_DIM],
-            units="unknown",
-            dtype=Float,
-        )
         if check_negative:
             raise NotImplementedError(
                 "Unimplemented namelist value check_negative=True"

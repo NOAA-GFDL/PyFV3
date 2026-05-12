@@ -8,8 +8,8 @@ from gt4py.cartesian.gtscript import (  # isort: skip
 )
 
 from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
-from ndsl.constants import GRAV, I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from ndsl.constants import GRAV, I_DIM, J_DIM, K_INTERFACE_DIM
+from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.stencils.moist_cv import moist_cv_nwat0_fn, moist_cv_nwat6_fn
@@ -28,7 +28,6 @@ def _compute_total_energy__stencil(
     tracers: FloatField,
     rsin2: FloatFieldIJ,
     cosa_s: FloatFieldIJ,
-    phyz: FloatField,
     te_2d: FloatFieldIJ,
 ):
     """
@@ -47,7 +46,6 @@ def _compute_total_energy__stencil(
         tracers(in):
         rsin2(in):
         cosa_s(in):
-        phyz(inout):
         te_2d(out):
     """
 
@@ -108,24 +106,18 @@ class ComputeTotalEnergy(NDSLRuntime):
 
         if config.hydrostatic:
             raise NotImplementedError(
-                "Dynamics (Compute Total Energy):  hydrostatic option is not implemented."
+                "Dynamics (Compute Total Energy): hydrostatic option is not implemented."
             )
 
         if not config.moist_phys:
             raise NotImplementedError(
-                "Dynamics (Compute Total Energy):  moist_phys=False option is not implemented."
+                "Dynamics (Compute Total Energy): moist_phys=False option is not implemented."
             )
 
         if config.nwat not in [0, 6]:
             raise NotImplementedError(
                 f"Compute total energy not implemented for {config.nwat} water species."
             )
-
-        self._phyz = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="Unknown",
-            dtype=Float,
-        )
 
         self._compute_total_energy = stencil_factory.from_dims_halo(
             func=_compute_total_energy__stencil,
@@ -168,6 +160,5 @@ class ComputeTotalEnergy(NDSLRuntime):
             tracers=tracers,
             rsin2=self._rsin2,
             cosa_s=self._cosa_s,
-            phyz=self._phyz,
             te_2d=te_2d,
         )
