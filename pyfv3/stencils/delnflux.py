@@ -2,7 +2,7 @@ from typing import Optional
 
 import dace
 
-from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
@@ -10,7 +10,7 @@ from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients
-from pyfv3.stencils.copy_corners import corner_copy_x, corner_copy_y
+from pyfv3.stencils.copy_corners import CopyCornersX, CopyCornersY
 
 
 def calc_damp(damp_c: Quantity, da_min: Float, nord: Quantity) -> Quantity:
@@ -184,19 +184,7 @@ def diffusive_damp(
         fy = fy + 0.5 * damp * (mass[0, -1, 0] + mass) * fy2
 
 
-def copy_corners_y_nord(field_to_copy, nord):
-    for k in dace.map[0 : nord.data.shape[0]]:
-        if nord.data[k] > 0:
-            corner_copy_y(field_to_copy[:, :, k])
-
-
-def copy_corners_x_nord(field_to_copy, nord):
-    for k in dace.map[0 : nord.data.shape[0]]:
-        if nord.data[k] > 0:
-            corner_copy_x(field_to_copy[:, :, k])
-
-
-class DelnFlux:
+class DelnFlux(NDSLRuntime):
     """
     Fortran name is deln_flux
     The test class is DelnFlux
@@ -221,10 +209,7 @@ class DelnFlux:
 
         nord and damp_c define the damping coefficient used in DelnFluxNoSG
         """
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
         self._no_compute = False
         if (damp_c.view[:] <= 1e-4).all():
             self._no_compute = True
@@ -313,7 +298,7 @@ class DelnFlux:
         return fx, fy
 
 
-class DelnFluxNoSG:
+class DelnFluxNoSG(NDSLRuntime):
     """
     This contains the mechanics of del6_vt and some of deln_flux from
     the Fortran code, since they are very similar routines. The test class
@@ -338,15 +323,12 @@ class DelnFluxNoSG:
         nord = 1:   del-4
         nord = 2:   del-6
         """
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
         grid_indexing = stencil_factory.grid_indexing
         self._del6_u = damping_coefficients.del6_u
         self._del6_v = damping_coefficients.del6_v
         self._rarea = rarea
-        nord.data[:] = nord.data[:].round().astype(int)
+        nord[:] = nord[:].round().astype(int)
         self._nmax = int(max(nord.view[:]))
         if self._nmax > 3:
             raise ValueError("nord must be less than 3")
@@ -438,6 +420,9 @@ class DelnFluxNoSG:
             domain=(f1_nx - 1, f1_ny + 1, nk),
         )
 
+        self.copy_corners_x = CopyCornersX(stencil_factory)
+        self.copy_corners_y = CopyCornersY(stencil_factory)
+
     def __call__(self, q, fx2, fy2, damp_c, d2, mass=None):
         """
         Computes flux fields which would apply del-n damping to q,
@@ -460,15 +445,18 @@ class DelnFluxNoSG:
         else:
             self._copy_stencil_interval(q_in=q, q_out=d2, nord=self._nord)
 
-        copy_corners_x_nord(d2.data, self._nord)
+        self.copy_corners_x.nord(d2.data, self._nord)
 
         self._fx_calc_stencil(q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord)
 
-        copy_corners_y_nord(d2.data, self._nord)
+        self.copy_corners_y.nord(d2.data, self._nord)
 
         self._fy_calc_stencil(q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord)
 
-        for n in range(self._nmax):
+        # Force unroll of the loop because list of object do not parse
+        # when unrolled
+        # -> https://github.com/spcl/dace/issues/2332
+        for n in dace.unroll(range(self._nmax)):
             self._d2_stencil[n](
                 fx=fx2,
                 fy=fy2,
@@ -478,13 +466,13 @@ class DelnFluxNoSG:
                 current_nord=n,
             )
 
-            copy_corners_x_nord(d2.data, self._nord)
+            self.copy_corners_x.nord(d2.data, self._nord)
 
             self._column_conditional_fx_calculation[n](
                 q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord, current_nord=n
             )
 
-            copy_corners_y_nord(d2.data, self._nord)
+            self.copy_corners_y.nord(d2.data, self._nord)
 
             self._column_conditional_fy_calculation[n](
                 q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord, current_nord=n

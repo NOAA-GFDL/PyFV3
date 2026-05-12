@@ -1,12 +1,12 @@
 import pytest
 from f90nml import Namelist
 
-import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import ParallelTranslate
 from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils import FiniteVolumeTransport, TracerAdvection
+from pyfv3.tracers import FVTracersAxisName, default_ai2_tracers
 from pyfv3.utils.functional_validation import get_subset_func
 
 
@@ -42,17 +42,22 @@ class TranslateTracer2D1L(ParallelTranslate):
             n_halo=((0, 0), (0, 0)),
         )
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
+        self.quantity_factory = grid.quantity_factory
 
     def collect_input_data(self, serializer, savepoint):
         input_data = self._base.collect_input_data(serializer, savepoint)
         return input_data
 
     def compute_parallel(self, inputs, communicator):
+        default_ai2_tracers(self.quantity_factory)
         self._base.make_storage_data_input_vars(inputs)
-        all_tracers = inputs["tracers"]
-        inputs["tracers"] = self.get_advected_tracer_dict(
-            inputs["tracers"], int(inputs.pop("nq"))
+
+        quantity_tracers = self.grid.quantity_factory.from_array(
+            inputs["tracers"], [I_DIM, J_DIM, K_DIM, FVTracersAxisName], "n/a"
         )
+        inputs["tracers"] = quantity_tracers
+        nq = int(inputs.pop("nq"))
+
         transport = FiniteVolumeTransport(
             stencil_factory=self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
@@ -69,6 +74,7 @@ class TranslateTracer2D1L(ParallelTranslate):
             self.grid.grid_data,
             communicator,
             inputs["tracers"],
+            nq,
         )
         inputs["x_mass_flux"] = inputs.pop("mfxd")
         inputs["y_mass_flux"] = inputs.pop("mfyd")
@@ -79,28 +85,13 @@ class TranslateTracer2D1L(ParallelTranslate):
         inputs["mfyd"] = inputs.pop("y_mass_flux")
         inputs["cxd"] = inputs.pop("x_courant")
         inputs["cyd"] = inputs.pop("y_courant")
-        inputs["tracers"] = (
-            all_tracers  # some aren't advected, still need to be validated
-        )
-        # need to convert tracers dict to [x, y, z, n_tracer] array before subsetting
+
+        inputs["tracers"] = quantity_tracers.field[:]
+
         outputs = self._base.slice_output(inputs)
-        outputs["tracers"] = self.subset_output("tracers", outputs["tracers"])
         return outputs
 
-    def get_advected_tracer_dict(self, all_tracers, nq):
-        all_tracers = {**all_tracers}  # make a new dict so we don't modify the input
-        properties = self.inputs["tracers"]
-        for name in utils.tracer_variables:
-            self.grid.quantity_dict_update(
-                all_tracers,
-                name,
-                dims=properties["dims"],
-                units=properties["units"],
-            )
-        tracer_names = utils.tracer_variables[:nq]
-        return {name: all_tracers[name + "_quantity"] for name in tracer_names}
-
-    def compute_sequential(self, a, b):
+    def compute_sequential(self, inputs_list, communicator_list):
         pytest.skip(
             f"{self.__class__} only has a mpirun implementation, not running in mock-parallel"
         )

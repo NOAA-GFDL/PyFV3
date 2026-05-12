@@ -31,7 +31,7 @@ MapN_Tracer_2d:
     max_error: 9e-9 # 48_6ranks
 
 NH_P_Grad:
-  max_error: 6e-11
+  - max_error: 6e-11
 
 Riem_Solver3:
   - backend: st:gt:gpu:KJI
