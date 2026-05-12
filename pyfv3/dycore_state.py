@@ -17,7 +17,6 @@ from ndsl.constants import (
     K_INTERFACE_DIM,
 )
 from ndsl.dsl.typing import Float
-from ndsl.quantity.field_bundle import FieldBundle
 from ndsl.restart._legacy_restart import open_restart
 from ndsl.typing import Communicator
 from pyfv3.tracers import FVTracers, FVTracersAxisName
@@ -492,12 +491,6 @@ class DycoreState:
                     name=name,
                     metadata=field_info.metadata,
                     data=getattr(self, name).data,
-                )
-            if isinstance(field_info.type, FieldBundle):
-                data_vars[name] = self._xr_dataarray_from_array(
-                    name=name,
-                    metadata=field_info.metadata,
-                    data=getattr(self, name).quantity.data,
                 )
         return xr.Dataset(data_vars=data_vars)
 

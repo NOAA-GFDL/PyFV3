@@ -218,10 +218,18 @@ class TracerAdvection(NDSLRuntime):
         self._update_mass_courant = update_mass_courant
 
         if not self._update_mass_courant:
-            self._tmp_mfx = self.make_local(quantity_factory, [I_INTERFACE_DIM, J_DIM, K_DIM])
-            self._tmp_mfy = self.make_local(quantity_factory, [I_DIM, J_INTERFACE_DIM, K_DIM])
-            self._tmp_cx = self.make_local(quantity_factory, [I_INTERFACE_DIM, J_DIM, K_DIM])
-            self._tmp_cy = self.make_local(quantity_factory, [I_DIM, J_INTERFACE_DIM, K_DIM])
+            self._tmp_mfx = self.make_local(
+                quantity_factory, [I_INTERFACE_DIM, J_DIM, K_DIM]
+            )
+            self._tmp_mfy = self.make_local(
+                quantity_factory, [I_DIM, J_INTERFACE_DIM, K_DIM]
+            )
+            self._tmp_cx = self.make_local(
+                quantity_factory, [I_INTERFACE_DIM, J_DIM, K_DIM]
+            )
+            self._tmp_cy = self.make_local(
+                quantity_factory, [I_DIM, J_INTERFACE_DIM, K_DIM]
+            )
         self._H = stencil_factory.grid_indexing.n_halo
         self._number_of_tracer_to_advect = number_of_tracer_to_advect or FVTracers.size(
             0
