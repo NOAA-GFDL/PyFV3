@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from datetime import timedelta
 
 import pyfv3.stencils.moist_cv as moist_cv
@@ -50,7 +49,7 @@ from pyfv3.tracers import FVTracers, FVTracersAxisName
 from pyfv3.version import IS_GEOS
 
 
-class DryMassRoundOff:
+class DryMassRoundOff(NDSLRuntime):
     def __init__(
         self,
         comm: Communicator,
@@ -59,21 +58,25 @@ class DryMassRoundOff:
         state: DycoreState,
         hydrostatic: bool,
     ) -> None:
-        self.psx_2d = quantity_factory.zeros(
-            dims=[I_DIM, J_DIM],
-            units="unknown",
+        super().__init__(stencil_factory)
+
+        self._psx_2d = self.make_local(
+            quantity_factory,
+            [I_DIM, J_DIM],
             dtype=NDSL_64BIT_FLOAT_TYPE,
             allow_mismatch_float_precision=True,
         )
+        # This is a quantity because it is used _outside_ of
+        # DryMassRoundOff. It should be an output
         self.dpx = quantity_factory.zeros(
-            dims=[I_DIM, J_DIM, K_DIM],
-            units="unknown",
+            [I_DIM, J_DIM, K_DIM],
+            "unknown",
             dtype=NDSL_64BIT_FLOAT_TYPE,
             allow_mismatch_float_precision=True,
         )
-        self.dpx0_2d = quantity_factory.zeros(
-            dims=[I_DIM, J_DIM],
-            units="unknown",
+        self._dpx0_2d = self.make_local(
+            quantity_factory,
+            [I_DIM, J_DIM],
             dtype=NDSL_64BIT_FLOAT_TYPE,
             allow_mismatch_float_precision=True,
         )
@@ -142,12 +145,12 @@ class DryMassRoundOff:
             pe[0, 0, 1] = psx_2d
 
     def reset(self, pe: FloatField):
-        self._reset(dpx=self.dpx, psx_2d=self.psx_2d, pe=pe)
+        self._reset(dpx=self.dpx, psx_2d=self._psx_2d, pe=pe)
 
     def apply(self, pe: FloatField):
-        self._apply_dpx_to_psx(self.dpx, self.dpx0_2d, self.psx_2d)
+        self._apply_dpx_to_psx(self.dpx, self._dpx0_2d, self._psx_2d)
         self._pe_halo_updater.update()
-        self._apply_psx_to_pe(self.psx_2d, pe)
+        self._apply_psx_to_pe(self._psx_2d, pe)
 
 
 def _increment_stencil(
@@ -200,25 +203,6 @@ def omega_from_w(
     """
     with computation(PARALLEL), interval(...):
         omega = delp / delz * w
-
-
-def fvdyn_temporaries(quantity_factory: QuantityFactory) -> Mapping[str, Quantity]:
-    tmps = {}
-    for name in ["te0_2d", "wsd"]:
-        quantity = quantity_factory.zeros(
-            dims=[I_DIM, J_DIM],
-            units="unknown",
-            dtype=Float,
-        )
-        tmps[name] = quantity
-    for name in ["dp1", "cvm"]:
-        quantity = quantity_factory.zeros(
-            dims=[I_DIM, J_DIM, K_DIM],
-            units="unknown",
-            dtype=Float,
-        )
-        tmps[name] = quantity
-    return tmps
 
 
 @dace_inhibitor
@@ -352,11 +336,14 @@ class DynamicalCore(NDSLRuntime):
                 "FV Dynamics requires FVTracers to be registered - see `pyfv3.tracers`"
             )
 
-        temporaries = fvdyn_temporaries(quantity_factory)
-        self._te0_2d = temporaries["te0_2d"]
-        self._wsd = temporaries["wsd"]
-        self._dp_initial = temporaries["dp1"]
-        self._cvm = temporaries["cvm"]
+        # Locals
+        # self._te0_2d = self.make_local(quantity_factory, [I_DIM, J_DIM])
+        self._wsd = self.make_local(quantity_factory, [I_DIM, J_DIM])
+        self._dp_initial = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._cvm = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+
+        # TODO: this is a true Local, but defining at such breaks `pt` in orchestration
+        self._te0_2d = quantity_factory.zeros([I_DIM, J_DIM], "")
 
         # Build advection stencils
         self.tracer_advection = tracer_2d_1l.TracerAdvection(
@@ -420,7 +407,6 @@ class DynamicalCore(NDSLRuntime):
             stretched_grid=stretched_grid,
             config=self.config.acoustic_dynamics,
             phis=self._phis,
-            wsd=self._wsd,
             state=state,
         )
         self._hyperdiffusion = HyperdiffusionDamping(
@@ -668,6 +654,7 @@ class DynamicalCore(NDSLRuntime):
                     cxd=self._cx_f64 if self._f32_correction else self._cx_local,
                     cyd=self._cy_f64 if self._f32_correction else self._cy_local,
                     dpx=self.dry_mass_control.dpx,
+                    wsd=self._wsd,
                     timestep=self._timestep / self._k_split,
                     n_map=n_map,
                 )

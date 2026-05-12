@@ -190,7 +190,6 @@ class TranslateDynCore(ParallelTranslate2PyState):
             stretched_grid=self.grid.stretched_grid,
             config=self.config.acoustic_dynamics,
             phis=phis,
-            wsd=wsd.data,
             state=state,
         )
         acoustic_dynamics.cappa.data[:] = inputs["cappa"][:]
@@ -202,6 +201,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
             cxd=state.cxd,
             cyd=state.cyd,
             dpx=dpx,
+            wsd=wsd,
             timestep=inputs["mdt"],
             n_map=inputs["n_map"],
         )
@@ -210,10 +210,10 @@ class TranslateDynCore(ParallelTranslate2PyState):
         storages_only = {}
         for name, value in vars(state).items():
             if isinstance(value, Quantity):
-                storages_only[name] = value.data
+                storages_only[name] = value[:]
             else:
                 storages_only[name] = value
-        storages_only["wsd"] = wsd.data
-        storages_only["cappa"] = acoustic_dynamics.cappa.data
-        storages_only["dpx"] = dpx.data
+        storages_only["wsd"] = wsd[:]
+        storages_only["cappa"] = acoustic_dynamics.cappa[:]
+        storages_only["dpx"] = dpx[:]
         return self._base.slice_output(storages_only)

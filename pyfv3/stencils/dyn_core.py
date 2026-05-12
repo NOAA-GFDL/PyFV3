@@ -410,7 +410,6 @@ class AcousticDynamics(NDSLRuntime):
         stretched_grid,
         config: AcousticDynamicsConfig,
         phis: FloatFieldIJ,
-        wsd: FloatFieldIJ,
         state,  # [DaCe] hack to get around quantity as parameters for halo updates
     ):
         """
@@ -448,7 +447,6 @@ class AcousticDynamics(NDSLRuntime):
         self.grid_data = grid_data
         self._ptop = grid_data.ptop
         self._pfull = grid_data.p
-        self._wsd = wsd
         self._nk_heat_dissipation = get_nk_heat_dissipation(
             config.d_grid_shallow_water,
             npz=grid_indexing.domain[2],
@@ -681,6 +679,7 @@ class AcousticDynamics(NDSLRuntime):
         cxd,
         cyd,
         dpx,
+        wsd,
         timestep: Float,  # time to step forward by in seconds
         n_map=1,  # [DaCe] replaces state.n_map
     ):
@@ -891,7 +890,7 @@ class AcousticDynamics(NDSLRuntime):
                     courant_number_y=self._cry,
                     x_area_flux=self._xfx,
                     y_area_flux=self._yfx,
-                    ws=self._wsd,
+                    ws=wsd,
                     dt=dt_acoustic_substep,
                 )
                 self.vertical_solver(
@@ -900,7 +899,7 @@ class AcousticDynamics(NDSLRuntime):
                     cappa=self.cappa,
                     ptop=self._ptop,
                     zs=self._zs,
-                    ws=self._wsd,
+                    ws=wsd,
                     delz=state.delz,
                     q_con=state.q_con,
                     delp=state.delp,
