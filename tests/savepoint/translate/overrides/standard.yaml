@@ -57,6 +57,11 @@ Remapping:
       - q_con
       - tracers
 
+Remapping_GEOS:
+  - backend: all
+    multimodal:
+      ulp_threshold: 150
+
 UpdateDzC:
   - backend: st:gt:gpu:KJI
     max_error: 5e-10

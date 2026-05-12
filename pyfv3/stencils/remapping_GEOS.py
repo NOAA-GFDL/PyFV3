@@ -101,90 +101,42 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
                 f"Remapping: {self.nwat} water species, only 0 and 6 implemented"
             )
 
-        # Quantities
-        self._pe1 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            units="Pa",
-            dtype=Float,
+        # Locals
+        self._pe1 = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM], units="Pa"
         )
-        self._pe2 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            units="Pa",
-            dtype=Float,
+        self._pe2 = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM], units="Pa"
         )
-        self._pe3 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            units="Pa",
-            dtype=Float,
+        self._pe3 = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM], units="Pa"
         )
-        self._dp2 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="Pa",
-            dtype=Float,
+        self._dp2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM], units="Pa")
+        self._pn1 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM], units="Pa")
+        self._pn2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM], units="Pa")
+        self._pe0 = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM], units="Pa"
         )
-        self._pn1 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-        self._pn2 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-        self._pe0 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-        self._pe3 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            units="Pa",
-            dtype=Float,
+        self._pe3 = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM], units="Pa"
         )
 
-        self._gz = quantity_factory.zeros(
-            [I_DIM, J_DIM],
-            units="m^2 s^-2",
-            dtype=Float,
+        self._gz = self.make_local(quantity_factory, [I_DIM, J_DIM], units="m^2 s^-2")
+        self._cvm = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._compute_performed = self.make_local(
+            quantity_factory, [I_DIM, J_DIM], dtype=bool, units="mask"
         )
-        self._cvm = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="unknown",
-            dtype=Float,
+        self._w2 = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM], units="temp W"
         )
-        self._compute_performed = quantity_factory.zeros(
-            [I_DIM, J_DIM],
-            units="mask",
-            dtype=bool,
-        )
-        self._w2 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="temp W",
-            dtype=Float,
-        )
-        self._pk2 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="Pa",
-            dtype=Float,
-        )
+        self._pk2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM], units="Pa")
 
-        self._te_2d = quantity_factory.zeros(
-            [I_DIM, J_DIM],
-            units="Pa",
-            dtype=Float,
-        )
+        self._phis = self.make_local(quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM])
 
-        self._zsum1 = quantity_factory.zeros(
-            [I_DIM, J_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-        self._phis = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            units="n/a",
-            dtype=Float,
-        )
+        # TODO: The following should be local but because of their use in a callback (GlobalSum)
+        #       they have to be persistent memory.
+        self.te_2d = quantity_factory.zeros([I_DIM, J_DIM], units="Pa")
+        self.zsum1 = quantity_factory.zeros([I_DIM, J_DIM], units="Pa")
 
         # Stencils
         water_species_externals = {
@@ -548,7 +500,7 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
                     u=u,
                     v=v,
                     w=w,
-                    te=self._te_2d,
+                    te=self.te_2d,
                     pt=pt,
                     phis=self._phis,
                     delp=delp,
@@ -560,19 +512,19 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
                 )
 
                 self._te_zsum(
-                    te_2d=self._te_2d,
+                    te_2d=self.te_2d,
                     te0_2d=te0_2d,
                     delp=delp,
                     pkz=pkz,
-                    zsum1=self._zsum1,
+                    zsum1=self.zsum1,
                 )
 
                 # We can normalize to the same array because
                 # they are properly reset in the above stencils
-                self._normalize_to_grid(self._te_2d, self._zsum1, self._area_64)
+                self._normalize_to_grid(self.te_2d, self.zsum1, self._area_64)
 
-                tesum: Float = self._global_sum(self._te_2d)
-                zsum: Float = self._global_sum(self._zsum1)
+                tesum: Float = self._global_sum(self.te_2d)
+                zsum: Float = self._global_sum(self.zsum1)
                 dtmp = tesum / (CV_AIR * zsum)
 
             elif consv_te < -CONSV_MIN:
