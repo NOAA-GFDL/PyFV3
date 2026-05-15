@@ -4,7 +4,7 @@ import dace
 import numpy as np
 
 from ndsl import NDSLRuntime, Quantity, StencilFactory
-from ndsl.dsl.typing import FloatField
+from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.optional_imports import cupy as cp
 
 
@@ -193,16 +193,22 @@ class CopyCornersX(NDSLRuntime):
 
         self._is_orch = stencil_factory.backend.is_orchestrated()
 
-    def _internal_corners_copy(self, field: FloatField):
+    def _internal_corners_copy_3D(self, field: FloatFieldIJ):
         _blind_copy_corners_x(field) if self._is_orch else corner_copy_x(field)
 
+    def _internal_corners_copy(self, field: FloatField, k: int):
+        if self._is_orch:
+            _blind_copy_corners_x(field[:, :, k])
+        else:
+            corner_copy_x(field)
+
     def __call__(self, field: FloatField):
-        self._internal_corners_copy(field)
+        self._internal_corners_copy_3D(field)
 
     def nord(self, field: FloatField, nord: Quantity):
         for k in dace.map[0 : nord.shape[0]]:
             if nord[k] > 0:
-                self._internal_corners_copy(field[:, :, k])
+                self._internal_corners_copy(field, k)
 
 
 class CopyCornersY(NDSLRuntime):
@@ -221,13 +227,19 @@ class CopyCornersY(NDSLRuntime):
 
         self._is_orch = stencil_factory.backend.is_orchestrated()
 
-    def _internal_corners_copy(self, field: FloatField):
+    def _internal_corners_copy_3D(self, field: FloatFieldIJ):
         _blind_copy_corners_y(field) if self._is_orch else corner_copy_y(field)
 
+    def _internal_corners_copy(self, field: FloatField, k: int):
+        if self._is_orch:
+            _blind_copy_corners_y(field[:, :, k])
+        else:
+            corner_copy_y(field[:, :, k])
+
     def __call__(self, field: FloatField):
-        self._internal_corners_copy(field)
+        self._internal_corners_copy_3D(field)
 
     def nord(self, field: FloatField, nord: Quantity):
         for k in dace.map[0 : nord.shape[0]]:
             if nord[k] > 0:
-                self._internal_corners_copy(field[:, :, k])
+                self._internal_corners_copy(field, k)
