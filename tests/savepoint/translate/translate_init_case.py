@@ -8,7 +8,15 @@ import ndsl.dsl.gt4py_utils as utils
 import pyfv3.initialization.analytic_init as analytic_init
 import pyfv3.initialization.init_utils as init_utils
 import pyfv3.initialization.test_cases.initialize_baroclinic as baroclinic_init
-from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
+import pyfv3.initialization.test_cases.initialize_aquaplanet as aq_init
+from ndsl import (
+    CubedSphereCommunicator,
+    CubedSpherePartitioner,
+    QuantityFactory,
+    StencilFactory,
+    SubtileGridSizer,
+    TilePartitioner,
+)
 from ndsl.constants import (
     N_HALO_DEFAULT,
     I_DIM,
@@ -22,7 +30,7 @@ from ndsl.grid import GridData, MetricTerms
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
 from ndsl.stencils.testing.grid import TRACER_DIM  # type: ignore
 from pyfv3 import DycoreState, DynamicalCoreConfig
-from pyfv3.testing import TranslateDycoreFortranData2Py
+from pyfv3.testing import NullComm, TranslateDycoreFortranData2Py
 
 
 class TranslateInitCase(ParallelTranslateBaseSlicing):
@@ -447,8 +455,8 @@ class TranslatePVarAuxiliaryPressureVars(TranslateDycoreFortranData2Py):
         return self.slice_output(inputs)
 
 class TranslateAquaplanet(TranslateDycoreFortranData2Py):
-    """ Translate the Fortran initialization for the aquaplanet test case to Python.
-        TODO: Modified by Claude Haiku 4.5 to setup the init_utils.hydro_eq call; currently be evaluated.   """
+    """ Translate the Fortran initialization for the Aquaplanet test case.
+    """
     def __init__(
         self,
         grid,
@@ -457,7 +465,15 @@ class TranslateAquaplanet(TranslateDycoreFortranData2Py):
     ):
         super().__init__(grid, namelist, stencil_factory)
         self.in_vars["data_vars"] = {
+            "u": {},
+            "v": {},
+            "w": {},
+            "ps": {},
+            "phis": {},
+            "pt": {},
             "delp": {},
+            "delz": {},
+            "qvapor": {},
         }
         self.in_vars["parameters"] = []
 
@@ -465,7 +481,7 @@ class TranslateAquaplanet(TranslateDycoreFortranData2Py):
             "u": grid.y3d_domain_dict(),
             "v": grid.x3d_domain_dict(),
             "w": {},
-            "ps": {"kstart": grid.npz, "kend": grid.npz},
+            "ps": {},
             "phis": {},
             "pt": {},
             "delp": {},
@@ -474,57 +490,54 @@ class TranslateAquaplanet(TranslateDycoreFortranData2Py):
                 "iend": grid.ie,
                 "jstart": grid.js,
                 "jend": grid.je,
-                "kend": grid.npz,
             },
+            "qvapor": {},
         }
         self.ignore_near_zero_errors = {}
         self.max_error = 1e-13
         self.stencil_factory = stencil_factory
 
+
     def compute(self, inputs):
-        self.make_storage_data_input_vars(inputs)
-        # Convert to numpy arrays, ensuring memoryview objects are converted
-        for k, v in inputs.items():
-            inputs[k] = np.asarray(v.data)[:]
-
-        full_shape = self.grid.domain_shape_full(add=(1, 1, 1))
-
-        # Initialize output arrays
-        inputs["ps"] = np.zeros(full_shape[0:2])
-        inputs["phis"] = np.zeros(full_shape[0:2])
-        inputs["pt"] = np.zeros(full_shape)
-        inputs["delz"] = np.zeros(full_shape)
-
-        # Initialize wind fields to zero (Aquaplanet has no initial winds)
-        inputs["u"] = np.zeros(full_shape)
-        inputs["v"] = np.zeros(full_shape)
-        inputs["w"] = np.zeros(full_shape)
-
-        # Get grid data as numpy arrays, converting from memoryview
-        ak = np.asarray(self.grid.ak.data)[:]
-        bk = np.asarray(self.grid.bk.data)[:]
-        area = np.asarray(self.grid.area.data)[:]
-
-        # Call hydro_eq with correct parameters
-        init_utils.hydro_eq(
-            km=self.grid.npz,
-            is_=self.grid.is_,
-            ie=self.grid.ie,
-            js=self.grid.js,
-            je=self.grid.je,
-            ps=inputs["ps"],
-            hs=inputs["phis"],
-            drym=1.0e5,
-            delp=inputs["delp"],
-            ak=ak,
-            bk=bk,
-            pt=inputs["pt"],
-            delz=inputs["delz"],
-            area=area,
-            ng=N_HALO_DEFAULT,
-            mountain=False,
-            hydrostatic=self.config.hydrostatic,
-            hybrid_z=not self.config.hydrostatic,
-            comm=None,  # Pass None for serial execution
+        mpi_comm = NullComm(
+            rank=self.grid.rank,
+            total_ranks=6 * self.config.layout[0] * self.config.layout[1],
         )
+        partitioner = CubedSpherePartitioner(TilePartitioner(self.config.layout))
+        communicator = CubedSphereCommunicator(mpi_comm, partitioner)
+        sizer = SubtileGridSizer.from_tile_params(
+            nx_tile=self.config.npx - 1,
+            ny_tile=self.config.npx - 1,
+            nz=self.config.npz,
+            n_halo=N_HALO_DEFAULT,
+            data_dimensions={},
+            layout=self.config.layout,
+            backend=self.stencil_factory.backend,
+        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
+        metric_terms = MetricTerms(
+            quantity_factory=quantity_factory,
+            communicator=communicator,
+            grid_type=self.config.grid_type,
+            ak=self.grid.ak,
+            bk=self.grid.bk,
+        )
+
+        grid_data = GridData.new_from_metric_terms(metric_terms)
+        hydrostatic = self.config.hydrostatic
+        moist_phys = self.config.moist_phys
+
+        # Main call being tested
+        dycore_state = aq_init.init_aquaplanet_state(
+            grid_data, quantity_factory, hydrostatic, moist_phys, communicator
+        )
+
+        inputs["ps"] = dycore_state.ps
+        inputs["phis"] = dycore_state.phis
+        inputs["pt"] = dycore_state.pt
+        inputs["delp"] = dycore_state.delp
+        inputs["delz"] = dycore_state.delz
+        inputs["u"] = dycore_state.u
+        inputs["v"] = dycore_state.v
+        inputs["w"] = dycore_state.w
         return self.slice_output(inputs)
