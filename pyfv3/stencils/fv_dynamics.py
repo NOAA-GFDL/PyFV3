@@ -286,26 +286,27 @@ class DynamicalCore(NDSLRuntime):
                 " Only nwat=0 or 6 has been implemented."
             )
 
-        # Implemented dynamics options require those tracers to be present at minima
-        # this is a more granular list than carried by the `nwat` single integer
-        # but cover the same topic
-        required_tracers = [
-            "vapor",
-            "liquid",
-            "rain",
-            "snow",
-            "ice",
-            "graupel",
-            "cloud",
-        ]
-        if not all(n in FVTracers.mapping.keys() for n in required_tracers):
-            raise NotImplementedError(
-                "Dynamical core (fv_dynamics):"
-                " missing required tracers. Dynamics requires:\n"
-                f" {required_tracers}\n"
-                "but only the following where given:\n"
-                f" {state.tracers._indexer.keys()}"
-            )
+        if config.nwat == 6:
+            # Implemented dynamics options require those tracers to be present at minima
+            # this is a more granular list than carried by the `nwat` single integer
+            # but cover the same topic
+            required_tracers = [
+                "vapor",
+                "liquid",
+                "rain",
+                "snow",
+                "ice",
+                "graupel",
+                "cloud",
+            ]
+            if not all(n in FVTracers.mapping.keys() for n in required_tracers):
+                raise NotImplementedError(
+                    "Dynamical core (fv_dynamics):"
+                    " missing required tracers. Dynamics requires:\n"
+                    f" {required_tracers}\n"
+                    "but only the following where given:\n"
+                    f" {FVTracers.mapping.keys()}"
+                )
 
         self._comm = comm
         self.comm_rank = comm.rank
