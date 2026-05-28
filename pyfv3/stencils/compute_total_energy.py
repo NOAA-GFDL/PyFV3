@@ -25,7 +25,7 @@ def _compute_total_energy__stencil(
     u: FloatField,
     v: FloatField,
     w: FloatField,
-    tracers: FloatField,
+    tracers: FVTracers,
     rsin2: FloatFieldIJ,
     cosa_s: FloatFieldIJ,
     te_2d: FloatFieldIJ,
