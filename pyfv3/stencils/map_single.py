@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 from typing import Optional
 
 from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
@@ -90,18 +89,10 @@ class MapSingle(NDSLRuntime):
         quantity_factory: QuantityFactory,
         kord: int,
         mode: int,
-        dims: Sequence[str],
+        dims: list[str] | tuple[str],
     ) -> None:
         super().__init__(stencil_factory)
 
-        def make_quantity():
-            return quantity_factory.zeros(
-                [I_DIM, J_DIM, K_DIM],
-                units="unknown",
-                dtype=Float,
-            )
-
-        # All locals will be initialized in code before being read
         self._dp1 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._q4_1 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._q4_2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
@@ -110,8 +101,8 @@ class MapSingle(NDSLRuntime):
         self._lev = self.make_local(quantity_factory, [I_DIM, J_DIM], dtype=Int)
 
         # If the boundary condition is not given as an input, we use use a zero-reference
-        self._zero_qs = self.make_local(quantity_factory, [I_DIM, J_DIM])
-        self._zero_qs.data[:] = 0
+        # Therefore we CAN'T use make_local
+        self._zero_qs = quantity_factory.zeros([I_DIM, J_DIM], "")
 
         self._copy_stencil = stencil_factory.from_dims_halo(
             copy,

@@ -311,7 +311,7 @@ class FiniteVolumeTransport:
         # y_area_flux as an input (flux = area_flux * advected_mean), since a flux is
         # easier to understand than the current output. This would be like merging
         # yppm with q_i_stencil and xppm with q_j_stencil.
-        self._copy_corners_y(q.data)
+        self._copy_corners_y(q)
         self.y_piecewise_parabolic_inner(q, cry, self._q_y_advected_mean)
         # q_y_advected_mean is 1/Delta_area * curly-F, where curly-F is defined in
         # equation 4.3 of the FV3 documentation and Delta_area is the advected area
@@ -328,7 +328,7 @@ class FiniteVolumeTransport:
         )
         # q_advected_y_x_advected_mean is now rho^n + F(rho^y) in PL07 eq 16
 
-        self._copy_corners_x(q.data)
+        self._copy_corners_x(q)
         # similarly below for x<->y
         self.x_piecewise_parabolic_inner(q, crx, self._q_x_advected_mean)
         self.q_j_stencil(
