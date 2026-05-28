@@ -3,7 +3,7 @@ from ndsl.dsl.gt4py import PARALLEL, compile_assert, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.typing import FloatField, FloatFieldIJ, Index3D
-from ndsl.stencils.basic_operations import sign
+from ndsl.stencils.arithmetical_functions import sign
 from pyfv3.stencils import ppm
 
 
@@ -68,9 +68,7 @@ def get_flux(q: FloatField, courant: FloatField, al: FloatField):
 
 
 @gtfunction
-def get_flux_ord8plus(
-    q: FloatField, courant: FloatField, bl: FloatField, br: FloatField
-):
+def get_flux_ord8plus(q: FloatField, courant: FloatField, bl: FloatField, br: FloatField):
     b0 = bl + br
     fx1 = fx1_fn(courant, br, b0, bl)
     return apply_flux(courant, q, fx1, 1.0)
@@ -101,16 +99,14 @@ def blbr_jord8(q: FloatField, al: FloatField, dm: FloatField):
 def yt_dya_edge_0_base(q, dya):
     return 0.5 * (
         ((2.0 * dya + dya[0, -1]) * q - dya * q[0, -1, 0]) / (dya[0, -1] + dya)
-        + ((2.0 * dya[0, 1] + dya[0, 2]) * q[0, 1, 0] - dya[0, 1] * q[0, 2, 0])
-        / (dya[0, 1] + dya[0, 2])
+        + ((2.0 * dya[0, 1] + dya[0, 2]) * q[0, 1, 0] - dya[0, 1] * q[0, 2, 0]) / (dya[0, 1] + dya[0, 2])
     )
 
 
 @gtfunction
 def yt_dya_edge_1_base(q, dya):
     return 0.5 * (
-        ((2.0 * dya[0, -1] + dya[0, -2]) * q[0, -1, 0] - dya[0, -1] * q[0, -2, 0])
-        / (dya[0, -2] + dya[0, -1])
+        ((2.0 * dya[0, -1] + dya[0, -2]) * q[0, -1, 0] - dya[0, -1] * q[0, -2, 0]) / (dya[0, -2] + dya[0, -1])
         + ((2.0 * dya + dya[0, 1]) * q - dya * q[0, 1, 0]) / (dya + dya[0, 1])
     )
 
@@ -166,13 +162,8 @@ def compute_al(q: FloatField, dya: FloatFieldIJ):
             al = ppm.c1 * q[0, -2, 0] + ppm.c2 * q[0, -1, 0] + ppm.c3 * q
         with horizontal(region[:, j_start], region[:, j_end + 1]):
             al = 0.5 * (
-                (
-                    (2.0 * dya[0, -1] + dya[0, -2]) * q[0, -1, 0]
-                    - dya[0, -1] * q[0, -2, 0]
-                )
-                / (dya[0, -2] + dya[0, -1])
-                + ((2.0 * dya[0, 0] + dya[0, 1]) * q[0, 0, 0] - dya[0, 0] * q[0, 1, 0])
-                / (dya[0, 0] + dya[0, 1])
+                ((2.0 * dya[0, -1] + dya[0, -2]) * q[0, -1, 0] - dya[0, -1] * q[0, -2, 0]) / (dya[0, -2] + dya[0, -1])
+                + ((2.0 * dya[0, 0] + dya[0, 1]) * q[0, 0, 0] - dya[0, 0] * q[0, 1, 0]) / (dya[0, 0] + dya[0, 1])
             )
         with horizontal(region[:, j_start + 1], region[:, j_end + 2]):
             al = ppm.c3 * q[0, -1, 0] + ppm.c2 * q[0, 0, 0] + ppm.c1 * q[0, 1, 0]
@@ -236,9 +227,7 @@ def bl_br_edges(bl, br, q, dya, al, dm):
         yt_bl = yt_dya_edge_1(q, dya)
         yt_br = ppm.s11 * (q[0, 1, 0] - q) - ppm.s14 * dm_right_end + q
 
-    with horizontal(
-        region[:, j_start - 1 : j_start + 2], region[:, j_end - 1 : j_end + 2]
-    ):
+    with horizontal(region[:, j_start - 1 : j_start + 2], region[:, j_end - 1 : j_end + 2]):
         bl = yt_bl - q
         br = yt_br - q
 
@@ -259,17 +248,13 @@ def compute_blbr_ord8plus(q: FloatField, dya: FloatFieldIJ):
     if __INLINED(grid_type < 3):
         bl, br = bl_br_edges(bl, br, q, dya, al, dm)
 
-        with horizontal(
-            region[:, j_start - 1 : j_start + 2], region[:, j_end - 1 : j_end + 2]
-        ):
+        with horizontal(region[:, j_start - 1 : j_start + 2], region[:, j_end - 1 : j_end + 2]):
             bl, br = ppm.pert_ppm_standard_constraint_fcn(q, bl, br)
 
     return bl, br
 
 
-def compute_y_flux(
-    q: FloatField, courant: FloatField, dya: FloatFieldIJ, yflux: FloatField
-):
+def compute_y_flux(q: FloatField, courant: FloatField, dya: FloatFieldIJ, yflux: FloatField):
     """
     Args:
         q (in):
@@ -307,21 +292,13 @@ class YPiecewiseParabolic:
         # namelist.grid_type
         # grid.dya
         if grid_type == 3 or grid_type > 4:
-            raise NotImplementedError(
-                "Y Piecewise Parabolic (yppm): "
-                f" grid type {grid_type} not implemented. <3 or 4 available."
-            )
+            raise NotImplementedError("Y Piecewise Parabolic (yppm): " f" grid type {grid_type} not implemented. <3 or 4 available.")
 
         if abs(jord) >= 8 and jord != 8:
-            raise NotImplementedError(
-                "Y Piecewise Parabolic (yppm): "
-                f"jord {jord} != 8 not implemented when >= 8."
-            )
+            raise NotImplementedError("Y Piecewise Parabolic (yppm): " f"jord {jord} != 8 not implemented when >= 8.")
 
         if jord < 0:
-            raise NotImplementedError(
-                f"Y Piecewise Parabolic (yppm): jord {jord} < 0 not implemented."
-            )
+            raise NotImplementedError(f"Y Piecewise Parabolic (yppm): jord {jord} < 0 not implemented.")
 
         self._dya = dya
         ax_offsets = stencil_factory.grid_indexing.axis_offsets(origin, domain)
@@ -367,8 +344,6 @@ class YPiecewiseParabolic:
         # in the Fortran version of this code, "x_advection" routines
         # were called "get_flux", while the routine which got the flux was called
         # fx1_fn. The final value was called yflux instead of q_out.
-        self._compute_flux_stencil(
-            q_in, c, self._dya, q_mean_advected_through_y_interface
-        )
+        self._compute_flux_stencil(q_in, c, self._dya, q_mean_advected_through_y_interface)
         # bl and br are "edge perturbation values" as in equation 4.1
         # of the FV3 documentation

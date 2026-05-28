@@ -6,7 +6,7 @@ from ndsl.dsl.gt4py import PARALLEL, computation, horizontal, interval, region
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, cast_to_index3d
 from ndsl.grid import DampingCoefficients
-from ndsl.stencils.basic_operations import copy
+from ndsl.stencils import copy
 from pyfv3.stencils.copy_corners import CopyCornersX, CopyCornersY
 
 

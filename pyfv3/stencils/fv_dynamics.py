@@ -18,7 +18,7 @@ from ndsl.dsl.typing import Float, FloatField
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log
 from ndsl.performance import Timer
-from ndsl.stencils.basic_operations import copy
+from ndsl.stencils import copy
 from ndsl.stencils.c2l_ord import CubedToLatLon
 from ndsl.typing import Checkpointer, Communicator
 from pyfv3._config import DynamicalCoreConfig

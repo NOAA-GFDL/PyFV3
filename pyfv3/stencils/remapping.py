@@ -19,7 +19,7 @@ from ndsl.dsl.gt4py import (
     region,
 )
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
-from ndsl.stencils.basic_operations import adjust_divide_stencil
+from ndsl.stencils import divide_self
 from pyfv3._config import RemappingConfig
 from pyfv3.stencils import moist_cv
 from pyfv3.stencils.map_single import MapSingle
@@ -508,8 +508,8 @@ class LagrangianToEulerian(NDSLRuntime):
             ),
         )
 
-        self._basic_adjust_divide_stencil = stencil_factory.from_origin_domain(
-            adjust_divide_stencil,
+        self._basic_divide_self_stencil = stencil_factory.from_origin_domain(
+            divide_self,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
@@ -720,4 +720,4 @@ class LagrangianToEulerian(NDSLRuntime):
             )
         else:
             # converts virtual temperature back to virtual potential temperature
-            self._basic_adjust_divide_stencil(pkz, pt)
+            self._basic_divide_self_stencil(pkz, pt)

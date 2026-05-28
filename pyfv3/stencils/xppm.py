@@ -3,7 +3,7 @@ from ndsl.dsl.gt4py import PARALLEL, compile_assert, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.typing import FloatField, FloatFieldIJ, Index3D
-from ndsl.stencils.basic_operations import sign
+from ndsl.stencils.arithmetical_functions import sign
 from pyfv3.stencils import ppm
 
 
@@ -68,9 +68,7 @@ def get_flux(q: FloatField, courant: FloatField, al: FloatField):
 
 
 @gtfunction
-def get_flux_ord8plus(
-    q: FloatField, courant: FloatField, bl: FloatField, br: FloatField
-):
+def get_flux_ord8plus(q: FloatField, courant: FloatField, bl: FloatField, br: FloatField):
     b0 = bl + br
     fx1 = fx1_fn(courant, br, b0, bl)
     return apply_flux(courant, q, fx1, 1.0)
@@ -101,16 +99,14 @@ def blbr_iord8(q: FloatField, al: FloatField, dm: FloatField):
 def xt_dxa_edge_0_base(q, dxa):
     return 0.5 * (
         ((2.0 * dxa + dxa[-1, 0]) * q - dxa * q[-1, 0, 0]) / (dxa[-1, 0] + dxa)
-        + ((2.0 * dxa[1, 0] + dxa[2, 0]) * q[1, 0, 0] - dxa[1, 0] * q[2, 0, 0])
-        / (dxa[1, 0] + dxa[2, 0])
+        + ((2.0 * dxa[1, 0] + dxa[2, 0]) * q[1, 0, 0] - dxa[1, 0] * q[2, 0, 0]) / (dxa[1, 0] + dxa[2, 0])
     )
 
 
 @gtfunction
 def xt_dxa_edge_1_base(q, dxa):
     return 0.5 * (
-        ((2.0 * dxa[-1, 0] + dxa[-2, 0]) * q[-1, 0, 0] - dxa[-1, 0] * q[-2, 0, 0])
-        / (dxa[-2, 0] + dxa[-1, 0])
+        ((2.0 * dxa[-1, 0] + dxa[-2, 0]) * q[-1, 0, 0] - dxa[-1, 0] * q[-2, 0, 0]) / (dxa[-2, 0] + dxa[-1, 0])
         + ((2.0 * dxa + dxa[1, 0]) * q - dxa * q[1, 0, 0]) / (dxa + dxa[1, 0])
     )
 
@@ -166,13 +162,8 @@ def compute_al(q: FloatField, dxa: FloatFieldIJ):
             al = ppm.c1 * q[-2, 0, 0] + ppm.c2 * q[-1, 0, 0] + ppm.c3 * q
         with horizontal(region[i_start, :], region[i_end + 1, :]):
             al = 0.5 * (
-                (
-                    (2.0 * dxa[-1, 0] + dxa[-2, 0]) * q[-1, 0, 0]
-                    - dxa[-1, 0] * q[-2, 0, 0]
-                )
-                / (dxa[-2, 0] + dxa[-1, 0])
-                + ((2.0 * dxa[0, 0] + dxa[1, 0]) * q[0, 0, 0] - dxa[0, 0] * q[1, 0, 0])
-                / (dxa[0, 0] + dxa[1, 0])
+                ((2.0 * dxa[-1, 0] + dxa[-2, 0]) * q[-1, 0, 0] - dxa[-1, 0] * q[-2, 0, 0]) / (dxa[-2, 0] + dxa[-1, 0])
+                + ((2.0 * dxa[0, 0] + dxa[1, 0]) * q[0, 0, 0] - dxa[0, 0] * q[1, 0, 0]) / (dxa[0, 0] + dxa[1, 0])
             )
         with horizontal(region[i_start + 1, :], region[i_end + 2, :]):
             al = ppm.c3 * q[-1, 0, 0] + ppm.c2 * q[0, 0, 0] + ppm.c1 * q[1, 0, 0]
@@ -236,9 +227,7 @@ def bl_br_edges(bl, br, q, dxa, al, dm):
         xt_bl = xt_dxa_edge_1(q, dxa)
         xt_br = ppm.s11 * (q[1, 0, 0] - q) - ppm.s14 * dm_right_end + q
 
-    with horizontal(
-        region[i_start - 1 : i_start + 2, :], region[i_end - 1 : i_end + 2, :]
-    ):
+    with horizontal(region[i_start - 1 : i_start + 2, :], region[i_end - 1 : i_end + 2, :]):
         bl = xt_bl - q
         br = xt_br - q
 
@@ -259,17 +248,13 @@ def compute_blbr_ord8plus(q: FloatField, dxa: FloatFieldIJ):
     if __INLINED(grid_type < 3):
         bl, br = bl_br_edges(bl, br, q, dxa, al, dm)
 
-        with horizontal(
-            region[i_start - 1 : i_start + 2, :], region[i_end - 1 : i_end + 2, :]
-        ):
+        with horizontal(region[i_start - 1 : i_start + 2, :], region[i_end - 1 : i_end + 2, :]):
             bl, br = ppm.pert_ppm_standard_constraint_fcn(q, bl, br)
 
     return bl, br
 
 
-def compute_x_flux(
-    q: FloatField, courant: FloatField, dxa: FloatFieldIJ, xflux: FloatField
-):
+def compute_x_flux(q: FloatField, courant: FloatField, dxa: FloatFieldIJ, xflux: FloatField):
     """
     Args:
         q (in):
@@ -307,21 +292,13 @@ class XPiecewiseParabolic:
         # namelist.grid_type
         # grid.dxa
         if grid_type == 3 or grid_type > 4:
-            raise NotImplementedError(
-                "X Piecewise Parabolic (xppm): "
-                f" grid type {grid_type} not implemented. <3 or 4 available."
-            )
+            raise NotImplementedError("X Piecewise Parabolic (xppm): " f" grid type {grid_type} not implemented. <3 or 4 available.")
 
         if abs(iord) >= 8 and iord != 8:
-            raise NotImplementedError(
-                "X Piecewise Parabolic (xppm): "
-                f"iord {iord} != 8 not implemented when >= 8."
-            )
+            raise NotImplementedError("X Piecewise Parabolic (xppm): " f"iord {iord} != 8 not implemented when >= 8.")
 
         if iord < 0:
-            raise NotImplementedError(
-                f"X Piecewise Parabolic (xppm): iord {iord} < 0 not implemented."
-            )
+            raise NotImplementedError(f"X Piecewise Parabolic (xppm): iord {iord} < 0 not implemented.")
 
         self._dxa = dxa
         ax_offsets = stencil_factory.grid_indexing.axis_offsets(origin, domain)
@@ -367,8 +344,6 @@ class XPiecewiseParabolic:
         # in the Fortran version of this code, "x_advection" routines
         # were called "get_flux", while the routine which got the flux was called
         # fx1_fn. The final value was called xflux instead of q_out.
-        self._compute_flux_stencil(
-            q_in, c, self._dxa, q_mean_advected_through_x_interface
-        )
+        self._compute_flux_stencil(q_in, c, self._dxa, q_mean_advected_through_x_interface)
         # bl and br are "edge perturbation values" as in equation 4.1
         # of the FV3 documentation
