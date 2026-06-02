@@ -2,7 +2,7 @@ from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import StencilFactory
-from ndsl.constants import I_DIM, J_DIM, K_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM, RDG
 from ndsl.stencils.testing import Grid
 from pyfv3.stencils import LagrangianToEulerian
 from pyfv3.testing import TranslateDycoreFortranData2Py
@@ -118,6 +118,11 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
         )
         inputs["tracers"] = quantity_tracers
 
+        rdg_var = self.quantity_factory.full(
+            [I_DIM, J_DIM, K_DIM], "(J/kg/deg) / (m s^-2)", RDG
+        )
+        inputs["rdg_var"] = rdg_var
+
         lagrangian_to_eulerian = LagrangianToEulerian(
             self.stencil_factory,
             quantity_factory=self.quantity_factory,
@@ -128,6 +133,8 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
         )
 
         lagrangian_to_eulerian(**inputs)
+
+        inputs.pop("rdg_var")
 
         if not self.stencil_factory.backend.is_fortran_aligned():
             inputs["tracers"] = quantity_tracers[:-1, :-1, :-1, :]

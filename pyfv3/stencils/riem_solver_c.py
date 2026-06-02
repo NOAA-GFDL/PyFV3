@@ -1,6 +1,5 @@
 import typing
 
-import ndsl.constants as constants
 from ndsl import QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval, log

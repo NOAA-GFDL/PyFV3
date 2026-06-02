@@ -9,11 +9,8 @@ import pyfv3.stencils.nh_p_grad as nh_p_grad
 import pyfv3.stencils.pe_halo as pe_halo
 import pyfv3.stencils.ray_fast as ray_fast
 import pyfv3.stencils.temperature_adjust as temperature_adjust
-
-# import pyfv3.stencils.rdg_adjust as rdg_adjust
 import pyfv3.stencils.updatedzc as updatedzc
 import pyfv3.stencils.updatedzd as updatedzd
-import pyfv3.stencils.wam as wam
 from ndsl import (
     GridIndexing,
     Quantity,

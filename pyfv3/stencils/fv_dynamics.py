@@ -12,7 +12,7 @@ from ndsl import (
 )
 from ndsl.checkpointer import NullCheckpointer
 from ndsl.comm.mpi import MPI
-from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM, KAPPA, NQ, ZVIR, GRAV
+from ndsl.constants import GRAV, I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM, KAPPA, NQ, ZVIR
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
 from ndsl.dsl.gt4py import PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField

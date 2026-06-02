@@ -2,7 +2,15 @@ from f90nml import Namelist
 
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Quantity, StencilFactory
-from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
+from ndsl.constants import (
+    GRAV,
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    RDG,
+)
 from ndsl.stencils.testing import Grid, ParallelTranslate2PyState
 from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
@@ -160,6 +168,9 @@ class TranslateDynCore(ParallelTranslate2PyState):
             dims=[I_DIM, J_DIM],
             units="m",
         )
+        state.grav_var.data[:] = GRAV
+        state.grav_var_h.data[:] = GRAV
+        state.rdg_var.data[:] = RDG
         phis.data[:] = phis.np.asarray(inputs["phis"])
         acoustic_dynamics = dyn_core.AcousticDynamics(
             comm=communicator,
