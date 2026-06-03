@@ -45,7 +45,10 @@ class MapNTracer(NDSLRuntime):
         else:
             self._fill_negative_tracers = False
 
-        self._index_cloud = FVTracers.index("cloud")
+        if self._nq > 6:
+            self._index_cloud = FVTracers.index("cloud")
+        else:
+            self._index_cloud = self._nq + 1
 
     def __call__(
         self,

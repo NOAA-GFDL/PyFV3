@@ -1,5 +1,6 @@
 import ndsl.constants as constants
 from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
+from ndsl.constants import I_DIM, J_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval
@@ -351,6 +352,16 @@ class AdjustNegativeTracerMixingRatio(NDSLRuntime):
             self._d0_vap = constants.CV_VAP - constants.C_LIQ
         self._lv00 = constants.HLV - self._d0_vap * constants.TICE
 
+        self._sum1 = quantity_factory.zeros(
+            [I_DIM, J_DIM],
+            units="unknown",
+            dtype=Float,
+        )
+        self._sum2 = quantity_factory.zeros(
+            [I_DIM, J_DIM],
+            units="unknown",
+            dtype=Float,
+        )
         self._fix_neg_water = stencil_factory.from_origin_domain(
             func=fix_neg_water,
             origin=grid_indexing.origin_compute(),
