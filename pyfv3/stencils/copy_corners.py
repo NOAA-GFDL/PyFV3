@@ -267,57 +267,54 @@ class CopyCornersX(NDSLRuntime):
         self._is_orch = stencil_factory.backend.is_orchestrated()
 
     def __call__(self, field: FloatField):
-        self.raw_corner_implementation(field)
+        for k in dace.map[0 : field.shape[2]]:
+            field[0, 0, k] = field[0, 5, k]
+            field[0, 1, k] = field[1, 5, k]
+            field[0, 2, k] = field[2, 5, k]
 
-    @dace_inhibitor
-    def raw_corner_implementation(self, field):
-        field[0, 0, :] = field[0, 5, :]
-        field[0, 1, :] = field[1, 5, :]
-        field[0, 2, :] = field[2, 5, :]
+            field[1, 0, k] = field[0, 4, k]
+            field[1, 1, k] = field[1, 4, k]
+            field[1, 2, k] = field[2, 4, k]
 
-        field[1, 0, :] = field[0, 4, :]
-        field[1, 1, :] = field[1, 4, :]
-        field[1, 2, :] = field[2, 4, :]
+            field[2, 0, k] = field[0, 3, k]
+            field[2, 1, k] = field[1, 3, k]
+            field[2, 2, k] = field[2, 3, k]
 
-        field[2, 0, :] = field[0, 3, :]
-        field[2, 1, :] = field[1, 3, :]
-        field[2, 2, :] = field[2, 3, :]
+            field[0, -4, k] = field[2, -7, k]
+            field[0, -3, k] = field[1, -7, k]
+            field[0, -2, k] = field[0, -7, k]
 
-        field[0, -4, :] = field[2, -7, :]
-        field[0, -3, :] = field[1, -7, :]
-        field[0, -2, :] = field[0, -7, :]
+            field[1, -4, k] = field[2, -6, k]
+            field[1, -3, k] = field[1, -6, k]
+            field[1, -2, k] = field[0, -6, k]
 
-        field[1, -4, :] = field[2, -6, :]
-        field[1, -3, :] = field[1, -6, :]
-        field[1, -2, :] = field[0, -6, :]
+            field[2, -4, k] = field[2, -5, k]
+            field[2, -3, k] = field[1, -5, k]
+            field[2, -2, k] = field[0, -5, k]
 
-        field[2, -4, :] = field[2, -5, :]
-        field[2, -3, :] = field[1, -5, :]
-        field[2, -2, :] = field[0, -5, :]
+            field[-4, 0, k] = field[-2, 3, k]
+            field[-4, 1, k] = field[-3, 3, k]
+            field[-4, 2, k] = field[-4, 3, k]
 
-        field[-4, 0, :] = field[-2, 3, :]
-        field[-4, 1, :] = field[-3, 3, :]
-        field[-4, 2, :] = field[-4, 3, :]
+            field[-3, 0, k] = field[-2, 4, k]
+            field[-3, 1, k] = field[-3, 4, k]
+            field[-3, 2, k] = field[-4, 4, k]
 
-        field[-3, 0, :] = field[-2, 4, :]
-        field[-3, 1, :] = field[-3, 4, :]
-        field[-3, 2, :] = field[-4, 4, :]
+            field[-2, 0, k] = field[-2, 5, k]
+            field[-2, 1, k] = field[-3, 5, k]
+            field[-2, 2, k] = field[-4, 5, k]
 
-        field[-2, 0, :] = field[-2, 5, :]
-        field[-2, 1, :] = field[-3, 5, :]
-        field[-2, 2, :] = field[-4, 5, :]
+            field[-4, -2, k] = field[-2, -5, k]
+            field[-4, -3, k] = field[-3, -5, k]
+            field[-4, -4, k] = field[-4, -5, k]
 
-        field[-4, -2, :] = field[-2, -5, :]
-        field[-4, -3, :] = field[-3, -5, :]
-        field[-4, -4, :] = field[-4, -5, :]
+            field[-3, -2, k] = field[-2, -6, k]
+            field[-3, -3, k] = field[-3, -6, k]
+            field[-3, -4, k] = field[-4, -6, k]
 
-        field[-3, -2, :] = field[-2, -6, :]
-        field[-3, -3, :] = field[-3, -6, :]
-        field[-3, -4, :] = field[-4, -6, :]
-
-        field[-2, -2, :] = field[-2, -7, :]
-        field[-2, -3, :] = field[-3, -7, :]
-        field[-2, -4, :] = field[-4, -7, :]
+            field[-2, -2, k] = field[-2, -7, k]
+            field[-2, -3, k] = field[-3, -7, k]
+            field[-2, -4, k] = field[-4, -7, k]
 
     def nord(self, field: FloatField, nord: Quantity):
         for k in dace.map[0 : nord.shape[0]]:
@@ -393,57 +390,54 @@ class CopyCornersY(NDSLRuntime):
         self._is_orch = stencil_factory.backend.is_orchestrated()
 
     def __call__(self, field: FloatField):
-        self.raw_corner_implementation(field)
+        for k in dace.map[0 : field.shape[2]]:
+            field[0, 0, k] = field[5, 0, k]
+            field[1, 0, k] = field[5, 1, k]
+            field[2, 0, k] = field[5, 2, k]
 
-    @dace_inhibitor
-    def raw_corner_implementation(self, field):
-        field[0, 0, :] = field[5, 0, :]
-        field[1, 0, :] = field[5, 1, :]
-        field[2, 0, :] = field[5, 2, :]
+            field[0, 1, k] = field[4, 0, k]
+            field[1, 1, k] = field[4, 1, k]
+            field[2, 1, k] = field[4, 2, k]
 
-        field[0, 1, :] = field[4, 0, :]
-        field[1, 1, :] = field[4, 1, :]
-        field[2, 1, :] = field[4, 2, :]
+            field[0, 2, k] = field[3, 0, k]
+            field[1, 2, k] = field[3, 1, k]
+            field[2, 2, k] = field[3, 2, k]
 
-        field[0, 2, :] = field[3, 0, :]
-        field[1, 2, :] = field[3, 1, :]
-        field[2, 2, :] = field[3, 2, :]
+            field[-4, 0, k] = field[-7, 2, k]
+            field[-3, 0, k] = field[-7, 1, k]
+            field[-2, 0, k] = field[-7, 0, k]
 
-        field[-4, 0, :] = field[-7, 2, :]
-        field[-3, 0, :] = field[-7, 1, :]
-        field[-2, 0, :] = field[-7, 0, :]
+            field[-4, 1, k] = field[-6, 2, k]
+            field[-3, 1, k] = field[-6, 1, k]
+            field[-2, 1, k] = field[-6, 0, k]
 
-        field[-4, 1, :] = field[-6, 2, :]
-        field[-3, 1, :] = field[-6, 1, :]
-        field[-2, 1, :] = field[-6, 0, :]
+            field[-4, 2, k] = field[-5, 2, k]
+            field[-3, 2, k] = field[-5, 1, k]
+            field[-2, 2, k] = field[-5, 0, k]
 
-        field[-4, 2, :] = field[-5, 2, :]
-        field[-3, 2, :] = field[-5, 1, :]
-        field[-2, 2, :] = field[-5, 0, :]
+            field[0, -2, k] = field[5, -2, k]
+            field[0, -3, k] = field[4, -2, k]
+            field[0, -4, k] = field[3, -2, k]
 
-        field[0, -2, :] = field[5, -2, :]
-        field[0, -3, :] = field[4, -2, :]
-        field[0, -4, :] = field[3, -2, :]
+            field[1, -2, k] = field[5, -3, k]
+            field[1, -3, k] = field[4, -3, k]
+            field[1, -4, k] = field[3, -3, k]
 
-        field[1, -2, :] = field[5, -3, :]
-        field[1, -3, :] = field[4, -3, :]
-        field[1, -4, :] = field[3, -3, :]
+            field[2, -2, k] = field[5, -4, k]
+            field[2, -3, k] = field[4, -4, k]
+            field[2, -4, k] = field[3, -4, k]
 
-        field[2, -2, :] = field[5, -4, :]
-        field[2, -3, :] = field[4, -4, :]
-        field[2, -4, :] = field[3, -4, :]
+            field[-2, -4, k] = field[-5, -2, k]
+            field[-2, -3, k] = field[-6, -2, k]
+            field[-2, -2, k] = field[-7, -2, k]
 
-        field[-2, -4, :] = field[-5, -2, :]
-        field[-2, -3, :] = field[-6, -2, :]
-        field[-2, -2, :] = field[-7, -2, :]
+            field[-3, -4, k] = field[-5, -3, k]
+            field[-3, -3, k] = field[-6, -3, k]
+            field[-3, -2, k] = field[-7, -3, k]
 
-        field[-3, -4, :] = field[-5, -3, :]
-        field[-3, -3, :] = field[-6, -3, :]
-        field[-3, -2, :] = field[-7, -3, :]
-
-        field[-4, -4, :] = field[-5, -4, :]
-        field[-4, -3, :] = field[-6, -4, :]
-        field[-4, -2, :] = field[-7, -4, :]
+            field[-4, -4, k] = field[-5, -4, k]
+            field[-4, -3, k] = field[-6, -4, k]
+            field[-4, -2, k] = field[-7, -4, k]
 
     def nord(self, field: FloatField, nord: Quantity):
         for k in dace.map[0 : nord.shape[0]]:
