@@ -305,6 +305,7 @@ def init_baroclinic_state(
     numpy_state.phis[:] = 1.0e25
     numpy_state.ps[:] = SURFACE_PRESSURE
     numpy_state.grav_var[:] = constants.GRAV
+    numpy_state.grav_var_h[:] = constants.GRAV
     numpy_state.rdg_var[:] = -1 / numpy_state.grav_var
     eta = np.zeros(nz)
     eta_v = np.zeros(nz)

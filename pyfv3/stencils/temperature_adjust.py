@@ -29,7 +29,6 @@ def apply_diffusive_heating(
         rdg_var (in): negative rdgas divided by variable gravity
     """
     with computation(PARALLEL), interval(...):
-        # JK TODO: Double-check rdg_var here instead of constants.RDG
         pkz = exp(cappa / (1.0 - cappa) * log(rdg_var * delp / delz * pt))
         dtmp = heat_source / (constants.CV_AIR * delp)
     with computation(PARALLEL):

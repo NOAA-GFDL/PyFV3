@@ -116,7 +116,7 @@ def init(
         cpm, cvm = standard_cm(
             cpm, cvm, q0_vapor, q0_liquid, q0_rain, q0_ice, q0_snow, q0_graupel
         )
-        gz = gzh[0, 0, 1] - grav_var * delz
+        gz = gzh[0, 0, 1] - 0.5 * grav_var * delz
         tmp = tvol(gz, u0, v0, w0)
         static_energy = cpm * t0 + tmp
         total_energy = cvm * t0 + tmp

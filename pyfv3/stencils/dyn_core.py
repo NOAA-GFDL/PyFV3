@@ -792,9 +792,6 @@ class AcousticDynamics:
             if it == 0:
                 self._halo_updaters.delp__pt.wait()
                 self._halo_updaters.grav_var_h.update()
-                # ALREADY HAPPENING IN DYNAMICAL CORE CALL
-                # self._average_gravity(state.grav_var, state.grav_var_h)
-                # self._neg_rdgas_div_gravity(state.rdg_var, state.grav_var)
 
             if it == n_split - 1 and end_step:
                 if self.config.use_old_omega:

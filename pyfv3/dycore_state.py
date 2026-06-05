@@ -295,7 +295,7 @@ class DycoreState:
     )
     grav_var_h: Quantity = field(
         metadata={
-            "name": "Interface gravity values",
+            "name": "gravity values defined at the K interfaces",
             "units": "m s^-2",
             "dims": [I_DIM, J_DIM, K_INTERFACE_DIM],
             "intent": "inout",
@@ -303,7 +303,7 @@ class DycoreState:
     )
     grav_var: Quantity = field(
         metadata={
-            "name": "variable gravity",
+            "name": "cell centered variable gravity",
             "units": "m s^-2",
             "dims": [I_DIM, J_DIM, K_DIM],
             "intent": "inout",
@@ -312,7 +312,7 @@ class DycoreState:
     rdg_var: Quantity = field(
         metadata={
             "name": "gas constant for dry air over variable gravity (RDGAS / grav_var) for Whole Atmosphere calculations",
-            "units": "(J/kg/deg) / (m s^-2)",  # JK TODO: What are the units?
+            "units": "(J/kg/deg) / (m s^-2)",
             "dims": [I_DIM, J_DIM, K_DIM],
             "intent": "inout",
         }

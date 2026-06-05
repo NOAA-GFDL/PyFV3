@@ -226,7 +226,6 @@ def initialize_log_pressure_interfaces(pe, ptop):
 
 
 def initialize_pkz_dry(delp, pt, delz, rdg_var):
-    # TODO: Is WAM-related variable rdg necessary here?
     return np.exp(
         constants.KAPPA
         * np.log(rdg_var * delp[:, :, :-1] * pt[:, :, :-1] / delz[:, :, :-1])
@@ -237,7 +236,7 @@ def initialize_pkz_moist(delp, pt, qvapor, delz, rdg_var):
     return np.exp(
         constants.KAPPA
         * np.log(
-            rdg_var[:, :, :-1]  # TODO: Is WAM-related variable rdg necessary here?
+            rdg_var[:, :, :-1]
             * delp[:, :, :-1]
             * pt[:, :, :-1]
             * (1.0 + constants.ZVIR * qvapor[:, :, :-1])

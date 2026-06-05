@@ -7,8 +7,7 @@ from ndsl.dsl.typing import FloatField, FloatFieldIJ
 
 @gtfunction
 def average_gravity(grav_var: FloatField, grav_var_h: FloatField):
-    grav_var = 0.5 * (grav_var_h[0, 0, 0] + grav_var_h[0, 0, 1])
-    return grav_var
+    return 0.5 * (grav_var_h[0, 0, 0] + grav_var_h[0, 0, 1])
 
 
 # May not need this stencil at all
@@ -40,15 +39,13 @@ def adjust_gravity(
         grav_var_h = GRAV * (RADIUS**2) / newrad**2
 
     with computation(BACKWARD), interval(0, -1):
-        newrad = RADIUS + (phis / GRAV)
-        newrad = newrad - delz
+        newrad = RADIUS + (phis / GRAV) - delz
         grav_var_h = GRAV * (RADIUS**2) / newrad**2
         grav_var = average_gravity(grav_var, grav_var_h)
 
 
 def neg_rdgas_div_gravity(rdg: FloatField, grav_var: FloatField):
     """
-    # JK TODO: Is there a better name than this?
     Adjust rdg to be the negative RDGAS divided by the variable gravity
     for Whole Atmosphere Modeling
 

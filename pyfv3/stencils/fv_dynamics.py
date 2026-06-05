@@ -284,10 +284,15 @@ class DynamicalCore(NDSLRuntime):
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(),
         )
-        self._init_gravity = stencil_factory.from_origin_domain(
+        self._init_gravity_h = stencil_factory.from_origin_domain(
             set_value,
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(add=(0, 0, 1)),
+        )
+        self._init_gravity = stencil_factory.from_origin_domain(
+            set_value,
+            origin=grid_indexing.origin_full(),
+            domain=grid_indexing.domain_full(),
         )
         self._adjust_gravity = stencil_factory.from_origin_domain(
             wam.adjust_gravity,
@@ -555,7 +560,7 @@ class DynamicalCore(NDSLRuntime):
         )
 
         self._init_gravity(state.grav_var, GRAV)
-        self._init_gravity(state.grav_var_h, GRAV)
+        self._init_gravity_h(state.grav_var_h, GRAV)
 
         if self.config.enable_wam:
             self._adjust_gravity(
