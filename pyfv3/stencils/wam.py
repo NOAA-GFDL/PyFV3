@@ -10,17 +10,6 @@ def average_gravity(grav_var: FloatField, grav_var_h: FloatField):
     return 0.5 * (grav_var_h[0, 0, 0] + grav_var_h[0, 0, 1])
 
 
-# May not need this stencil at all
-def average_gravity_stencil_defn(grav_var: FloatField, grav_var_h: FloatField):
-    """
-    Args:
-        grav_var (out): gravity field
-        grav_var_h (in): gravity value at interfaces
-    """
-    with computation(FORWARD), interval(...):
-        grav_var = average_gravity(grav_var, grav_var_h)
-
-
 def adjust_gravity(
     grav_var: FloatField,
     grav_var_h: FloatField,
