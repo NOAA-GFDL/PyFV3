@@ -6,7 +6,6 @@ import numpy as np
 from ndsl import NDSLRuntime, Quantity, StencilFactory, orchestrate
 from ndsl.dsl.typing import FloatField
 from ndsl.optional_imports import cupy as cp
-from ndsl.dsl.dace.orchestration import dace_inhibitor
 
 
 @singledispatch
