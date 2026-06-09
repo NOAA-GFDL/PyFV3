@@ -30,7 +30,7 @@ def adjust_gravity(
     with computation(BACKWARD), interval(0, -1):
         newrad = RADIUS + (phis / GRAV) - delz
         grav_var_h = GRAV * (RADIUS**2) / newrad**2
-        grav_var = average_gravity(grav_var, grav_var_h)
+        grav_var = average_gravity(grav_var_h)
 
 
 def neg_rdgas_div_gravity(rdg: FloatField, grav_var: FloatField):
