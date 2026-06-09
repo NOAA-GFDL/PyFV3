@@ -6,7 +6,7 @@ from ndsl.dsl.typing import FloatField, FloatFieldIJ
 
 
 @gtfunction
-def average_gravity(grav_var: FloatField, grav_var_h: FloatField):
+def average_gravity(grav_var_h: FloatField):
     return 0.5 * (grav_var_h[0, 0, 0] + grav_var_h[0, 0, 1])
 
 
