@@ -53,6 +53,7 @@ sed -i 's/XPiecewise/YPiecewise/g' pyfv3/stencils/yppm.py
 sed -i 's/X Piecewise/Y Piecewise/g' pyfv3/stencils/yppm.py
 sed -i 's/xppm/yppm/g' pyfv3/stencils/yppm.py
 sed -i 's/u\*/v\*/g' pyfv3/stencils/yppm.py
+sed -i 's/svbgrid/subgrid/g' pyfv3/stencils/yppm.py
 
 sed -i 's/j_start - 1 : j_start + 1, j_start/i_start, j_start - 1 : j_start + 1/g' pyfv3/stencils/ytp_v.py
 sed -i 's/j_start - 1 : j_start + 1, j_end + 1/i_end + 1, j_start - 1 : j_start + 1/g' pyfv3/stencils/ytp_v.py
