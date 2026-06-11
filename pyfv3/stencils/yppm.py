@@ -385,7 +385,7 @@ class YPiecewiseParabolic(NDSLRuntime):
         """
         Determine the mean value per area of q_in to be advected along y-interfaces.
 
-        This is done by integrating a piecewise-parabolic svbgrid reconstruction
+        This is done by integrating a piecewise-parabolic subgrid reconstruction
         of q_in along the y-direction over the segment of gridcell which
         will be advected.
 

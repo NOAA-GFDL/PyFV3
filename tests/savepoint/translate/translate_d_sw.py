@@ -3,7 +3,7 @@ from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 import pyfv3.stencils.d_sw as d_sw
 from ndsl import StencilFactory
-from ndsl.constants import I_DIM, J_DIM, K_INTERFACE_DIM
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
@@ -22,7 +22,7 @@ class TranslateD_SW(TranslateDycoreFortranData2Py):
             config=self.config.acoustic_dynamics.d_grid_shallow_water,
             quantity_factory=self.grid.quantity_factory,
         )
-        self.compute_func = d_sw.DGridShallowWaterLagrangianDynamics(  # type: ignore
+        self.compute_func = d_sw.DGridShallowWaterLagrangianDynamics(
             stencil_factory=self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             grid_data=self.grid.grid_data,
@@ -67,25 +67,28 @@ class TranslateD_SW(TranslateDycoreFortranData2Py):
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
+
         # Convert relevant inputs to quantities:
         delp = self.grid.quantity_factory.zeros(
-            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown", dtype=Float
+            dims=[I_DIM, J_DIM, K_DIM], units="unknown", dtype=Float
         )
         delp.data[:] = delp.np.asarray(inputs.pop("delp"))
         inputs["delp"] = delp
+
         w = self.grid.quantity_factory.zeros(
-            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown", dtype=Float
+            dims=[I_DIM, J_DIM, K_DIM], units="unknown", dtype=Float
         )
         w.data[:] = delp.np.asarray(inputs.pop("w"))
         inputs["w"] = w
+
         q_con = self.grid.quantity_factory.zeros(
-            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown", dtype=Float
+            dims=[I_DIM, J_DIM, K_DIM], units="unknown", dtype=Float
         )
         q_con.data[:] = delp.np.asarray(inputs.pop("q_con"))
         inputs["q_con"] = q_con
 
         pt = self.grid.quantity_factory.zeros(
-            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown", dtype=Float
+            dims=[I_DIM, J_DIM, K_DIM], units="unknown", dtype=Float
         )
         pt.data[:] = delp.np.asarray(inputs.pop("pt"))
         inputs["pt"] = pt
