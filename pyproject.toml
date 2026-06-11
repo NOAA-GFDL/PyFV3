@@ -44,7 +44,7 @@ extras = [
   "pyfv3[ndsl]",
   "pyfv3[test]"
 ]
-ndsl = ["ndsl @ git+https://github.com/FlorianDeconinck/NDSL.git@feature/data_dimnesion_fields"]
+ndsl = ["ndsl @ git+https://github.com/romanc/NDSL.git@romanc/translate-tests-without-interface-padding"]
 test = [
   "coverage",
   "pytest",
