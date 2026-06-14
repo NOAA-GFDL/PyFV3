@@ -1,8 +1,7 @@
 import numpy as np
 
 import ndsl.constants as constants
-from ndsl import NDSLRuntime, StencilFactory
-from ndsl.boilerplate import get_factories_single_tile
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory, SubtileGridSizer
 from ndsl.constants import (
     I_DIM,
     I_INTERFACE_DIM,
@@ -204,15 +203,6 @@ class RayleighDamping(NDSLRuntime):
             },
         )
 
-        # We compute the damping increment once using a trick to write a
-        # FloatFieldK as a (1, 1, K) 3D writable Field
-        _K_stencil_factory, K_quantity_factory = get_factories_single_tile(
-            1,
-            1,
-            domain[2],
-            0,
-            stencil_factory.backend,
-        )
         self._ray_fast_damping_increment = stencil_factory.from_origin_domain(
             ray_fast_damping_increment,
             origin=(0, 0, origin[2]),
@@ -222,9 +212,16 @@ class RayleighDamping(NDSLRuntime):
                 "tau": tau,
             },
         )
-        self._damping_increment = K_quantity_factory.ones(
-            [I_DIM, J_DIM, K_DIM], units="n/a"
+        sizer = SubtileGridSizer(
+            nx=1,
+            ny=1,
+            nz=domain[2],
+            n_halo=0,
+            data_dimensions={},
+            backend=stencil_factory.backend,
         )
+        K_quantity_factory = QuantityFactory(sizer, backend=stencil_factory.backend)
+        self._damping_increment = K_quantity_factory.ones([I_DIM, J_DIM, K_DIM], "n/a")
         self._initialize_damping_increment = np.ones((1,), dtype=int)
 
     def __call__(
