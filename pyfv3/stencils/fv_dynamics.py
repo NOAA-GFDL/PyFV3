@@ -33,7 +33,7 @@ from ndsl.dsl.typing import (
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log
 from ndsl.performance import Timer
-from ndsl.stencils.basic_operations import copy, set_value
+from ndsl.stencils.basic_operations import copy
 from ndsl.stencils.c2l_ord import CubedToLatLon
 from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
@@ -210,6 +210,11 @@ def log_on_rank_0(message: str) -> None:
     """Print when rank is 0 - outside of DaCe critical path"""
     if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
         ndsl_log.info(message)
+
+
+def _reset_to_zero(field: FloatField):
+    with computation(PARALLEL), interval(...):
+        field = 0
 
 
 class DynamicalCore(NDSLRuntime):
@@ -528,13 +533,13 @@ class DynamicalCore(NDSLRuntime):
             units="unknown",
             dtype=Float,
         )
-        self._set_value_I_interface = stencil_factory.from_origin_domain(
-            func=set_value,
+        self._reset_I_interface = stencil_factory.from_origin_domain(
+            func=_reset_to_zero,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(add=(1, 0, 0)),
         )
-        self._set_value_J_interface = stencil_factory.from_origin_domain(
-            func=set_value,
+        self._reset_J_interface = stencil_factory.from_origin_domain(
+            func=_reset_to_zero,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(add=(0, 1, 0)),
         )
@@ -567,10 +572,10 @@ class DynamicalCore(NDSLRuntime):
             log_on_rank_0("FV Setup")
 
         # Reset fluxes
-        self._set_value_I_interface(state.mfxd, Float(0.0))
-        self._set_value_I_interface(state.cxd, Float(0.0))
-        self._set_value_J_interface(state.mfyd, Float(0.0))
-        self._set_value_J_interface(state.cyd, Float(0.0))
+        self._reset_I_interface(state.mfxd)
+        self._reset_I_interface(state.cxd)
+        self._reset_J_interface(state.mfyd)
+        self._reset_J_interface(state.cyd)
 
         self._fv_setup_stencil(
             state.tracers,
