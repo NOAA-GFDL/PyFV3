@@ -39,7 +39,6 @@ class TranslateFvTp2d(TranslateDycoreFortranData2Py):
         }
         self.out_vars["q_x_flux"]["serialname"] = "fx"
         self.out_vars["q_y_flux"]["serialname"] = "fy"
-        self.stencil_factory = stencil_factory
 
     # use_sg -- 'dx', 'dy', 'rdxc', 'rdyc', 'sin_sg needed
     def compute_from_storage(self, inputs):
@@ -56,21 +55,21 @@ class TranslateFvTp2d(TranslateDycoreFortranData2Py):
         nord_col = self.grid.quantity_factory.zeros(
             dims=[K_DIM], units="unknown", dtype=Float
         )
-        nord_col.data[:] = nord_col.np.asarray(inputs.pop("nord"))
+        nord_col[:] = nord_col.np.asarray(inputs.pop("nord"))
         damp_c = self.grid.quantity_factory.zeros(
             dims=[K_DIM], units="unknown", dtype=Float
         )
-        damp_c.data[:] = damp_c.np.asarray(inputs.pop("damp_c"))
+        damp_c[:] = damp_c.np.asarray(inputs.pop("damp_c"))
 
         q = self.grid.quantity_factory.zeros(
             dims=[I_DIM, J_DIM, K_DIM], units="unknown", dtype=Float
         )
-        q.data[:] = q.np.asarray(inputs.pop("q"))
+        q[:] = q.np.asarray(inputs.pop("q"))
         inputs["q"] = q
         for optional_arg in ["mass"]:
             if optional_arg not in inputs:
                 inputs[optional_arg] = None
-        self.compute_func = FiniteVolumeTransport(  # type: ignore
+        self.compute_func = FiniteVolumeTransport(
             stencil_factory=self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             grid_data=self.grid.grid_data,
