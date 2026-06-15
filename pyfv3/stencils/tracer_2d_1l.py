@@ -423,7 +423,7 @@ class TracerAdvection(NDSLRuntime):
 
         dp2 = self._tmp_dp
 
-        # The original algorithm works on K level independantly
+        # The original algorithm works on K level independently
         # (from with a  K loop) and therefore compute `nsplit`
         # per K
         # The stencil nature of the framework doesn't allow for it
