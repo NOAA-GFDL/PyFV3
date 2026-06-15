@@ -8,7 +8,6 @@ from ndsl import (
     StencilFactory,
     WrappedHaloUpdater,
 )
-from ndsl.comm.mpi import MPI
 from ndsl.constants import (
     I_DIM,
     I_INTERFACE_DIM,
@@ -20,7 +19,7 @@ from ndsl.constants import (
     NQ,
     ZVIR,
 )
-from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
+from ndsl.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation, interval
 from ndsl.dsl.typing import (
     NDSL_64BIT_FLOAT_TYPE,
@@ -31,7 +30,6 @@ from ndsl.dsl.typing import (
     get_precision,
 )
 from ndsl.grid import DampingCoefficients, GridData
-from ndsl.logging import ndsl_log
 from ndsl.performance import Timer
 from ndsl.stencils.basic_operations import copy
 from ndsl.stencils.c2l_ord import CubedToLatLon
@@ -203,13 +201,6 @@ def omega_from_w(
     """
     with computation(PARALLEL), interval(...):
         omega = delp / delz * w
-
-
-@dace_inhibitor
-def log_on_rank_0(message: str) -> None:
-    """Print when rank is 0 - outside of DaCe critical path"""
-    if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
-        ndsl_log.info(message)
 
 
 def _reset_to_zero(field: FloatField):
@@ -568,9 +559,6 @@ class DynamicalCore(NDSLRuntime):
         if self.config.hydrostatic:
             raise NotImplementedError("Hydrostatic is not implemented")
 
-        if __debug__:
-            log_on_rank_0("FV Setup")
-
         # Reset fluxes
         self._reset_I_interface(state.mfxd)
         self._reset_I_interface(state.cxd)
@@ -649,9 +637,6 @@ class DynamicalCore(NDSLRuntime):
                 self._dp_initial,
             )
 
-            if __debug__:
-                log_on_rank_0("DynCore")
-
             with timer.clock("DynCore"):
                 self.acoustic_dynamics(
                     state=state,
@@ -672,9 +657,6 @@ class DynamicalCore(NDSLRuntime):
                 if last_step and self.config.hydrostatic:
                     self.dry_mass_control.apply(state.pe)
             if self.config.z_tracer:
-                if __debug__:
-                    log_on_rank_0("TracerAdvection")
-
                 with timer.clock("TracerAdvection"):
                     self.tracer_advection(
                         state.tracers,
@@ -702,9 +684,6 @@ class DynamicalCore(NDSLRuntime):
                 # TODO: Determine a better way to do this, polymorphic fields perhaps?
                 # issue is that set_val in map_single expects a 3D field for the
                 # "surface" array
-                if __debug__:
-                    log_on_rank_0("Remapping")
-
                 with timer.clock("Remapping"):
                     if IS_GEOS:
                         self._lagrangian_to_eulerian_GEOS(
@@ -783,8 +762,6 @@ class DynamicalCore(NDSLRuntime):
 
                 if last_step:
                     if not self.config.hydrostatic:
-                        if __debug__:
-                            log_on_rank_0("Omega")
                         # TODO: GFDL should implement the "vulcan omega" update,
                         # use hydrostatic omega instead of this conversion
                         self._omega_from_w(
@@ -794,14 +771,10 @@ class DynamicalCore(NDSLRuntime):
                             state.omga,
                         )
                     if self.config.nf_omega > 0:
-                        if __debug__:
-                            log_on_rank_0("Del2Cubed")
                         self._omega_halo_updater.update()
                         self._hyperdiffusion(state.omga, Float(0.18) * self._da_min)
 
         if self.config.nwat >= 6:
-            if __debug__:
-                log_on_rank_0("Neg Adj 3")
             self._adjust_tracer_mixing_ratio(
                 state.tracers[:, :, :, FVTracers.index("vapor")],
                 state.tracers[:, :, :, FVTracers.index("liquid")],
@@ -814,8 +787,6 @@ class DynamicalCore(NDSLRuntime):
                 state.delp,
             )
 
-        if __debug__:
-            log_on_rank_0("CubedToLatLon")
         # convert d-grid x-wind and y-wind to
         # cell-centered zonal and meridional winds
         # TODO: make separate variables for the internal-temporary
