@@ -28,7 +28,7 @@ from pyfv3.tracers import FVTracers, FVTracersAxisName
 
 
 @gtfunction
-def flux_x(cx, dxa, dy, sin_sg3, sin_sg1, xfx):
+def flux_x(cx, dxa, dy, sin_sg3, sin_sg1):
     from __externals__ import local_ie, local_is, local_je, local_js
 
     with horizontal(region[local_is : local_ie + 2, local_js - 3 : local_je + 4]):
@@ -39,7 +39,7 @@ def flux_x(cx, dxa, dy, sin_sg3, sin_sg1, xfx):
 
 
 @gtfunction
-def flux_y(cy, dya, dx, sin_sg4, sin_sg2, yfx):
+def flux_y(cy, dya, dx, sin_sg4, sin_sg2):
     from __externals__ import local_ie, local_is, local_je, local_js
 
     with horizontal(region[local_is - 3 : local_ie + 4, local_js : local_je + 2]):
@@ -80,8 +80,8 @@ def flux_compute(
         yfx (out): y-direction area flux
     """
     with computation(PARALLEL), interval(...):
-        xfx = flux_x(cx, dxa, dy, sin_sg3, sin_sg1, xfx)
-        yfx = flux_y(cy, dya, dx, sin_sg4, sin_sg2, yfx)
+        xfx = flux_x(cx, dxa, dy, sin_sg3, sin_sg1)
+        yfx = flux_y(cy, dya, dx, sin_sg4, sin_sg2)
 
 
 @no_type_check
