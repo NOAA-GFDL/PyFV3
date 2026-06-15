@@ -59,7 +59,6 @@ class TranslateA2B_Ord4(TranslateDycoreFortranData2Py):
         self.in_vars["data_vars"] = {"wk": {}, "vort": {}, "delpc": {}, "nord_col": {}}
         self.in_vars["parameters"] = ["dt"]
         self.out_vars: Dict[str, Any] = {"wk": {}, "vort": {}}
-        self.stencil_factory = stencil_factory
         self.compute_obj = A2B_Ord4Compute(stencil_factory)
         self._subset = get_subset_func(
             self.grid.grid_indexing,
@@ -69,7 +68,7 @@ class TranslateA2B_Ord4(TranslateDycoreFortranData2Py):
 
     def compute_from_storage(self, inputs):
         nord_col = self.grid.quantity_factory.zeros(dims=[K_DIM], units="unknown")
-        nord_col.data[:] = nord_col.np.asarray(inputs.pop("nord_col"))
+        nord_col[:] = nord_col.np.asarray(inputs.pop("nord_col"))
         divdamp = DivergenceDamping(
             self.stencil_factory,
             self.grid.quantity_factory,
@@ -96,5 +95,5 @@ class TranslateA2B_Ord4(TranslateDycoreFortranData2Py):
         """
         if varname in ["wk"]:
             return self._subset(output)
-        else:
-            return output
+
+        return output
