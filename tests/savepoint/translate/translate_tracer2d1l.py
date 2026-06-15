@@ -1,7 +1,7 @@
 import pytest
 from f90nml import Namelist
 
-from ndsl import QuantityFactory, StencilFactory
+from ndsl import StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import Grid, ParallelTranslate
 from pyfv3 import DynamicalCoreConfig
@@ -11,13 +11,6 @@ from pyfv3.utils.functional_validation import get_subset_func
 
 
 class TranslateTracer2D1L(ParallelTranslate):
-    inputs = {
-        "tracers": {
-            "dims": [I_DIM, J_DIM, K_DIM],
-            "units": "kg/m^2",
-        }
-    }
-
     def __init__(
         self,
         grid: Grid,
@@ -36,22 +29,17 @@ class TranslateTracer2D1L(ParallelTranslate):
         self._base.in_vars["parameters"] = ["nq"]
         self._base.out_vars = self._base.in_vars["data_vars"]
         self.stencil_factory = stencil_factory
-        self._quantity_factory = QuantityFactory(
-            sizer=grid.sizer,
-            backend=stencil_factory.backend,
-        )
         self._subset = get_subset_func(
             self.grid.grid_indexing,
             dims=[I_DIM, J_DIM, K_DIM],
             n_halo=((0, 0), (0, 0)),
         )
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
-        self.quantity_factory = grid.quantity_factory
 
     def compute_parallel(self, inputs, communicator):
         self._base.make_storage_data_input_vars(inputs)
         setup_fvtracers(
-            self.quantity_factory, inputs["tracers"].shape[3], GEOS_tracers_mapping
+            self.grid.quantity_factory, inputs["tracers"].shape[3], GEOS_tracers_mapping
         )
 
         quantity_tracers = self.grid.quantity_factory.from_array(
@@ -104,5 +92,5 @@ class TranslateTracer2D1L(ParallelTranslate):
         """
         if varname in ["tracers"]:
             return self._subset(output)
-        else:
-            return output
+
+        return output
