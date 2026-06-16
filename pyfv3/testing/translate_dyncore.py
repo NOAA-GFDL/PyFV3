@@ -164,21 +164,21 @@ class TranslateDynCore(ParallelTranslate2PyState):
                 # the ndarray can have buffer points at the end, so value.shape
                 # is often not equal to state[name].shape
                 selection = tuple(slice(0, end) for end in value.shape)
-                state[name].data[selection] = value
+                state[name][selection] = value
             else:
                 setattr(state, name, value)
         phis = self.grid.quantity_factory.zeros(
             dims=[I_DIM, J_DIM],
             units="m",
         )
-        phis.data[:] = phis.np.asarray(inputs["phis"])
+        phis[:] = phis.np.asarray(inputs["phis"])
         dpx = self.grid.quantity_factory.zeros(
             dims=[I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=inputs_dtypes["dpx"],
             allow_mismatch_float_precision=True,
         )
-        dpx.data[:] = dpx.np.asarray(inputs["dpx"])
+        dpx[:] = dpx.np.asarray(inputs["dpx"])
         acoustic_dynamics = dyn_core.AcousticDynamics(
             comm=communicator,
             stencil_factory=self.stencil_factory,
@@ -192,7 +192,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
             phis=phis,
             state=state,
         )
-        acoustic_dynamics.cappa.data[:] = inputs["cappa"][:]
+        acoustic_dynamics.cappa[:] = inputs["cappa"][:]
 
         acoustic_dynamics(
             state,
