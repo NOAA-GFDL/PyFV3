@@ -201,7 +201,7 @@ def compute_mass_flux(ri, ri_ref, delp, ratio):
             * delp[0, 0, -1]
             * delp
             / (delp[0, 0, -1] + delp)
-            * (1.0 - max_ri_ratio) ** 2.0
+            * (1.0 - max_ri_ratio) ** 2
         )
     return mc
 
