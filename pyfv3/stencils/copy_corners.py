@@ -42,19 +42,6 @@ class CopyCornersX(NDSLRuntime):
                 field[2, 2, k] = field[2, 3, k]
 
             if self._is_se_corner:
-                field[0, -4, k] = field[2, -7, k]
-                field[0, -3, k] = field[1, -7, k]
-                field[0, -2, k] = field[0, -7, k]
-
-                field[1, -4, k] = field[2, -6, k]
-                field[1, -3, k] = field[1, -6, k]
-                field[1, -2, k] = field[0, -6, k]
-
-                field[2, -4, k] = field[2, -5, k]
-                field[2, -3, k] = field[1, -5, k]
-                field[2, -2, k] = field[0, -5, k]
-
-            if self._is_nw_corner:
                 field[-4, 0, k] = field[-2, 3, k]
                 field[-4, 1, k] = field[-3, 3, k]
                 field[-4, 2, k] = field[-4, 3, k]
@@ -66,6 +53,19 @@ class CopyCornersX(NDSLRuntime):
                 field[-2, 0, k] = field[-2, 5, k]
                 field[-2, 1, k] = field[-3, 5, k]
                 field[-2, 2, k] = field[-4, 5, k]
+
+            if self._is_nw_corner:
+                field[0, -4, k] = field[2, -7, k]
+                field[0, -3, k] = field[1, -7, k]
+                field[0, -2, k] = field[0, -7, k]
+
+                field[1, -4, k] = field[2, -6, k]
+                field[1, -3, k] = field[1, -6, k]
+                field[1, -2, k] = field[0, -6, k]
+
+                field[2, -4, k] = field[2, -5, k]
+                field[2, -3, k] = field[1, -5, k]
+                field[2, -2, k] = field[0, -5, k]
 
             if self._is_ne_corner:
                 field[-4, -2, k] = field[-2, -5, k]
@@ -97,19 +97,6 @@ class CopyCornersX(NDSLRuntime):
                     field[2, 2, k] = field[2, 3, k]
 
                 if self._is_se_corner:
-                    field[0, -4, k] = field[2, -7, k]
-                    field[0, -3, k] = field[1, -7, k]
-                    field[0, -2, k] = field[0, -7, k]
-
-                    field[1, -4, k] = field[2, -6, k]
-                    field[1, -3, k] = field[1, -6, k]
-                    field[1, -2, k] = field[0, -6, k]
-
-                    field[2, -4, k] = field[2, -5, k]
-                    field[2, -3, k] = field[1, -5, k]
-                    field[2, -2, k] = field[0, -5, k]
-
-                if self._is_nw_corner:
                     field[-4, 0, k] = field[-2, 3, k]
                     field[-4, 1, k] = field[-3, 3, k]
                     field[-4, 2, k] = field[-4, 3, k]
@@ -121,6 +108,19 @@ class CopyCornersX(NDSLRuntime):
                     field[-2, 0, k] = field[-2, 5, k]
                     field[-2, 1, k] = field[-3, 5, k]
                     field[-2, 2, k] = field[-4, 5, k]
+
+                if self._is_nw_corner:
+                    field[0, -4, k] = field[2, -7, k]
+                    field[0, -3, k] = field[1, -7, k]
+                    field[0, -2, k] = field[0, -7, k]
+
+                    field[1, -4, k] = field[2, -6, k]
+                    field[1, -3, k] = field[1, -6, k]
+                    field[1, -2, k] = field[0, -6, k]
+
+                    field[2, -4, k] = field[2, -5, k]
+                    field[2, -3, k] = field[1, -5, k]
+                    field[2, -2, k] = field[0, -5, k]
 
                 if self._is_ne_corner:
                     field[-4, -2, k] = field[-2, -5, k]
