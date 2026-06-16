@@ -514,8 +514,8 @@ def doubly_periodic_a2b_ord4(qin):
     Grid conversion is much simpler on a doubly-periodic, orthogonal grid so we
     can bypass most of the above code
     """
-    qx = b2 * (qin[-2, 0, 0] + qin[1, 0, 0]) * b1 * (qin[-1, 0, 0] + qin)
-    qy = b2 * (qin[0, -2, 0] + qin[0, 1, 0]) * b1 * (qin[0, -1, 0] + qin)
+    qx = b2 * (qin[-2, 0, 0] + qin[1, 0, 0]) + b1 * (qin[-1, 0, 0] + qin)
+    qy = b2 * (qin[0, -2, 0] + qin[0, 1, 0]) + b1 * (qin[0, -1, 0] + qin)
     qout = 0.5 * (
         a2 * (qx[0, -2, 0] + qx[0, 1, 0] + qy[-2, 0, 0] + qy[1, 0, 0])
         + a1 * (qx[0, -1, 0] + qx + qy[-1, 0, 0] + qy)
