@@ -40,11 +40,11 @@ def apply_perturbation(u_component, up, lon, lat, is_steady: bool = False):
         :, :, None
     ]
     r3d = np.repeat(r, u_component.shape[2], axis=2)
-    near_perturbation = (r3d / R) ** 2.0 < 40.0
+    near_perturbation = (r3d / R) ** 2 < 40.0
     # Equation(10) in JRMS2006 perturbation applied to u_component
     # Equivalent to Equation (14) in DCMIP 2016, where Zp = 1.0
     u_component[near_perturbation] = u_component[near_perturbation] + up * np.exp(
-        -((r3d[near_perturbation] / R) ** 2.0)
+        -((r3d[near_perturbation] / R) ** 2)
     )
 
 

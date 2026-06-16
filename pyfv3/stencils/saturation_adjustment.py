@@ -354,7 +354,7 @@ def sublimation(
                 * 349138.78
                 * expsubl
                 / (
-                    iqs2 * den * constants.LAT2 / (0.0243 * constants.RVGAS * pt1**2.0)
+                    iqs2 * den * constants.LAT2 / (0.0243 * constants.RVGAS * pt1**2)
                     + 4.42478e4
                 )
             )
