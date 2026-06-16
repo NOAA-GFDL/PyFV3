@@ -34,8 +34,8 @@ def great_circle_dist(p1a, p1b, p2a, p2b):
     return (
         asin(
             sqrt(
-                sin((p1b - p2b) / 2.0) ** 2.0
-                + cos(p1b) * cos(p2b) * sin((p1a - p2a) / 2.0) ** 2.0
+                sin((p1b - p2b) / 2.0) ** 2
+                + cos(p1b) * cos(p2b) * sin((p1a - p2a) / 2.0) ** 2
             )
         )
         * 2.0
