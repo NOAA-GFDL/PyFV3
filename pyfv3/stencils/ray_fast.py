@@ -1,3 +1,4 @@
+import dace
 import numpy as np
 
 import ndsl.constants as constants
@@ -168,6 +169,7 @@ class RayleighDamping(NDSLRuntime):
     def __init__(
         self,
         stencil_factory: StencilFactory,
+        quantity_factory: QuantityFactory,
         rf_cutoff: Float,
         tau: Float,
         hydrostatic: bool,
@@ -221,8 +223,12 @@ class RayleighDamping(NDSLRuntime):
             backend=stencil_factory.backend,
         )
         K_quantity_factory = QuantityFactory(sizer, backend=stencil_factory.backend)
-        self._damping_increment = K_quantity_factory.ones([I_DIM, J_DIM, K_DIM], "n/a")
-        self._initialize_damping_increment = np.ones((1,), dtype=int)
+        self._tmp_damping_increment = K_quantity_factory.ones(
+            [I_DIM, J_DIM, K_DIM], "n/a"
+        )
+        self._damping_increment = self.make_local(quantity_factory, [K_DIM])
+        self._initialize_damping_increment = np.ones((1,), dtype=bool)
+        self._KM = domain[2]
 
     def __call__(
         self,
@@ -248,17 +254,22 @@ class RayleighDamping(NDSLRuntime):
 
         # TODO: this is a bad fix to go around an orchestration issue
         #       on compile-time values. Do better.
-        if self._initialize_damping_increment[0] == 1:
+        if self._initialize_damping_increment[0]:
             self._ray_fast_damping_increment(
-                pfull=pfull, dt=dt, ptop=ptop, rf=self._damping_increment
+                pfull=pfull,
+                dt=dt,
+                ptop=ptop,
+                rf=self._tmp_damping_increment,
             )
-            self._initialize_damping_increment[0] = 0
+            for _k in dace.map[0 : self._KM]:
+                self._damping_increment[_k] = self._tmp_damping_increment[0, 0, _k]
+            self._initialize_damping_increment[0] = False
         self._ray_fast_wind_compute(
             u=u,
             v=v,
             w=w,
             delta_p_ref=dp,
             pfull=pfull,
-            rf=self._damping_increment[0, 0, :],
+            rf=self._damping_increment,
             rf_cutoff_nudge=rf_cutoff_nudge,
         )

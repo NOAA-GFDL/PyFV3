@@ -599,6 +599,7 @@ class AcousticDynamics(NDSLRuntime):
         if config.rf_fast:
             self._rayleigh_damping = ray_fast.RayleighDamping(
                 stencil_factory,
+                quantity_factory,
                 rf_cutoff=config.rf_cutoff,
                 tau=config.tau,
                 hydrostatic=config.hydrostatic,
