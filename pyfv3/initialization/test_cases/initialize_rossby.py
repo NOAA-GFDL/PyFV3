@@ -92,7 +92,7 @@ def _calc_rossby_delp(grid_data: GridData):
     ) * RK * RK * (np.cos(agd1) ** (R + R)) * (
         (R + 1) * (np.cos(agd1) ** 2)
         + (2 * R * R - R - 2)
-        - 2 * (R * R) * np.cos(agd1) ** (-2)
+        - 2 * (R * R) * np.cos(agd1) ** (-2.0)
     )
     b = (
         (2 * (constants.OMEGA + OMG) * RK / ((R + 1) * (R + 2)))
@@ -103,7 +103,7 @@ def _calc_rossby_delp(grid_data: GridData):
         Float(0.25)
         * RK
         * RK
-        * (np.cos(agd1) ** (2 * R))
+        * (np.cos(agd1) ** (2.0 * R))
         * ((R + 1) * (np.cos(agd1) ** 2) - (R + 2))
     )
     return GH0 + constants.RADIUS * constants.RADIUS * (
