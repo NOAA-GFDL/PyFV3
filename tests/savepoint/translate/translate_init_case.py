@@ -540,4 +540,5 @@ class TranslateAquaplanet(TranslateDycoreFortranData2Py):
         inputs["u"] = dycore_state.u
         inputs["v"] = dycore_state.v
         inputs["w"] = dycore_state.w
+        inputs["qvapor"] = dycore_state.qvapor
         return self.slice_output(inputs)
