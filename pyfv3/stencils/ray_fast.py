@@ -222,11 +222,16 @@ class RayleighDamping(NDSLRuntime):
             data_dimensions={},
             backend=stencil_factory.backend,
         )
+
+        # Not a local - because of the separate factory trick
         K_quantity_factory = QuantityFactory(sizer, backend=stencil_factory.backend)
         self._tmp_damping_increment = K_quantity_factory.ones(
             [I_DIM, J_DIM, K_DIM], "n/a"
         )
-        self._damping_increment = self.make_local(quantity_factory, [K_DIM])
+
+        # Not a local because it's a lazy initialization
+        self._damping_increment = quantity_factory.ones([K_DIM], "")
+
         self._initialize_damping_increment = np.ones((1,), dtype=bool)
         self._KM = domain[2]
 

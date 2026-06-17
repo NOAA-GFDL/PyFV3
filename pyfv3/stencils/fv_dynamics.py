@@ -334,7 +334,6 @@ class DynamicalCore(NDSLRuntime):
             )
 
         # Locals
-        # self._te0_2d = self.make_local(quantity_factory, [I_DIM, J_DIM])
         self._wsd = self.make_local(quantity_factory, [I_DIM, J_DIM])
         self._dp_initial = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._cvm = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
