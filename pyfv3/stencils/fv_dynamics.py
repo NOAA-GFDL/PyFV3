@@ -775,13 +775,7 @@ class DynamicalCore(NDSLRuntime):
 
         if self.config.nwat >= 6:
             self._adjust_tracer_mixing_ratio(
-                state.tracers[:, :, :, FVTracers.index("vapor")],
-                state.tracers[:, :, :, FVTracers.index("liquid")],
-                state.tracers[:, :, :, FVTracers.index("rain")],
-                state.tracers[:, :, :, FVTracers.index("snow")],
-                state.tracers[:, :, :, FVTracers.index("ice")],
-                state.tracers[:, :, :, FVTracers.index("graupel")],
-                state.tracers[:, :, :, FVTracers.index("cloud")],
+                state.tracers,
                 state.pt,
                 state.delp,
             )
