@@ -1,5 +1,12 @@
 from ndsl import GridIndexing, NDSLRuntime, QuantityFactory, StencilFactory
-from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
+from ndsl.constants import (
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    K_INTERFACE_DIM,
+)
 from ndsl.dsl.gt4py import PARALLEL, asin, computation, cos
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region, sin, sqrt
@@ -528,8 +535,54 @@ def doubly_periodic_a2b_ord4_stencil(qout: FloatField, qin: FloatField):
         qout = doubly_periodic_a2b_ord4(qin)
 
 
+class AGrid2BGridFourthOrderInPlace(NDSLRuntime):
+    """
+    `q` is moved from the A grid to the B grid.
+
+    Relies on `AGrid2BGridFourthOrder`
+    """
+
+    def __init__(
+        self,
+        stencil_factory: StencilFactory,
+        quantity_factory: QuantityFactory,
+        grid_data: GridData,
+        grid_type: int,
+        z_dim=K_DIM,
+    ):
+        super().__init__(stencil_factory)
+        self._a2bord4 = AGrid2BGridFourthOrder(
+            stencil_factory,
+            quantity_factory,
+            grid_data,
+            grid_type,
+            z_dim,
+        )
+
+        self._tmp_q_to_bgrid = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM]
+        )
+        self._copy_stencil = stencil_factory.from_dims_halo(
+            copy, compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, z_dim]
+        )
+
+    def __call__(self, q: FloatField):
+        """
+        Converts qin from A-grid to B-grid in place.
+
+        Args:
+            qin (inout): Input on A-grid
+            qout (out): Output on B-grid
+        """
+
+        self._a2bord4(q, self._tmp_q_to_bgrid)
+        self._copy_stencil(self._tmp_q_to_bgrid, q)
+
+
 class AGrid2BGridFourthOrder(NDSLRuntime):
     """
+    `qout` is `qin` moved from the A grid to the B grid.
+
     Fortran name is a2b_ord4, test module is A2B_Ord4
     """
 
@@ -540,7 +593,6 @@ class AGrid2BGridFourthOrder(NDSLRuntime):
         grid_data: GridData,
         grid_type: int,
         z_dim=K_DIM,
-        replace: bool = False,
     ):
         """
         Args:
@@ -558,7 +610,6 @@ class AGrid2BGridFourthOrder(NDSLRuntime):
             )
         self._idx: GridIndexing = stencil_factory.grid_indexing
         self._stencil_config = stencil_factory.config
-        self.replace = replace
         self.grid_type = grid_type
 
         if grid_type < 3:
@@ -673,19 +724,11 @@ class AGrid2BGridFourthOrder(NDSLRuntime):
             self._a2b_interpolation_stencil = stencil_factory.from_origin_domain(
                 a2b_interpolation, externals=ax_offsets, origin=origin, domain=domain
             )
-            self._copy_stencil = stencil_factory.from_dims_halo(
-                copy, compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, z_dim]
-            )
-
         else:  # grid type >= 3:
             self._doubly_periodic_a2b_ord4 = stencil_factory.from_dims_halo(
                 doubly_periodic_a2b_ord4_stencil,
                 compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, z_dim],
             )
-            if self.replace:
-                self._copy_stencil = stencil_factory.from_dims_halo(
-                    copy, compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, z_dim]
-                )
 
     def _exclude_tile_edges(self, origin, domain, dims=("x", "y")):
         """
@@ -713,10 +756,8 @@ class AGrid2BGridFourthOrder(NDSLRuntime):
         """
         Converts qin from A-grid to B-grid in qout.
 
-        If initialized with replace=True, qin is also updated to the B grid.
-
         Args:
-            qin (inout): Input on A-grid (intent=in if replace=false)
+            qin (inout): Input on A-grid
             qout (out): Output on B-grid
         """
 
@@ -794,12 +835,5 @@ class AGrid2BGridFourthOrder(NDSLRuntime):
                 self._tmp_qx,
                 self._tmp_qy,
             )
-            if self.replace:
-                self._copy_stencil(
-                    qout,
-                    qin,
-                )
         else:  # grid type >= 3:
             self._doubly_periodic_a2b_ord4(qout, qin)
-            if self.replace:
-                self._copy_stencil(qout, qin)

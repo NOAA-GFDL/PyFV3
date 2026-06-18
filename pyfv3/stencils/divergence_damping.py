@@ -517,7 +517,6 @@ class DivergenceDamping(NDSLRuntime):
                 quantity_factory=quantity_factory,
                 grid_data=grid_data,
                 grid_type=self._grid_type,
-                replace=False,
             )
 
             self._smagorinksy_diffusion_approx_stencil = (
