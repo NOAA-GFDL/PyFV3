@@ -10,6 +10,8 @@ from ndsl.dsl.typing import BoolField, Float, FloatField, FloatFieldIJ
 
 from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
+QMIN_DEFAULT = Float(0.0)
+
 
 @gtfunction
 def limit_minmax(q, a4):
@@ -607,7 +609,7 @@ class RemapProfile(NDSLRuntime):
         a4_3: FloatField,
         a4_4: FloatField,
         delp: FloatField,
-        qmin: Float = 0.0,
+        qmin: Float = QMIN_DEFAULT,
     ):
         """
         Calculates the interpolation coefficients for a cubic-spline which models the
@@ -657,5 +659,5 @@ class RemapProfile(NDSLRuntime):
                 self._ext5,
                 self._ext6,
                 self._extm,
-                Float(qmin),
+                qmin,
             )

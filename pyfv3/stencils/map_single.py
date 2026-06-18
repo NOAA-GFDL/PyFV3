@@ -15,7 +15,7 @@ from ndsl.dsl.typing import (  # noqa: F401
     IntFieldIJ,
 )
 from ndsl.stencils.basic_operations import copy
-from pyfv3.stencils.remap_profile import RemapProfile
+from pyfv3.stencils.remap_profile import QMIN_DEFAULT, RemapProfile
 
 
 def set_dp(dp1: FloatField, pe1: FloatField, lev: IntFieldIJ):
@@ -373,7 +373,7 @@ class MapSingle(NDSLRuntime):
         pe1: FloatField,
         pe2: FloatField,
         qs: Optional[FloatFieldIJ] = None,
-        qmin: Float = 0.0,
+        qmin: Float = QMIN_DEFAULT,
     ) -> None:
         """
         Compute x-flux using the PPM method.
@@ -397,7 +397,7 @@ class MapSingle(NDSLRuntime):
                 self._q4_3,
                 self._q4_4,
                 self._dp1,
-                Float(qmin),
+                qmin,
             )
         else:
             self._remap_profile(
@@ -407,7 +407,7 @@ class MapSingle(NDSLRuntime):
                 self._q4_3,
                 self._q4_4,
                 self._dp1,
-                Float(qmin),
+                qmin,
             )
 
         self._lagrangian_contributions(
