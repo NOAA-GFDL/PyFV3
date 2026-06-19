@@ -3,6 +3,7 @@ from datetime import timedelta
 import pyfv3.stencils.moist_cv as moist_cv
 from ndsl import (
     NDSLRuntime,
+    OptimizationConfig,
     Quantity,
     QuantityFactory,
     StencilFactory,
@@ -239,13 +240,20 @@ class DynamicalCore(NDSLRuntime):
                 and Remapping schemes
             timestep: model timestep
         """
-        super().__init__(stencil_factory)
+
+        opt_config = OptimizationConfig(
+            gpu=OptimizationConfig.GPU(common_gpu_xforms=False),
+            stree=OptimizationConfig.Tree(enabled=False),
+        )
+
+        super().__init__(stencil_factory, optimization_config=opt_config)
 
         orchestrate(
             obj=self,
             config=stencil_factory.config.dace_config,
             method_to_orchestrate="step_dynamics",
             dace_compiletime_args=["state", "timer"],
+            optimization_config=opt_config,
         )
 
         orchestrate(
@@ -253,6 +261,7 @@ class DynamicalCore(NDSLRuntime):
             config=stencil_factory.config.dace_config,
             method_to_orchestrate="compute_preamble",
             dace_compiletime_args=["state"],
+            optimization_config=opt_config,
         )
 
         orchestrate(
@@ -260,6 +269,7 @@ class DynamicalCore(NDSLRuntime):
             config=stencil_factory.config.dace_config,
             method_to_orchestrate="_compute",
             dace_compiletime_args=["state", "timer"],
+            optimization_config=opt_config,
         )
 
         if timestep == timedelta(seconds=0):
