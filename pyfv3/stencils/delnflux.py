@@ -452,7 +452,7 @@ class DelnFluxNoSG(NDSLRuntime):
                 nord=self._nord,
             )
 
-        self.copy_corners_x.nord(d2.data, self._nord)
+        self.copy_corners_x.nord(d2, self._nord)
 
         self._fx_calc_stencil(
             q=d2,
@@ -461,7 +461,7 @@ class DelnFluxNoSG(NDSLRuntime):
             nord=self._nord,
         )
 
-        self.copy_corners_y.nord(d2.data, self._nord)
+        self.copy_corners_y.nord(d2, self._nord)
 
         self._fy_calc_stencil(
             q=d2,
@@ -483,7 +483,7 @@ class DelnFluxNoSG(NDSLRuntime):
                 current_nord=n,
             )
 
-            self.copy_corners_x.nord(d2.data, self._nord)
+            self.copy_corners_x.nord(d2, self._nord)
 
             self._column_conditional_fx_calculation[n](
                 q=d2,
@@ -493,7 +493,7 @@ class DelnFluxNoSG(NDSLRuntime):
                 current_nord=n,
             )
 
-            self.copy_corners_y.nord(d2.data, self._nord)
+            self.copy_corners_y.nord(d2, self._nord)
 
             self._column_conditional_fy_calculation[n](
                 q=d2,
