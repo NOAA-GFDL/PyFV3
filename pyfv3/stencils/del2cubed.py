@@ -114,8 +114,16 @@ class HyperdiffusionDamping(NDSLRuntime):
             compute_dims=[I_DIM, J_DIM, K_DIM],
             compute_halos=(3, 3),
         )
+        self._copy_stencil = stencil_factory.from_dims_halo(
+            func=copy,
+            compute_dims=[I_DIM, J_DIM, K_DIM],
+            compute_halos=(3, 3),
+        )
 
         self._copy_corners_x = CopyCornersX(stencil_factory)
+        """Stencil responsible for doing corners updates in x-direction."""
+        self._copy_corners_y = CopyCornersY(stencil_factory)
+        """Stencil responsible for doing corners updates in y-direction."""
 
         self._ntimes = int(min(3, nmax))
         origins = []
@@ -138,25 +146,15 @@ class HyperdiffusionDamping(NDSLRuntime):
             domains_y.append(cast_to_index3d(domain_y))
 
         self._compute_zonal_flux = get_stencils_with_varied_bounds(
-            compute_zonal_flux, origins, domains_x, stencil_factory=stencil_factory
+            compute_zonal_flux, origins, domains_x, stencil_factory
         )
-
-        self._copy_corners_y = CopyCornersY(stencil_factory)
-        """Stencil responsible for doing corners updates in y-direction."""
 
         self._compute_meridional_flux = get_stencils_with_varied_bounds(
-            compute_meridional_flux, origins, domains_y, stencil_factory=stencil_factory
-        )
-
-        """Stencil responsible for doing corners updates in x-direction."""
-        self._copy_stencil = stencil_factory.from_dims_halo(
-            func=copy,
-            compute_dims=[I_DIM, J_DIM, K_DIM],
-            compute_halos=(3, 3),
+            compute_meridional_flux, origins, domains_y, stencil_factory
         )
 
         self._update_q = get_stencils_with_varied_bounds(
-            update_q, origins, domains, stencil_factory=stencil_factory
+            update_q, origins, domains, stencil_factory
         )
 
     def __call__(self, qdel: FloatField, cd: np.float64):
@@ -179,12 +177,12 @@ class HyperdiffusionDamping(NDSLRuntime):
             self._corner_fill(qdel, self._q)
 
             if nt > 0:
-                self._copy_corners_x(self._q.data)
+                self._copy_corners_x(self._q)
 
             self._compute_zonal_flux[n](self._fx, self._q, self._del6_v)
 
             if nt > 0:
-                self._copy_corners_y(self._q.data)
+                self._copy_corners_y(self._q)
 
             self._compute_meridional_flux[n](self._fy, self._q, self._del6_u)
 
