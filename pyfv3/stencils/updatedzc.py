@@ -221,8 +221,6 @@ class UpdateGeopotentialHeightOnCGrid(NDSLRuntime):
             domain=grid_indexing.domain_compute(add=(2, 2, 1)),
         )
 
-        self.DEBUG_VAR_1 = quantity_factory.zeros([I_DIM, J_DIM, K_DIM], "n/a")
-
     def __call__(
         self,
         zs: FloatFieldIJ,
