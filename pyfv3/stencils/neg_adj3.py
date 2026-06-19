@@ -165,8 +165,8 @@ def fillq(q: FloatField, dp: FloatField):
 def fix_water_vapor_down(dp: FloatField, tracers: FVTracers):
     """
     Args:
-        qvapor (inout):
         dp (in):
+        tracers (inout): updates the "vapor" tracer
     """
     from __externals__ import vapor
 
@@ -178,18 +178,19 @@ def fix_water_vapor_down(dp: FloatField, tracers: FVTracers):
             if tracers[0, 0, -1][vapor] < 0:  # top level is negative
                 # reduce level 1 by that amount to compensate:
                 tracers[0, 0, 0][vapor] = (
-                    tracers[0, 0, 0][vapor] + tracers[0, 0, -1][0] * dp[0, 0, -1] / dp
+                    tracers[0, 0, 0][vapor]
+                    + tracers[0, 0, -1][vapor] * dp[0, 0, -1] / dp
                 )
         with interval(0, 1):
             if tracers[0, 0, 0][vapor] < 0.0:
                 tracers[0, 0, 0][vapor] = 0.0  # top level is now 0
     with computation(FORWARD), interval(1, -1):
-        dq = tracers[0, 0, -1][0] * dp[0, 0, -1]
+        dq = tracers[0, 0, -1][vapor] * dp[0, 0, -1]
         # if we borrowed from this level to fix the upper level, account for that here:
         if lower_fix[0, 0, -1] != 0:
             tracers[0, 0, 0][vapor] += lower_fix[0, 0, -1] / dp
         # if we're now negative and can borrow from above do so:
-        if (tracers[0, 0, 0][vapor] < 0) and (tracers[0, 0, -1][0] > 0):
+        if (tracers[0, 0, 0][vapor] < 0) and (tracers[0, 0, -1][vapor] > 0):
             dq = (
                 dq
                 if dq < -tracers[0, 0, 0][vapor] * dp
