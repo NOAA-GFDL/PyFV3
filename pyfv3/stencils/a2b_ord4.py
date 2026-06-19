@@ -539,7 +539,7 @@ class AGrid2BGridFourthOrderInPlace(NDSLRuntime):
     """
     `q` is moved from the A grid to the B grid.
 
-    Relies on `AGrid2BGridFourthOrder`
+    Relies on `AGrid2BGridFourthOrder`.
     """
 
     def __init__(
@@ -568,11 +568,10 @@ class AGrid2BGridFourthOrderInPlace(NDSLRuntime):
 
     def __call__(self, q: FloatField):
         """
-        Converts qin from A-grid to B-grid in place.
+        Converts q from A-grid to B-grid in place.
 
         Args:
-            qin (inout): Input on A-grid
-            qout (out): Output on B-grid
+            q (inout): Input on A-grid, output on B-Grid
         """
 
         self._a2bord4(q, self._tmp_q_to_bgrid)
@@ -583,7 +582,7 @@ class AGrid2BGridFourthOrder(NDSLRuntime):
     """
     `qout` is `qin` moved from the A grid to the B grid.
 
-    Fortran name is a2b_ord4, test module is A2B_Ord4
+    Fortran name is a2b_ord4, test module is A2B_Ord4.
     """
 
     def __init__(
@@ -597,19 +596,19 @@ class AGrid2BGridFourthOrder(NDSLRuntime):
         """
         Args:
             stencil_factory: creates gt4py stencils
+            quantity_factory: to create tmp quantities
+            grid_data: used for the interpolation
             grid_type: integer representing the type of grid
             z_dim: defines whether vertical dimension is centered or staggered
-            replace: boolean, update qin to the B grid as well
         """
         super().__init__(stencil_factory)
 
-        if grid_type != 0 and grid_type != 4:
+        if grid_type not in (0, 4):
             raise RuntimeError(
                 "A-Grid to B-Grid 4th order (a2b_ord4):"
                 f" grid type {grid_type} is not implemented. 0 and 4 available."
             )
         self._idx: GridIndexing = stencil_factory.grid_indexing
-        self._stencil_config = stencil_factory.config
         self.grid_type = grid_type
 
         if grid_type < 3:
@@ -757,7 +756,7 @@ class AGrid2BGridFourthOrder(NDSLRuntime):
         Converts qin from A-grid to B-grid in qout.
 
         Args:
-            qin (inout): Input on A-grid
+            qin (in): Input on A-grid
             qout (out): Output on B-grid
         """
 
