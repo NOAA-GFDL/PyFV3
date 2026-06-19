@@ -18,7 +18,7 @@ from ndsl.stencils.basic_operations import adjust_divide_stencil
 from pyfv3._config import RemappingConfig
 from pyfv3.mpi.sum import GlobalSum
 from pyfv3.stencils import moist_cv
-from pyfv3.stencils.map_single import MapSingle
+from pyfv3.stencils.map_single import QMIN_DEFAULT, MapSingle
 from pyfv3.stencils.mapn_tracer import MapNTracer
 from pyfv3.stencils.moist_cv import moist_pt_last_step
 from pyfv3.stencils.remapping import (
@@ -442,9 +442,9 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
         self._mapn_tracer(self._pe1, self._pe2, self._dp2, tracers)
 
         # Map vertical wind
-        self._map_single_w(w, self._pe1, self._pe2, qs=wsd)
+        self._map_single_w(w, self._pe1, self._pe2, QMIN_DEFAULT, qs=wsd)
         self._rescale_delz_1(delz, delp)
-        self._map_single_delz(delz, self._pe1, self._pe2)
+        self._map_single_delz(delz, self._pe1, self._pe2, QMIN_DEFAULT)
         self._rescale_delz_2(delz, self._dp2)
         self._w_fix_consrv_moment(
             w=w,
@@ -459,14 +459,14 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
         # Map horizontal winds, fluxes and courant number
         self._pressures_mapu(pe, ak, bk, self._pe0, self._pe3, ptop)
         self._pe0_ptop_xmax(self._pe0, ptop)
-        self._map_single_u(u, self._pe0, self._pe3)
-        self._map_single_u(mfy, self._pe0, self._pe3)
-        self._map_single_u(cy, self._pe0, self._pe3)
+        self._map_single_u(u, self._pe0, self._pe3, QMIN_DEFAULT)
+        self._map_single_u(mfy, self._pe0, self._pe3, QMIN_DEFAULT)
+        self._map_single_u(cy, self._pe0, self._pe3, QMIN_DEFAULT)
 
         self._pressures_mapv(pe, ak, bk, self._pe0, self._pe3)
-        self._map_single_v(v, self._pe0, self._pe3)
-        self._map_single_v(mfx, self._pe0, self._pe3)
-        self._map_single_v(cx, self._pe0, self._pe3)
+        self._map_single_v(v, self._pe0, self._pe3, QMIN_DEFAULT)
+        self._map_single_v(mfx, self._pe0, self._pe3, QMIN_DEFAULT)
+        self._map_single_v(cx, self._pe0, self._pe3, QMIN_DEFAULT)
 
         self._pe_pk_delp_peln(
             pe=pe,

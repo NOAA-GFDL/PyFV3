@@ -22,7 +22,7 @@ from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.stencils.basic_operations import adjust_divide_stencil
 from pyfv3._config import RemappingConfig
 from pyfv3.stencils import moist_cv
-from pyfv3.stencils.map_single import MapSingle
+from pyfv3.stencils.map_single import QMIN_DEFAULT, MapSingle
 from pyfv3.stencils.mapn_tracer import MapNTracer
 from pyfv3.stencils.moist_cv import (
     moist_pt_func_nwat0,
@@ -708,8 +708,8 @@ class LagrangianToEulerian(NDSLRuntime):
 
         self._mapn_tracer(self._pe1, self._pe2, self._dp2, tracers)
 
-        self._map_single_w(w, self._pe1, self._pe2, qs=wsd)
-        self._map_single_delz(delz, self._pe1, self._pe2)
+        self._map_single_w(w, self._pe1, self._pe2, QMIN_DEFAULT, qs=wsd)
+        self._map_single_delz(delz, self._pe1, self._pe2, QMIN_DEFAULT)
 
         # W_limiter routine will go here
 
@@ -738,10 +738,10 @@ class LagrangianToEulerian(NDSLRuntime):
         # and exit
 
         self._pressures_mapu(pe, self._pe1, ak, bk, self._pe0, self._pe3)
-        self._map_single_u(u, self._pe0, self._pe3)
+        self._map_single_u(u, self._pe0, self._pe3, QMIN_DEFAULT)
 
         self._pressures_mapv(pe, ak, bk, self._pe0, self._pe3)
-        self._map_single_v(v, self._pe0, self._pe3)
+        self._map_single_v(v, self._pe0, self._pe3, QMIN_DEFAULT)
 
         self._update_ua(self._pe2, self._pe3)
 

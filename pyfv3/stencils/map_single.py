@@ -15,7 +15,11 @@ from ndsl.dsl.typing import (  # noqa: F401
     IntFieldIJ,
 )
 from ndsl.stencils.basic_operations import copy
-from pyfv3.stencils.remap_profile import QMIN_DEFAULT, RemapProfile
+from pyfv3.stencils.remap_profile import RemapProfile
+
+
+QMIN_DEFAULT = Float(0.0)
+"""Minimum value allowed in a cell when remapping a field"""
 
 
 def set_dp(dp1: FloatField, pe1: FloatField, lev: IntFieldIJ):
@@ -372,8 +376,8 @@ class MapSingle(NDSLRuntime):
         q1: FloatField,
         pe1: FloatField,
         pe2: FloatField,
+        qmin: Float,
         qs: Optional[FloatFieldIJ] = None,
-        qmin: Float = QMIN_DEFAULT,
     ) -> None:
         """
         Compute x-flux using the PPM method.
@@ -382,8 +386,8 @@ class MapSingle(NDSLRuntime):
             q1 (out): Remapped field on Eulerian grid
             pe1 (in): Lagrangian pressure levels
             pe2 (in): Eulerian pressure levels
-            qs (in): Bottom boundary condition
             qmin (in): Minimum allowed value of the remapped field
+            qs (in): Bottom boundary condition
         """
 
         self._copy_stencil(q1, self._q4_1)

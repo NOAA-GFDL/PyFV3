@@ -2,7 +2,7 @@ from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import FloatField
 from pyfv3.stencils.fillz import FillNegativeTracerValues
-from pyfv3.stencils.map_single import MapSingle
+from pyfv3.stencils.map_single import QMIN_DEFAULT, MapSingle
 from pyfv3.tracers import FVTracers
 
 
@@ -70,9 +70,13 @@ class MapNTracer(NDSLRuntime):
         """
         for i_tracer in range(0, self._nq):
             if i_tracer == self._index_cloud:
-                self._map_single_kord9(tracers[:, :, :, i_tracer], pe1, pe2)
+                self._map_single_kord9(
+                    tracers[:, :, :, i_tracer], pe1, pe2, QMIN_DEFAULT
+                )
             else:
-                self._map_single_parametrized_kord(tracers[:, :, :, i_tracer], pe1, pe2)
+                self._map_single_parametrized_kord(
+                    tracers[:, :, :, i_tracer], pe1, pe2, QMIN_DEFAULT
+                )
 
         if self._fill_negative_tracers:
             self._fillz(dp2, tracers)

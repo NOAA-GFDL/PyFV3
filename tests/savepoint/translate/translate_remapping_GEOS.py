@@ -13,6 +13,7 @@ from ndsl.constants import (
 )
 from ndsl.dsl.typing import Float
 from ndsl.stencils.testing import Grid, ParallelTranslateBaseSlicing
+from ndsl.utils import safe_assign_array
 from pyfv3 import DynamicalCoreConfig
 from pyfv3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
 from pyfv3.tracers import FVTracers, FVTracersAxisName, setup_fvtracers
@@ -430,7 +431,7 @@ class TranslateRemapping_GEOS(ParallelTranslateBaseSlicing):
         self._tracers = self.quantity_factory.empty(
             [I_DIM, J_DIM, K_DIM, FVTracersAxisName], ""
         )
-        self._tracers[:-1, :-1, :-1, :] = inputs["tracers"][:]
+        safe_assign_array(self._tracers[:-1, :-1, :-1, :], inputs["tracers"])
         inputs.pop("tracers")
         self._base.in_vars["data_vars"].pop("tracers")
 

@@ -4,7 +4,7 @@ from ndsl import StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
-from pyfv3.stencils.map_single import MapSingle
+from pyfv3.stencils.map_single import QMIN_DEFAULT, MapSingle
 
 
 class TranslateMap1_PPM_W(TranslateFortranData2Py):
@@ -67,6 +67,7 @@ class TranslateMap1_PPM_W(TranslateFortranData2Py):
             inputs["w_"],
             inputs["pe1_"],
             inputs["pe2_"],
+            QMIN_DEFAULT,
             qs=inputs["ws_"],
         )
         return inputs

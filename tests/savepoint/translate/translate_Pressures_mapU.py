@@ -4,7 +4,7 @@ from ndsl import StencilFactory
 from ndsl.constants import I_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
-from pyfv3.stencils.map_single import MapSingle
+from pyfv3.stencils.map_single import QMIN_DEFAULT, MapSingle
 from pyfv3.stencils.remapping import pe0_ptop_xmax, pressures_mapu
 
 
@@ -147,16 +147,19 @@ class TranslatePressures_mapU(TranslateFortranData2Py):
             inputs["u_"],
             inputs["pe0_"],
             inputs["pe3_"],
+            QMIN_DEFAULT,
         )
         self._map1_ppm_u(
             inputs["mfy_"],
             inputs["pe0_"],
             inputs["pe3_"],
+            QMIN_DEFAULT,
         )
 
         self._map1_ppm_u(
             inputs["cy_"],
             inputs["pe0_"],
             inputs["pe3_"],
+            QMIN_DEFAULT,
         )
         return inputs

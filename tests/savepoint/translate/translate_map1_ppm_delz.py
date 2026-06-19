@@ -6,7 +6,7 @@ from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import FloatField
 from ndsl.stencils.testing import TranslateFortranData2Py
 from ndsl.stencils.testing.grid import Grid
-from pyfv3.stencils.map_single import MapSingle
+from pyfv3.stencils.map_single import QMIN_DEFAULT, MapSingle
 
 
 def rescale_delz_1(
@@ -110,6 +110,7 @@ class TranslateMap1_PPM_delz(TranslateFortranData2Py):
             inputs["delz_"],
             inputs["pe1_"],
             inputs["pe2_"],
+            QMIN_DEFAULT,
             qs=inputs["gz_"],
         )
 
