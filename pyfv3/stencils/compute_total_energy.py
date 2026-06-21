@@ -1,7 +1,7 @@
 from gt4py.cartesian.gtscript import (  # isort: skip
     __INLINED,
     BACKWARD,
-    FORWARD,
+    PARALLEL,
     K,
     computation,
     interval,
@@ -56,7 +56,7 @@ def _compute_total_energy__stencil(
         phis = hs
     with computation(BACKWARD), interval(0, -1):
         phis = phis[K + 1] - GRAV * delz
-    with computation(FORWARD), interval(0, -1):
+    with computation(PARALLEL), interval(0, -1):
         if __INLINED(nwat == 0):
             cvm, qd = moist_cv_nwat0_fn()
         elif __INLINED(nwat == 6):
