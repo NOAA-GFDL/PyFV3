@@ -5,7 +5,7 @@ def get_optimization_config(backend: Backend) -> OptimizationConfig:
     if backend.is_gpu_backend():
         return OptimizationConfig(
             stree=OptimizationConfig.Tree(
-                enabled=True,
+                enabled=False,
                 kernalize=True,
                 merger=OptimizationConfig.Tree.Merger(enabled=False, overcompute=False),
             ),
