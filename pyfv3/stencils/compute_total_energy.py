@@ -5,6 +5,7 @@ from gt4py.cartesian.gtscript import (  # isort: skip
     K,
     computation,
     interval,
+    FORWARD,
 )
 
 from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
@@ -68,7 +69,7 @@ def _compute_total_energy__stencil(
                 tracers.A[i_ice],
                 tracers.A[i_graupel],
             )
-
+    with computation(FORWARD), interval(0, -1):
         te_2d = te_2d + delp * (
             cvm * pt * (1.0 + qc) * (1.0 - qd)
             + 0.5
