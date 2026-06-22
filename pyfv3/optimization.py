@@ -11,11 +11,11 @@ def get_optimization_config(backend: Backend) -> OptimizationConfig:
             ),
             gpu=OptimizationConfig.GPU(common_gpu_xforms=False),
         )
-    else:
-        return OptimizationConfig(
-            stree=OptimizationConfig.Tree(
-                enabled=False,
-                kernalize=False,
-                merger=OptimizationConfig.Tree.Merger(enabled=True, overcompute=False),
-            ),
-        )
+
+    return OptimizationConfig(
+        stree=OptimizationConfig.Tree(
+            enabled=False,
+            kernalize=False,
+            merger=OptimizationConfig.Tree.Merger(enabled=True, overcompute=False),
+        ),
+    )
