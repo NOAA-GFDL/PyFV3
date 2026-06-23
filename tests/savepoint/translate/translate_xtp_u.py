@@ -5,7 +5,7 @@ from ndsl import StencilFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from pyfv3.stencils import xtp_u
-from tests.savepoint.translate.translate_ytp_v import TranslateYTP_V
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 def xtp_u_stencil_defn(
@@ -63,17 +63,10 @@ class XTP_U:
             u (in): x-dir wind on D-grid
             flux (out): Flux of kinetic energy
         """
-        self._stencil(
-            c,
-            u,
-            flux,
-            self._dx,
-            self._dxa,
-            self._rdx,
-        )
+        self._stencil(c, u, flux, self._dx, self._dxa, self._rdx)
 
 
-class TranslateXTP_U(TranslateYTP_V):
+class TranslateXTP_U(TranslateDycoreFortranData2Py):
     def __init__(
         self,
         grid,
@@ -81,10 +74,13 @@ class TranslateXTP_U(TranslateYTP_V):
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
-        self.in_vars["data_vars"]["u"] = {}
-        self.in_vars["data_vars"]["c"]["serialname"] = "ub"
-        self.in_vars["data_vars"]["flux"]["serialname"] = "vb"
-        self.stencil_factory = stencil_factory
+        c_info = self.grid.compute_dict_buffer_2d()
+        c_info["serialname"] = "ub"
+        flux_info = self.grid.compute_dict_buffer_2d()
+        flux_info["serialname"] = "vb"
+        self.in_vars["data_vars"] = {"c": c_info, "u": {}, "flux": flux_info}
+        self.in_vars["parameters"] = []
+        self.out_vars = {"flux": flux_info}
 
     def compute_from_storage(self, inputs):
         xtp_obj = XTP_U(
