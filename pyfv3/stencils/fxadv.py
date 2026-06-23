@@ -501,7 +501,7 @@ def fxadv_fluxes_stencil(
         with horizontal(region[local_is : local_ie + 2, :]):
             # Including the temporary (tmp) calculation enables x_area_flux and y_area_flux
             # to more closely precision match the respective Fortran calculation
-            # since Fortran also performs this temporary calcuation
+            # since Fortran also performs this temporary calculation
             tmp = dt * uc_contra
             if uc_contra > 0:
                 crx = tmp * rdxa[-1, 0]

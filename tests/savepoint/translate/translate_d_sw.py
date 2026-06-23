@@ -22,7 +22,7 @@ class TranslateD_SW(TranslateDycoreFortranData2Py):
             config=self.config.acoustic_dynamics.d_grid_shallow_water,
             quantity_factory=self.grid.quantity_factory,
         )
-        self.compute_func = d_sw.DGridShallowWaterLagrangianDynamics(  # type: ignore
+        self.compute_func = d_sw.DGridShallowWaterLagrangianDynamics(
             stencil_factory=self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             grid_data=self.grid.grid_data,

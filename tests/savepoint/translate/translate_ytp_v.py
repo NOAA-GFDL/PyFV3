@@ -83,7 +83,6 @@ class TranslateYTP_V(TranslateDycoreFortranData2Py):
         self.in_vars["data_vars"] = {"c": c_info, "v": {}, "flux": flux_info}
         self.in_vars["parameters"] = []
         self.out_vars = {"flux": flux_info}
-        self.stencil_factory = stencil_factory
 
     def compute_from_storage(self, inputs):
         ytp_obj = YTP_V(
