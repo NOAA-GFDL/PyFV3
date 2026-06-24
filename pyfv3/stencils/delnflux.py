@@ -268,32 +268,30 @@ class DelnFlux(NDSLRuntime):
             d2 (in): A damped copy of the q field
             mass (in): Mass to weight the diffusive flux by
         """
-        if self._no_compute:
-            return fx, fy
+        if not self._no_compute:
+            # [DaCe] Optional d2 gets reduced to subset 0 in DaCe parsing leading to a
+            # parsing error
+            # Original code:
+            # if d2 is None:
+            #     d2 = self._d2
+            # fx2 and fy2 are local variables containing the diffusive flux, which
+            # gets added to the base flux below
+            if d2 is None:
+                self.delnflux_nosg(q, self._fx2, self._fy2, self._damp, self._d2, mass)
+            else:
+                self.delnflux_nosg(q, self._fx2, self._fy2, self._damp, d2, mass)
 
-        # [DaCe] Optional d2 gets reduced to subset 0 in DaCe parsing leading to a
-        # parsing error
-        # Original code:
-        # if d2 is None:
-        #     d2 = self._d2
-        # fx2 and fy2 are local variables containing the diffusive flux, which
-        # gets added to the base flux below
-        if d2 is None:
-            self.delnflux_nosg(q, self._fx2, self._fy2, self._damp, self._d2, mass)
-        else:
-            self.delnflux_nosg(q, self._fx2, self._fy2, self._damp, d2, mass)
+            if mass is None:
+                self._add_diffusive_stencil(fx, self._fx2, fy, self._fy2)
+            else:
+                # TODO: To join these stencils you need to overcompute, making the edges
+                # 'wrong', but not actually used, separating now for comparison sanity.
 
-        if mass is None:
-            self._add_diffusive_stencil(fx, self._fx2, fy, self._fy2)
-        else:
-            # TODO: To join these stencils you need to overcompute, making the edges
-            # 'wrong', but not actually used, separating now for comparison sanity.
-
-            # diffusive_damp(fx, fx2, fy, fy2, mass, damp, origin=diffuse_origin,
-            # domain=(grid.nic + 1, grid.njc + 1, nk))
-            self._diffusive_damp_stencil(fx, self._fx2, fy, self._fy2, mass, self._damp)
-
-        return fx, fy
+                # diffusive_damp(fx, fx2, fy, fy2, mass, damp, origin=diffuse_origin,
+                # domain=(grid.nic + 1, grid.njc + 1, nk))
+                self._diffusive_damp_stencil(
+                    fx, self._fx2, fy, self._fy2, mass, self._damp
+                )
 
 
 class DelnFluxNoSG(NDSLRuntime):
