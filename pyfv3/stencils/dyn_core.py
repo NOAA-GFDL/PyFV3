@@ -213,6 +213,7 @@ def get_nk_heat_dissipation(
     return nk_heat_dissipation
 
 
+# TODO unused function (forgot to remove when moving to locals?)
 def dyncore_temporaries(
     quantity_factory: QuantityFactory,
 ) -> Mapping[str, Quantity]:

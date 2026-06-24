@@ -3,7 +3,7 @@ from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.grid import DampingCoefficients, GridData
 from pyfv3.stencils.copy_corners import CopyCornersX, CopyCornersY
 from pyfv3.stencils.delnflux import DelnFlux
@@ -138,13 +138,6 @@ class FiniteVolumeTransport(NDSLRuntime):
         # use a shorter alias for grid_indexing here to avoid very verbose lines
         idx = stencil_factory.grid_indexing
         self._area = grid_data.area
-
-        def make_quantity():
-            return quantity_factory.zeros(
-                [I_DIM, J_DIM, K_DIM],
-                units="unknown",
-                dtype=Float,
-            )
 
         self._q_advected_y = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._q_advected_x = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
