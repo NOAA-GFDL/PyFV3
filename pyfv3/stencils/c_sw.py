@@ -792,4 +792,3 @@ class CGridShallowWaterDynamics(NDSLRuntime):
             self.grid_data.rdxc,
             dt2,
         )
-        return self.delpc, self.ptc

@@ -80,7 +80,7 @@ class TranslateC_SW(TranslateDycoreFortranData2Py):
         cgrid_shallow_water_lagrangian_dynamics = get_c_sw_instance(
             grid, self.config, stencil_factory, self.grid.quantity_factory
         )
-        self.compute_func = cgrid_shallow_water_lagrangian_dynamics  # type: ignore
+        self.compute_func = cgrid_shallow_water_lagrangian_dynamics
         self.in_vars["data_vars"] = {
             "delp": {},
             "pt": {},
@@ -110,8 +110,10 @@ class TranslateC_SW(TranslateDycoreFortranData2Py):
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
-        delpc, ptc = self.compute_func(**inputs)
-        return self.slice_output(inputs, {"delpcd": delpc, "ptcd": ptc})
+        self.compute_func(**inputs)
+        return self.slice_output(
+            inputs, {"delpcd": self.compute_func.delpc, "ptcd": self.compute_func.ptc}
+        )
 
 
 class TranslateDivergenceCorner(TranslateDycoreFortranData2Py):
