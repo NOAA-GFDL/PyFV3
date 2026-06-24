@@ -16,7 +16,7 @@ class TranslateRiem_Solver_C(TranslateDycoreFortranData2Py):
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
-        self.compute_func = NonhydrostaticVerticalSolverCGrid(  # type: ignore
+        self.compute_func = NonhydrostaticVerticalSolverCGrid(
             stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             p_fac=self.config.p_fac,
@@ -35,7 +35,6 @@ class TranslateRiem_Solver_C(TranslateDycoreFortranData2Py):
         self.in_vars["parameters"] = ["dt2", "ptop"]
         self.out_vars = {"pef": {"kend": grid.npz}, "gz": {"kend": grid.npz}}
         self.max_error = 5e-14
-        self.stencil_factory = stencil_factory
         self._subset = get_subset_func(
             self.grid.grid_indexing,
             dims=[I_DIM, J_DIM, K_DIM],
@@ -54,5 +53,5 @@ class TranslateRiem_Solver_C(TranslateDycoreFortranData2Py):
         """
         if varname in ["gz", "pef"]:
             return self._subset(output)
-        else:
-            return output
+
+        return output

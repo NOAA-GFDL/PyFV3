@@ -78,7 +78,6 @@ class TranslateRiem_Solver3(TranslateDycoreFortranData2Py):
             "pk": grid.compute_buffer_k_dict(),
             "pk3": grid.default_buffer_k_dict(),
         }
-        self.stencil_factory = stencil_factory
 
     def compute_func(self, **kwargs):
         kwargs["last_call"] = bool(kwargs["last_call"])

@@ -22,7 +22,7 @@ def get_c_sw_instance(
     )
 
 
-def compute_vorticitytransport_cgrid(
+def compute_vorticity_transport_c_grid(
     c_sw: CGridShallowWaterDynamics,
     uc,
     vc,
@@ -107,7 +107,6 @@ class TranslateC_SW(TranslateDycoreFortranData2Py):
         # TODO: Fix edge_interpolate4 in d2a2c_vect to match closer and the
         # variables here should as well.
         self.max_error = 2e-10
-        self.stencil_factory = stencil_factory
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
@@ -152,7 +151,6 @@ class TranslateDivergenceCorner(TranslateDycoreFortranData2Py):
                 "jend": grid.jed + 1,
             }
         }
-        self.stencil_factory = stencil_factory
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
@@ -203,7 +201,6 @@ class TranslateCirculation_Cgrid(TranslateDycoreFortranData2Py):
                 "jend": grid.je + 1,
             }
         }
-        self.stencil_factory = stencil_factory
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
@@ -228,7 +225,7 @@ class TranslateVorticityTransport_Cgrid(TranslateDycoreFortranData2Py):
         )
 
         def compute_func(*args, **kwargs):
-            return compute_vorticitytransport_cgrid(
+            return compute_vorticity_transport_c_grid(
                 cgrid_sw_lagrangian_dynamics, *args, **kwargs
             )
 
@@ -253,4 +250,3 @@ class TranslateVorticityTransport_Cgrid(TranslateDycoreFortranData2Py):
         }
         self.in_vars["parameters"] = ["dt2"]
         self.out_vars = {"uc": grid.x3d_domain_dict(), "vc": grid.y3d_domain_dict()}
-        self.stencil_factory = stencil_factory
