@@ -38,6 +38,7 @@ def init_aquaplanet_state(
     numpy_state.delp[:NHALO, NHALO + ny :] = 0.0
     numpy_state.delp[NHALO + nx :, :NHALO] = 0.0
     numpy_state.delp[NHALO + nx :, NHALO + ny :] = 0.0
+
     numpy_state.pe[:] = 0.0
     numpy_state.pt[:] = 1.0
     numpy_state.ua[:] = 1e35
@@ -47,7 +48,11 @@ def init_aquaplanet_state(
     numpy_state.w[:] = 1.0e30
     numpy_state.delz[:] = 1.0e25
     numpy_state.phis[:] = 1.0e25
-    numpy_state.ps[:] = SURFACE_PRESSURE
+
+    # Initializing to Fortran values does for easy comparison
+    numpy_state.ps[:] = 0
+    numpy_state.ps[NHALO:NHALO + nx, NHALO:-(NHALO+1)] = SURFACE_PRESSURE
+
     eta = np.zeros(npz)
     eta_v = np.zeros(npz)
     islice, jslice, slice_3d, slice_2d = init_utils.compute_slices(nx, ny)
@@ -86,13 +91,12 @@ def init_aquaplanet_state(
         numpy_state.w[:] = 0.0
 
     numpy_state.phis[:] = 0.0
-    # print(numpy_state.ps.shape)
     init_utils.hydro_eq(
         nz,
         isc,
-        iec,
+        iec-1,
         jsc,
-        jec,
+        jec-1,
         numpy_state.ps[:],
         numpy_state.phis[:],
         1.0e5,

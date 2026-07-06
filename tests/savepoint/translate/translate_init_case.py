@@ -8,21 +8,29 @@ import ndsl.dsl.gt4py_utils as utils
 import pyfv3.initialization.analytic_init as analytic_init
 import pyfv3.initialization.init_utils as init_utils
 import pyfv3.initialization.test_cases.initialize_baroclinic as baroclinic_init
-from ndsl import QuantityFactory, StencilFactory, SubtileGridSizer
+import pyfv3.initialization.test_cases.initialize_aquaplanet as aq_init
+from ndsl import (
+    CubedSphereCommunicator,
+    CubedSpherePartitioner,
+    QuantityFactory,
+    StencilFactory,
+    SubtileGridSizer,
+    TilePartitioner,
+)
 from ndsl.constants import (
+    N_HALO_DEFAULT,
     I_DIM,
     I_INTERFACE_DIM,
     J_DIM,
     J_INTERFACE_DIM,
     K_DIM,
     K_INTERFACE_DIM,
-    N_HALO_DEFAULT,
 )
 from ndsl.grid import GridData, MetricTerms
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
 from ndsl.stencils.testing.grid import TRACER_DIM  # type: ignore
 from pyfv3 import DycoreState, DynamicalCoreConfig
-from pyfv3.testing import TranslateDycoreFortranData2Py
+from pyfv3.testing import NullComm, TranslateDycoreFortranData2Py
 
 
 class TranslateInitCase(ParallelTranslateBaseSlicing):
@@ -170,7 +178,8 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
 
     def compute_sequential(self, *args, **kwargs):
         pytest.skip(
-            f"{self.__class__} only has a mpirun implementation, not running in mock-parallel"
+            f"{self.__class__} only has a mpirun implementation, "
+            "not running in mock-parallel"
         )
 
     def outputs_from_state(self, state: DycoreState) -> dict:
@@ -238,7 +247,7 @@ def make_sliced_inputs_dict(inputs, slice_2d):
                 slices = slice_2d
             sliced_inputs[k] = inputs[k][slices]
         else:
-            sliced_inputs[k] = inputs[k]
+            sliced_inputs[k] = np.asarray(inputs[k])
     return sliced_inputs
 
 
@@ -313,10 +322,10 @@ class TranslateJablonowskiBaroclinic(TranslateDycoreFortranData2Py):
             "eta_v": {"istart": 0, "iend": 0, "jstart": 0, "jend": 0},
             "eta": {"istart": 0, "iend": 0, "jstart": 0, "jend": 0},
             "peln": {
-                "istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
+                "istart": grid.isd,
+                "iend": grid.ied,
+                "jstart": grid.jsd,
+                "jend": grid.jed,
                 "kend": grid.npz,
                 "kaxis": 1,
             },
@@ -329,7 +338,13 @@ class TranslateJablonowskiBaroclinic(TranslateDycoreFortranData2Py):
             "w": {},
             "pt": {},
             "phis": {},
-            "delz": {},
+            "delz": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz - 1,
+            },
             "qvapor": {},
         }
         self.ignore_near_zero_errors = {}
@@ -355,15 +370,16 @@ class TranslateJablonowskiBaroclinic(TranslateDycoreFortranData2Py):
             slice(self.grid.is_, self.grid.ie + 2),
             slice(self.grid.js, self.grid.je + 2),
         )
+
         grid_vars = {
-            "lon": self.grid.bgrid1.data[slice_2d],
-            "lat": self.grid.bgrid2.data[slice_2d],
-            "lon_agrid": self.grid.agrid1.data[slice_2d],
-            "lat_agrid": self.grid.agrid2.data[slice_2d],
-            "ee1": self.grid.ee1.data[slice_2d],
-            "ee2": self.grid.ee2.data[slice_2d],
-            "es1": self.grid.es1.data[slice_2d],
-            "ew2": self.grid.ew2.data[slice_2d],
+            "lon": np.asarray(self.grid.bgrid1.data)[slice_2d], # Convert from memoryview to numpy array for slicing
+            "lat": np.asarray(self.grid.bgrid2.data)[slice_2d],
+            "lon_agrid": np.asarray(self.grid.agrid1.data)[slice_2d],
+            "lat_agrid": np.asarray(self.grid.agrid2.data)[slice_2d],
+            "ee1": np.asarray(self.grid.ee1.data)[slice_2d],
+            "ee2": np.asarray(self.grid.ee2.data)[slice_2d],
+            "es1": np.asarray(self.grid.es1.data)[slice_2d],
+            "ew2": np.asarray(self.grid.ew2.data)[slice_2d],
         }
         inputs["w"][:] = 1e30
         inputs["delz"][:] = 1e30
@@ -436,4 +452,93 @@ class TranslatePVarAuxiliaryPressureVars(TranslateDycoreFortranData2Py):
             moist_phys=self.config.moist_phys,
             make_nh=(not self.config.hydrostatic),
         )
+        return self.slice_output(inputs)
+
+class TranslateAquaplanet(TranslateDycoreFortranData2Py):
+    """ Translate the Fortran initialization for the Aquaplanet test case.
+    """
+    def __init__(
+        self,
+        grid,
+        namelist: Namelist,
+        stencil_factory: StencilFactory,
+    ):
+        super().__init__(grid, namelist, stencil_factory)
+        self.in_vars["data_vars"] = {
+            "u": {},
+            "v": {},
+            "w": {},
+            "ps": {},
+            "phis": {},
+            "pt": {},
+            "delp": {},
+            "delz": {},
+            "qvapor": {},
+        }
+        self.in_vars["parameters"] = []
+
+        self.out_vars = {
+            "u": grid.y3d_domain_dict(),
+            "v": grid.x3d_domain_dict(),
+            "w": {},
+            "ps": {},
+            "phis": {},
+            "pt": {},
+            "delp": {},
+            "delz": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+            },
+            "qvapor": {},
+        }
+        self.ignore_near_zero_errors = {}
+        self.max_error = 1e-13
+        self.stencil_factory = stencil_factory
+
+
+    def compute(self, inputs):
+        mpi_comm = NullComm(
+            rank=self.grid.rank,
+            total_ranks=6 * self.config.layout[0] * self.config.layout[1],
+        )
+        partitioner = CubedSpherePartitioner(TilePartitioner(self.config.layout))
+        communicator = CubedSphereCommunicator(mpi_comm, partitioner)
+        sizer = SubtileGridSizer.from_tile_params(
+            nx_tile=self.config.npx - 1,
+            ny_tile=self.config.npx - 1,
+            nz=self.config.npz,
+            n_halo=N_HALO_DEFAULT,
+            data_dimensions={},
+            layout=self.config.layout,
+            backend=self.stencil_factory.backend,
+        )
+        quantity_factory = QuantityFactory(sizer, backend=self.stencil_factory.backend)
+        metric_terms = MetricTerms(
+            quantity_factory=quantity_factory,
+            communicator=communicator,
+            grid_type=self.config.grid_type,
+            ak=self.grid.ak,
+            bk=self.grid.bk,
+        )
+
+        grid_data = GridData.new_from_metric_terms(metric_terms)
+        hydrostatic = self.config.hydrostatic
+        moist_phys = self.config.moist_phys
+
+        # Main call being tested
+        dycore_state = aq_init.init_aquaplanet_state(
+            grid_data, quantity_factory, hydrostatic, moist_phys, communicator
+        )
+
+        inputs["ps"] = dycore_state.ps
+        inputs["phis"] = dycore_state.phis
+        inputs["pt"] = dycore_state.pt
+        inputs["delp"] = dycore_state.delp
+        inputs["delz"] = dycore_state.delz
+        inputs["u"] = dycore_state.u
+        inputs["v"] = dycore_state.v
+        inputs["w"] = dycore_state.w
+        inputs["qvapor"] = dycore_state.qvapor
         return self.slice_output(inputs)
