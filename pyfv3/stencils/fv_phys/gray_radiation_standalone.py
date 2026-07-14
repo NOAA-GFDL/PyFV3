@@ -101,6 +101,7 @@ class GrayRadSolo:
         self._clouds = make_quantity_2d()
         self._t_dt_rad = make_quantity()
         self._p3 = make_quantity()
+        self._den = make_quantity()
 
         self._gather_inputs = stencil_factory.from_dims_halo(
             gather_inputs,
@@ -144,14 +145,64 @@ class GrayRadSolo:
             },
         )
         
-    def __call__(self,):
-        self._gather_inputs()
+    def __call__(
+        self,
+        pt,
+        ql,
+        qi,
+        qa,
+        delp,
+        pe,
+        peln,
+        ps,
+        delz,
+        t_dt,
+        ts,
+        olr,
+        lwu,
+        lwd,
+        sw_surf,
+        t_out,
+    ):
+        self._gather_inputs(
+            delp,
+            peln,
+            delz,
+            self._p3,
+            self._den,
+        )
 
         if self._prog_low_cloud:
-            self._get_low_clouds()
+            self._get_low_clouds(
+                ql,
+                qi,
+                qa,
+                self._clouds,
+            )
         else:
-            self._set_clouds()
+            self._set_clouds(
+                self._clouds,
+            )
 
-        self._gray_rad()
+        self._gray_rad(
+            self._clouds,
+            ts,
+            pt,
+            ps,
+            pe,
+            delz,
+            self._den,
+            self._t_dt_rad,
+            olr,
+            lwu,
+            lwd,
+            sw_surf,
+        )
 
-        self._maybe_calc_strat_rad_and_set_temp()
+        self._maybe_calc_strat_rad_and_set_temp(
+            self._p3,
+            t_dt,
+            self._t_dt_rad,
+            pt,
+            t_out,
+        )
