@@ -735,7 +735,10 @@ ArgSpec = collections.namedtuple(
 
 class DryConvectiveAdjustment:
     """
-    Corresponds to fv_subgrid_z in Fortran's fv_sg module
+    Corresponds to fv_subgrid_z in Fortran's fv_sg module.
+
+    ⚠️ ⚠️ ⚠️ This code fell out of validation sometime in 2024 ⚠️ ⚠️ ⚠️
+    ⚠️ ⚠️ ⚠️ Translate test deactivated - need re-validation   ⚠️ ⚠️ ⚠️
     """
 
     arg_specs = (

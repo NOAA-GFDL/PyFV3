@@ -1,4 +1,4 @@
-from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import (
     I_DIM,
     I_INTERFACE_DIM,
@@ -26,6 +26,7 @@ from pyfv3.stencils.map_single import MapSingle
 from pyfv3.stencils.mapn_tracer import MapNTracer
 from pyfv3.stencils.moist_cv import moist_pt_func, moist_pt_last_step
 from pyfv3.stencils.saturation_adjustment import SatAdjust3d
+from pyfv3.tracers import FVTracers
 
 
 from gt4py.cartesian.gtscript import __INLINED  # isort:skip
@@ -278,7 +279,7 @@ def copy_from_below(a: FloatField, b: FloatField):
         b = a[0, 0, -1]
 
 
-class LagrangianToEulerian:
+class LagrangianToEulerian(NDSLRuntime):
     """
     Fortran name is Lagrangian_to_Eulerian
     """
@@ -291,13 +292,9 @@ class LagrangianToEulerian:
         area_64,
         nq,
         pfull,
-        tracers: dict[str, Quantity],
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            dace_compiletime_args=["tracers"],
-        )
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         if config.kord_tm >= 0:
             raise NotImplementedError("map ppm, untested mode where kord_tm >= 0")
@@ -315,48 +312,57 @@ class LagrangianToEulerian:
             grid_indexing.domain[2] + 1,
         )
 
-        self._pe1 = quantity_factory.zeros(
+        self._pe1 = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
-        self._pe2 = quantity_factory.zeros(
+        self._pe2 = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
-        self._pe3 = quantity_factory.zeros(
+        self._pe3 = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
-        self._dp2 = quantity_factory.zeros(
+        self._dp2 = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="Pa",
             dtype=Float,
         )
-        self._pn2 = quantity_factory.zeros(
+        self._pn2 = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="Pa",
             dtype=Float,
         )
-        self._pe0 = quantity_factory.zeros(
+        self._pe0 = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
-        self._pe3 = quantity_factory.zeros(
+        self._pe3 = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
             dtype=Float,
         )
 
-        self._gz = quantity_factory.zeros(
+        self._gz = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="m^2 s^-2",
             dtype=Float,
         )
-        self._cvm = quantity_factory.zeros(
+        self._cvm = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
@@ -405,7 +411,6 @@ class LagrangianToEulerian:
             abs(config.kord_tr),
             nq,
             fill=config.fill,
-            tracers=tracers,
         )
 
         self._map_single_w = MapSingle(
@@ -511,7 +516,7 @@ class LagrangianToEulerian:
 
     def __call__(
         self,
-        tracers: dict[str, Quantity],
+        tracers: FVTracers,
         pt: FloatField,
         delp: FloatField,
         delz: FloatField,
@@ -521,7 +526,6 @@ class LagrangianToEulerian:
         w: FloatField,
         cappa: FloatField,
         q_con: FloatField,
-        q_cld: FloatField,
         pkz: FloatField,
         pk: FloatField,
         pe: FloatField,
@@ -555,7 +559,6 @@ class LagrangianToEulerian:
             va (inout): A-grid y-velocity
             cappa (inout): Power to raise pressure to
             q_con (out): Total condensate mixing ratio
-            q_cld (out): Cloud fraction
             pkz (in): Layer mean pressure raised to the power of Kappa
             pk (out): Interface pressure raised to power of kappa, final acoustic value
             pe (in): Pressure at layer edges
@@ -586,12 +589,12 @@ class LagrangianToEulerian:
         # pe2 is final Eulerian edge pressures
 
         self._moist_cv_pt_pressure(
-            tracers["qvapor"],
-            tracers["qliquid"],
-            tracers["qrain"],
-            tracers["qsnow"],
-            tracers["qice"],
-            tracers["qgraupel"],
+            tracers[:, :, :, FVTracers.index("vapor")],
+            tracers[:, :, :, FVTracers.index("liquid")],
+            tracers[:, :, :, FVTracers.index("rain")],
+            tracers[:, :, :, FVTracers.index("snow")],
+            tracers[:, :, :, FVTracers.index("ice")],
+            tracers[:, :, :, FVTracers.index("graupel")],
             q_con,
             pt,
             cappa,
@@ -626,12 +629,12 @@ class LagrangianToEulerian:
         # it clear the outputs are not needed until then?
         # or, are its outputs actually used? can we delete this stencil call?
         self._moist_cv_pkz(
-            tracers["qvapor"],
-            tracers["qliquid"],
-            tracers["qrain"],
-            tracers["qsnow"],
-            tracers["qice"],
-            tracers["qgraupel"],
+            tracers[:, :, :, FVTracers.index("vapor")],
+            tracers[:, :, :, FVTracers.index("liquid")],
+            tracers[:, :, :, FVTracers.index("rain")],
+            tracers[:, :, :, FVTracers.index("snow")],
+            tracers[:, :, :, FVTracers.index("ice")],
+            tracers[:, :, :, FVTracers.index("graupel")],
             q_con,
             self._gz,
             self._cvm,
@@ -675,13 +678,13 @@ class LagrangianToEulerian:
             fast_mp_consv = consv_te > CONSV_MIN
             self._saturation_adjustment(
                 dp1,
-                tracers["qvapor"],
-                tracers["qliquid"],
-                tracers["qice"],
-                tracers["qrain"],
-                tracers["qsnow"],
-                tracers["qgraupel"],
-                q_cld,
+                tracers[:, :, :, FVTracers.index("vapor")],
+                tracers[:, :, :, FVTracers.index("liquid")],
+                tracers[:, :, :, FVTracers.index("ice")],
+                tracers[:, :, :, FVTracers.index("rain")],
+                tracers[:, :, :, FVTracers.index("snow")],
+                tracers[:, :, :, FVTracers.index("graupel")],
+                tracers[:, :, :, FVTracers.index("cloud")],
                 hs,
                 peln,
                 delp,
@@ -703,12 +706,12 @@ class LagrangianToEulerian:
             # to the physics, but if we're staying in dynamics we need
             # to keep it as the virtual potential temperature
             self._moist_cv_last_step_stencil(
-                tracers["qvapor"],
-                tracers["qliquid"],
-                tracers["qrain"],
-                tracers["qsnow"],
-                tracers["qice"],
-                tracers["qgraupel"],
+                tracers[:, :, :, FVTracers.index("vapor")],
+                tracers[:, :, :, FVTracers.index("liquid")],
+                tracers[:, :, :, FVTracers.index("rain")],
+                tracers[:, :, :, FVTracers.index("snow")],
+                tracers[:, :, :, FVTracers.index("ice")],
+                tracers[:, :, :, FVTracers.index("graupel")],
                 self._gz,
                 pt,
                 pkz,

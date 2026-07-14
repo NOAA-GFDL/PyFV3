@@ -1,10 +1,9 @@
-from collections.abc import Sequence
 from typing import Optional
 
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation, interval
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, IntFieldIJ
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, Int, IntFieldIJ
 from ndsl.stencils.basic_operations import copy
 from pyfv3.stencils.remap_profile import RemapProfile
 
@@ -79,7 +78,7 @@ def lagrangian_contributions(
         lev = lev - 1
 
 
-class MapSingle:
+class MapSingle(NDSLRuntime):
     """
     Fortran name is map_single, test classes are Map1_PPM_2d, Map_Scalar_2d
     """
@@ -90,31 +89,20 @@ class MapSingle:
         quantity_factory: QuantityFactory,
         kord: int,
         mode: int,
-        dims: Sequence[str],
+        dims: list[str] | tuple[str],
     ) -> None:
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
 
-        def make_quantity():
-            return quantity_factory.zeros(
-                [I_DIM, J_DIM, K_DIM],
-                units="unknown",
-                dtype=Float,
-            )
+        self._dp1 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._q4_1 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._q4_2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._q4_3 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._q4_4 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._lev = self.make_local(quantity_factory, [I_DIM, J_DIM], dtype=Int)
 
-        self._dp1 = make_quantity()
-        self._q4_1 = make_quantity()
-        self._q4_2 = make_quantity()
-        self._q4_3 = make_quantity()
-        self._q4_4 = make_quantity()
-        self._tmp_qs = quantity_factory.zeros(
-            [I_DIM, J_DIM],
-            units="unknown",
-            dtype=Float,
-        )
-        self._lev = quantity_factory.zeros([I_DIM, J_DIM], units="", dtype=int)
+        # If the boundary condition is not given as an input, we use use a zero-reference
+        # Therefore we CAN'T use make_local
+        self._zero_qs = quantity_factory.zeros([I_DIM, J_DIM], "")
 
         self._copy_stencil = stencil_factory.from_dims_halo(
             copy,
@@ -144,7 +132,7 @@ class MapSingle:
         q1: FloatField,
         pe1: FloatField,
         pe2: FloatField,
-        qs: Optional["FloatFieldIJ"] = None,
+        qs: Optional[FloatFieldIJ] = None,
         qmin: Float = 0.0,
     ) -> None:
         """
@@ -163,7 +151,7 @@ class MapSingle:
 
         if qs is None:
             self._remap_profile(
-                self._tmp_qs,
+                self._zero_qs,
                 self._q4_1,
                 self._q4_2,
                 self._q4_3,

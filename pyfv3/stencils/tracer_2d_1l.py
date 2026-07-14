@@ -1,12 +1,6 @@
 import math
 
-from ndsl import (
-    Quantity,
-    QuantityFactory,
-    StencilFactory,
-    WrappedHaloUpdater,
-    orchestrate,
-)
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory, WrappedHaloUpdater
 from ndsl.constants import (
     I_DIM,
     I_INTERFACE_DIM,
@@ -21,6 +15,7 @@ from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.typing import Communicator
 from pyfv3.stencils.fvtp2d import FiniteVolumeTransport
+from pyfv3.tracers import FVTracers, FVTracersAxisName
 
 
 @gtfunction
@@ -177,7 +172,7 @@ def swap_dp(dp1: FloatField, dp2: FloatField):
         dp2 = tmp
 
 
-class TracerAdvection:
+class TracerAdvection(NDSLRuntime):
     """
     Performs horizontal advection on tracers.
 
@@ -191,44 +186,45 @@ class TracerAdvection:
         transport: FiniteVolumeTransport,
         grid_data,
         comm: Communicator,
-        tracers: dict[str, Quantity],
+        tracers: FVTracers,
+        number_of_tracer_to_advect: int | None = None,
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            dace_compiletime_args=["tracers"],
-        )
+        super().__init__(stencil_factory)
         grid_indexing = stencil_factory.grid_indexing
         self.grid_indexing = grid_indexing  # needed for selective validation
-        self._tracer_count = len(tracers)
         self.grid_data = grid_data
+        self._H = stencil_factory.grid_indexing.n_halo
+        self._number_of_tracer_to_advect = number_of_tracer_to_advect or FVTracers.size(
+            0
+        )
+        self._number_of_tracers = FVTracers.size(0)
 
-        self._x_area_flux = quantity_factory.zeros(
+        self._x_area_flux = self.make_local(
+            quantity_factory,
             [I_INTERFACE_DIM, J_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
-        self._y_area_flux = quantity_factory.zeros(
+        self._y_area_flux = self.make_local(
+            quantity_factory,
             [I_DIM, J_INTERFACE_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
-        self._x_flux = quantity_factory.zeros(
+        self._x_flux = self.make_local(
+            quantity_factory,
             [I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
-        self._y_flux = quantity_factory.zeros(
+        self._y_flux = self.make_local(
+            quantity_factory,
             [I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             units="unknown",
             dtype=Float,
         )
-        self._tmp_dp = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-        self._tmp_dp2 = quantity_factory.zeros(
+        self._tmp_dp = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="Pa",
             dtype=Float,
@@ -277,19 +273,36 @@ class TracerAdvection:
 
         # Setup halo updater for tracers
         tracer_halo_spec = quantity_factory.get_quantity_halo_spec(
-            dims=[I_DIM, J_DIM, K_DIM],
+            dims=[I_DIM, J_DIM, K_DIM, FVTracersAxisName],
             n_halo=N_HALO_DEFAULT,
             dtype=Float,
         )
         self._tracers_halo_updater = WrappedHaloUpdater(
-            comm.get_scalar_halo_updater([tracer_halo_spec] * self._tracer_count),
-            tracers,
-            [t for t in tracers.keys()],
+            comm.get_scalar_halo_updater([tracer_halo_spec]),
+            {"tracers": tracers},
+            ["tracers"],
         )
+
+    def _halo_exchange_tracers(self, tracers: FVTracers):
+        self._tracers_halo_updater.update()
+
+        # We exchange all tracers - but some might not be advected.
+        # Therefore we should reset their value.
+        # Dev NOTE: a better version would restrict the halo exchange. It's
+        #           possible but we need a partial buffer spec generation
+
+        # Temporary deactivate code as we look for a better solution
+        # if self._number_of_tracer_to_advect < self._number_of_tracers:
+        #     tracers.data[
+        #         self._H : -self._H,
+        #         self._H : -self._H,
+        #         :,
+        #         self._number_of_tracer_to_advect : self._number_of_tracers,
+        #     ] = Float(0)
 
     def __call__(
         self,
-        tracers: dict[str, Quantity],
+        tracers: FVTracers,
         dp1,
         x_mass_flux,
         y_mass_flux,
@@ -391,9 +404,9 @@ class TracerAdvection:
                 self.grid_data.rarea,
                 dp2,
             )
-            for q in tracers.values():
+            for i_tracer in range(self._number_of_tracer_to_advect):
                 self.finite_volume_transport(
-                    q,
+                    tracers[:, :, :, i_tracer],
                     x_courant,
                     y_courant,
                     self._x_area_flux,
@@ -404,7 +417,7 @@ class TracerAdvection:
                     y_mass_flux=y_mass_flux,
                 )
                 self._apply_tracer_flux(
-                    q,
+                    tracers[:, :, :, i_tracer],
                     dp1,
                     self._x_flux,
                     self._y_flux,
@@ -412,7 +425,7 @@ class TracerAdvection:
                     dp2,
                 )
             if not last_call:
-                self._tracers_halo_updater.update()
+                self._halo_exchange_tracers(tracers)
                 # we can't use variable assignment to avoid a data copy
                 # because of current dace limitations
                 self._swap_dp(dp1, dp2)

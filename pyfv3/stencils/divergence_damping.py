@@ -1,3 +1,4 @@
+import dace
 import numpy as np
 
 import ndsl.stencils.basic_operations as basic
@@ -640,7 +641,10 @@ class DivergenceDamping:
                 dt,
             )
         self._copy_computeplus(divg_d, delpc)
-        for n in range(self._nonzero_nord):
+        # Force unroll of the loop because list of object do not parse
+        # when unrolled
+        # -> https://github.com/spcl/dace/issues/2332
+        for n in dace.unroll(range(self._nonzero_nord)):
             fillc = (
                 (n + 1 != self._nonzero_nord)
                 and self._grid_type < 3
