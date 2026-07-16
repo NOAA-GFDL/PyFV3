@@ -1,4 +1,5 @@
-FROM python:3.11-slim-bookworm@sha256:7cd3fa11d619688317226bc93dc59bc8966e9aec6bc2a6abb847e8ab7d656706
+FROM python:3.12-slim-bookworm
+#@sha256:28cf028e5a544e92dbe11450debd93dd5eb70eaf3179a9e878cfaee426556b3b
 
 RUN apt-get update &&\
     apt install -y --no-install-recommends \
@@ -51,11 +52,16 @@ RUN pip install \
     pytest-cov
 
 # # set up for fv3viz
-RUN cd /
-RUN git clone --recursive https://github.com/ai2cm/fv3net.git
-RUN cd fv3net && git checkout 1d168ef
-RUN pip install fv3net/external/vcm
-ENV PYTHONPATH=/fv3net/external/fv3viz
+RUN cd / && \
+    git clone https://github.com/oelbert/fv3viz
+
+RUN python -m ensurepip --upgrade && \
+    python -m pip install \
+    /fv3viz
+
+RUN python -m pip install pybind11==2.13.6
+
+ENV PYTHONPATH=/fv3viz:/pace/external/gt4py/src
 
 ENV CFLAGS="-I/usr/include -DACCEPT_USE_OF_DEPRECATED_PROJ_API_H=1"
 
