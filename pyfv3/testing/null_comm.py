@@ -1,12 +1,7 @@
 import copy
 from typing import Any, Mapping, TypeVar, cast
 
-from ndsl import MPIComm
-from ndsl.comm import (
-    Comm,
-    ReductionOperator,
-    Request,
-)
+from ndsl.comm import Comm, ReductionOperator, Request
 
 
 T = TypeVar("T")
@@ -113,4 +108,3 @@ class NullComm(Comm[T]):
 
     def Allreduce_inplace(self, obj: T, op: ReductionOperator) -> T:
         raise NotImplementedError("NullComm.Allreduce_inplace")
-

@@ -51,7 +51,7 @@ def init_aquaplanet_state(
 
     # Initializing to Fortran values does for easy comparison
     numpy_state.ps[:] = 0
-    numpy_state.ps[NHALO:NHALO + nx, NHALO:-(NHALO+1)] = SURFACE_PRESSURE
+    numpy_state.ps[NHALO : NHALO + nx, NHALO : -(NHALO + 1)] = SURFACE_PRESSURE
 
     eta = np.zeros(npz)
     eta_v = np.zeros(npz)
@@ -94,9 +94,9 @@ def init_aquaplanet_state(
     init_utils.hydro_eq(
         nz,
         isc,
-        iec-1,
+        iec - 1,
         jsc,
-        jec-1,
+        jec - 1,
         numpy_state.ps[:],
         numpy_state.phis[:],
         1.0e5,

@@ -58,11 +58,11 @@ from .translate_haloupdate import (
     TranslateMPPUpdateDomains,
 )
 from .translate_init_case import (
+    TranslateAquaplanet,
     TranslateInitCase,
     TranslateInitPreJab,
     TranslateJablonowskiBaroclinic,
     TranslatePVarAuxiliaryPressureVars,
-    TranslateAquaplanet,
 )
 from .translate_last_step import TranslateLastStep
 from .translate_moistcvpluspkz_2d import TranslateMoistCVPlusPkz_2d

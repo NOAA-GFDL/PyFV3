@@ -1,8 +1,8 @@
+from .null_comm import NullComm
 from .translate_data import TranslateDycoreFortranData2Py
 from .translate_dyncore import TranslateDynCore
 from .translate_fvdynamics import TranslateFVDynamics
 from .validation import enable_selective_validation
-from .null_comm import NullComm
 
 
 """

@@ -7,8 +7,8 @@ from f90nml import Namelist
 import ndsl.dsl.gt4py_utils as utils
 import pyfv3.initialization.analytic_init as analytic_init
 import pyfv3.initialization.init_utils as init_utils
-import pyfv3.initialization.test_cases.initialize_baroclinic as baroclinic_init
 import pyfv3.initialization.test_cases.initialize_aquaplanet as aq_init
+import pyfv3.initialization.test_cases.initialize_baroclinic as baroclinic_init
 from ndsl import (
     CubedSphereCommunicator,
     CubedSpherePartitioner,
@@ -18,13 +18,13 @@ from ndsl import (
     TilePartitioner,
 )
 from ndsl.constants import (
-    N_HALO_DEFAULT,
     I_DIM,
     I_INTERFACE_DIM,
     J_DIM,
     J_INTERFACE_DIM,
     K_DIM,
     K_INTERFACE_DIM,
+    N_HALO_DEFAULT,
 )
 from ndsl.grid import GridData, MetricTerms
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
@@ -372,7 +372,9 @@ class TranslateJablonowskiBaroclinic(TranslateDycoreFortranData2Py):
         )
 
         grid_vars = {
-            "lon": np.asarray(self.grid.bgrid1.data)[slice_2d], # Convert from memoryview to numpy array for slicing
+            "lon": np.asarray(self.grid.bgrid1.data)[
+                slice_2d
+            ],  # Convert from memoryview to numpy array for slicing
             "lat": np.asarray(self.grid.bgrid2.data)[slice_2d],
             "lon_agrid": np.asarray(self.grid.agrid1.data)[slice_2d],
             "lat_agrid": np.asarray(self.grid.agrid2.data)[slice_2d],
@@ -454,9 +456,10 @@ class TranslatePVarAuxiliaryPressureVars(TranslateDycoreFortranData2Py):
         )
         return self.slice_output(inputs)
 
+
 class TranslateAquaplanet(TranslateDycoreFortranData2Py):
-    """ Translate the Fortran initialization for the Aquaplanet test case.
-    """
+    """Translate the Fortran initialization for the Aquaplanet test case."""
+
     def __init__(
         self,
         grid,
@@ -496,7 +499,6 @@ class TranslateAquaplanet(TranslateDycoreFortranData2Py):
         self.ignore_near_zero_errors = {}
         self.max_error = 1e-13
         self.stencil_factory = stencil_factory
-
 
     def compute(self, inputs):
         mpi_comm = NullComm(
