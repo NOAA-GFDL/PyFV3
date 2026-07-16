@@ -3,15 +3,15 @@ from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 import pyfv3.stencils.d_sw as d_sw
 from ndsl import StencilFactory
-from ndsl.constants import I_DIM, J_DIM, K_INTERFACE_DIM
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from ndsl.dsl.typing import FloatField, FloatFieldIJ
+from ndsl.stencils.testing.grid import Grid
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 class TranslateD_SW(TranslateDycoreFortranData2Py):
     def __init__(
         self,
-        grid,
+        grid: Grid,
         namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
@@ -22,7 +22,7 @@ class TranslateD_SW(TranslateDycoreFortranData2Py):
             config=self.config.acoustic_dynamics.d_grid_shallow_water,
             quantity_factory=self.grid.quantity_factory,
         )
-        self.compute_func = d_sw.DGridShallowWaterLagrangianDynamics(  # type: ignore
+        self.compute_func = d_sw.DGridShallowWaterLagrangianDynamics(
             stencil_factory=self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             grid_data=self.grid.grid_data,
@@ -63,34 +63,6 @@ class TranslateD_SW(TranslateDycoreFortranData2Py):
         self.out_vars = self.in_vars["data_vars"].copy()
         del self.out_vars["zh"]
 
-    def compute(self, inputs):
-        self.make_storage_data_input_vars(inputs)
-        # Convert relevant inputs to quantities:
-        delp = self.grid.quantity_factory.zeros(
-            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown", dtype=Float
-        )
-        delp.data[:] = delp.np.asarray(inputs.pop("delp"))
-        inputs["delp"] = delp
-        w = self.grid.quantity_factory.zeros(
-            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown", dtype=Float
-        )
-        w.data[:] = delp.np.asarray(inputs.pop("w"))
-        inputs["w"] = w
-        q_con = self.grid.quantity_factory.zeros(
-            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown", dtype=Float
-        )
-        q_con.data[:] = delp.np.asarray(inputs.pop("q_con"))
-        inputs["q_con"] = q_con
-
-        pt = self.grid.quantity_factory.zeros(
-            dims=[I_DIM, J_DIM, K_INTERFACE_DIM], units="unknown", dtype=Float
-        )
-        pt.data[:] = delp.np.asarray(inputs.pop("pt"))
-        inputs["pt"] = pt
-
-        self.compute_func(**inputs)
-        return self.slice_output(inputs)
-
 
 def ubke(
     uc: FloatField,
@@ -128,7 +100,7 @@ class TranslateUbKE(TranslateDycoreFortranData2Py):
         domain = self.grid.domain_shape_compute(add=(1, 1, 0))
         self.stencil_factory = stencil_factory
         ax_offsets = self.stencil_factory.grid_indexing.axis_offsets(origin, domain)
-        self.compute_func = self.stencil_factory.from_origin_domain(  # type: ignore
+        self.compute_func = self.stencil_factory.from_origin_domain(
             ubke, externals=ax_offsets, origin=origin, domain=domain
         )
 
@@ -175,7 +147,7 @@ class TranslateVbKE(TranslateDycoreFortranData2Py):
         domain = self.grid.domain_shape_compute(add=(1, 1, 0))
         self.stencil_factory = stencil_factory
         ax_offsets = self.stencil_factory.grid_indexing.axis_offsets(origin, domain)
-        self.compute_func = self.stencil_factory.from_origin_domain(  # type: ignore
+        self.compute_func = self.stencil_factory.from_origin_domain(
             vbke, externals=ax_offsets, origin=origin, domain=domain
         )
 
@@ -208,7 +180,7 @@ class TranslateFluxCapacitor(TranslateDycoreFortranData2Py):
         for outvar in ["cx", "cy", "xflux", "yflux"]:
             self.out_vars[outvar] = self.in_vars["data_vars"][outvar]
         self.stencil_factory = stencil_factory
-        self.compute_func = self.stencil_factory.from_origin_domain(  # type: ignore
+        self.compute_func = self.stencil_factory.from_origin_domain(
             d_sw.flux_capacitor,
             origin=grid.full_origin(),
             domain=grid.domain_shape_full(),
@@ -272,7 +244,7 @@ class TranslateWdivergence(TranslateDycoreFortranData2Py):
         }
         self.out_vars = {"q": {"serialname": "w"}}
         self.stencil_factory = stencil_factory
-        self.compute_func = self.stencil_factory.from_origin_domain(  # type: ignore
+        self.compute_func = self.stencil_factory.from_origin_domain(
             d_sw.apply_fluxes,
             origin=self.grid.compute_origin(),
             domain=self.grid.domain_shape_compute(),
