@@ -701,5 +701,8 @@ class DynamicalCore(NDSLRuntime):
             state.ua,
             state.va,
         )
+        ndsl_log.info(
+            f"ua min: {state.ua.field[:].min()} ua max: {state.ua.field[:].max()}"
+        )
 
         self._tracers_into_state(state)
