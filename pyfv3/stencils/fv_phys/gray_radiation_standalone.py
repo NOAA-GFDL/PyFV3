@@ -1,24 +1,26 @@
-from pyfv3.stencils.fv_phys.gray_radiation import GrayRadiation
-from pyfv3.stencils.fv_phys._config import GrayRadiationConfig
 import ndsl.constants as constants
 from ndsl import Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
-from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, cos, interval, min, sin
+from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
+from ndsl.dsl.gt4py import interval, min
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
+from pyfv3.stencils.fv_phys._config import GrayRadiationConfig
+from pyfv3.stencils.fv_phys.gray_radiation import GrayRadiation
 
 
 def gather_inputs(
-        delp: FloatField,
-        peln: FloatField,
-        delz: FloatField,
-        p3: FloatField,
-        den: FloatField,
+    delp: FloatField,
+    peln: FloatField,
+    delz: FloatField,
+    p3: FloatField,
+    den: FloatField,
 ):
     with computation(BACKWARD), interval(0, -1):
         p3 = delp / (peln[0, 0, 1] - peln[0, 0, 0])
-        den = -delp/(constants.GRAV * delz)
+        den = -delp / (constants.GRAV * delz)
+
 
 @gtfunction
 def save_low_clouds(
@@ -27,10 +29,11 @@ def save_low_clouds(
     qa: FloatField,
     clouds: FloatFieldIJ,
 ):
-    if ((ql[0, 0, 0] > 1.e-5 or qi[0, 0, 0] > 2.e-4) and qa[0, 0, 0] > 1.e-3):
+    if (ql[0, 0, 0] > 1.0e-5 or qi[0, 0, 0] > 2.0e-4) and qa[0, 0, 0] > 1.0e-3:
         return max(clouds, qa[0, 0, 0])
     else:
         return clouds
+
 
 def get_low_clouds(
     ql: FloatField,
@@ -48,24 +51,28 @@ def get_low_clouds(
             clouds = save_low_clouds(ql, qi, qa, clouds)
             clouds = min(1.0, clouds)
 
+
 def set_clouds(clouds: FloatFieldIJ):
     from __externals__ import low_cf0
+
     with computation(FORWARD), interval(0, 1):
         clouds = low_cf0
 
+
 def maybe_calc_strat_rad_and_set_temp(
-        p3: FloatField,
-        t_dt: FloatField,
-        t_dt_rad: FloatField,
-        pt: FloatField,
-        t_out: FloatField,
+    p3: FloatField,
+    t_dt: FloatField,
+    t_dt_rad: FloatField,
+    pt: FloatField,
+    t_out: FloatField,
 ):
     from __externals__ import dt_atmos, heating, strat_rad
+
     with computation(PARALLEL), interval(...):
         t_dt = t_dt + t_dt_rad
         if strat_rad:
-            if p3 < 100.e2:
-                t_dt = t_dt + heating * (100.E2 - p3) / 100.E2
+            if p3 < 100.0e2:
+                t_dt = t_dt + heating * (100.0e2 - p3) / 100.0e2
 
         t_out = pt + dt_atmos * t_dt
 
@@ -73,8 +80,9 @@ def maybe_calc_strat_rad_and_set_temp(
 class GrayRadSolo:
     """
     Wrapper to run the gray radiation scheme as a standalone parameterization
-    instead of as part of the fv physics package
+    instead of as part of the fv physics package. Assumes k=0 at TOA, as in FV3
     """
+
     def __init__(
         self,
         stencil_factory: StencilFactory,
@@ -111,7 +119,7 @@ class GrayRadSolo:
         if self._prog_low_cloud:
             origin = stencil_factory.grid_indexing.origin
             domain = stencil_factory.grid_indexing.domain
-            k2 = int(domain[2]/2)
+            k2 = int(domain[2] / 2)
             dk2 = int(domain[2] - k2)
             self._get_low_clouds = stencil_factory.from_origin_domain(
                 get_low_clouds,
@@ -128,13 +136,10 @@ class GrayRadSolo:
             )
 
         self._gray_rad = GrayRadiation(
-            stencil_factory,
-            quantity_factory,
-            grid_data,
-            config
+            stencil_factory, quantity_factory, grid_data, config
         )
 
-        heating = config.heating_rate / 86400.
+        heating = config.heating_rate / 86400.0
         self._maybe_calc_strat_rad_and_set_temp = stencil_factory.from_dims_halo(
             maybe_calc_strat_rad_and_set_temp,
             compute_dims=[I_DIM, J_DIM, K_DIM],
@@ -144,26 +149,45 @@ class GrayRadSolo:
                 "strat_rad": config.strat_rad,
             },
         )
-        
+
     def __call__(
         self,
-        pt,
-        ql,
-        qi,
-        qa,
-        delp,
-        pe,
-        peln,
-        ps,
-        delz,
-        t_dt,
-        ts,
-        olr,
-        lwu,
-        lwd,
-        sw_surf,
-        t_out,
+        pt: FloatField,
+        ql: FloatField,
+        qi: FloatField,
+        qa: FloatField,
+        delp: FloatField,
+        pe: FloatField,
+        peln: FloatField,
+        ps: FloatFieldIJ,
+        delz: FloatField,
+        t_dt: FloatField,
+        ts: FloatFieldIJ,
+        olr: FloatFieldIJ,
+        lwu: FloatFieldIJ,
+        lwd: FloatFieldIJ,
+        sw_surf: FloatFieldIJ,
+        t_out: FloatField,
     ):
+        """
+        Arguments:
+            pt(in): potential temperature
+            ql(in): liquid mixing ratio
+            qi(in): ice mixing ratio
+            qa(in): cloud mixing ratio
+            delp(in): pressure thickness of atmosphere layers
+            pe(in): edge (level) pressure
+            peln(in): log(pe)
+            ps(in): surface pressure
+            delz(in): geopotential thickness of atmosphere layers
+            t_dt(inout): temperature tendency
+            ts(in): surface temperature
+            olr(out): column-integrated outgoing longwave radiation
+            lwu(out): column-integrated upward longwave radiation
+            lwd(out): column-integrated downward longwave radiation
+            sw_surf(out): surface shortwave flux
+            t_out(out): layer temperature after radiative heating
+        """
         self._gather_inputs(
             delp,
             peln,
