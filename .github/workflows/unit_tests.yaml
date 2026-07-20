@@ -20,8 +20,6 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v7
-        with:
-          submodules: 'recursive'
 
       - name: Setup Python 3.12
         uses: actions/setup-python@v6
