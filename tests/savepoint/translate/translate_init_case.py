@@ -372,16 +372,16 @@ class TranslateJablonowskiBaroclinic(TranslateDycoreFortranData2Py):
         )
 
         grid_vars = {
-            "lon": np.asarray(self.grid.bgrid1.data)[
+            "lon": np.asarray(self.grid.bgrid1)[
                 slice_2d
             ],  # Convert from memoryview to numpy array for slicing
-            "lat": np.asarray(self.grid.bgrid2.data)[slice_2d],
-            "lon_agrid": np.asarray(self.grid.agrid1.data)[slice_2d],
-            "lat_agrid": np.asarray(self.grid.agrid2.data)[slice_2d],
-            "ee1": np.asarray(self.grid.ee1.data)[slice_2d],
-            "ee2": np.asarray(self.grid.ee2.data)[slice_2d],
-            "es1": np.asarray(self.grid.es1.data)[slice_2d],
-            "ew2": np.asarray(self.grid.ew2.data)[slice_2d],
+            "lat": np.asarray(self.grid.bgrid2)[slice_2d],
+            "lon_agrid": np.asarray(self.grid.agrid1)[slice_2d],
+            "lat_agrid": np.asarray(self.grid.agrid2)[slice_2d],
+            "ee1": np.asarray(self.grid.ee1)[slice_2d],
+            "ee2": np.asarray(self.grid.ee2)[slice_2d],
+            "es1": np.asarray(self.grid.es1)[slice_2d],
+            "ew2": np.asarray(self.grid.ew2)[slice_2d],
         }
         inputs["w"][:] = 1e30
         inputs["delz"][:] = 1e30
