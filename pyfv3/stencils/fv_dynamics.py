@@ -367,11 +367,7 @@ class DynamicalCore(NDSLRuntime):
                 v=state.v,
                 w=state.w,
                 delz=state.delz,
-                # ua is not checked as its halo values differ from Fortran,
-                # this can be re-enabled if no longer comparing to Fortran, if the
-                # Fortran is updated to match the Python, or if the checkpointer
-                # can check only the compute domain values
-                # ua=state.ua,
+                ua=state.ua,
                 va=state.va,
                 uc=state.uc,
                 vc=state.vc,
@@ -700,6 +696,9 @@ class DynamicalCore(NDSLRuntime):
             state.v,
             state.ua,
             state.va,
+        )
+        ndsl_log.debug(
+            f"ua min: {state.ua.field[:].min()} ua max: {state.ua.field[:].max()}"
         )
 
         self._tracers_into_state(state)

@@ -2,8 +2,9 @@ from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 from ndsl import StencilFactory
 from ndsl.dsl.typing import FloatField
-from ndsl.stencils.testing import TranslateFortranData2Py, pad_field_in_j
+from ndsl.stencils.testing import pad_field_in_j
 from pyfv3.stencils import moist_cv
+from pyfv3.testing import TranslateDycoreFortranData2Py
 
 
 def moist_pt(
@@ -84,7 +85,7 @@ class MoistPT:
         )
 
 
-class TranslateMoistCVPlusPt_2d(TranslateFortranData2Py):
+class TranslateMoistCVPlusPt_2d(TranslateDycoreFortranData2Py):
     def __init__(self, grid, namelist, stencil_factory):
         super().__init__(grid, stencil_factory)
         self.stencil_factory = stencil_factory
