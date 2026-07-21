@@ -17,6 +17,9 @@ on:
         default: ''
         required: false
   pull_request: # ... a PR is opened / updated
+    branches:
+      - main
+      - develop
   merge_group: # ... the PR is added to the merge queue
   push:
     branches:

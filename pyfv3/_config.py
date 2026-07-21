@@ -284,6 +284,8 @@ class DynamicalCoreConfig:
     n_sponge: int = 1
     sw_dynamics: bool = False
     """shallow water conditions"""
+    enable_wam: bool = False
+    """Enables whole atmosphere modeling with variable gravity"""
     namelist_override: str | None = None
     target_nml_groups: tuple[str, ...] | None = DEFAULT_DYCORE_NML_GROUPS
 

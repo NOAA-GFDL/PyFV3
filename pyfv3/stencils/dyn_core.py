@@ -122,9 +122,9 @@ def interface_pressure_from_toa_pressure_and_thickness(
             pem[0, 0, 0] = pem[0, 0, -1] + delp
 
 
-def compute_geopotential(zh: FloatField, gz: FloatField):
+def compute_geopotential(zh: FloatField, gz: FloatField, grav_var_h: FloatField):
     with computation(PARALLEL), interval(...):
-        gz = zh * constants.GRAV
+        gz = zh * grav_var_h
 
 
 def p_grad_c_stencil(
@@ -263,6 +263,7 @@ class AcousticDynamics:
             divgd: Quantity,
             heat_source: Quantity,
             pkc: Quantity,
+            grav_var_h: Quantity,
         ):
             # Define the memory specification required
             # Those can be re-used as they are read-only descriptors
@@ -374,6 +375,12 @@ class AcousticDynamics:
             )
             self.interface_uc__vc = WrappedHaloUpdater(
                 None, state, ["u"], ["v"], comm=comm
+            )
+            self.grav_var_h = WrappedHaloUpdater(
+                comm.get_scalar_halo_updater([full_size_xyzi_halo_spec]),
+                state,
+                {"grav_var_h": grav_var_h},
+                ["grav_var_h"],
             )
 
     def __init__(
@@ -644,6 +651,7 @@ class AcousticDynamics:
             divgd=self._divgd,
             heat_source=self._heat_source,
             pkc=self._pkc,
+            grav_var_h=state.grav_var_h,
         )
 
     # See divergence_damping.py, _get_da_min for explanation of this function
@@ -783,6 +791,7 @@ class AcousticDynamics:
                     self._halo_updaters.gz.start()
             if it == 0:
                 self._halo_updaters.delp__pt.wait()
+                self._halo_updaters.grav_var_h.update()
 
             if it == n_split - 1 and end_step:
                 if self.config.use_old_omega:
@@ -858,6 +867,7 @@ class AcousticDynamics:
                     self._gz,
                     self._pkc,
                     state.omga,
+                    state.grav_var,
                 )
 
             self._p_grad_c(
@@ -945,6 +955,7 @@ class AcousticDynamics:
                     state.pk,
                     state.peln,
                     state.w,
+                    state.grav_var,
                 )
 
                 self._halo_updaters.zh.start()
@@ -963,6 +974,7 @@ class AcousticDynamics:
                 self._compute_geopotential_stencil(
                     self._zh,
                     self._gz,
+                    state.grav_var_h,
                 )
                 self._halo_updaters.pkc.wait()
 
@@ -1023,4 +1035,5 @@ class AcousticDynamics:
                     self._heat_source,
                     state.pt,
                     delt_time_factor,
+                    state.rdg_var,
                 )

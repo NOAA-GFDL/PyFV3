@@ -48,6 +48,9 @@ def init_aquaplanet_state(
     numpy_state.delz[:] = 1.0e25
     numpy_state.phis[:] = 1.0e25
     numpy_state.ps[:] = SURFACE_PRESSURE
+    numpy_state.grav_var[:] = constants.GRAV
+    numpy_state.grav_var_h[:] = constants.GRAV
+    numpy_state.rdg_var[:] = constants.RDG
     eta = np.zeros(npz)
     eta_v = np.zeros(npz)
     islice, jslice, slice_3d, slice_2d = init_utils.compute_slices(nx, ny)
@@ -121,6 +124,7 @@ def init_aquaplanet_state(
         ptop=grid_data.ptop,
         moist_phys=moist_phys,
         make_nh=(not hydrostatic),
+        rdg_var=numpy_state.rdg_var[slice_3d],
     )
 
     state = DycoreState.init_from_numpy_arrays(

@@ -11,6 +11,7 @@ def apply_diffusive_heating(
     heat_source: FloatField,
     pt: FloatField,
     delt_time_factor: Float,
+    rdg_var: FloatField,
 ):
     """
     Adjust air temperature from heating due to vorticity damping.
@@ -25,9 +26,10 @@ def apply_diffusive_heating(
             energy conservation
         pt (inout): Air potential temperature
         delta_time_factor (in): scaled time step
+        rdg_var (in): negative rdgas divided by variable gravity
     """
     with computation(PARALLEL), interval(...):
-        pkz = exp(cappa / (1.0 - cappa) * log(constants.RDG * delp / delz * pt))
+        pkz = exp(cappa / (1.0 - cappa) * log(rdg_var * delp / delz * pt))
         dtmp = heat_source / (constants.CV_AIR * delp)
     with computation(PARALLEL):
         with interval(0, 1):

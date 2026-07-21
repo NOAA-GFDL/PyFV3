@@ -2,6 +2,7 @@ from collections.abc import Mapping
 from datetime import timedelta
 
 import pyfv3.stencils.moist_cv as moist_cv
+import pyfv3.stencils.wam as wam
 from ndsl import (
     NDSLRuntime,
     Quantity,
@@ -11,14 +12,14 @@ from ndsl import (
 )
 from ndsl.checkpointer import NullCheckpointer
 from ndsl.comm.mpi import MPI
-from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM, KAPPA, NQ, ZVIR
+from ndsl.constants import GRAV, I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM, KAPPA, NQ, ZVIR
 from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
 from ndsl.dsl.gt4py import PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.logging import ndsl_log
 from ndsl.performance import Timer
-from ndsl.stencils.basic_operations import copy
+from ndsl.stencils.basic_operations import copy, set_value
 from ndsl.stencils.c2l_ord import CubedToLatLon
 from ndsl.typing import Checkpointer, Communicator
 from pyfv3._config import DynamicalCoreConfig
@@ -283,6 +284,26 @@ class DynamicalCore(NDSLRuntime):
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(),
         )
+        self._init_gravity_h = stencil_factory.from_origin_domain(
+            set_value,
+            origin=grid_indexing.origin_full(),
+            domain=grid_indexing.domain_full(add=(0, 0, 1)),
+        )
+        self._init_gravity = stencil_factory.from_origin_domain(
+            set_value,
+            origin=grid_indexing.origin_full(),
+            domain=grid_indexing.domain_full(),
+        )
+        self._adjust_gravity = stencil_factory.from_origin_domain(
+            wam.adjust_gravity,
+            origin=grid_indexing.origin_full(),
+            domain=grid_indexing.domain_full(add=(0, 0, 1)),
+        )
+        self._adjust_rdg = stencil_factory.from_origin_domain(
+            wam.neg_rdgas_div_gravity,
+            origin=grid_indexing.origin_full(),
+            domain=grid_indexing.domain_full(),
+        )
         self._copy_domain = stencil_factory.from_origin_domain(
             copy,
             origin=grid_indexing.origin_compute(),
@@ -348,6 +369,12 @@ class DynamicalCore(NDSLRuntime):
         )
         self._omega_halo_updater = WrappedHaloUpdater(
             comm.get_scalar_halo_updater([full_xyz_spec]), state, ["omga"], comm=comm
+        )
+        self._gravity_halo_updater = WrappedHaloUpdater(
+            comm.get_scalar_halo_updater([full_xyz_spec]),
+            state,
+            ["grav_var"],
+            comm=comm,
         )
         self._n_split = config.n_split
         self._k_split = config.k_split
@@ -532,6 +559,17 @@ class DynamicalCore(NDSLRuntime):
             self._dp_initial,
         )
 
+        self._init_gravity(state.grav_var, GRAV)
+        self._init_gravity_h(state.grav_var_h, GRAV)
+
+        if self.config.enable_wam:
+            self._adjust_gravity(
+                state.grav_var, state.grav_var_h, state.phis, state.delz
+            )
+            self._gravity_halo_updater.update()
+
+        self._adjust_rdg(state.rdg_var, state.grav_var)
+
         if self._conserve_total_energy > 0:
             raise NotImplementedError(
                 "Dynamical Core (fv_dynamics): compute total energy is not implemented"
@@ -640,6 +678,7 @@ class DynamicalCore(NDSLRuntime):
                         state.pe,
                         state.phis,
                         state.ps,
+                        state.rdg_var,
                         self._wsd,
                         self._ak,
                         self._bk,
@@ -652,6 +691,10 @@ class DynamicalCore(NDSLRuntime):
                         self._timestep / self._k_split,
                     )
                     self._checkpoint_remapping_out(state)
+                    if self.config.enable_wam:
+                        self._adjust_gravity(
+                            state.grav_var, state.grav_var_h, state.phis, state.delz
+                        )
                 # TODO: can we pull this block out of the loop intead of
                 # using an if-statement?
                 if last_step:

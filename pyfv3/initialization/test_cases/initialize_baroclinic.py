@@ -304,6 +304,9 @@ def init_baroclinic_state(
     numpy_state.delz[:] = 1.0e25
     numpy_state.phis[:] = 1.0e25
     numpy_state.ps[:] = SURFACE_PRESSURE
+    numpy_state.grav_var[:] = constants.GRAV
+    numpy_state.grav_var_h[:] = constants.GRAV
+    numpy_state.rdg_var[:] = -1 / numpy_state.grav_var
     eta = np.zeros(nz)
     eta_v = np.zeros(nz)
     islice, jslice, slice_3d, slice_2d = init_utils.compute_slices(nx, ny)
@@ -365,6 +368,7 @@ def init_baroclinic_state(
         ptop=grid_data.ptop,
         moist_phys=moist_phys,
         make_nh=(not hydrostatic),
+        rdg_var=numpy_state.rdg_var[slice_3d],
     )
     state = DycoreState.init_from_numpy_arrays(
         numpy_state.__dict__,
