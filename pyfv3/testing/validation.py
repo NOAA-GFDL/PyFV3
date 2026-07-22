@@ -72,14 +72,9 @@ def get_selective_class(
             for name, validation_slice in self._validation_slice.items():
                 if name in kwargs.keys():
                     array = kwargs[name]
-                    try:
-                        validation_data = np.copy(array[validation_slice])
-                        array[:] = np.nan
-                        array[validation_slice] = validation_data
-                    except TypeError:
-                        validation_data = np.copy(array.data[validation_slice])
-                        array.data[:] = np.nan
-                        array.data[validation_slice] = validation_data
+                    validation_data = np.copy(array[validation_slice])
+                    array[:] = np.nan
+                    array[validation_slice] = validation_data
 
         def __getattr__(self, name):
             # if SelectivelyValidated doesn't have an attribute, this is called
@@ -132,9 +127,9 @@ def get_selective_tracer_advection(
         def _set_nans(self, tracers: Mapping[str, Quantity]):
             # tracers is a dict of Quantity for this routine
             for quantity in tracers.values():
-                validation_data = np.copy(quantity.data[self._validation_slice])
-                quantity.data[:] = np.nan
-                quantity.data[self._validation_slice] = validation_data
+                validation_data = np.copy(quantity[self._validation_slice])
+                quantity[:] = np.nan
+                quantity[self._validation_slice] = validation_data
 
     return SelectivelyValidatedTracerAdvection
 

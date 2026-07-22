@@ -502,7 +502,7 @@ class AcousticDynamics:
                 dtype=Float,
             )
             self._zs[:] = self._zs.np.asarray(
-                phis.data / constants.GRAV, dtype=self._zs.data.dtype
+                phis[:] / constants.GRAV, dtype=self._zs.dtype
             )
 
             self.update_height_on_d_grid = updatedzd.UpdateHeightOnDGrid(

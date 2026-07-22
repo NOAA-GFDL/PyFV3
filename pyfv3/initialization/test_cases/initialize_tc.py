@@ -287,8 +287,8 @@ def _initialize_vortex_ps_phis(grid_data, shape, tc_properties, calc):
     grid = np.transpose(
         np.stack(
             [
-                grid_data._horizontal_data.lon_agrid.data,
-                grid_data._horizontal_data.lat_agrid.data,
+                grid_data._horizontal_data.lon_agrid[:],
+                grid_data._horizontal_data.lat_agrid[:],
             ]
         ),
         [1, 2, 0],
@@ -297,7 +297,7 @@ def _initialize_vortex_ps_phis(grid_data, shape, tc_properties, calc):
 
     grid = np.transpose(
         np.stack(
-            [grid_data._horizontal_data.lon.data, grid_data._horizontal_data.lat.data]
+            [grid_data._horizontal_data.lon[:], grid_data._horizontal_data.lat[:]]
         ),
         [1, 2, 0],
     )
@@ -336,8 +336,8 @@ def _initialize_qvapor_temperature(grid_data, pe, ps, tc_properties, calc, shape
     p2 = np.transpose(
         np.stack(
             [
-                grid_data._horizontal_data.lon_agrid.data,
-                grid_data._horizontal_data.lat_agrid.data,
+                grid_data._horizontal_data.lon_agrid[:],
+                grid_data._horizontal_data.lat_agrid[:],
             ]
         ),
         [1, 2, 0],
@@ -362,7 +362,7 @@ def _initialize_wind_dgrid(
 
     grid = np.transpose(
         np.stack(
-            [grid_data._horizontal_data.lon.data, grid_data._horizontal_data.lat.data]
+            [grid_data._horizontal_data.lon[:], grid_data._horizontal_data.lat[:]]
         ),
         [1, 2, 0],
     )
@@ -409,18 +409,18 @@ def _interpolate_winds_dgrid_agrid(grid_data, ud, vd, tc_properties, shape):
         ua[:, :-1, :] = (
             0.5
             * (
-                ud[:, :-1, :] * grid_data._horizontal_data.dx.data[:, :-1, None]
-                + ud[:, 1:, :] * grid_data._horizontal_data.dx.data[:, 1:, None]
+                ud[:, :-1, :] * grid_data._horizontal_data.dx[:, :-1, None]
+                + ud[:, 1:, :] * grid_data._horizontal_data.dx[:, 1:, None]
             )
-            / grid_data.dxa.data[:, :-1, None]
+            / grid_data.dxa[:, :-1, None]
         )
         va[:-1, :, :] = (
             0.5
             * (
-                vd[:-1, :, :] * grid_data._horizontal_data.dy.data[:-1, :, None]
-                + vd[1:, :, :] * grid_data._horizontal_data.dy.data[1:, :, None]
+                vd[:-1, :, :] * grid_data._horizontal_data.dy[:-1, :, None]
+                + vd[1:, :, :] * grid_data._horizontal_data.dy[1:, :, None]
             )
-            / grid_data._horizontal_data.dya.data[:-1, :, None]
+            / grid_data._horizontal_data.dya[:-1, :, None]
         )
     else:
         pass
@@ -496,7 +496,7 @@ def init_tc_state(
     """
 
     sample_quantity = grid_data.lat
-    shape = (*sample_quantity.data.shape[:2], grid_data.ak.data.shape[0])
+    shape = (*sample_quantity.shape[:2], grid_data.ak.shape[0])
     numpy_state = init_utils.empty_numpy_dycore_state(shape)
 
     tc_properties = {

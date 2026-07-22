@@ -83,8 +83,8 @@ def _calc_rossby_delp(grid_data: GridData):
     Returns
         np.ndarray representing delp values
     """
-    agd0 = grid_data.lon_agrid.data[:]
-    agd1 = grid_data.lat_agrid.data[:]
+    agd0 = grid_data.lon_agrid[:]
+    agd1 = grid_data.lat_agrid[:]
 
     a = Float(0.5) * OMG * (2 * constants.OMEGA + OMG) * (np.cos(agd1) ** 2) + Float(
         0.25
@@ -134,7 +134,7 @@ def _init_for_rossby(numpy_state: SimpleNamespace, grid_data: GridData, shape):
 
     grid = np.transpose(
         np.stack(  # TODO: Refactor to non-protected _horizontal_data
-            [grid_data._horizontal_data.lon.data, grid_data._horizontal_data.lat.data]
+            [grid_data._horizontal_data.lon[:], grid_data._horizontal_data.lat[:]]
         ),
         [1, 2, 0],
     )
@@ -193,7 +193,7 @@ def init_rossby_state(
     #       May require a change to pass a config here in order to check.
 
     sample_quantity = grid_data.lat
-    shape = (*sample_quantity.data.shape[0:2], grid_data.ak.data.shape[0])
+    shape = (*sample_quantity.shape[0:2], grid_data.ak.shape[0])
     numpy_state = init_utils.empty_numpy_dycore_state(shape)
 
     _preinit_for_all_sw(numpy_state, shape)

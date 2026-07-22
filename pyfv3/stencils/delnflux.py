@@ -14,11 +14,11 @@ from pyfv3.stencils.copy_corners import CopyCornersX, CopyCornersY
 
 
 def calc_damp(damp_c: Quantity, da_min: Float, nord: Quantity) -> Quantity:
-    if damp_c.dims != nord.dims or damp_c.data.shape != nord.data.shape:
+    if damp_c.dims != nord.dims or damp_c.shape != nord.shape:
         raise NotImplementedError(
-            "current implementation requires damp_c and nord to have identical data shape and dims"
+            "Current implementation requires damp_c and nord to have identical data shape and dims."
         )
-    data = (damp_c.data * da_min) ** (nord.data + 1)
+    data = (damp_c[:] * da_min) ** (nord[:] + 1)
     return Quantity(
         data=data,
         dims=damp_c.dims,
@@ -445,11 +445,11 @@ class DelnFluxNoSG(NDSLRuntime):
         else:
             self._copy_stencil_interval(q_in=q, q_out=d2, nord=self._nord)
 
-        self.copy_corners_x.nord(d2.data, self._nord)
+        self.copy_corners_x.nord(d2, self._nord)
 
         self._fx_calc_stencil(q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord)
 
-        self.copy_corners_y.nord(d2.data, self._nord)
+        self.copy_corners_y.nord(d2, self._nord)
 
         self._fy_calc_stencil(q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord)
 
@@ -466,13 +466,13 @@ class DelnFluxNoSG(NDSLRuntime):
                 current_nord=n,
             )
 
-            self.copy_corners_x.nord(d2.data, self._nord)
+            self.copy_corners_x.nord(d2, self._nord)
 
             self._column_conditional_fx_calculation[n](
                 q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord, current_nord=n
             )
 
-            self.copy_corners_y.nord(d2.data, self._nord)
+            self.copy_corners_y.nord(d2, self._nord)
 
             self._column_conditional_fy_calculation[n](
                 q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord, current_nord=n

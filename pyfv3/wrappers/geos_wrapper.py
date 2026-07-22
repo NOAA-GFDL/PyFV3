@@ -376,7 +376,7 @@ class GeosDycoreWrapper:
         safe_assign_array(state.cyd.view[:], cyd[isc:iec, :, :])
 
         safe_assign_array(state.ps.view[:], ps[isc:iec, jsc:jec])
-        safe_assign_array(state.pe.data[isc - 1 : iec + 1, jsc - 1 : jec + 1, :], pe)
+        safe_assign_array(state.pe[isc - 1 : iec + 1, jsc - 1 : jec + 1, :], pe)
         safe_assign_array(state.pk.view[:], pk)
         safe_assign_array(state.peln.view[:], peln)
         safe_assign_array(state.pkz.view[:], pkz)
@@ -405,129 +405,117 @@ class GeosDycoreWrapper:
         jec = self._grid_indexing.jec + 1
 
         if self._fortran_mem_space != self._pace_mem_space:
-            safe_assign_array(output_dict["u"], self.dycore_state.u.data[:-1, :, :-1])
-            safe_assign_array(output_dict["v"], self.dycore_state.v.data[:, :-1, :-1])
-            safe_assign_array(output_dict["w"], self.dycore_state.w.data[:-1, :-1, :-1])
-            safe_assign_array(
-                output_dict["ua"], self.dycore_state.ua.data[:-1, :-1, :-1]
-            )
-            safe_assign_array(
-                output_dict["va"], self.dycore_state.va.data[:-1, :-1, :-1]
-            )
-            safe_assign_array(output_dict["uc"], self.dycore_state.uc.data[:, :-1, :-1])
-            safe_assign_array(output_dict["vc"], self.dycore_state.vc.data[:-1, :, :-1])
+            safe_assign_array(output_dict["u"], self.dycore_state.u[:-1, :, :-1])
+            safe_assign_array(output_dict["v"], self.dycore_state.v[:, :-1, :-1])
+            safe_assign_array(output_dict["w"], self.dycore_state.w[:-1, :-1, :-1])
+            safe_assign_array(output_dict["ua"], self.dycore_state.ua[:-1, :-1, :-1])
+            safe_assign_array(output_dict["va"], self.dycore_state.va[:-1, :-1, :-1])
+            safe_assign_array(output_dict["uc"], self.dycore_state.uc[:, :-1, :-1])
+            safe_assign_array(output_dict["vc"], self.dycore_state.vc[:-1, :, :-1])
 
             safe_assign_array(
-                output_dict["delz"], self.dycore_state.delz.data[:-1, :-1, :-1]
+                output_dict["delz"], self.dycore_state.delz[:-1, :-1, :-1]
             )
+            safe_assign_array(output_dict["pt"], self.dycore_state.pt[:-1, :-1, :-1])
             safe_assign_array(
-                output_dict["pt"], self.dycore_state.pt.data[:-1, :-1, :-1]
-            )
-            safe_assign_array(
-                output_dict["delp"], self.dycore_state.delp.data[:-1, :-1, :-1]
+                output_dict["delp"], self.dycore_state.delp[:-1, :-1, :-1]
             )
 
             safe_assign_array(
                 output_dict["mfxd"],
-                self.dycore_state.mfxd.data[isc : iec + 1, jsc:jec, :-1],
+                self.dycore_state.mfxd[isc : iec + 1, jsc:jec, :-1],
             )
             safe_assign_array(
                 output_dict["mfyd"],
-                self.dycore_state.mfyd.data[isc:iec, jsc : jec + 1, :-1],
+                self.dycore_state.mfyd[isc:iec, jsc : jec + 1, :-1],
             )
             safe_assign_array(
-                output_dict["cxd"], self.dycore_state.cxd.data[isc : iec + 1, :-1, :-1]
+                output_dict["cxd"], self.dycore_state.cxd[isc : iec + 1, :-1, :-1]
             )
             safe_assign_array(
-                output_dict["cyd"], self.dycore_state.cyd.data[:-1, jsc : jec + 1, :-1]
+                output_dict["cyd"], self.dycore_state.cyd[:-1, jsc : jec + 1, :-1]
             )
 
-            safe_assign_array(output_dict["ps"], self.dycore_state.ps.data[:-1, :-1])
+            safe_assign_array(output_dict["ps"], self.dycore_state.ps[:-1, :-1])
             safe_assign_array(
                 output_dict["pe"],
-                self.dycore_state.pe.data[isc - 1 : iec + 1, jsc - 1 : jec + 1, :],
+                self.dycore_state.pe[isc - 1 : iec + 1, jsc - 1 : jec + 1, :],
             )
             safe_assign_array(
-                output_dict["pk"], self.dycore_state.pk.data[isc:iec, jsc:jec, :]
+                output_dict["pk"], self.dycore_state.pk[isc:iec, jsc:jec, :]
             )
             safe_assign_array(
-                output_dict["peln"], self.dycore_state.peln.data[isc:iec, jsc:jec, :]
+                output_dict["peln"], self.dycore_state.peln[isc:iec, jsc:jec, :]
             )
             safe_assign_array(
-                output_dict["pkz"], self.dycore_state.pkz.data[isc:iec, jsc:jec, :-1]
+                output_dict["pkz"], self.dycore_state.pkz[isc:iec, jsc:jec, :-1]
+            )
+            safe_assign_array(output_dict["phis"], self.dycore_state.phis[:-1, :-1])
+            safe_assign_array(
+                output_dict["q_con"], self.dycore_state.q_con[:-1, :-1, :-1]
             )
             safe_assign_array(
-                output_dict["phis"], self.dycore_state.phis.data[:-1, :-1]
-            )
-            safe_assign_array(
-                output_dict["q_con"], self.dycore_state.q_con.data[:-1, :-1, :-1]
-            )
-            safe_assign_array(
-                output_dict["omga"], self.dycore_state.omga.data[:-1, :-1, :-1]
+                output_dict["omga"], self.dycore_state.omga[:-1, :-1, :-1]
             )
             safe_assign_array(
                 output_dict["diss_estd"],
-                self.dycore_state.diss_estd.data[:-1, :-1, :-1],
+                self.dycore_state.diss_estd[:-1, :-1, :-1],
             )
 
             safe_assign_array(
-                output_dict["qvapor"], self.dycore_state.qvapor.data[:-1, :-1, :-1]
+                output_dict["qvapor"], self.dycore_state.qvapor[:-1, :-1, :-1]
             )
             safe_assign_array(
-                output_dict["qliquid"], self.dycore_state.qliquid.data[:-1, :-1, :-1]
+                output_dict["qliquid"], self.dycore_state.qliquid[:-1, :-1, :-1]
             )
             safe_assign_array(
-                output_dict["qice"], self.dycore_state.qice.data[:-1, :-1, :-1]
+                output_dict["qice"], self.dycore_state.qice[:-1, :-1, :-1]
             )
             safe_assign_array(
-                output_dict["qrain"], self.dycore_state.qrain.data[:-1, :-1, :-1]
+                output_dict["qrain"], self.dycore_state.qrain[:-1, :-1, :-1]
             )
             safe_assign_array(
-                output_dict["qsnow"], self.dycore_state.qsnow.data[:-1, :-1, :-1]
+                output_dict["qsnow"], self.dycore_state.qsnow[:-1, :-1, :-1]
             )
             safe_assign_array(
-                output_dict["qgraupel"], self.dycore_state.qgraupel.data[:-1, :-1, :-1]
+                output_dict["qgraupel"], self.dycore_state.qgraupel[:-1, :-1, :-1]
             )
             safe_assign_array(
-                output_dict["qcld"], self.dycore_state.qcld.data[:-1, :-1, :-1]
+                output_dict["qcld"], self.dycore_state.qcld[:-1, :-1, :-1]
             )
         else:
-            output_dict["u"] = self.dycore_state.u.data[:-1, :, :-1]
-            output_dict["v"] = self.dycore_state.v.data[:, :-1, :-1]
-            output_dict["w"] = self.dycore_state.w.data[:-1, :-1, :-1]
-            output_dict["ua"] = self.dycore_state.ua.data[:-1, :-1, :-1]
-            output_dict["va"] = self.dycore_state.va.data[:-1, :-1, :-1]
-            output_dict["uc"] = self.dycore_state.uc.data[:, :-1, :-1]
-            output_dict["vc"] = self.dycore_state.vc.data[:-1, :, :-1]
-            output_dict["delz"] = self.dycore_state.delz.data[:-1, :-1, :-1]
-            output_dict["pt"] = self.dycore_state.pt.data[:-1, :-1, :-1]
-            output_dict["delp"] = self.dycore_state.delp.data[:-1, :-1, :-1]
-            output_dict["mfxd"] = self.dycore_state.mfxd.data[
-                isc : iec + 1, jsc:jec, :-1
-            ]
-            output_dict["mfyd"] = self.dycore_state.mfyd.data[
-                isc:iec, jsc : jec + 1, :-1
-            ]
-            output_dict["cxd"] = self.dycore_state.cxd.data[isc : iec + 1, :-1, :-1]
-            output_dict["cyd"] = self.dycore_state.cyd.data[:-1, jsc : jec + 1, :-1]
-            output_dict["ps"] = self.dycore_state.ps.data[:-1, :-1]
-            output_dict["pe"] = self.dycore_state.pe.data[
+            output_dict["u"] = self.dycore_state.u[:-1, :, :-1]
+            output_dict["v"] = self.dycore_state.v[:, :-1, :-1]
+            output_dict["w"] = self.dycore_state.w[:-1, :-1, :-1]
+            output_dict["ua"] = self.dycore_state.ua[:-1, :-1, :-1]
+            output_dict["va"] = self.dycore_state.va[:-1, :-1, :-1]
+            output_dict["uc"] = self.dycore_state.uc[:, :-1, :-1]
+            output_dict["vc"] = self.dycore_state.vc[:-1, :, :-1]
+            output_dict["delz"] = self.dycore_state.delz[:-1, :-1, :-1]
+            output_dict["pt"] = self.dycore_state.pt[:-1, :-1, :-1]
+            output_dict["delp"] = self.dycore_state.delp[:-1, :-1, :-1]
+            output_dict["mfxd"] = self.dycore_state.mfxd[isc : iec + 1, jsc:jec, :-1]
+            output_dict["mfyd"] = self.dycore_state.mfyd[isc:iec, jsc : jec + 1, :-1]
+            output_dict["cxd"] = self.dycore_state.cxd[isc : iec + 1, :-1, :-1]
+            output_dict["cyd"] = self.dycore_state.cyd[:-1, jsc : jec + 1, :-1]
+            output_dict["ps"] = self.dycore_state.ps[:-1, :-1]
+            output_dict["pe"] = self.dycore_state.pe[
                 isc - 1 : iec + 1, jsc - 1 : jec + 1, :
             ]
-            output_dict["pk"] = self.dycore_state.pk.data[isc:iec, jsc:jec, :]
-            output_dict["peln"] = self.dycore_state.peln.data[isc:iec, jsc:jec, :]
-            output_dict["pkz"] = self.dycore_state.pkz.data[isc:iec, jsc:jec, :-1]
-            output_dict["phis"] = self.dycore_state.phis.data[:-1, :-1]
-            output_dict["q_con"] = self.dycore_state.q_con.data[:-1, :-1, :-1]
-            output_dict["omga"] = self.dycore_state.omga.data[:-1, :-1, :-1]
-            output_dict["diss_estd"] = self.dycore_state.diss_estd.data[:-1, :-1, :-1]
-            output_dict["qvapor"] = self.dycore_state.qvapor.data[:-1, :-1, :-1]
-            output_dict["qliquid"] = self.dycore_state.qliquid.data[:-1, :-1, :-1]
-            output_dict["qice"] = self.dycore_state.qice.data[:-1, :-1, :-1]
-            output_dict["qrain"] = self.dycore_state.qrain.data[:-1, :-1, :-1]
-            output_dict["qsnow"] = self.dycore_state.qsnow.data[:-1, :-1, :-1]
-            output_dict["qgraupel"] = self.dycore_state.qgraupel.data[:-1, :-1, :-1]
-            output_dict["qcld"] = self.dycore_state.qcld.data[:-1, :-1, :-1]
+            output_dict["pk"] = self.dycore_state.pk[isc:iec, jsc:jec, :]
+            output_dict["peln"] = self.dycore_state.peln[isc:iec, jsc:jec, :]
+            output_dict["pkz"] = self.dycore_state.pkz[isc:iec, jsc:jec, :-1]
+            output_dict["phis"] = self.dycore_state.phis[:-1, :-1]
+            output_dict["q_con"] = self.dycore_state.q_con[:-1, :-1, :-1]
+            output_dict["omga"] = self.dycore_state.omga[:-1, :-1, :-1]
+            output_dict["diss_estd"] = self.dycore_state.diss_estd[:-1, :-1, :-1]
+            output_dict["qvapor"] = self.dycore_state.qvapor[:-1, :-1, :-1]
+            output_dict["qliquid"] = self.dycore_state.qliquid[:-1, :-1, :-1]
+            output_dict["qice"] = self.dycore_state.qice[:-1, :-1, :-1]
+            output_dict["qrain"] = self.dycore_state.qrain[:-1, :-1, :-1]
+            output_dict["qsnow"] = self.dycore_state.qsnow[:-1, :-1, :-1]
+            output_dict["qgraupel"] = self.dycore_state.qgraupel[:-1, :-1, :-1]
+            output_dict["qcld"] = self.dycore_state.qcld[:-1, :-1, :-1]
 
         return output_dict
 
