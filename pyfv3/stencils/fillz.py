@@ -1,34 +1,24 @@
 import typing
 
-from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
+from ndsl import NDSLRuntime, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval, max, min
-from ndsl.dsl.typing import FloatField, FloatFieldIJ, Int, IntFieldIJ
+from ndsl.dsl.typing import FloatField, FloatFieldIJ, IntFieldIJ
 from pyfv3.tracers import FVTracers
 
 
 @typing.no_type_check
-def fix_tracer(
-    q: FloatField,
-    dp: FloatField,
-    zfix: IntFieldIJ,
-    sum0: FloatFieldIJ,
-    sum1: FloatFieldIJ,
-):
+def fix_tracer(q: FloatField, dp: FloatField) -> None:
     """
     Args:
-        q (inout):
-        dp (in):
-        zfix (out):
-        sum0 (out):
-        sum1 (out):
+        q (inout): tracer to fix negative masses in
+        dp (in): pressure thickness of atmospheric layer
     """
-    # TODO: can we make everything except q and dp temporaries?
     # Reset 2D fields
     with computation(FORWARD), interval(0, 1):
-        zfix = 0
-        sum0 = 0.0
-        sum1 = 0.0
+        zfix: IntFieldIJ = 0
+        sum0: FloatFieldIJ = 0.0
+        sum1: FloatFieldIJ = 0.0
     # Reset 3D fields
     with computation(PARALLEL), interval(...):
         lower_fix = 0.0
@@ -107,9 +97,8 @@ class FillNegativeTracerValues(NDSLRuntime):
     def __init__(
         self,
         stencil_factory: StencilFactory,
-        quantity_factory: QuantityFactory,
         nq: int,
-    ):
+    ) -> None:
         super().__init__(stencil_factory)
 
         self._nq = int(nq)
@@ -118,30 +107,18 @@ class FillNegativeTracerValues(NDSLRuntime):
             compute_dims=[I_DIM, J_DIM, K_DIM],
         )
 
-        # Setting initial value of upper_fix to zero is only needed for validation.
-        # The values in the compute domain are set to zero in the stencil.
-        self._zfix = self.make_local(quantity_factory, [I_DIM, J_DIM], dtype=Int)
-        self._zfix[:] = 0
-        self._sum0 = self.make_local(quantity_factory, [I_DIM, J_DIM])
-        self._sum0[:] = 0
-        self._sum1 = self.make_local(quantity_factory, [I_DIM, J_DIM])
-        self._sum1[:] = 0
-
     def __call__(
         self,
         dp2: FloatField,
         tracers: FVTracers,
-    ):
+    ) -> None:
         """
         Args:
-            dp2 (in): pressure thickness of atmospheric layer
             tracers (inout): tracers to fix negative masses in
+            dp2 (in): pressure thickness of atmospheric layer
         """
         for i_tracer in range(0, self._nq):
             self._fix_tracer_stencil(
                 tracers[:, :, :, i_tracer],
                 dp2,
-                self._zfix,
-                self._sum0,
-                self._sum1,
             )
