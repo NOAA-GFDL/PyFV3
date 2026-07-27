@@ -46,14 +46,13 @@ jobs:
 
       - name: External trigger Checkout pyFV3
         if: ${{inputs.component_name}}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
-          submodules: 'recursive'
           repository: NOAA-GFDL/pyFV3
           path: pyFV3
 
       - name: Checkout hash that triggered CI
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'recursive'
           path: pyFV3/${{inputs.component_name}}

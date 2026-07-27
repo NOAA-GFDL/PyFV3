@@ -61,6 +61,7 @@ from .translate_haloupdate import (
     TranslateMPPUpdateDomains,
 )
 from .translate_init_case import (
+    TranslateAquaplanet,
     TranslateInitCase,
     TranslateInitPreJab,
     TranslateJablonowskiBaroclinic,

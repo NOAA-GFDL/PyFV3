@@ -66,7 +66,7 @@ class TranslateFillz(TranslateDycoreFortranData2Py):
         )
         for i_tracer, value in tuple(inputs["tracers"].items()):
             if hasattr(value, "shape") and len(value.shape) > 1 and value.shape[1] == 1:
-                quantity_tracers.data[:, :, :, i_tracer] = self.make_storage_data(
+                quantity_tracers[:, :, :, i_tracer] = self.make_storage_data(
                     pad_field_in_j(
                         value, self.grid.njd, backend=self.stencil_factory.backend
                     )
@@ -75,7 +75,6 @@ class TranslateFillz(TranslateDycoreFortranData2Py):
 
         run_fillz = fillz.FillNegativeTracerValues(
             self.stencil_factory,
-            self.grid.quantity_factory,
             inputs.pop("nq"),
         )
         run_fillz(**inputs)
@@ -89,7 +88,7 @@ class TranslateFillz(TranslateDycoreFortranData2Py):
             offset = -1
 
         out = {
-            "q2tracers": quantity_tracers.data[
+            "q2tracers": quantity_tracers[
                 ds["istart"] : ds["iend"] + 1, ds["jstart"], : ds["kend"] + 1, :offset
             ]
         }

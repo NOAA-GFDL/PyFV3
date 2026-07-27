@@ -78,7 +78,7 @@ dev:
 	DEV=y $(MAKE) enter
 
 notebook:
-	$(VOLUMES) += -v $(CWD):/examples
+	$(VOLUMES) += -v $(ROOT_DIR):/examples/notebook
 	CMD="jupyter notebook --ip 0.0.0.0 --no-browser --allow-root --notebook-dir=$(ROOT_DIR)/examples/notebook" \
 	DEV=y \
 	$(MAKE) dev

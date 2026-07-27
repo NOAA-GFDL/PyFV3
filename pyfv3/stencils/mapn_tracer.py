@@ -39,9 +39,7 @@ class MapNTracer(NDSLRuntime):
 
         if fill:
             self._fill_negative_tracers = True
-            self._fillz = FillNegativeTracerValues(
-                stencil_factory, quantity_factory, self._nq
-            )
+            self._fillz = FillNegativeTracerValues(stencil_factory, self._nq)
         else:
             self._fill_negative_tracers = False
 

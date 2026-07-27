@@ -285,7 +285,6 @@ def _initialize_vortex_ps_phis(grid_data, shape, tc_properties, calc):
 
     phis = np.zeros(shape[:2])
     ps = np.zeros(shape[:2])
-    # breakpoint()
     grid = np.transpose(
         np.stack(
             [
