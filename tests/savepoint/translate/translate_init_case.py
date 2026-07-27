@@ -188,10 +188,10 @@ class TranslateInitCase(ParallelTranslateBaseSlicing):
         for name, _properties in self.outputs.items():
             if isinstance(state[name], dict):
                 for tracer, _quantity in state[name].items():
-                    state[name][tracer] = state[name][tracer].data
+                    state[name][tracer] = state[name][tracer][:]
                 arrays[name] = state[name]
             elif len(self.outputs[name]["dims"]) > 0:
-                arrays[name] = state[name].data
+                arrays[name] = state[name][:]
             else:
                 outputs[name] = state[name]  # scalar
         outputs.update(self._base.slice_output(arrays))
@@ -291,7 +291,7 @@ class TranslateInitPreJab(TranslateDycoreFortranData2Py):
         self.make_storage_data_input_vars(inputs)
         for k, v in inputs.items():
             if k != "ptop":
-                inputs[k] = v.data
+                inputs[k] = v[:]
         full_shape = self.grid.domain_shape_full(add=(1, 1, 1))
         for variable in ["pe", "peln", "pk", "pkz"]:
             inputs[variable] = np.zeros(full_shape)
@@ -359,7 +359,7 @@ class TranslateJablonowskiBaroclinic(TranslateDycoreFortranData2Py):
         # testing just numpy arrays for this
         for k, v in inputs.items():
             if k != "ptop":
-                inputs[k] = v.data
+                inputs[k] = v[:]
         full_shape = self.grid.domain_shape_full(add=(1, 1, 1))
         for variable in ["u", "v", "pt", "delz", "w", "qvapor"]:
             inputs[variable] = np.zeros(full_shape)
@@ -443,7 +443,7 @@ class TranslatePVarAuxiliaryPressureVars(TranslateDycoreFortranData2Py):
         # testing just numpy arrays for this
         for k, v in inputs.items():
             if k != "ptop":
-                inputs[k] = v.data
+                inputs[k] = v[:]
 
         inputs["delz"][:] = 1.0e25
         sliced_inputs = make_sliced_inputs_dict(

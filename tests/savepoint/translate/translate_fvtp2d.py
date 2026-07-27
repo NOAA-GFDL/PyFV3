@@ -56,16 +56,16 @@ class TranslateFvTp2d(TranslateDycoreFortranData2Py):
         nord_col = self.grid.quantity_factory.zeros(
             dims=[K_DIM], units="unknown", dtype=Float
         )
-        nord_col.data[:] = nord_col.np.asarray(inputs.pop("nord"))
+        nord_col[:] = nord_col.np.asarray(inputs.pop("nord"))
         damp_c = self.grid.quantity_factory.zeros(
             dims=[K_DIM], units="unknown", dtype=Float
         )
-        damp_c.data[:] = damp_c.np.asarray(inputs.pop("damp_c"))
+        damp_c[:] = damp_c.np.asarray(inputs.pop("damp_c"))
 
         q = self.grid.quantity_factory.zeros(
             dims=[I_DIM, J_DIM, K_DIM], units="unknown", dtype=Float
         )
-        q.data[:] = q.np.asarray(inputs.pop("q"))
+        q[:] = q.np.asarray(inputs.pop("q"))
         inputs["q"] = q
         for optional_arg in ["mass"]:
             if optional_arg not in inputs:

@@ -153,14 +153,14 @@ class TranslateDynCore(ParallelTranslate2PyState):
                 # the ndarray can have buffer points at the end, so value.shape
                 # is often not equal to state[name].shape
                 selection = tuple(slice(0, end) for end in value.shape)
-                state[name].data[selection] = value
+                state[name][selection] = value
             else:
                 setattr(state, name, value)
         phis: Quantity = self.grid.quantity_factory.zeros(
             dims=[I_DIM, J_DIM],
             units="m",
         )
-        phis.data[:] = phis.np.asarray(inputs["phis"])
+        phis[:] = phis.np.asarray(inputs["phis"])
         acoustic_dynamics = dyn_core.AcousticDynamics(
             comm=communicator,
             stencil_factory=self.stencil_factory,
@@ -172,10 +172,10 @@ class TranslateDynCore(ParallelTranslate2PyState):
             stretched_grid=self.grid.stretched_grid,
             config=self.config.acoustic_dynamics,
             phis=phis,
-            wsd=wsd.data,
+            wsd=wsd,
             state=state,
         )
-        acoustic_dynamics.cappa.data[:] = inputs["cappa"][:]
+        acoustic_dynamics.cappa[:] = inputs["cappa"][:]
 
         acoustic_dynamics(state, timestep=inputs["mdt"], n_map=state.n_map)  # type: ignore[attr-defined]
         # the "inputs" dict is not used to return, we construct a new dict based
@@ -183,9 +183,9 @@ class TranslateDynCore(ParallelTranslate2PyState):
         storages_only = {}
         for name, value in vars(state).items():
             if isinstance(value, Quantity):
-                storages_only[name] = value.data
+                storages_only[name] = value[:]
             else:
                 storages_only[name] = value
-        storages_only["wsd"] = wsd.data
-        storages_only["cappa"] = acoustic_dynamics.cappa.data
+        storages_only["wsd"] = wsd[:]
+        storages_only["cappa"] = acoustic_dynamics.cappa[:]
         return self._base.slice_output(storages_only)
