@@ -1,9 +1,9 @@
+import copy
 from collections.abc import Callable, Sequence
 
 import numpy as np
 
 from ndsl import GridIndexing
-import copy
 
 
 def get_subset_func(
