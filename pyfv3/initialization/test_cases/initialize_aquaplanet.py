@@ -21,8 +21,8 @@ def init_aquaplanet_state(
     comm: CubedSphereCommunicator,
 ) -> DycoreState:
     sample_quantity = grid_data.lat
-    field_shape = (*sample_quantity.field.shape[0:2], grid_data.ak.data.shape[0])
-    data_shape = (*sample_quantity.data.shape[0:2], grid_data.ak.data.shape[0])
+    field_shape = (*sample_quantity.field.shape[0:2], grid_data.ak.shape[0])
+    data_shape = (*sample_quantity.shape[0:2], grid_data.ak.shape[0])
     nx, ny, npz = init_utils.local_compute_size(data_shape)
     nz = npz - 1
     numpy_state = init_utils.empty_numpy_dycore_state(data_shape)
@@ -67,8 +67,8 @@ def init_aquaplanet_state(
         peln=numpy_state.peln[slice_3d],
         pk=numpy_state.pk[slice_3d],
         pkz=numpy_state.pkz[slice_3d],
-        ak=utils.asarray(grid_data.ak.data),
-        bk=utils.asarray(grid_data.bk.data),
+        ak=utils.asarray(grid_data.ak[:]),
+        bk=utils.asarray(grid_data.bk[:]),
         ptop=grid_data.ptop,
     )
     alpha = 0
@@ -99,11 +99,11 @@ def init_aquaplanet_state(
         numpy_state.phis[:],
         1.0e5,
         numpy_state.delp[:],
-        grid_data.ak.data[:],
-        grid_data.bk.data[:],
+        grid_data.ak[:],
+        grid_data.bk[:],
         numpy_state.pt[:],
         numpy_state.delz[:],
-        grid_data.area.data[:],
+        grid_data.area[:],
         NHALO,
         False,
         hydrostatic,

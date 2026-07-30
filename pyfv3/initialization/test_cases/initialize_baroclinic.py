@@ -286,7 +286,7 @@ def init_baroclinic_state(
     Williamson baroclinic test case perturbation applied to the cubed sphere grid.
     """
     sample_quantity = grid_data.lat
-    shape = (*sample_quantity.data.shape[0:2], grid_data.ak.data.shape[0])
+    shape = (*sample_quantity.shape[0:2], grid_data.ak.shape[0])
     nx, ny, nz = init_utils.local_compute_size(shape)
     numpy_state = init_utils.empty_numpy_dycore_state(shape)
     # Initializing to values the Fortran does for easy comparison
@@ -321,8 +321,8 @@ def init_baroclinic_state(
         peln=numpy_state.peln[slice_3d],
         pk=numpy_state.pk[slice_3d],
         pkz=numpy_state.pkz[slice_3d],
-        ak=utils.asarray(grid_data.ak.data),
-        bk=utils.asarray(grid_data.bk.data),
+        ak=utils.asarray(grid_data.ak[:]),
+        bk=utils.asarray(grid_data.bk[:]),
         ptop=grid_data.ptop,
     )
 
@@ -338,14 +338,14 @@ def init_baroclinic_state(
         phis=numpy_state.phis[slice_2d_buffer],
         delz=numpy_state.delz[slice_3d_buffer],
         w=numpy_state.w[slice_3d_buffer],
-        lon=utils.asarray(grid_data.lon.data[slice_2d_buffer]),
-        lat=utils.asarray(grid_data.lat.data[slice_2d_buffer]),
-        lon_agrid=utils.asarray(grid_data.lon_agrid.data[slice_2d_buffer]),
-        lat_agrid=utils.asarray(grid_data.lat_agrid.data[slice_2d_buffer]),
-        ee1=utils.asarray(grid_data.ee1.data[slice_3d_buffer]),
-        ee2=utils.asarray(grid_data.ee2.data[slice_3d_buffer]),
-        es1=utils.asarray(grid_data.es1.data[slice_3d_buffer]),
-        ew2=utils.asarray(grid_data.ew2.data[slice_3d_buffer]),
+        lon=utils.asarray(grid_data.lon[slice_2d_buffer]),
+        lat=utils.asarray(grid_data.lat[slice_2d_buffer]),
+        lon_agrid=utils.asarray(grid_data.lon_agrid[slice_2d_buffer]),
+        lat_agrid=utils.asarray(grid_data.lat_agrid[slice_2d_buffer]),
+        ee1=utils.asarray(grid_data.ee1[slice_3d_buffer]),
+        ee2=utils.asarray(grid_data.ee2[slice_3d_buffer]),
+        es1=utils.asarray(grid_data.es1[slice_3d_buffer]),
+        ew2=utils.asarray(grid_data.ew2[slice_3d_buffer]),
         ptop=grid_data.ptop,
         adiabatic=adiabatic,
         hydrostatic=hydrostatic,

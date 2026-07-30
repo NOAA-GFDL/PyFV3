@@ -132,5 +132,5 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
         if not self.stencil_factory.backend.is_fortran_aligned():
             inputs["tracers"] = quantity_tracers[:-1, :-1, :-1, :]
         else:
-            inputs["tracers"] = quantity_tracers.data
+            inputs["tracers"] = quantity_tracers[:]
         return inputs

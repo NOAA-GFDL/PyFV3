@@ -228,8 +228,8 @@ class TranslateGridAreas(ParallelTranslateGrid):
         )
 
         in_state = self.state_from_inputs(inputs)
-        grid_generator._grid.data[:] = in_state["grid"].data[:]
-        grid_generator._agrid.data[:] = in_state["agrid"].data[:]
+        grid_generator._grid[:] = in_state["grid"][:]
+        grid_generator._agrid[:] = in_state["agrid"][:]
         state = {}
         for metric_term, metadata in self.outputs.items():
             state[metadata["name"]] = getattr(grid_generator, metric_term)
@@ -336,7 +336,7 @@ class TranslateDxDy(ParallelTranslateGrid):
         )
 
         in_state = self.state_from_inputs(inputs)
-        grid_generator._grid.data[:] = in_state["grid"].data[:]
+        grid_generator._grid[:] = in_state["grid"][:]
         state = {}
         for metric_term, metadata in self.outputs.items():
             state[metadata["name"]] = getattr(grid_generator, metric_term)
@@ -398,7 +398,7 @@ class TranslateAGrid(ParallelTranslateGrid):
         )
 
         in_state = self.state_from_inputs(inputs)
-        grid_generator._grid.data[:] = in_state["grid"].data[:]
+        grid_generator._grid[:] = in_state["grid"][:]
         grid_generator._init_agrid()
         state = {}
         for metric_term, metadata in self.outputs.items():
@@ -576,13 +576,9 @@ class TranslateSetEta(ParallelTranslateGrid):
         state = self.state_from_inputs(inputs)
         pressure_coefficients = set_hybrid_pressure_coefficients(state["npz"])
         state["ptop"] = pressure_coefficients.ptop
-        array_type = type(state["ak"].data[:])
-        state["ak"].data[:] = utils.asarray(
-            pressure_coefficients.ak, to_type=array_type
-        )
-        state["bk"].data[:] = utils.asarray(
-            pressure_coefficients.bk, to_type=array_type
-        )
+        array_type = type(state["ak"][:])
+        state["ak"][:] = utils.asarray(pressure_coefficients.ak, to_type=array_type)
+        state["bk"][:] = utils.asarray(pressure_coefficients.bk, to_type=array_type)
         return state
 
 
@@ -754,8 +750,8 @@ class TranslateUtilVectors(ParallelTranslateGrid):
         )
 
         in_state = self.state_from_inputs(inputs)
-        grid_generator._grid.data[:] = in_state["grid"].data[:]
-        grid_generator._agrid.data[:] = in_state["agrid"].data[:]
+        grid_generator._grid[:] = in_state["grid"][:]
+        grid_generator._agrid[:] = in_state["agrid"][:]
         state = {}
         for metric_term, metadata in self.outputs.items():
             state[metadata["name"]] = getattr(grid_generator, metric_term)
@@ -1019,8 +1015,8 @@ class TranslateTrigSg(ParallelTranslateGrid):
         )
 
         in_state = self.state_from_inputs(inputs)
-        grid_generator._grid.data[:] = in_state["grid"].data[:]
-        grid_generator._agrid.data[:] = in_state["agrid"].data[:]
+        grid_generator._grid[:] = in_state["grid"][:]
+        grid_generator._agrid[:] = in_state["agrid"][:]
         grid_generator._ec1 = in_state["ec1"]
         grid_generator._ec2 = in_state["ec2"]
         state = {}
@@ -1095,7 +1091,7 @@ class TranslateAAMCorrection(ParallelTranslateGrid):
         )
 
         in_state = self.state_from_inputs(inputs)
-        grid_generator._grid.data[:] = in_state["grid"].data[:]
+        grid_generator._grid[:] = in_state["grid"][:]
         state = {}
         for metric_term, metadata in self.outputs.items():
             state[metadata["name"]] = getattr(grid_generator, metric_term)
@@ -1388,7 +1384,7 @@ class TranslateDerivedTrig(ParallelTranslateGrid):
         )
 
         in_state = self.state_from_inputs(inputs)
-        grid_generator._grid.data[:] = in_state["grid"].data[:]
+        grid_generator._grid[:] = in_state["grid"][:]
         grid_generator._cos_sg1 = in_state["cos_sg1"]
         grid_generator._cos_sg2 = in_state["cos_sg2"]
         grid_generator._cos_sg3 = in_state["cos_sg3"]
@@ -1666,7 +1662,7 @@ class TranslateInitCubedtoLatLon(ParallelTranslateGrid):
 
         in_state = self.state_from_inputs(inputs)
         grid_generator._sin_sg5 = in_state["sin_sg5"]
-        grid_generator._agrid.data[:] = in_state["agrid"].data[:]
+        grid_generator._agrid[:] = in_state["agrid"][:]
         grid_generator._ec1 = in_state["ec1"]
         grid_generator._ec2 = in_state["ec2"]
         state = {}
@@ -1804,8 +1800,8 @@ class TranslateEdgeFactors(ParallelTranslateGrid):
         )
 
         in_state = self.state_from_inputs(inputs)
-        grid_generator._grid.data[:] = in_state["grid"].data[:]
-        grid_generator._agrid.data[:] = in_state["agrid"].data[:]
+        grid_generator._grid[:] = in_state["grid"][:]
+        grid_generator._agrid[:] = in_state["agrid"][:]
         state = {}
         for metric_term, metadata in self.outputs.items():
             state[metadata["name"]] = getattr(grid_generator, metric_term)

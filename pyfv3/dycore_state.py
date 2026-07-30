@@ -484,13 +484,17 @@ class DycoreState:
     def xr_dataset(self) -> xr.Dataset:
         data_vars = {}
         for name, field_info in self.__dataclass_fields__.items():
-            if isinstance(field_info.type, type) and issubclass(
-                field_info.type, Quantity
-            ):
-                data_vars[name] = self._xr_dataarray_from_array(
-                    name=name,
-                    metadata=field_info.metadata,
-                    data=getattr(self, name).data,
+            if issubclass(field_info.type, Quantity):  # type: ignore[arg-type]
+                dims = [
+                    f"{dim_name}_{name}" for dim_name in field_info.metadata["dims"]
+                ]
+                data_vars[name] = xr.DataArray(
+                    gt_utils.asarray(getattr(self, name)[:]),
+                    dims=dims,
+                    attrs={
+                        "long_name": field_info.metadata["name"],
+                        "units": field_info.metadata.get("units", "unknown"),
+                    },
                 )
         return xr.Dataset(data_vars=data_vars)
 
