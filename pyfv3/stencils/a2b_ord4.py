@@ -5,7 +5,7 @@ from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region, sin, sqrt
 from ndsl.dsl.typing import Float, FloatField, FloatFieldI, FloatFieldIJ
 from ndsl.grid import GridData
-from ndsl.stencils.basic_operations import copy
+from ndsl.stencils import copy
 
 
 # compact 4-pt cubic interpolation

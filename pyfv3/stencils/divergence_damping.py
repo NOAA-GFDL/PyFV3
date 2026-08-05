@@ -1,7 +1,7 @@
 import dace
 import numpy as np
 
-import ndsl.stencils.basic_operations as basic
+import ndsl.stencils as stencils
 import ndsl.stencils.corners as corners
 from ndsl import Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
@@ -412,7 +412,7 @@ class DivergenceDamping:
         )
 
         self._copy_computeplus = high_k_stencil_factory.from_dims_halo(
-            func=basic.copy,
+            func=stencils.copy,
             compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             compute_halos=(0, 0),
         )
@@ -475,7 +475,7 @@ class DivergenceDamping:
         )
 
         self._set_value = high_k_stencil_factory.from_dims_halo(
-            func=basic.set_value,
+            func=stencils.set_value,
             compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             compute_halos=(self.grid_indexing.n_halo, self.grid_indexing.n_halo),
         )

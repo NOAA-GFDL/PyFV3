@@ -21,7 +21,7 @@ from ndsl.dsl.gt4py import BACKWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval
 from ndsl.dsl.typing import Float, FloatField
-from ndsl.stencils.basic_operations import dim
+from ndsl.stencils import dim
 from pyfv3.dycore_state import DycoreState
 
 

@@ -1,7 +1,7 @@
 import ndsl.constants as constants
 from ndsl.dsl.gt4py import PARALLEL, computation, exp, interval, log
 from ndsl.dsl.typing import Float, FloatField
-from ndsl.stencils.basic_operations import sign
+from ndsl.stencils import sign
 
 
 def apply_diffusive_heating(

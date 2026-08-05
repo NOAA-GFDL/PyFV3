@@ -3,7 +3,7 @@ from ndsl.dsl.gt4py import PARALLEL, compile_assert, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.typing import FloatField, FloatFieldIJ, Index3D
-from ndsl.stencils.basic_operations import sign
+from ndsl.stencils import sign
 from pyfv3.stencils import ppm
 
 
