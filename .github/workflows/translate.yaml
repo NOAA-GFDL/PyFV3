@@ -48,9 +48,9 @@ jobs:
         if: ${{inputs.component_name}}
         uses: actions/checkout@v7
         with:
-          repository: NOAA-GFDL/pyFV3
+          repository: twicki/pyFV3
+          ref: BREAKING_replace_basic_stencils
           path: pyFV3
-
       - name: Checkout hash that triggered CI
         uses: actions/checkout@v7
         with:
