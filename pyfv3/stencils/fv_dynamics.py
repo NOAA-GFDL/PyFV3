@@ -22,12 +22,12 @@ from ndsl.constants import (
 from ndsl.dsl.dace.orchestration import orchestrate
 from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation, interval
 from ndsl.dsl.typing import (
-    NDSL_64BIT_FLOAT_TYPE,
+    NDSL_GLOBAL_PRECISION,
     Float,
+    Float64,
     FloatField,
     FloatField64,
     FloatFieldIJ64,
-    get_precision,
 )
 from ndsl.grid import DampingCoefficients, GridData
 from ndsl.performance import Timer
@@ -62,7 +62,7 @@ class DryMassRoundOff(NDSLRuntime):
         self._psx_2d = self.make_local(
             quantity_factory,
             [I_DIM, J_DIM],
-            dtype=NDSL_64BIT_FLOAT_TYPE,
+            dtype=Float64,
             allow_mismatch_float_precision=True,
         )
         # This is a quantity because it is used _outside_ of
@@ -70,13 +70,13 @@ class DryMassRoundOff(NDSLRuntime):
         self.dpx = quantity_factory.zeros(
             [I_DIM, J_DIM, K_DIM],
             "unknown",
-            dtype=NDSL_64BIT_FLOAT_TYPE,
+            dtype=Float64,
             allow_mismatch_float_precision=True,
         )
         self._dpx0_2d = self.make_local(
             quantity_factory,
             [I_DIM, J_DIM],
-            dtype=NDSL_64BIT_FLOAT_TYPE,
+            dtype=Float64,
             allow_mismatch_float_precision=True,
         )
 
@@ -483,30 +483,30 @@ class DynamicalCore(NDSLRuntime):
         self._timestep = timestep.total_seconds()
 
         # At 32-bit precision we still need
-        self._f32_correction = get_precision() == 32
+        self._f32_correction = NDSL_GLOBAL_PRECISION == 32
         if self._f32_correction:
             self._mfx_f64 = quantity_factory.zeros(
                 dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
                 units="unknown",
-                dtype=NDSL_64BIT_FLOAT_TYPE,
+                dtype=Float64,
                 allow_mismatch_float_precision=True,
             )
             self._mfy_f64 = quantity_factory.zeros(
                 dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
                 units="unknown",
-                dtype=NDSL_64BIT_FLOAT_TYPE,
+                dtype=Float64,
                 allow_mismatch_float_precision=True,
             )
             self._cx_f64 = quantity_factory.zeros(
                 dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
                 units="unknown",
-                dtype=NDSL_64BIT_FLOAT_TYPE,
+                dtype=Float64,
                 allow_mismatch_float_precision=True,
             )
             self._cy_f64 = quantity_factory.zeros(
                 dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
                 units="unknown",
-                dtype=NDSL_64BIT_FLOAT_TYPE,
+                dtype=Float64,
                 allow_mismatch_float_precision=True,
             )
         self._mfx_local = quantity_factory.zeros(
