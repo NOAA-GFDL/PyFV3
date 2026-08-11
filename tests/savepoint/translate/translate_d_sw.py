@@ -1,8 +1,8 @@
 from f90nml import Namelist
-from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 import pyfv3.stencils.d_sw as d_sw
 from ndsl import StencilFactory
+from ndsl.dsl.gt4py import PARALLEL, computation, interval
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.stencils.testing.grid import Grid
 from pyfv3.testing import TranslateDycoreFortranData2Py

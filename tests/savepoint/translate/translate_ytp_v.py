@@ -1,7 +1,7 @@
 from f90nml import Namelist
-from gt4py.cartesian.gtscript import PARALLEL, computation, interval
 
 from ndsl import StencilFactory
+from ndsl.dsl.gt4py import PARALLEL, computation, interval
 from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.grid import GridData
 from pyfv3.stencils import ytp_v
