@@ -1,11 +1,8 @@
 import ndsl.constants as constants
-from ndsl.dsl.gt4py import PARALLEL, computation, exp
+from ndsl.dsl.gt4py import __INLINED, PARALLEL, computation, exp
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval, log
 from ndsl.dsl.typing import Float, FloatField
-
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 
 @gtfunction

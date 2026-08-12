@@ -4,13 +4,19 @@ import typing
 import ndsl.constants as constants
 from ndsl import QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
-from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, exp, interval, log
+from ndsl.dsl.gt4py import (
+    __INLINED,
+    BACKWARD,
+    FORWARD,
+    PARALLEL,
+    computation,
+    exp,
+    interval,
+    log,
+)
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from pyfv3._config import RiemannConfig
 from pyfv3.stencils.sim1_solver import Sim1Solver
-
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 
 @typing.no_type_check
