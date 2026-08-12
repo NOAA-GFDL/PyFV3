@@ -34,7 +34,6 @@ from ndsl.optional_imports import cupy as cp
 from ndsl.utils import safe_assign_array
 from pyfv3.tracers import default_ai2_tracers
 
-
 # Direct GT4Py imports (if we have to) go after NDSL imports such that
 # NDSL has a chance to configure things like literal precision in GT4Py.
 from gt4py.cartesian.config import build_settings as gt_build_settings  # isort: skip

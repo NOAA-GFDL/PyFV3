@@ -29,7 +29,6 @@ from pyfv3.stencils.moist_cv import moist_pt_func, moist_pt_last_step
 from pyfv3.stencils.saturation_adjustment import SatAdjust3d
 from pyfv3.tracers import FVTracers
 
-
 # TODO: Should this be set here or in global_constants?
 CONSV_MIN = 0.001
 

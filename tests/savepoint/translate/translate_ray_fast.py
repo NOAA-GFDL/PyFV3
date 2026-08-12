@@ -13,7 +13,7 @@ class TranslateRay_Fast(TranslateDycoreFortranData2Py):
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
-        self.compute_func = RayleighDamping(  # type: ignore
+        self.compute_func = RayleighDamping(
             stencil_factory,
             self.config.rf_cutoff,
             self.config.tau,

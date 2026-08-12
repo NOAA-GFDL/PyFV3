@@ -16,7 +16,6 @@ from ndsl.grid.gnomonic import (
 from ndsl.logging import ndsl_log
 from pyfv3.dycore_state import DycoreState
 
-
 # maximum windspeed amplitude - close to windspeed of zonal-mean time-mean
 # jet stream in troposphere
 U0 = 35.0  # From Table VI of DCMIP2016

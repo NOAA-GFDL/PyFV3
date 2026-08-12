@@ -24,7 +24,6 @@ from ndsl.dsl.typing import Float, FloatField
 from ndsl.stencils.basic_operations import dim
 from pyfv3.dycore_state import DycoreState
 
-
 RK = CP_AIR / RDGAS + 1.0
 G2 = 0.5 * GRAV
 T1_MIN = 160.0

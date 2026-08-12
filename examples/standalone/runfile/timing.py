@@ -74,6 +74,7 @@ def gather_timing_data(
             recvbuf = np.array([data] * comm.Get_size())
         comm.Gather(sendbuf, recvbuf, root=0)
         if is_root:
+            assert recvbuf is not None
             results["times"][timer_name]["times"] = copy.deepcopy(recvbuf.tolist())
     return results
 
@@ -110,8 +111,8 @@ def gather_hit_counts(
 
 def collect_data_and_write_to_file(
     comm: Optional[MPI.Comm],
-    hits_per_step,
-    times_per_step,
+    hits_per_step: List[Dict[str, int]],
+    times_per_step: List[Dict[str, float]],
     experiment_setup: Dict[str, Any],
 ) -> None:
     """

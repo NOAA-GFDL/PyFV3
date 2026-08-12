@@ -7,7 +7,6 @@ from ndsl.dsl.gt4py import interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.stencils import corners
 
-
 DZ_MIN = constants.DZ_MIN
 
 

@@ -10,7 +10,6 @@ from ndsl.stencils.basic_operations import dim
 from pyfv3._config import SatAdjustConfig
 from pyfv3.stencils.moist_cv import compute_pkz_func
 
-
 # TODO: This code could be reduced greatly with abstraction, but first gt4py
 # needs to support gtscript function calls of arbitrary depth embedded in
 # conditionals.

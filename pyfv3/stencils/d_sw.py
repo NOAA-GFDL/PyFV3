@@ -18,7 +18,6 @@ from pyfv3.stencils.xtp_u import advect_u_along_x
 from pyfv3.stencils.ytp_v import advect_v_along_y
 from pyfv3.version import IS_GEOS
 
-
 dcon_threshold = 1e-5
 
 
@@ -529,8 +528,8 @@ def heat_source_from_vorticity_damping(
         kinetic_energy_fraction_to_damp (in): the fraction of kinetic energy
             to explicitly damp and convert into heat.
     """
-    from __externals__ import (  # noqa (see below)
-        d_con,
+    from __externals__ import d_con  # noqa (see below)
+    from __externals__ import (
         do_stochastic_ke_backscatter,
         local_ie,
         local_is,
