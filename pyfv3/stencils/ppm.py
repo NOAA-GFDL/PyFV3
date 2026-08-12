@@ -1,7 +1,6 @@
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.typing import FloatField
 
-
 # volume-conserving cubic with 2nd drv=0 at end point:
 # non-monotonic
 c1 = -2.0 / 14.0

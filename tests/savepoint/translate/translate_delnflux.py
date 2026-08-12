@@ -35,7 +35,7 @@ class TranslateDelnFlux(TranslateDycoreFortranData2Py):
         nord_col[:] = nord_col.np.asarray(inputs.pop("nord_column"))
         damp_c = self.grid.quantity_factory.zeros(dims=[K_DIM], units="unknown")
         damp_c[:] = damp_c.np.asarray(inputs.pop("damp_c"))
-        self.compute_func = delnflux.DelnFlux(  # type: ignore
+        self.compute_func = delnflux.DelnFlux(
             self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             damping_coefficients=self.grid.damping_coefficients,

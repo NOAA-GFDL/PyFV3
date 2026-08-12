@@ -16,7 +16,6 @@ from ndsl.grid import DampingCoefficients, GridData
 from pyfv3.stencils.delnflux import DelnFluxNoSG
 from pyfv3.stencils.fvtp2d import FiniteVolumeTransport
 
-
 DZ_MIN = constants.DZ_MIN
 
 

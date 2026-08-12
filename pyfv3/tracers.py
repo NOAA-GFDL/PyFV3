@@ -2,7 +2,6 @@ from ndsl import QuantityFactory
 from ndsl.dsl.typing import Float
 from ndsl.quantity.data_dimensions_field import DataDimensionsField, SparseNameMapping
 
-
 FVTracers = DataDimensionsField.declare()
 FVTracersAxisName = "fv_tracers"
 

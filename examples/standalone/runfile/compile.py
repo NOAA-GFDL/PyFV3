@@ -12,7 +12,6 @@ from mpi4py import MPI
 from ndsl import Backend, LocalComm
 from pyfv3 import DynamicalCoreConfig
 
-
 local = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, local)
 from runfile.dynamics import get_experiment_info, setup_dycore  # noqa: E402

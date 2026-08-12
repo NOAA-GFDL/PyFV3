@@ -13,7 +13,7 @@ class TranslateRiem_Solver_C(TranslateDycoreFortranData2Py):
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
-        self.compute_func = NonhydrostaticVerticalSolverCGrid(  # type: ignore
+        self.compute_func = NonhydrostaticVerticalSolverCGrid(
             stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             p_fac=self.config.p_fac,

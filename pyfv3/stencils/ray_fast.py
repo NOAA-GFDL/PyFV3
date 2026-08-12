@@ -6,7 +6,6 @@ from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, log, region, sin
 from ndsl.dsl.typing import Float, FloatField, FloatFieldK
 
-
 SDAY = 86400.0
 
 

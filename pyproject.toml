@@ -57,8 +57,7 @@ Repository = "https://github.com/NOAA-GFDL/pyFV3"
 [tool.aliases]
 
 [tool.black]
-line-length = 88
-target_version = ['py311']
+target-version = ["py311", "py312", "py313"]
 
 [tool.coverage.run]
 branch = true
@@ -73,15 +72,10 @@ max-line-length = 88
 
 [tool.isort]
 default_section = "THIRDPARTY"
-force_grid_wrap = 0
-include_trailing_comma = true
 known_first_party = "pyfv3,ndsl,pyshield"
 known_third_party = "f90nml,pytest,xarray,numpy,mpi4py,gt4py"
-line_length = 88
-lines_after_imports = 2
-multi_line_output = 3
+profile = "black"
 sections = "FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
-use_parentheses = true
 
 [tool.mypy]
 disallow_incomplete_defs = true

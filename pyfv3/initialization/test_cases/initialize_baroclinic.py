@@ -9,7 +9,6 @@ from ndsl.grid.gnomonic import great_circle_distance_lon_lat, lon_lat_midpoint
 from pyfv3.dycore_state import DycoreState
 from pyfv3.initialization import init_utils
 
-
 # maximum windspeed amplitude - close to windspeed of zonal-mean time-mean
 # jet stream in troposphere
 U0 = Float(35.0)  # From Table VI of DCMIP2016

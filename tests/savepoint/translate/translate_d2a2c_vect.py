@@ -15,7 +15,7 @@ class TranslateD2A2C_Vect(TranslateDycoreFortranData2Py):
         super().__init__(grid, namelist, stencil_factory)
         dord4 = True
         self.stencil_factory = stencil_factory
-        self.compute_func = DGrid2AGrid2CGridVectors(  # type: ignore
+        self.compute_func = DGrid2AGrid2CGridVectors(
             self.stencil_factory,
             self.grid.quantity_factory,
             self.grid.grid_data,

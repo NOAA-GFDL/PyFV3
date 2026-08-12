@@ -88,7 +88,7 @@ class TranslateMoistCVPlusPt_2d(TranslateDycoreFortranData2Py):
     def __init__(self, grid, namelist, stencil_factory):
         super().__init__(grid, stencil_factory)
         self.stencil_factory = stencil_factory
-        self.compute_func = MoistPT(stencil_factory, self.grid)  # type: ignore
+        self.compute_func = MoistPT(stencil_factory, self.grid)
         self.in_vars["data_vars"] = {
             "qvapor": {"serialname": "qvapor_js"},
             "qliquid": {"serialname": "qliquid_js"},
