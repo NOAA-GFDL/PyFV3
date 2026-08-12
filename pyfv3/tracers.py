@@ -43,7 +43,11 @@ def setup_fvtracers(
 
     if not DataDimensionsField.exists("FVTracers"):
         DataDimensionsField.register(
-            FVTracers, quantity_factory, [FVTracersAxisName], name_mapping, dtype=Float
+            FVTracers,
+            quantity_factory,
+            data_dimensions_names=[FVTracersAxisName],
+            name_mapping=name_mapping,
+            dtype=Float,
         )
 
 
