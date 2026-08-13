@@ -6,7 +6,6 @@
 
 import pyfv3.testing
 
-
 # this must happen before any classes from pyfv3 are instantiated
 pyfv3.testing.enable_selective_validation()
 
@@ -15,5 +14,4 @@ from ndsl.stencils.testing.conftest import *  # noqa: F403,F401
 
 from . import translate
 
-
-ndsl.stencils.testing.conftest.translate = translate  # type: ignore
+ndsl.stencils.testing.conftest.translate = translate

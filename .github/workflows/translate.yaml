@@ -41,8 +41,8 @@ jobs:
         with:
           python-version: ${{ inputs.python_version && inputs.python_version || env.python_default }}
 
-      - name: Install mpi (MPICH flavor)
-        run: pip3 install mpich
+      - name: Install mpi
+        run: pip install openmpi
 
       - name: External trigger Checkout pyFV3
         if: ${{inputs.component_name}}
@@ -60,9 +60,10 @@ jobs:
       - name: External trigger install NDSL packages
         if: ${{inputs.component_name}}
         run: |
+          cd ${GITHUB_WORKSPACE}/pyFV3/${{inputs.component_name}}
+          pip install .
           cd ${GITHUB_WORKSPACE}/pyFV3
-          cd NDSL && pip3 install . && cd ../
-          pip3 install .[test]
+          pip install .[test]
 
       - name: Install pyFV3 packages
         if: ${{ ! inputs.component_name }}
@@ -123,7 +124,7 @@ jobs:
           export NDSL_LITERAL_PRECISION=64
           export OMP_NUM_THREADS=1
           export NDSL_LOGLEVEL=Debug
-          mpiexec -np 6 coverage run --rcfile=pyproject.toml -m mpi4py -m pytest \
+          mpiexec -np 6 --oversubscribe coverage run --rcfile=pyproject.toml -m mpi4py -m pytest \
             -v -s --data_path=${{ env.DATA_PATH }} \
             --backend=orch:dace:cpu:KIJ \
             -m parallel \

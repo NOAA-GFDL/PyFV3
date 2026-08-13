@@ -8,7 +8,6 @@ from ndsl.grid import GridData
 from pyfv3.dycore_state import DycoreState
 from pyfv3.initialization import init_utils
 
-
 SURFACE_PRESSURE = Float(1.0e5)  # units of (Pa), from Table VI of DCMIP2016
 NHALO = constants.N_HALO_DEFAULT
 

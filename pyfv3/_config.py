@@ -11,7 +11,6 @@ from dacite import Config, from_dict
 from ndsl.dsl.typing import Float, Int
 from ndsl.utils import f90nml_as_dict
 
-
 DEFAULT_INT = Int(0)
 DEFAULT_STR = ""
 DEFAULT_FLOAT = Float(0.0)

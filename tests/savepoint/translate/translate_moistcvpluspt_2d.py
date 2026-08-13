@@ -1,7 +1,6 @@
-from gt4py.cartesian.gtscript import PARALLEL, computation, interval
-
 from ndsl import StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
+from ndsl.dsl.gt4py import PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.stencils.testing import pad_field_in_j
 from pyfv3.stencils import moist_cv
@@ -97,7 +96,7 @@ class TranslateMoistCVPlusPt_2d(TranslateDycoreFortranData2Py):
     def __init__(self, grid, namelist, stencil_factory):
         super().__init__(grid, stencil_factory)
         self.stencil_factory = stencil_factory
-        self.compute_func = MoistPT(stencil_factory, self.grid)  # type: ignore
+        self.compute_func = MoistPT(stencil_factory, self.grid)
         self.in_vars["data_vars"] = {
             "qvapor": {"serialname": "qvapor_js"},
             "qliquid": {"serialname": "qliquid_js"},

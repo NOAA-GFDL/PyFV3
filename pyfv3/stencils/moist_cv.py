@@ -1,12 +1,9 @@
-import ndsl.constants as constants
-from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, exp
+from ndsl import constants
+from ndsl.dsl.gt4py import __INLINED, BACKWARD, FORWARD, PARALLEL, computation, exp
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval, log
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from pyfv3.tracers import FVTracers
-
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 
 @gtfunction

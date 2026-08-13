@@ -15,7 +15,6 @@ from pyfv3.dycore_state import DycoreState
 from pyfv3.initialization import init_utils
 from pyfv3.tracers import default_GEOS_tracers
 
-
 NHALO = constants.N_HALO_DEFAULT
 OMG = Float(7.848e-6)
 RK = Float(7.848e-6)

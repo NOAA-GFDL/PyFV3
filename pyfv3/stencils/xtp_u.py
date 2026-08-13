@@ -1,11 +1,8 @@
-from ndsl.dsl.gt4py import compile_assert
+from ndsl.dsl.gt4py import __INLINED, compile_assert
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from pyfv3.stencils import ppm, xppm
-
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 
 @gtfunction

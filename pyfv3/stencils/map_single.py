@@ -17,7 +17,6 @@ from ndsl.dsl.typing import (  # noqa: F401
 from ndsl.stencils.basic_operations import copy
 from pyfv3.stencils.remap_profile import RemapProfile
 
-
 QMIN_DEFAULT = Float(0.0)
 """Minimum value allowed in a cell when remapping a field"""
 

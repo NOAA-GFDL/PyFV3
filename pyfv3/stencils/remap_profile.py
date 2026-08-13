@@ -2,13 +2,10 @@ from collections.abc import Sequence
 
 from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
-from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
+from ndsl.dsl.gt4py import __INLINED, BACKWARD, FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval
 from ndsl.dsl.typing import BoolField, Float, FloatField, FloatFieldIJ
-
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 
 @gtfunction

@@ -1,8 +1,13 @@
 import dace
 import numpy as np
 
-import ndsl.constants as constants
-from ndsl import NDSLRuntime, QuantityFactory, StencilFactory, SubtileGridSizer
+from ndsl import (
+    NDSLRuntime,
+    QuantityFactory,
+    StencilFactory,
+    SubtileGridSizer,
+    constants,
+)
 from ndsl.constants import (
     I_DIM,
     I_INTERFACE_DIM,
@@ -11,13 +16,10 @@ from ndsl.constants import (
     K_DIM,
     SECONDS_PER_DAY,
 )
-from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, float64
+from ndsl.dsl.gt4py import __INLINED, BACKWARD, FORWARD, PARALLEL, computation, float64
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, log, region, sin
 from ndsl.dsl.typing import Float, FloatField, FloatFieldK
-
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 SDAY = 86400.0
 

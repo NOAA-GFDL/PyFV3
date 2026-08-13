@@ -29,6 +29,7 @@ from ndsl.constants import (
     K_INTERFACE_DIM,
 )
 from ndsl.dsl.gt4py import (
+    __INLINED,
     BACKWARD,
     FORWARD,
     PARALLEL,
@@ -47,9 +48,6 @@ from pyfv3.stencils.del2cubed import HyperdiffusionDamping
 from pyfv3.stencils.pk3_halo import PK3Halo
 from pyfv3.stencils.riem_solver3 import NonhydrostaticVerticalSolver
 from pyfv3.stencils.riem_solver_c import NonhydrostaticVerticalSolverCGrid
-
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 if Float == np.float32:
     HUGE_R = Float(1.0e8)

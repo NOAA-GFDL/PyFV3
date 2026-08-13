@@ -2,7 +2,7 @@ from collections.abc import Mapping
 
 from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
-from ndsl.dsl.gt4py import PARALLEL, I, J, computation
+from ndsl.dsl.gt4py import __INLINED, PARALLEL, I, J, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.typing import Float, FloatField, FloatField64, FloatFieldIJ, FloatFieldK
@@ -16,9 +16,6 @@ from pyfv3.stencils.fxadv import FiniteVolumeFluxPrep
 from pyfv3.stencils.xtp_u import advect_u_along_x
 from pyfv3.stencils.ytp_v import advect_v_along_y
 from pyfv3.version import IS_GEOS
-
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 dcon_threshold = Float(1e-5)
 

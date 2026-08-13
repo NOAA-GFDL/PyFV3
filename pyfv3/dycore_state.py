@@ -21,7 +21,6 @@ from ndsl.restart._legacy_restart import open_restart
 from ndsl.typing import Communicator
 from pyfv3.tracers import FVTracers, FVTracersAxisName
 
-
 DEFAULT_TRACER_PROPERTIES = {
     "specific_humidity": {
         "pyFV3_key": "vapor",

@@ -231,7 +231,7 @@ class TranslateVorticityTransport_Cgrid(TranslateDycoreFortranData2Py):
                 cgrid_sw_lagrangian_dynamics, *args, **kwargs
             )
 
-        self.compute_func = compute_func  # type: ignore
+        self.compute_func = compute_func
         self.in_vars["data_vars"] = {
             "uc": {},
             "vc": {},

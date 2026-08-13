@@ -7,7 +7,6 @@ from ndsl.dsl.gt4py import interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from pyfv3.tracers import FVTracers
 
-
 ZVIR = constants.RVGAS / constants.RDGAS - 1.0
 
 

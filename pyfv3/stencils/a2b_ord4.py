@@ -20,7 +20,6 @@ from ndsl.dsl.typing import (
 from ndsl.grid import GridData
 from ndsl.stencils.basic_operations import copy
 
-
 # comact 4-pt cubic interpolation
 c1 = Float(2.0) / Float(3.0)
 c2 = Float(-1.0) / Float(6.0)

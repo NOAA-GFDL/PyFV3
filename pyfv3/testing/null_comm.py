@@ -3,7 +3,6 @@ from typing import Any, Mapping, TypeVar, cast
 
 from ndsl.comm import Comm, ReductionOperator, Request
 
-
 T = TypeVar("T")
 
 
