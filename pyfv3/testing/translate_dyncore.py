@@ -177,7 +177,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
         )
         acoustic_dynamics.cappa[:] = inputs["cappa"][:]
 
-        acoustic_dynamics(state, timestep=inputs["mdt"], n_map=state.n_map)  # type: ignore[attr-defined]
+        acoustic_dynamics(state, timestep=inputs["mdt"], n_map=state.n_map)
         # the "inputs" dict is not used to return, we construct a new dict based
         # on variables attached to `state`
         storages_only = {}
