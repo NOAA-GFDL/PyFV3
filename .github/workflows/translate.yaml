@@ -40,7 +40,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ inputs.python_version && inputs.python_version || env.python_default }}
-
       - name: Install mpi
         run: pip install openmpi
 
