@@ -48,8 +48,7 @@ jobs:
         if: ${{inputs.component_name}}
         uses: actions/checkout@v7
         with:
-          repository: twicki/pyFV3
-          ref: rename_basic_operations
+          repository: NOAA-GFDL/pyFV3
           path: pyFV3
       - name: Checkout hash that triggered CI
         uses: actions/checkout@v7
