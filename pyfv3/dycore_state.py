@@ -1,8 +1,9 @@
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field, fields
-from typing import Any, Self
+from typing import Any
 
 import xarray as xr
+from typing_extensions import Self
 
 import ndsl.dsl.gt4py_utils as gt_utils
 from ndsl import Backend, GridSizer, Quantity, QuantityFactory
