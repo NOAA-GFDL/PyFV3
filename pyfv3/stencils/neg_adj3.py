@@ -6,7 +6,6 @@ from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 
-
 ZVIR = constants.RVGAS / constants.RDGAS - 1.0
 
 

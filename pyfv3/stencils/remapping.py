@@ -8,6 +8,7 @@ from ndsl.constants import (
     K_INTERFACE_DIM,
 )
 from ndsl.dsl.gt4py import (
+    __INLINED,
     BACKWARD,
     FORWARD,
     PARALLEL,
@@ -27,9 +28,6 @@ from pyfv3.stencils.mapn_tracer import MapNTracer
 from pyfv3.stencils.moist_cv import moist_pt_func, moist_pt_last_step
 from pyfv3.stencils.saturation_adjustment import SatAdjust3d
 from pyfv3.tracers import FVTracers
-
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 # TODO: Should this be set here or in global_constants?
 CONSV_MIN = 0.001

@@ -29,7 +29,7 @@ class TranslateUpdateDzC(TranslateDycoreFortranData2Py):
             kwargs["dt"] = kwargs.pop("dt2")
             update_gz_on_c_grid(**kwargs)
 
-        self.compute_func = compute  # type: ignore
+        self.compute_func = compute
         self.in_vars["data_vars"] = {
             "zs": {},
             "ut": {"serialname": "utc"},

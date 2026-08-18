@@ -2,7 +2,7 @@ from collections.abc import Mapping
 
 from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
-from ndsl.dsl.gt4py import PARALLEL, computation
+from ndsl.dsl.gt4py import __INLINED, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
@@ -17,9 +17,6 @@ from pyfv3.stencils.fxadv import FiniteVolumeFluxPrep
 from pyfv3.stencils.xtp_u import advect_u_along_x
 from pyfv3.stencils.ytp_v import advect_v_along_y
 from pyfv3.version import IS_GEOS
-
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 dcon_threshold = 1e-5
 
@@ -531,8 +528,8 @@ def heat_source_from_vorticity_damping(
         kinetic_energy_fraction_to_damp (in): the fraction of kinetic energy
             to explicitly damp and convert into heat.
     """
-    from __externals__ import (  # noqa (see below)
-        d_con,
+    from __externals__ import d_con  # noqa (see below)
+    from __externals__ import (
         do_stochastic_ke_backscatter,
         local_ie,
         local_is,

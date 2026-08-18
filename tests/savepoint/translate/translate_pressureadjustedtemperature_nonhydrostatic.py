@@ -22,7 +22,7 @@ class TranslatePressureAdjustedTemperature_NonHydrostatic(
             config=self.config.d_grid_shallow_water,
             npz=grid.grid_indexing.domain[2],
         )
-        self.compute_func = stencil_factory.from_origin_domain(  # type: ignore
+        self.compute_func = stencil_factory.from_origin_domain(
             temperature_adjust.apply_diffusive_heating,
             origin=stencil_factory.grid_indexing.origin_compute(),
             domain=stencil_factory.grid_indexing.restrict_vertical(

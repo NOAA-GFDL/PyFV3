@@ -1,13 +1,10 @@
 import ndsl.constants as constants
 from ndsl import StencilFactory, orchestrate
 from ndsl.constants import I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM
-from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
+from ndsl.dsl.gt4py import __INLINED, BACKWARD, FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, log, region, sin
 from ndsl.dsl.typing import Float, FloatField, FloatFieldK
-
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 SDAY = 86400.0
 

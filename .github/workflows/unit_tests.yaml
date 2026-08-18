@@ -26,8 +26,8 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install mpi (MPICH flavor)
-        run: pip install mpich
+      - name: Install mpi
+        run: pip install openmpi
 
       - name: Install Python packages
         run: pip install .[ndsl,test]
@@ -38,7 +38,7 @@ jobs:
       - name: Run parallel-cpu tests
         env:
           NDSL_LOGLEVEL: Debug
-        run: mpiexec -np 9 coverage run --rcfile=pyproject.toml -m mpi4py -m pytest tests/mpi
+        run: mpiexec -np 9 --oversubscribe coverage run --rcfile=pyproject.toml -m mpi4py -m pytest tests/mpi
 
       - name: Output code coverage
         run: |

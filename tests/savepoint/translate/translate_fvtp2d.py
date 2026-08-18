@@ -70,7 +70,7 @@ class TranslateFvTp2d(TranslateDycoreFortranData2Py):
         for optional_arg in ["mass"]:
             if optional_arg not in inputs:
                 inputs[optional_arg] = None
-        self.compute_func = FiniteVolumeTransport(  # type: ignore
+        self.compute_func = FiniteVolumeTransport(
             stencil_factory=self.stencil_factory,
             quantity_factory=self.grid.quantity_factory,
             grid_data=self.grid.grid_data,

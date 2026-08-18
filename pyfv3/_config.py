@@ -10,7 +10,6 @@ from dacite import Config, from_dict
 
 from ndsl.utils import f90nml_as_dict
 
-
 DEFAULT_INT = 0
 DEFAULT_STR = ""
 DEFAULT_FLOAT = 0.0

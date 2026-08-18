@@ -1,13 +1,10 @@
 from ndsl import StencilFactory, orchestrate
-from ndsl.dsl.gt4py import PARALLEL, compile_assert, computation
+from ndsl.dsl.gt4py import __INLINED, PARALLEL, compile_assert, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
 from ndsl.dsl.typing import FloatField, FloatFieldIJ, Index3D
 from ndsl.stencils import sign
 from pyfv3.stencils import ppm
-
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 
 @gtfunction

@@ -4,7 +4,6 @@ from .translate_dyncore import TranslateDynCore
 from .translate_fvdynamics import TranslateFVDynamics
 from .validation import enable_selective_validation
 
-
 """
 TranslateDynCore: Translate test for dynamical core
 TranslateDycoreFortranData2Py: Infrastructure to format serialized fortran data for translate tests

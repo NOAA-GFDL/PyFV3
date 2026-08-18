@@ -17,15 +17,12 @@ from ndsl.constants import (
     RDGAS,
     ZVIR,
 )
-from ndsl.dsl.gt4py import BACKWARD, PARALLEL, computation
+from ndsl.dsl.gt4py import __INLINED, BACKWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval
 from ndsl.dsl.typing import Float, FloatField
 from ndsl.stencils import dim
 from pyfv3.dycore_state import DycoreState
-
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 RK = CP_AIR / RDGAS + 1.0
 G2 = 0.5 * GRAV

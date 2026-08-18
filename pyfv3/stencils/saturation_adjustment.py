@@ -2,16 +2,13 @@ import math
 
 import ndsl.constants as constants
 from ndsl import StencilFactory
-from ndsl.dsl.gt4py import PARALLEL, computation, exp, floor
+from ndsl.dsl.gt4py import __INLINED, PARALLEL, computation, exp, floor
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval, log
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.stencils import dim
 from pyfv3._config import SatAdjustConfig
 from pyfv3.stencils.moist_cv import compute_pkz_func
-
-
-from gt4py.cartesian.gtscript import __INLINED  # isort:skip
 
 # TODO: This code could be reduced greatly with abstraction, but first gt4py
 # needs to support gtscript function calls of arbitrary depth embedded in

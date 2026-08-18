@@ -28,7 +28,7 @@ from ndsl.constants import (
 )
 from ndsl.grid import GridData, MetricTerms
 from ndsl.stencils.testing import ParallelTranslateBaseSlicing
-from ndsl.stencils.testing.grid import TRACER_DIM  # type: ignore
+from ndsl.stencils.testing.grid import TRACER_DIM
 from pyfv3 import DycoreState, DynamicalCoreConfig
 from pyfv3.testing import NullComm, TranslateDycoreFortranData2Py
 

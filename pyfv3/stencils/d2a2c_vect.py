@@ -8,7 +8,6 @@ from ndsl.grid import GridData
 from ndsl.stencils import corners
 from pyfv3.stencils.a2b_ord4 import a1, a2, lagrange_x_func, lagrange_y_func
 
-
 c1 = -2.0 / 14.0
 c2 = 11.0 / 14.0
 c3 = 5.0 / 14.0
