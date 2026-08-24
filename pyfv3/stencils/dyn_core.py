@@ -3,7 +3,6 @@ from collections.abc import Mapping
 import numpy as np
 
 import ndsl.constants as constants
-import ndsl.stencils.basic_operations as basic
 import pyfv3.stencils.d_sw as d_sw
 import pyfv3.stencils.nh_p_grad as nh_p_grad
 import pyfv3.stencils.pe_halo as pe_halo
@@ -41,6 +40,7 @@ from ndsl.dsl.gt4py import (
 )
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import DampingCoefficients, GridData
+from ndsl.stencils import copy
 from ndsl.typing import Checkpointer, Communicator
 from pyfv3._config import AcousticDynamicsConfig
 from pyfv3.dycore_state import DycoreState
@@ -625,7 +625,7 @@ class AcousticDynamics:
         )
         self._pk3_halo = PK3Halo(stencil_factory, quantity_factory)
         self._copy_stencil = stencil_factory.from_origin_domain(
-            basic.copy,
+            copy,
             origin=grid_indexing.origin_full(),
             domain=grid_indexing.domain_full(add=(0, 0, 1)),
         )
