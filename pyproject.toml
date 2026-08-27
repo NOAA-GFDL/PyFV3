@@ -10,7 +10,8 @@ classifiers = [
   "Natural Language :: English",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3.13"
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14"
 ]
 dependencies = [
   "dacite",
@@ -24,7 +25,7 @@ license = "Apache-2.0"
 license-files = ["LICENSE.md"]
 name = "pyfv3"
 readme = "README.md"
-requires-python = ">=3.12,<3.14"
+requires-python = ">=3.12,<3.15"
 version = "0.2.0"
 
 [project.optional-dependencies]
@@ -43,7 +44,7 @@ extras = [
   "pyfv3[ndsl]",
   "pyfv3[test]"
 ]
-ndsl = ["ndsl @ git+https://github.com/NOAA-GFDL/NDSL.git@2026.08.00"]
+ndsl = ["ndsl @ git+https://github.com/romanc/NDSL.git@romanc/ndsl-py-3.14"]
 test = [
   "coverage",
   "pytest",
