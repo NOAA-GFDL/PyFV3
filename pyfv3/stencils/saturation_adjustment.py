@@ -6,7 +6,7 @@ from ndsl.dsl.gt4py import __INLINED, PARALLEL, computation, exp, floor
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval, log
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
-from ndsl.stencils.basic_operations import dim
+from ndsl.stencils.arithmetic_functions import dim
 from pyfv3._config import SatAdjustConfig
 from pyfv3.stencils.moist_cv import compute_pkz_func
 
