@@ -230,8 +230,8 @@ def uc_contra_corners(
     from __externals__ import i_end, i_start, j_end, j_start
 
     with computation(PARALLEL), interval(...):
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v[-1, 0])
         with horizontal(region[i_start + 1, j_start - 1], region[i_start + 1, j_end]):
+            damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v[-1, 0])
             # we can derive why there's a 0.25 and not 1/3rd factor below, based on the
             # system being solved as documented above
             # use Kramer's rule to solve the 2x2 matrix instead of Gaussian elimination
@@ -254,7 +254,6 @@ def uc_contra_corners(
                     )
                 )
             ) * damp
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v[-1, 1])
         with horizontal(region[i_start + 1, j_start], region[i_start + 1, j_end + 1]):
             damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v[-1, 1])
             uc_contra = (
@@ -275,8 +274,8 @@ def uc_contra_corners(
                     )
                 )
             ) * damp
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v)
         with horizontal(region[i_end, j_start - 1], region[i_end, j_end]):
+            damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v)
             uc_contra = (
                 uc
                 - 0.25
@@ -295,8 +294,8 @@ def uc_contra_corners(
                     )
                 )
             ) * damp
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v[0, 1])
         with horizontal(region[i_end, j_start], region[i_end, j_end + 1]):
+            damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v[0, 1])
             uc_contra = (
                 uc
                 - 0.25
@@ -339,8 +338,8 @@ def vc_contra_corners(
     from __externals__ import i_end, i_start, j_end, j_start
 
     with computation(PARALLEL), interval(...):
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u[0, -1] * cosa_v)
         with horizontal(region[i_start - 1, j_start + 1], region[i_end, j_start + 1]):
+            damp = 1.0 / (1.0 - 0.0625 * cosa_u[0, -1] * cosa_v)
             vc_contra = (
                 vc
                 - 0.25
@@ -359,8 +358,8 @@ def vc_contra_corners(
                     )
                 )
             ) * damp
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u[1, -1] * cosa_v)
         with horizontal(region[i_start, j_start + 1], region[i_end + 1, j_start + 1]):
+            damp = 1.0 / (1.0 - 0.0625 * cosa_u[1, -1] * cosa_v)
             vc_contra = (
                 vc
                 - 0.25
@@ -379,8 +378,8 @@ def vc_contra_corners(
                     )
                 )
             ) * damp
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u[1, 0] * cosa_v)
         with horizontal(region[i_end + 1, j_end], region[i_start, j_end]):
+            damp = 1.0 / (1.0 - 0.0625 * cosa_u[1, 0] * cosa_v)
             vc_contra = (
                 vc
                 - 0.25
@@ -399,8 +398,8 @@ def vc_contra_corners(
                     )
                 )
             ) * damp
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v)
         with horizontal(region[i_end, j_end], region[i_start - 1, j_end]):
+            damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v)
             vc_contra = (
                 vc
                 - 0.25
