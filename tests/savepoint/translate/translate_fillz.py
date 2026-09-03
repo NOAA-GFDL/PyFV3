@@ -73,6 +73,16 @@ class TranslateFillz(TranslateDycoreFortranData2Py):
                 )
         inputs["tracers"] = quantity_tracers
 
+        dp2 = self.grid.quantity_factory.empty(
+            [I_DIM, J_DIM, K_DIM], "n/a"
+        )
+        dp2[:, :, :] = self.make_storage_data(
+            pad_field_in_j(
+                inputs["dp2"], self.grid.njd, backend=self.stencil_factory.backend
+            )
+        )
+        inputs["dp2"] = dp2
+
         run_fillz = fillz.FillNegativeTracerValues(
             self.stencil_factory,
             inputs.pop("nq"),

@@ -120,7 +120,7 @@ class FillNegativeTracerValues(NDSLRuntime):
             tracers (inout): tracers to fix negative masses in
             dp2 (in): pressure thickness of atmospheric layer
         """
-        for i_tracer in range(0, self._nq):
+        for i_tracer in range(self._nq):
             self._fix_tracer_stencil(
                 tracers[:, :, :, i_tracer],
                 dp2,
