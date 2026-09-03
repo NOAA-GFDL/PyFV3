@@ -14,7 +14,7 @@ from ndsl.constants import (
 )
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldIJ64, FloatFieldK
 from ndsl.grid import GridData
-from ndsl.stencils import divide_self
+from ndsl.stencils.basic_operations import divide_self
 from pyfv3._config import RemappingConfig
 from pyfv3.mpi.sum import GlobalSum
 from pyfv3.stencils import moist_cv
