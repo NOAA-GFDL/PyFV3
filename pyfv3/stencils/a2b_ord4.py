@@ -1,30 +1,51 @@
-from ndsl import GridIndexing, QuantityFactory, StencilFactory, orchestrate
-from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
+from ndsl import GridIndexing, NDSLRuntime, QuantityFactory, StencilFactory
+from ndsl.constants import (
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    K_INTERFACE_DIM,
+)
 from ndsl.dsl.gt4py import PARALLEL, asin, computation, cos
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region, sin, sqrt
-from ndsl.dsl.typing import Float, FloatField, FloatFieldI, FloatFieldIJ
+from ndsl.dsl.typing import (
+    Float,
+    FloatField,
+    FloatFieldI64,
+    FloatFieldIJ,
+    FloatFieldIJ64,
+)
 from ndsl.grid import GridData
 from ndsl.stencils import copy
 
-# compact 4-pt cubic interpolation
-c1 = 2.0 / 3.0
-c2 = -1.0 / 6.0
-d1 = 0.375
-d2 = -1.0 / 24.0
+# comact 4-pt cubic interpolation
+c1 = Float(2.0) / Float(3.0)
+c2 = Float(-1.0) / Float(6.0)
+d1 = Float(0.375)
+d2 = Float(-1.0) / Float(24.0)
 # PPM volume mean form
-b1 = 7.0 / 12.0
-b2 = -1.0 / 12.0
+b1 = Float(7.0) / Float(12.0)  # 0.58333333
+b2 = Float(-1.0) / Float(12.0)
 # 4-pt Lagrange interpolation
-a1 = 9.0 / 16.0
-a2 = -1.0 / 16.0
+a1 = Float(0.5625)  # 9/16
+a2 = Float(-0.0625)  # -1/16
+
+r3 = Float(1.0 / 3.0)
 
 
 @gtfunction
 def great_circle_dist(p1a, p1b, p2a, p2b):
-    tb = sin((p1b - p2b) / 2.0) ** 2.0
-    ta = sin((p1a - p2a) / 2.0) ** 2.0
-    return asin(sqrt(tb + cos(p1b) * cos(p2b) * ta)) * 2.0
+    return (
+        asin(
+            sqrt(
+                sin((p1b - p2b) / 2.0) ** 2
+                + cos(p1b) * cos(p2b) * sin((p1a - p2a) / 2.0) ** 2
+            )
+        )
+        * 2.0
+    )
 
 
 @gtfunction
@@ -94,7 +115,7 @@ def _sw_corner(
             qin[1, -2, 0],
         )
 
-        qout = (ec1 + ec2 + ec3) * (1.0 / 3.0)
+        qout = (ec1 + ec2 + ec3) * r3
         tmp_qout_edges = qout
 
 
@@ -148,7 +169,7 @@ def _nw_corner(
             qin[0, 0, 0],
             qin[1, 1, 0],
         )
-        qout = (ec1 + ec2 + ec3) * (1.0 / 3.0)
+        qout = (ec1 + ec2 + ec3) * r3
         tmp_qout_edges = qout
 
 
@@ -202,7 +223,7 @@ def _ne_corner(
             qin[-1, 0, 0],
             qin[-2, 1, 0],
         )
-        qout = (ec1 + ec2 + ec3) * (1.0 / 3.0)
+        qout = (ec1 + ec2 + ec3) * r3
         tmp_qout_edges = qout
 
 
@@ -256,7 +277,7 @@ def _se_corner(
             qin[0, 0, 0],
             qin[1, 1, 0],
         )
-        qout = (ec1 + ec2 + ec3) * (1.0 / 3.0)
+        qout = (ec1 + ec2 + ec3) * r3
         tmp_qout_edges = qout
 
 
@@ -273,7 +294,7 @@ def lagrange_x_func(qy):
 def qout_x_edge(
     qin: FloatField,
     dxa: FloatFieldIJ,
-    edge_w: FloatFieldIJ,
+    edge_w: FloatFieldIJ64,
     qout: FloatField,
     tmp_qout_edges: FloatField,
 ):
@@ -294,7 +315,7 @@ def qout_x_edge(
 def qout_y_edge(
     qin: FloatField,
     dya: FloatFieldIJ,
-    edge_s: FloatFieldI,
+    edge_s: FloatFieldI64,
     qout: FloatField,
     tmp_qout_edges: FloatField,
 ):
@@ -499,11 +520,11 @@ def doubly_periodic_a2b_ord4(qin):
     Grid conversion is much simpler on a doubly-periodic, orthogonal grid so we
     can bypass most of the above code
     """
-    qx = b1 * (qin[-1, 0, 0] + qin) + b2 * (qin[-2, 0, 0] + qin[1, 0, 0])
-    qy = b1 * (qin[0, -1, 0] + qin) + b2 * (qin[0, -2, 0] + qin[0, 1, 0])
+    qx = b2 * (qin[-2, 0, 0] + qin[1, 0, 0]) + b1 * (qin[-1, 0, 0] + qin)
+    qy = b2 * (qin[0, -2, 0] + qin[0, 1, 0]) + b1 * (qin[0, -1, 0] + qin)
     qout = 0.5 * (
-        a1 * (qx[0, -1, 0] + qx + qy[-1, 0, 0] + qy)
-        + a2 * (qx[0, -2, 0] + qx[0, 1, 0] + qy[-2, 0, 0] + qy[1, 0, 0])
+        a2 * (qx[0, -2, 0] + qx[0, 1, 0] + qy[-2, 0, 0] + qy[1, 0, 0])
+        + a1 * (qx[0, -1, 0] + qx + qy[-1, 0, 0] + qy)
     )
     return qout
 
@@ -513,9 +534,11 @@ def doubly_periodic_a2b_ord4_stencil(qout: FloatField, qin: FloatField):
         qout = doubly_periodic_a2b_ord4(qin)
 
 
-class AGrid2BGridFourthOrder:
+class AGrid2BGridFourthOrderInPlace(NDSLRuntime):
     """
-    Fortran name is a2b_ord4, test module is A2B_Ord4
+    `q` is moved from the A grid to the B grid.
+
+    Relies on `AGrid2BGridFourthOrder`.
     """
 
     def __init__(
@@ -525,24 +548,66 @@ class AGrid2BGridFourthOrder:
         grid_data: GridData,
         grid_type: int,
         z_dim=K_DIM,
-        replace: bool = False,
+    ):
+        super().__init__(stencil_factory)
+        self._a2bord4 = AGrid2BGridFourthOrder(
+            stencil_factory,
+            quantity_factory,
+            grid_data,
+            grid_type,
+            z_dim,
+        )
+
+        self._tmp_q_to_bgrid = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM]
+        )
+        self._copy_stencil = stencil_factory.from_dims_halo(
+            copy, compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, z_dim]
+        )
+
+    def __call__(self, q: FloatField):
+        """
+        Converts q from A-grid to B-grid in place.
+
+        Args:
+            q (inout): Input on A-grid, output on B-Grid
+        """
+
+        self._a2bord4(q, self._tmp_q_to_bgrid)
+        self._copy_stencil(self._tmp_q_to_bgrid, q)
+
+
+class AGrid2BGridFourthOrder(NDSLRuntime):
+    """
+    `qout` is `qin` moved from the A grid to the B grid.
+
+    Fortran name is a2b_ord4, test module is A2B_Ord4.
+    """
+
+    def __init__(
+        self,
+        stencil_factory: StencilFactory,
+        quantity_factory: QuantityFactory,
+        grid_data: GridData,
+        grid_type: int,
+        z_dim=K_DIM,
     ):
         """
         Args:
             stencil_factory: creates gt4py stencils
+            quantity_factory: to create tmp quantities
+            grid_data: used for the interpolation
             grid_type: integer representing the type of grid
             z_dim: defines whether vertical dimension is centered or staggered
-            replace: boolean, update qin to the B grid as well
         """
-        orchestrate(obj=self, config=stencil_factory.config.dace_config)
-        if grid_type != 0 and grid_type != 4:
+        super().__init__(stencil_factory)
+
+        if grid_type not in (0, 4):
             raise RuntimeError(
                 "A-Grid to B-Grid 4th order (a2b_ord4):"
                 f" grid type {grid_type} is not implemented. 0 and 4 available."
             )
         self._idx: GridIndexing = stencil_factory.grid_indexing
-        self._stencil_config = stencil_factory.config
-        self.replace = replace
         self.grid_type = grid_type
 
         if grid_type < 3:
@@ -560,22 +625,16 @@ class AGrid2BGridFourthOrder:
             self._edge_s = grid_data.edge_s
             self._edge_n = grid_data.edge_n
 
-            self._tmp_qx = quantity_factory.zeros(
-                dims=[I_INTERFACE_DIM, J_DIM, z_dim],
-                units="unknown",
-                dtype=Float,
+            self._tmp_qx = self.make_local(
+                quantity_factory, [I_INTERFACE_DIM, J_DIM, z_dim]
             )
-            self._tmp_qy = quantity_factory.zeros(
-                dims=[I_DIM, J_INTERFACE_DIM, z_dim],
-                units="unknown",
-                dtype=Float,
+            self._tmp_qy = self.make_local(
+                quantity_factory, [I_DIM, J_INTERFACE_DIM, z_dim]
             )
             # TODO: the dimensions of tmp_qout_edges may not be correct, verify
             # with Lucas and either update the code or remove this comment
-            self._tmp_qout_edges = quantity_factory.zeros(
-                dims=[I_DIM, J_DIM, z_dim],
-                units="unknown",
-                dtype=Float,
+            self._tmp_qout_edges = self.make_local(
+                quantity_factory, [I_DIM, J_DIM, z_dim]
             )
 
             _, (z_domain,) = self._idx.get_origin_domain([z_dim])
@@ -663,19 +722,11 @@ class AGrid2BGridFourthOrder:
             self._a2b_interpolation_stencil = stencil_factory.from_origin_domain(
                 a2b_interpolation, externals=ax_offsets, origin=origin, domain=domain
             )
-            self._copy_stencil = stencil_factory.from_dims_halo(
-                copy, compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, z_dim]
-            )
-
         else:  # grid type >= 3:
             self._doubly_periodic_a2b_ord4 = stencil_factory.from_dims_halo(
                 doubly_periodic_a2b_ord4_stencil,
                 compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, z_dim],
             )
-            if self.replace:
-                self._copy_stencil = stencil_factory.from_dims_halo(
-                    copy, compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, z_dim]
-                )
 
     def _exclude_tile_edges(self, origin, domain, dims=("x", "y")):
         """
@@ -703,10 +754,8 @@ class AGrid2BGridFourthOrder:
         """
         Converts qin from A-grid to B-grid in qout.
 
-        If initialized with replace=True, qin is also updated to the B grid.
-
         Args:
-            qin (inout): Input on A-grid (intent=in if replace=false)
+            qin (in): Input on A-grid
             qout (out): Output on B-grid
         """
 
@@ -784,12 +833,5 @@ class AGrid2BGridFourthOrder:
                 self._tmp_qx,
                 self._tmp_qy,
             )
-            if self.replace:
-                self._copy_stencil(
-                    qout,
-                    qin,
-                )
         else:  # grid type >= 3:
             self._doubly_periodic_a2b_ord4(qout, qin)
-            if self.replace:
-                self._copy_stencil(qout, qin)

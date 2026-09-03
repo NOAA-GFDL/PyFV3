@@ -1,6 +1,13 @@
-import math
+from typing import no_type_check
 
-from ndsl import NDSLRuntime, QuantityFactory, StencilFactory, WrappedHaloUpdater
+from ndsl import (
+    NDSLRuntime,
+    Quantity,
+    QuantityFactory,
+    StencilFactory,
+    WrappedHaloUpdater,
+)
+from ndsl.comm.mpi import ReductionOperator
 from ndsl.constants import (
     I_DIM,
     I_INTERFACE_DIM,
@@ -9,17 +16,19 @@ from ndsl.constants import (
     K_DIM,
     N_HALO_DEFAULT,
 )
+from ndsl.dsl.dace.orchestration import dace_inhibitor
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
-from ndsl.dsl.gt4py import horizontal, interval, region
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from ndsl.dsl.gt4py import horizontal, int32, interval, region
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
+from ndsl.grid import GridData
 from ndsl.typing import Communicator
 from pyfv3.stencils.fvtp2d import FiniteVolumeTransport
 from pyfv3.tracers import FVTracers, FVTracersAxisName
 
 
 @gtfunction
-def flux_x(cx, dxa, dy, sin_sg3, sin_sg1, xfx):
+def flux_x(cx, dxa, dy, sin_sg3, sin_sg1):
     from __externals__ import local_ie, local_is, local_je, local_js
 
     with horizontal(region[local_is : local_ie + 2, local_js - 3 : local_je + 4]):
@@ -30,7 +39,7 @@ def flux_x(cx, dxa, dy, sin_sg3, sin_sg1, xfx):
 
 
 @gtfunction
-def flux_y(cy, dya, dx, sin_sg4, sin_sg2, yfx):
+def flux_y(cy, dya, dx, sin_sg4, sin_sg2):
     from __externals__ import local_ie, local_is, local_je, local_js
 
     with horizontal(region[local_is - 3 : local_ie + 4, local_js : local_je + 2]):
@@ -40,6 +49,7 @@ def flux_y(cy, dya, dx, sin_sg4, sin_sg2, yfx):
     return yfx
 
 
+@no_type_check
 def flux_compute(
     cx: FloatField,
     cy: FloatField,
@@ -70,10 +80,11 @@ def flux_compute(
         yfx (out): y-direction area flux
     """
     with computation(PARALLEL), interval(...):
-        xfx = flux_x(cx, dxa, dy, sin_sg3, sin_sg1, xfx)
-        yfx = flux_y(cy, dya, dx, sin_sg4, sin_sg2, yfx)
+        xfx = flux_x(cx, dxa, dy, sin_sg3, sin_sg1)
+        yfx = flux_y(cy, dya, dx, sin_sg4, sin_sg2)
 
 
+@no_type_check
 def divide_fluxes_by_n_substeps(
     cxd: FloatField,
     xfx: FloatField,
@@ -81,10 +92,11 @@ def divide_fluxes_by_n_substeps(
     cyd: FloatField,
     yfx: FloatField,
     mfyd: FloatField,
-    n_split: int,
+    cmax: FloatFieldK,
 ):
     """
-    Divide all inputs in-place by the number of substeps n_split.
+    Divide all inputs in-place by the number of substeps n_split computed
+    from the max courant number on the grid
 
     Args:
         cxd (inout):
@@ -95,27 +107,18 @@ def divide_fluxes_by_n_substeps(
         mfyd (inout):
     """
     with computation(PARALLEL), interval(...):
-        frac = 1.0 / n_split
-        cxd = cxd * frac
-        xfx = xfx * frac
-        mfxd = mfxd * frac
-        cyd = cyd * frac
-        yfx = yfx * frac
-        mfyd = mfyd * frac
+        n_split = int32(1.0 + cmax)
+        if n_split > 1:
+            frac = 1.0 / n_split
+            cxd = cxd * frac
+            xfx = xfx * frac
+            mfxd = mfxd * frac
+            cyd = cyd * frac
+            yfx = yfx * frac
+            mfyd = mfyd * frac
 
 
-def cmax_stencil1(cx: FloatField, cy: FloatField, cmax: FloatField):
-    with computation(PARALLEL), interval(...):
-        cmax = max(abs(cx), abs(cy))
-
-
-def cmax_stencil2(
-    cx: FloatField, cy: FloatField, sin_sg5: FloatField, cmax: FloatField
-):
-    with computation(PARALLEL), interval(...):
-        cmax = max(abs(cx), abs(cy)) + 1.0 - sin_sg5
-
-
+@no_type_check
 def apply_mass_flux(
     dp1: FloatField,
     x_mass_flux: FloatField,
@@ -134,11 +137,15 @@ def apply_mass_flux(
     with computation(PARALLEL), interval(...):
         dp2 = (
             dp1
-            + (x_mass_flux - x_mass_flux[1, 0, 0] + y_mass_flux - y_mass_flux[0, 1, 0])
+            + (
+                (x_mass_flux - x_mass_flux[1, 0, 0])
+                + (y_mass_flux - y_mass_flux[0, 1, 0])
+            )
             * rarea
         )
 
 
+@no_type_check
 def apply_tracer_flux(
     q: FloatField,
     dp1: FloatField,
@@ -146,6 +153,8 @@ def apply_tracer_flux(
     fy: FloatField,
     rarea: FloatFieldIJ,
     dp2: FloatField,
+    cmax: FloatFieldK,
+    current_nsplit: int,
 ):
     """
     Args:
@@ -157,7 +166,8 @@ def apply_tracer_flux(
         dp2 (in):
     """
     with computation(PARALLEL), interval(...):
-        q = (q * dp1 + (fx - fx[1, 0, 0] + fy - fy[0, 1, 0]) * rarea) / dp2
+        if current_nsplit < int32(1.0 + cmax):
+            q = (q * dp1 + ((fx - fx[1, 0, 0]) + (fy - fy[0, 1, 0])) * rarea) / dp2
 
 
 # Simple stencil replacing:
@@ -165,6 +175,7 @@ def apply_tracer_flux(
 #   dp1[:] = dp2
 #   dp2[:] = self._tmp_dp2
 # Because dpX can be a quantity or an array
+@no_type_check
 def swap_dp(dp1: FloatField, dp2: FloatField):
     with computation(PARALLEL), interval(...):
         tmp = dp1
@@ -177,6 +188,16 @@ class TracerAdvection(NDSLRuntime):
     Performs horizontal advection on tracers.
 
     Corresponds to tracer_2D_1L in the Fortran code.
+
+    Args:
+        stencil_factory: Stencil maker built on the required grid
+        quantity_factory: Quantity maker built on the required grid
+        transport: The Finite Volume to be applied to each tracers
+        grid_data: Metric Terms for the grid
+        comm: Communicator on the grid
+        tracers: Bundle of data of tracers to be advected
+        exclude_tracers: Tracers to not be advected
+        update_mass_courant: update the mass and courant numbers
     """
 
     def __init__(
@@ -184,15 +205,31 @@ class TracerAdvection(NDSLRuntime):
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
         transport: FiniteVolumeTransport,
-        grid_data,
+        grid_data: GridData,
         comm: Communicator,
         tracers: FVTracers,
         number_of_tracer_to_advect: int | None = None,
+        update_mass_courant: bool = True,
     ):
         super().__init__(stencil_factory)
         grid_indexing = stencil_factory.grid_indexing
         self.grid_indexing = grid_indexing  # needed for selective validation
         self.grid_data = grid_data
+        self._update_mass_courant = update_mass_courant
+
+        if not self._update_mass_courant:
+            self._tmp_mfx = self.make_local(
+                quantity_factory, [I_INTERFACE_DIM, J_DIM, K_DIM]
+            )
+            self._tmp_mfy = self.make_local(
+                quantity_factory, [I_DIM, J_INTERFACE_DIM, K_DIM]
+            )
+            self._tmp_cx = self.make_local(
+                quantity_factory, [I_INTERFACE_DIM, J_DIM, K_DIM]
+            )
+            self._tmp_cy = self.make_local(
+                quantity_factory, [I_DIM, J_INTERFACE_DIM, K_DIM]
+            )
         self._H = stencil_factory.grid_indexing.n_halo
         self._number_of_tracer_to_advect = number_of_tracer_to_advect or FVTracers.size(
             0
@@ -203,31 +240,34 @@ class TracerAdvection(NDSLRuntime):
             quantity_factory,
             [I_INTERFACE_DIM, J_DIM, K_DIM],
             units="unknown",
-            dtype=Float,
         )
         self._y_area_flux = self.make_local(
             quantity_factory,
             [I_DIM, J_INTERFACE_DIM, K_DIM],
             units="unknown",
-            dtype=Float,
         )
         self._x_flux = self.make_local(
             quantity_factory,
             [I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             units="unknown",
-            dtype=Float,
         )
         self._y_flux = self.make_local(
             quantity_factory,
             [I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
             units="unknown",
-            dtype=Float,
         )
         self._tmp_dp = self.make_local(
             quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="Pa",
-            dtype=Float,
+        )
+        # The `TracerCMax` system expects a Quantity to be
+        # able to do `.field.max` on it. Giving it a Local
+        # would lead to orchestration passing a numpy.array
+        # ⚠️ This must be a Quantity for now ⚠️
+        self._cmax = quantity_factory.zeros(
+            [K_DIM],
+            units="unitless",
         )
 
         ax_offsets = grid_indexing.axis_offsets(
@@ -270,6 +310,14 @@ class TracerAdvection(NDSLRuntime):
             externals=local_axis_offsets,
         )
         self.finite_volume_transport: FiniteVolumeTransport = transport
+
+        # Setup tracer courant max reduction calculation
+        self._compute_cmax = TracerCMax(
+            stencil_factory=stencil_factory,
+            quantity_factory=quantity_factory,
+            grid_data=grid_data,
+            comm=comm,
+        )
 
         # Setup halo updater for tracers
         tracer_halo_spec = quantity_factory.get_quantity_halo_spec(
@@ -324,17 +372,25 @@ class TracerAdvection(NDSLRuntime):
             x_courant (inout): accumulated courant number in x-direction
             y_courant (inout): accumulated courant number in y-direction
         """
-        # DaCe parsing issue
-        # if len(tracers) != self._tracer_count:
-        #     raise ValueError(
-        #         f"incorrect number of tracers, {self._tracer_count} was "
-        #         f"specified on init but {len(tracers)} were passed"
-        #     )
-        # start HALO update on q (in dyn_core in fortran -- just has started when
-        # this function is called...)
+
+        if self._update_mass_courant:
+            working_x_mass_flux = x_mass_flux
+            working_y_mass_flux = y_mass_flux
+            working_x_courant = x_courant
+            working_y_courant = y_courant
+        else:
+            self._tmp_mfx.data = x_mass_flux
+            self._tmp_mfy.data = y_mass_flux
+            self._tmp_cx.data = x_courant
+            self._tmp_cy.data = y_courant
+            working_x_mass_flux = self._tmp_mfx
+            working_y_mass_flux = self._tmp_mfy
+            working_x_courant = self._tmp_cx
+            working_y_courant = self._tmp_cy
+
         self._flux_compute(
-            x_courant,
-            y_courant,
+            working_x_courant,
+            working_y_courant,
             self.grid_data.dxa,
             self.grid_data.dya,
             self.grid_data.dx,
@@ -343,64 +399,48 @@ class TracerAdvection(NDSLRuntime):
             self.grid_data.sin_sg2,
             self.grid_data.sin_sg3,
             self.grid_data.sin_sg4,
-            # TODO: rename xfx/yfx to "area flux"
             self._x_area_flux,
             self._y_area_flux,
         )
 
-        # # TODO for if we end up using the Allreduce and compute cmax globally
-        # (or locally). For now, hardcoded.
-        # split = int(grid_indexing.domain[2] / 6)
-        # self._cmax_1(
-        #     cxd, cyd, self._tmp_cmax, origin=grid_indexing.origin_compute(),
-        #     domain=(grid_indexing.domain[0], self.grid_indexing.domain[1], split)
-        # )
-        # self._cmax_2(
-        #     cxd,
-        #     cyd,
-        #     self.grid.sin_sg5,
-        #     self._tmp_cmax,
-        #     origin=(grid_indexing.isc, self.grid_indexing.jsc, split),
-        #     domain=(
-        #         grid_indexing.domain[0],
-        #         self.grid_indexing.domain[1],
-        #         grid_indexing.domain[2] - split + 1
-        #     ),
-        # )
-        # cmax_flat = np.amax(self._tmp_cmax, axis=(0, 1))
-        # # cmax_flat is a gt4py storage still, but of dimension [npz+1]...
+        self._compute_cmax(
+            cx=working_x_courant,
+            cy=working_y_courant,
+            cmax=self._cmax,
+        )
 
-        # cmax_max_all_ranks = cmax_flat.data
-        # # TODO mpi allreduce...
-        # # comm.Allreduce(cmax_flat, cmax_max_all_ranks, op=MPI.MAX)
-
-        cmax_max_all_ranks = 2.0
-        n_split = math.floor(1.0 + cmax_max_all_ranks)
-        # NOTE: cmax is not usually a single value, it varies with k, if return to
-        # that, make n_split a column as well
-
-        if n_split > 1.0:
-            self._divide_fluxes_by_n_substeps(
-                x_courant,
-                self._x_area_flux,
-                x_mass_flux,
-                y_courant,
-                self._y_area_flux,
-                y_mass_flux,
-                n_split,
-            )
+        self._divide_fluxes_by_n_substeps(
+            cxd=working_x_courant,
+            xfx=self._x_area_flux,
+            mfxd=working_x_mass_flux,
+            cyd=working_y_courant,
+            yfx=self._y_area_flux,
+            mfyd=working_y_mass_flux,
+            cmax=self._cmax,
+        )
 
         self._tracers_halo_updater.update()
 
         dp2 = self._tmp_dp
 
-        for it in range(n_split):
-            last_call = it == n_split - 1
+        # The original algorithm works on K level independently
+        # (from with a  K loop) and therefore compute `nsplit`
+        # per K
+        # The stencil nature of the framework doesn't allow for it
+        # because after advection, an halo exchange need to be carried
+        # (or else we could just move the test within the stencil).
+        # We overcompute to retain true parallelization, by running
+        # a loop on the highest number of nsplit, but restraining
+        # actual update in `apply_tracer_flux` to only the valid
+        # K level for each tracers
+        max_n_split = int(1.0 + self._compute_cmax.max_over_column)
+        for current_nsplit in range(max_n_split):
+            last_call = current_nsplit == max_n_split - 1
             # tracer substep
             self._apply_mass_flux(
                 dp1,
-                x_mass_flux,
-                y_mass_flux,
+                working_x_mass_flux,
+                working_y_mass_flux,
                 self.grid_data.rarea,
                 dp2,
             )
@@ -423,9 +463,108 @@ class TracerAdvection(NDSLRuntime):
                     self._y_flux,
                     self.grid_data.rarea,
                     dp2,
+                    cmax=self._cmax,
+                    current_nsplit=current_nsplit,
                 )
             if not last_call:
                 self._halo_exchange_tracers(tracers)
                 # we can't use variable assignment to avoid a data copy
                 # because of current dace limitations
                 self._swap_dp(dp1, dp2)
+
+
+@no_type_check
+def cmax_stencil_low_k(
+    cx: FloatField,
+    cy: FloatField,
+    cmax: FloatField,
+):
+    with computation(PARALLEL), interval(...):
+        cmax = max(abs(cx), abs(cy))
+
+
+@no_type_check
+def cmax_stencil_high_k(
+    cx: FloatField,
+    cy: FloatField,
+    sin_sg5: FloatFieldIJ,
+    cmax: FloatField,
+):
+    with computation(PARALLEL), interval(...):
+        cmax = max(abs(cx), abs(cy)) + 1.0 - sin_sg5
+
+
+class TracerCMax(NDSLRuntime):
+    def __init__(
+        self,
+        stencil_factory: StencilFactory,
+        quantity_factory: QuantityFactory,
+        grid_data: GridData,
+        comm: Communicator,
+    ):
+        """Perform global courant number max.
+
+        The maximum courant number for every atmospheric level on the entire grid.
+        """
+        super().__init__(stencil_factory)
+
+        self._grid_data = grid_data
+        self._comm = comm
+        grid_indexing = stencil_factory.grid_indexing
+        cmax_atmospheric_level_split = int(grid_indexing.domain[2] / 6) - 1
+        self._cmax_low_k = stencil_factory.from_origin_domain(
+            func=cmax_stencil_low_k,
+            origin=grid_indexing.origin_compute(),
+            domain=(
+                grid_indexing.domain[0],
+                grid_indexing.domain[1],
+                cmax_atmospheric_level_split,
+            ),
+        )
+        self._cmax_high_k = stencil_factory.from_origin_domain(
+            func=cmax_stencil_high_k,
+            origin=(
+                grid_indexing.origin_compute()[0],
+                grid_indexing.origin_compute()[1],
+                cmax_atmospheric_level_split,
+            ),
+            domain=(
+                grid_indexing.domain[0],
+                grid_indexing.domain[1],
+                grid_indexing.domain[2] - cmax_atmospheric_level_split,
+            ),
+        )
+        # When turned into a Local - orchestration decides that
+        # cmax_low and high are no longer used and skip all code
+        # -> https://github.com/NOAA-GFDL/NDSL/issues/444
+        # ⚠️ This must be a Quantity for now ⚠️
+        self._tmp_cmax = quantity_factory.zeros(
+            [I_DIM, J_DIM, K_DIM],
+            units="unknown",
+        )
+        self.max_over_column = 0
+
+    @dace_inhibitor
+    def _reduce(self, cmax):
+        if __debug__:
+            if not isinstance(cmax, Quantity):
+                raise TypeError(
+                    f"[pyfv3][Tracer]: cmax must be a quantity, got {type(cmax)}"
+                )
+        cmax[:] = self._tmp_cmax[:].max(axis=0).max(axis=0)[:]
+        self._comm.all_reduce_per_element_in_place(cmax, ReductionOperator.MAX)
+        self.max_over_column = cmax.field.max()
+
+    def __call__(self, cx, cy, cmax):
+        self._cmax_low_k(
+            cx=cx,
+            cy=cy,
+            cmax=self._tmp_cmax,
+        )
+        self._cmax_high_k(
+            cx=cx,
+            cy=cy,
+            sin_sg5=self._grid_data.sin_sg5,
+            cmax=self._tmp_cmax,
+        )
+        self._reduce(cmax)

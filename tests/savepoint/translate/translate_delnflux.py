@@ -24,7 +24,6 @@ class TranslateDelnFlux(TranslateDycoreFortranData2Py):
         }
         self.in_vars["parameters"] = []
         self.out_vars = {"fx": grid.x3d_compute_dict(), "fy": grid.y3d_compute_dict()}
-        self.stencil_factory = stencil_factory
 
     # If use_sg is defined -- 'dx', 'dy', 'rdxc', 'rdyc', 'sin_sg needed
     def compute(self, inputs):

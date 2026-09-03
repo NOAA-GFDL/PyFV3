@@ -604,7 +604,7 @@ class RemapProfile(NDSLRuntime):
         a4_3: FloatField,
         a4_4: FloatField,
         delp: FloatField,
-        qmin: Float = 0.0,
+        qmin: Float,
     ):
         """
         Calculates the interpolation coefficients for a cubic-spline which models the

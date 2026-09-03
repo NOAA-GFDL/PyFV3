@@ -1,4 +1,4 @@
-from ndsl import StencilFactory, orchestrate
+from ndsl import NDSLRuntime, StencilFactory
 from ndsl.dsl.gt4py import __INLINED, PARALLEL, compile_assert, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
@@ -38,12 +38,19 @@ def fx1_fn(courant, br, b0, bl):
 
 @gtfunction
 def get_advection_mask(bl, b0, br):
-    from __externals__ import mord
+    from __externals__ import i_end, i_start, mord
 
     if __INLINED(mord == 5):
         smt5 = bl * br < 0
+    elif __INLINED(mord == -5):
+        compile_assert(False)
     else:
         smt5 = (3.0 * abs(b0)) < abs(bl - br)
+        # Fix edge issues
+        with horizontal(region[i_start - 1, :], region[i_start, :]):
+            smt5 = bl * br < 0.0
+        with horizontal(region[i_end, :], region[i_end + 1, :]):
+            smt5 = bl * br < 0.0
 
     if smt5[-1, 0, 0] or smt5[0, 0, 0]:
         advection_mask = 1.0
@@ -154,10 +161,6 @@ def compute_al(q: FloatField, dxa: FloatFieldIJ):
 
     al = ppm.p1 * (q[-1, 0, 0] + q) + ppm.p2 * (q[-2, 0, 0] + q[1, 0, 0])
 
-    if __INLINED(iord < 0):
-        compile_assert(False)
-        al = max(al, 0.0)
-
     if __INLINED(grid_type < 3):
         with horizontal(region[i_start - 1, :], region[i_end, :]):
             al = ppm.c1 * q[-2, 0, 0] + ppm.c2 * q[-1, 0, 0] + ppm.c3 * q
@@ -173,6 +176,9 @@ def compute_al(q: FloatField, dxa: FloatFieldIJ):
             )
         with horizontal(region[i_start + 1, :], region[i_end + 2, :]):
             al = ppm.c3 * q[-1, 0, 0] + ppm.c2 * q[0, 0, 0] + ppm.c1 * q[1, 0, 0]
+
+    if __INLINED(iord < 0):
+        al = max(al, 0.0)
 
     return al
 
@@ -265,7 +271,10 @@ def compute_blbr_ord8plus(q: FloatField, dxa: FloatFieldIJ):
 
 
 def compute_x_flux(
-    q: FloatField, courant: FloatField, dxa: FloatFieldIJ, xflux: FloatField
+    q: FloatField,
+    courant: FloatField,
+    dxa: FloatFieldIJ,
+    xflux: FloatField,
 ):
     """
     Args:
@@ -285,9 +294,32 @@ def compute_x_flux(
             xflux = get_flux_ord8plus(q, courant, bl, br)
 
 
-class XPiecewiseParabolic:
+class XPiecewiseParabolic(NDSLRuntime):
     """
     Fortran name is xppm
+
+    `iord` is `hord_dp` which is hord for `δp`, `δz`, where:
+
+    `δp`: Total air mass (including vapor and condensates)
+        Equal to hydrostatic pressure depth of layer
+    `δz`: Geometric layer depth (nonhydrostatic)
+
+    Value explainers:
+        5: Unlimited “fifth-order” scheme with weak 2∆x filter; fastest
+            and least diffusive (“inviscid”)
+        6: Intermediate-strength 2∆x filter. Gives best ACC and storm
+            structure but weaker TCs (“minimally-diffusive”)
+        8: Lin 2004 monotone PPM constraint (“monotonic”)
+        9: Hunyh constraint: more expensive but less diffusive than #8
+        -5: #5 with a positive-definite constraint
+
+    Undocumented values implemented in Fortran: 7, 10, 11, 12, 13.
+
+    The code below is capable of:
+        - FV3-sphere grid (no single-tile periodic grid)
+        - `iord` == 8 for monotonic behaviors OR
+        - `iord` 5, 6
+        - `iord` must be positive
     """
 
     def __init__(
@@ -299,25 +331,30 @@ class XPiecewiseParabolic:
         origin: Index3D,
         domain: Index3D,
     ):
-        orchestrate(obj=self, config=stencil_factory.config.dace_config)
+        # Dev note: this could be rewrote to split monotonic and not, or per-type of
+        #           scheme as described above with compiler-time `iord` conditional to
+        #           direct the code
+
+        super().__init__(stencil_factory)
+
         # Arguments come from:
         # namelist.grid_type
         # grid.dxa
-        if grid_type == 3 or grid_type > 4:
+
+        available_grid_options = [0, 4]
+        if grid_type not in available_grid_options:
             raise NotImplementedError(
-                "X Piecewise Parabolic (xppm): "
-                f" grid type {grid_type} not implemented. <3 or 4 available."
+                "Y Piecewise Parabolic (yppm) configuration: "
+                f"grid type {grid_type} not implemented. "
+                f"Options are {available_grid_options}."
             )
 
-        if abs(iord) >= 8 and iord != 8:
+        available_iords = [-6, 5, 6, 8]
+        if iord not in available_iords:
             raise NotImplementedError(
-                "X Piecewise Parabolic (xppm): "
-                f"iord {iord} != 8 not implemented when >= 8."
-            )
-
-        if iord < 0:
-            raise NotImplementedError(
-                f"X Piecewise Parabolic (xppm): iord {iord} < 0 not implemented."
+                "Y Piecewise Parabolic (yppm) configuration: "
+                f"iord {iord} not implemented. "
+                f"Options are {available_iords}."
             )
 
         self._dxa = dxa
@@ -365,7 +402,10 @@ class XPiecewiseParabolic:
         # were called "get_flux", while the routine which got the flux was called
         # fx1_fn. The final value was called xflux instead of q_out.
         self._compute_flux_stencil(
-            q_in, c, self._dxa, q_mean_advected_through_x_interface
+            q_in,
+            c,
+            self._dxa,
+            q_mean_advected_through_x_interface,
         )
         # bl and br are "edge perturbation values" as in equation 4.1
         # of the FV3 documentation

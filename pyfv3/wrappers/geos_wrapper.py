@@ -38,6 +38,16 @@ from pyfv3.tracers import default_ai2_tracers
 # NDSL has a chance to configure things like literal precision in GT4Py.
 from gt4py.cartesian.config import build_settings as gt_build_settings  # isort: skip
 
+GEOS_TRACER_MAPPING = [
+    "vapor",
+    "liquid",
+    "ice",
+    "rain",
+    "snow",
+    "graupel",
+    "cloud",
+]
+
 
 class StencilBackendCompilerOverride:
     """Override the Pace global stencil JIT to allow for 9-rank build
@@ -110,8 +120,22 @@ class GeosDycoreWrapper:
         bdt: int,
         comm: Comm,
         backend: Backend,
+        water_tracers_count: int,
+        all_tracers_count: int,
         fortran_mem_space: MemorySpace = MemorySpace.HOST,
-    ) -> None:
+    ):
+        # Check for water species configuration not handled by the interface
+        if water_tracers_count != 6:
+            raise NotImplementedError(
+                f"[pyfv3 Bridge] Bridge expect 6 water species, got {water_tracers_count}."
+            )
+
+        # Build the full tracer mapping by appending None to the expected tracer list
+        # based on parameter
+        self._tracers_mapping = GEOS_TRACER_MAPPING
+        for i in range(all_tracers_count, len(GEOS_TRACER_MAPPING)):
+            self._tracers_mapping.append(f"tracer_#{i}")
+
         # Look for an override to run on a single node
         gtfv3_single_rank_override = int(os.getenv("GTFV3_SINGLE_RANK_OVERRIDE", -1))
         if gtfv3_single_rank_override >= 0:
@@ -218,7 +242,6 @@ class GeosDycoreWrapper:
         )
 
         self.output_dict: dict[str, np.ndarray] = {}
-        self._allocate_output_dir()
 
         # Feedback information
         device_ordinal_info = (
@@ -252,6 +275,16 @@ class GeosDycoreWrapper:
                 state=self.dycore_state,
                 timer=self.perf_collector.timestep_timer,
             )
+
+    def _collect_timings(self, timings: dict[str, list[float]]) -> None:
+        """Collect performance of the timestep"""
+        self.perf_collector.collect_performance()
+        for k, v in self.perf_collector.times_per_step[0].items():
+            if k not in timings.keys():
+                timings[k] = [v]
+            else:
+                timings[k].append(v)
+        self.perf_collector.clear()
 
     def __call__(
         self,
@@ -315,14 +348,7 @@ class GeosDycoreWrapper:
         with self.perf_collector.timestep_timer.clock("dycore-to-numpy"):
             self.output_dict = self._prep_outputs_for_geos()
 
-        # Collect performance of the timestep and write a json file for rank 0
-        self.perf_collector.collect_performance()
-        for k, v in self.perf_collector.times_per_step[0].items():
-            if k not in timings.keys():
-                timings[k] = [v]
-            else:
-                timings[k].append(v)
-        self.perf_collector.clear()
+        self._collect_timings(timings)
 
         return self.output_dict, timings
 
@@ -388,15 +414,11 @@ class GeosDycoreWrapper:
         safe_assign_array(state.omga.view[:], omga[isc:iec, jsc:jec, :])
         safe_assign_array(state.diss_estd.view[:], diss_estd[isc:iec, jsc:jec, :])
 
-        # tracer quantities should be a 4d array in order:
-        # vapor, liquid, ice, rain, snow, graupel, cloud
-        safe_assign_array(state.qvapor.view[:], q[isc:iec, jsc:jec, :, 0])
-        safe_assign_array(state.qliquid.view[:], q[isc:iec, jsc:jec, :, 1])
-        safe_assign_array(state.qice.view[:], q[isc:iec, jsc:jec, :, 2])
-        safe_assign_array(state.qrain.view[:], q[isc:iec, jsc:jec, :, 3])
-        safe_assign_array(state.qsnow.view[:], q[isc:iec, jsc:jec, :, 4])
-        safe_assign_array(state.qgraupel.view[:], q[isc:iec, jsc:jec, :, 5])
-        safe_assign_array(state.qcld.view[:], q[isc:iec, jsc:jec, :, 6])
+        # Copy tracer data
+        for index, name in enumerate(self._tracers_mapping):
+            safe_assign_array(
+                state.tracers[name].view[:], q[isc:iec, jsc:jec, :, index]
+            )
 
         return state
 
@@ -465,27 +487,8 @@ class GeosDycoreWrapper:
                 self.dycore_state.diss_estd[:-1, :-1, :-1],
             )
 
-            safe_assign_array(
-                output_dict["qvapor"], self.dycore_state.qvapor[:-1, :-1, :-1]
-            )
-            safe_assign_array(
-                output_dict["qliquid"], self.dycore_state.qliquid[:-1, :-1, :-1]
-            )
-            safe_assign_array(
-                output_dict["qice"], self.dycore_state.qice[:-1, :-1, :-1]
-            )
-            safe_assign_array(
-                output_dict["qrain"], self.dycore_state.qrain[:-1, :-1, :-1]
-            )
-            safe_assign_array(
-                output_dict["qsnow"], self.dycore_state.qsnow[:-1, :-1, :-1]
-            )
-            safe_assign_array(
-                output_dict["qgraupel"], self.dycore_state.qgraupel[:-1, :-1, :-1]
-            )
-            safe_assign_array(
-                output_dict["qcld"], self.dycore_state.qcld[:-1, :-1, :-1]
-            )
+            # Copy tracer data
+            safe_assign_array(output_dict["q"], self.dycore_state.tracers.as_4D_array())
         else:
             output_dict["u"] = self.dycore_state.u[:-1, :, :-1]
             output_dict["v"] = self.dycore_state.v[:, :-1, :-1]
@@ -512,23 +515,18 @@ class GeosDycoreWrapper:
             output_dict["q_con"] = self.dycore_state.q_con[:-1, :-1, :-1]
             output_dict["omga"] = self.dycore_state.omga[:-1, :-1, :-1]
             output_dict["diss_estd"] = self.dycore_state.diss_estd[:-1, :-1, :-1]
-            output_dict["qvapor"] = self.dycore_state.qvapor[:-1, :-1, :-1]
-            output_dict["qliquid"] = self.dycore_state.qliquid[:-1, :-1, :-1]
-            output_dict["qice"] = self.dycore_state.qice[:-1, :-1, :-1]
-            output_dict["qrain"] = self.dycore_state.qrain[:-1, :-1, :-1]
-            output_dict["qsnow"] = self.dycore_state.qsnow[:-1, :-1, :-1]
-            output_dict["qgraupel"] = self.dycore_state.qgraupel[:-1, :-1, :-1]
-            output_dict["qcld"] = self.dycore_state.qcld[:-1, :-1, :-1]
+            output_dict["q"] = self.dycore_state.tracers.as_4D_array()
 
         return output_dict
 
     def _allocate_output_dir(self) -> None:
+        if len(self.output_dict) != 0:
+            return
         if self._fortran_mem_space != self._pace_mem_space:
             nhalo = self._grid_indexing.n_halo
             shape_centered = self._grid_indexing.domain_full(add=(0, 0, 0))
             shape_x_interface = self._grid_indexing.domain_full(add=(1, 0, 0))
             shape_y_interface = self._grid_indexing.domain_full(add=(0, 1, 0))
-            shape_z_interface = self._grid_indexing.domain_full(add=(0, 0, 1))
             shape_2d = shape_centered[:-1]
 
             self.output_dict["u"] = np.empty((shape_y_interface))
@@ -581,34 +579,3 @@ class GeosDycoreWrapper:
             self.output_dict["qsnow"] = np.empty((shape_centered))
             self.output_dict["qgraupel"] = np.empty((shape_centered))
             self.output_dict["qcld"] = np.empty((shape_centered))
-        else:
-            self.output_dict["u"] = None
-            self.output_dict["v"] = None
-            self.output_dict["w"] = None
-            self.output_dict["ua"] = None
-            self.output_dict["va"] = None
-            self.output_dict["uc"] = None
-            self.output_dict["vc"] = None
-            self.output_dict["delz"] = None
-            self.output_dict["pt"] = None
-            self.output_dict["delp"] = None
-            self.output_dict["mfxd"] = None
-            self.output_dict["mfyd"] = None
-            self.output_dict["cxd"] = None
-            self.output_dict["cyd"] = None
-            self.output_dict["ps"] = None
-            self.output_dict["pe"] = None
-            self.output_dict["pk"] = None
-            self.output_dict["peln"] = None
-            self.output_dict["pkz"] = None
-            self.output_dict["phis"] = None
-            self.output_dict["q_con"] = None
-            self.output_dict["omga"] = None
-            self.output_dict["diss_estd"] = None
-            self.output_dict["qvapor"] = None
-            self.output_dict["qliquid"] = None
-            self.output_dict["qice"] = None
-            self.output_dict["qrain"] = None
-            self.output_dict["qsnow"] = None
-            self.output_dict["qgraupel"] = None
-            self.output_dict["qcld"] = None

@@ -15,10 +15,7 @@ class TranslateDel6VtFlux(TranslateDycoreFortranData2Py):
         stencil_factory: StencilFactory,
     ):
         super().__init__(grid, namelist, stencil_factory)
-        fxstat = grid.x3d_domain_dict()
-        fxstat.update({"serialname": "fx2"})
-        fystat = grid.y3d_domain_dict()
-        fystat.update({"serialname": "fy2"})
+
         self.in_vars["data_vars"] = {
             "q": {"serialname": "wq"},
             "d2": {"serialname": "wd2"},
@@ -34,7 +31,6 @@ class TranslateDel6VtFlux(TranslateDycoreFortranData2Py):
             "d2": {"serialname": "wd2"},
             "q": {"serialname": "wq"},
         }
-        self.stencil_factory = stencil_factory
 
     # use_sg -- 'dx', 'dy', 'rdxc', 'rdyc', 'sin_sg needed
     def compute(self, inputs):

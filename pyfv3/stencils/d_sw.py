@@ -1,15 +1,14 @@
 from collections.abc import Mapping
 
-from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
-from ndsl.dsl.gt4py import __INLINED, PARALLEL, computation
+from ndsl.dsl.gt4py import __INLINED, PARALLEL, I, J, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
+from ndsl.dsl.typing import Float, FloatField, FloatField64, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients, GridData
 from pyfv3._config import DGridShallowWaterLagrangianDynamicsConfig
 from pyfv3.stencils import delnflux
-from pyfv3.stencils.d2a2c_vect import contravariant
 from pyfv3.stencils.delnflux import DelnFluxNoSG
 from pyfv3.stencils.divergence_damping import DivergenceDamping
 from pyfv3.stencils.fvtp2d import FiniteVolumeTransport
@@ -18,14 +17,14 @@ from pyfv3.stencils.xtp_u import advect_u_along_x
 from pyfv3.stencils.ytp_v import advect_v_along_y
 from pyfv3.version import IS_GEOS
 
-dcon_threshold = 1e-5
+dcon_threshold = Float(1e-5)
 
 
 def flux_capacitor(
-    cx: FloatField,
-    cy: FloatField,
-    xflux: FloatField,
-    yflux: FloatField,
+    cx: FloatField64,
+    cy: FloatField64,
+    xflux: FloatField64,
+    yflux: FloatField64,
     crx_adv: FloatField,
     cry_adv: FloatField,
     fx: FloatField,
@@ -84,6 +83,8 @@ def heat_diss(
         damp_w (in):
         ke_bg (in):
     """
+    from __externals__ import do_stochastic_ke_backscatter
+
     with computation(PARALLEL), interval(...):
         heat_source = 0.0
         diss_est = 0.0
@@ -91,7 +92,8 @@ def heat_diss(
             dd8 = ke_bg * abs(dt)
             dw = (fx2 - fx2[1, 0, 0] + fy2 - fy2[0, 1, 0]) * rarea
             heat_source = dd8 - dw * (w + 0.5 * dw)
-            diss_est = heat_source
+            if __INLINED(do_stochastic_ke_backscatter):
+                diss_est = heat_source
 
 
 @gtfunction
@@ -192,6 +194,16 @@ def apply_pt_delp_fluxes_stencil_defn(
         pt, delp = apply_pt_delp_fluxes(gx, gy, rarea, fx, fy, pt, delp)
 
 
+def delp_increment_accumulation(
+    dpx: FloatField64,
+    fx: FloatField,
+    fy: FloatField,
+    rarea: FloatFieldIJ,
+):
+    with computation(PARALLEL), interval(...):
+        dpx = dpx + ((fx - fx[1, 0, 0]) + (fy - fy[0, 1, 0])) * rarea
+
+
 def compute_kinetic_energy(
     vc: FloatField,
     uc: FloatField,
@@ -233,20 +245,22 @@ def compute_kinetic_energy(
     from __externals__ import grid_type
 
     with computation(PARALLEL), interval(...):
+        dt4 = 0.25 * dt
+        dt5 = 0.5 * dt
         if __INLINED(grid_type < 3):
             ub_contra, vb_contra = interpolate_uc_vc_to_cell_corners(
-                uc, vc, cosa, rsina, uc_contra, vc_contra
+                uc, vc, cosa, rsina, uc_contra, vc_contra, dt4, dt5
             )
         else:
-            ub_contra = 0.5 * (uc[0, -1, 0] + uc)
-            vb_contra = 0.5 * (vc[-1, 0, 0] + vc)
+            ub_contra = dt5 * (uc[0, -1, 0] + uc)
+            vb_contra = dt5 * (vc[-1, 0, 0] + vc)
         advected_v = advect_v_along_y(v, vb_contra, rdy=rdy, dy=dy, dya=dya, dt=dt)
         advected_u = advect_u_along_x(u, ub_contra, rdx=rdx, dx=dx, dxa=dxa, dt=dt)
         # makes sure the kinetic energy part of the governing equation is computed
         # the same way as the vorticity flux part (in terms of time splitting)
         # to avoid a Hollingsworth-Kallberg instability
-        dt_kinetic_energy_on_cell_corners = (
-            0.5 * dt * (ub_contra * advected_u + vb_contra * advected_v)
+        dt_kinetic_energy_on_cell_corners = 0.5 * (
+            ub_contra * advected_u + vb_contra * advected_v
         )
         dt_kinetic_energy_on_cell_corners = all_corners_ke(
             dt_kinetic_energy_on_cell_corners, u, v, uc_contra, vc_contra, dt
@@ -318,11 +332,9 @@ def compute_vorticity(
         # cell-mean vorticity is equal to the circulation around the gridcell
         # divided by the area of the gridcell. It isn't exactly true that
         # area = dx * dy, so the form below is necessary to get an exact result.
-        rdy_tmp = rarea * dx
-        rdx_tmp = rarea * dy
-        vorticity = (u - u[0, 1, 0] * dx[0, 1] / dx) * rdy_tmp + (
-            v[1, 0, 0] * dy[1, 0] / dy - v
-        ) * rdx_tmp
+        ut = v * dy
+        vt = u * dx
+        vorticity = rarea * (vt - vt[J + 1] - ut + ut[I + 1])
 
 
 def adjust_w_and_qcon(
@@ -365,9 +377,7 @@ def vort_differencing(
     from __externals__ import local_ie, local_is, local_je, local_js
 
     with computation(PARALLEL), interval(...):
-        # TODO: this should likely be dcon[k] rather than dcon[0] so that this
-        # can be turned on and off per-layer
-        if dcon[0] > dcon_threshold:
+        if dcon > dcon_threshold:
             # Creating a gtscript function for the ub/vb computation
             # results in an "NotImplementedError" error for Jenkins
             # Inlining the ub/vb computation in this stencil resolves the Jenkins error
@@ -528,8 +538,7 @@ def heat_source_from_vorticity_damping(
         kinetic_energy_fraction_to_damp (in): the fraction of kinetic energy
             to explicitly damp and convert into heat.
     """
-    from __externals__ import d_con  # noqa (see below)
-    from __externals__ import (
+    from __externals__ import (  # noqa (see below)
         do_stochastic_ke_backscatter,
         local_ie,
         local_is,
@@ -623,24 +632,15 @@ def set_low_kvals(col: Mapping[str, Quantity], k):
 
 # For the column namelist at a specific k-level
 # set the vorticity parameters if do_vort_damp is true
-def vorticity_damping_option_FV3GFS(column, k, do_vort_damp):
+def vorticity_damping_option(column, k, do_vort_damp):
     if do_vort_damp:
         column["nord_v"].view[k] = 0
         column["damp_vt"].view[k] = 0.5 * column["d2_divg"].view[k]
 
 
-def vorticity_damping_option_GEOS(column, k, do_vort_damp):
-    # GEOS does not set damp_vt
-    if do_vort_damp:
-        column["nord_v"].view[k] = 0
-
-
 def lowest_kvals(column, k, do_vort_damp):
     set_low_kvals(column, k)
-    if IS_GEOS:
-        vorticity_damping_option_GEOS(column, k, do_vort_damp)
-    else:
-        vorticity_damping_option_FV3GFS(column, k, do_vort_damp)
+    vorticity_damping_option(column, k, do_vort_damp)
 
 
 def get_column_namelist(
@@ -714,16 +714,16 @@ def get_column_namelist(
 
     # Check that the format of nord_col is N 0's then non-zero values
     # all the way to the top.
-    # Check upper values are all the same.
-    non_zero_k = -1
-    non_zero_v = -1
-    for k, v in enumerate(col["nord_v"].view[:]):
+    # Non-zeros values are all the same.
+    first_non_zero_index = -1
+    first_non_zero_value = -1
+    for i, v in enumerate(col["nord_v"].view[:]):
         if v != 0:
-            non_zero_k = k
-            non_zero_v = v
+            first_non_zero_index = i
+            first_non_zero_value = v
             break
-    for v in range(non_zero_k, col["nord_v"].view.extent[0]):
-        if col["nord_v"].view[v] != non_zero_v:
+    for v in range(first_non_zero_index, col["nord_v"].view.extent[0]):
+        if col["nord_v"].view[v] != first_non_zero_value:
             raise RuntimeError(
                 f"D_SW.column is not homogeneous in values: {col['nord_v'].view[:]}"
             )
@@ -733,45 +733,41 @@ def get_column_namelist(
 
 @gtfunction
 def interpolate_uc_vc_to_cell_corners(
-    uc_cov, vc_cov, cosa, rsina, uc_contra, vc_contra
+    uc_cov, vc_cov, cosa, rsina, uc_contra, vc_contra, dt4, dt5
 ):
     """
     Convert covariant C-grid winds to contravariant B-grid (cell-corner) winds.
     """
     from __externals__ import i_end, i_start, j_end, j_start
 
-    # In the original Fortran, this routine was given dt4 (0.25 * dt)
-    # and dt5 (0.5 * dt), and its outputs were wind times timestep. This has
-    # been refactored so the timestep is later explicitly multiplied, when
-    # the wind is integrated forward in time.
-    # TODO: ask Lucas why we interpolate then convert to contravariant in tile center,
-    # but convert to contravariant and then interpolate on tile edges.
-    ub_cov = 0.5 * (uc_cov[0, -1, 0] + uc_cov)
-    vb_cov = 0.5 * (vc_cov[-1, 0, 0] + vc_cov)
-    ub_contra = contravariant(ub_cov, vb_cov, cosa, rsina)
-    vb_contra = contravariant(vb_cov, ub_cov, cosa, rsina)
-    # ASSUME : if __INLINED(namelist.grid_type < 3):
+    # Orders matter because corners take the last edge computation values
+    # Center domain
+    ub = dt5 * (uc_cov[J - 1] + uc_cov - (vc_cov[I - 1] + vc_cov) * cosa) * rsina
+    vb = dt5 * (vc_cov[I - 1] + vc_cov - (uc_cov[J - 1] + uc_cov) * cosa) * rsina
+    # UB - Orders matter because corners take the last edge computation values
+    # North/South edge
     with horizontal(region[:, j_start], region[:, j_end + 1]):
-        ub_contra = 0.25 * (
-            -uc_contra[0, -2, 0]
-            + 3.0 * (uc_contra[0, -1, 0] + uc_contra)
-            - uc_contra[0, 1, 0]
+        ub = dt4 * (
+            -uc_contra[J - 2] + 3.0 * (uc_contra[J - 1] + uc_contra) - uc_contra[J + 1]
         )
+    # East/West
     with horizontal(region[i_start, :], region[i_end + 1, :]):
-        ub_contra = 0.5 * (uc_contra[0, -1, 0] + uc_contra)
+        ub = dt5 * (uc_contra[J - 1] + uc_contra)
+
+    # VB - Orders matter because corners take the last edge computation values
+    # North/South edge
     with horizontal(region[i_start, :], region[i_end + 1, :]):
-        vb_contra = 0.25 * (
-            -vc_contra[-2, 0, 0]
-            + 3.0 * (vc_contra[-1, 0, 0] + vc_contra)
-            - vc_contra[1, 0, 0]
+        vb = dt4 * (
+            -vc_contra[I - 2] + 3.0 * (vc_contra[I - 1] + vc_contra) - vc_contra[I + 1]
         )
+    # East/West
     with horizontal(region[:, j_start], region[:, j_end + 1]):
-        vb_contra = 0.5 * (vc_contra[-1, 0, 0] + vc_contra)
+        vb = dt5 * (vc_contra[I - 1] + vc_contra)
 
-    return ub_contra, vb_contra
+    return ub, vb
 
 
-class DGridShallowWaterLagrangianDynamics:
+class DGridShallowWaterLagrangianDynamics(NDSLRuntime):
     """
     Fortran name is the d_sw subroutine
     """
@@ -787,7 +783,8 @@ class DGridShallowWaterLagrangianDynamics:
         stretched_grid: bool,
         config: DGridShallowWaterLagrangianDynamicsConfig,
     ):
-        orchestrate(obj=self, config=stencil_factory.config.dace_config)
+        super().__init__(stencil_factory)
+
         self.grid_data = grid_data
         self._f0 = self.grid_data.fC_agrid
         self._d_con = config.d_con
@@ -833,34 +830,36 @@ class DGridShallowWaterLagrangianDynamics:
                 "D-Grid Shallow Water Lagrangian Dynamics (D_SW): Hydrostatic is not implemented"
             )
 
-        def make_quantity():
-            return quantity_factory.zeros(
-                [I_DIM, J_DIM, K_DIM],
-                units="unknown",
-                dtype=Float,
-            )
-
-        self._tmp_heat_s = make_quantity()
-        self._tmp_diss_e = make_quantity()
-        self._vort_x_delta = make_quantity()
-        self._vort_y_delta = make_quantity()
-        self._dt_kinetic_energy_on_cell_corners = make_quantity()
-        self._abs_vorticity_agrid = make_quantity()
-        self._damped_rel_vorticity_agrid = make_quantity()
-        self._uc_contra = make_quantity()
-        self._vc_contra = make_quantity()
-        self._tmp_ut = make_quantity()
-        self._tmp_vt = make_quantity()
-        self._tmp_fx = make_quantity()
-        self._tmp_fy = make_quantity()
-        self._tmp_gx = make_quantity()
-        self._tmp_gy = make_quantity()
-        self._tmp_dw = make_quantity()
-        self._tmp_wk = make_quantity()
-        self._vorticity_agrid = make_quantity()
-        self._vorticity_bgrid_damped = make_quantity()
-        self._tmp_fx2 = make_quantity()
-        self._tmp_fy2 = make_quantity()
+        # locals
+        self._tmp_heat_s = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_diss_e = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._vort_x_delta = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._vort_y_delta = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._dt_kinetic_energy_on_cell_corners = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
+        self._abs_vorticity_agrid = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
+        self._damped_rel_vorticity_agrid = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
+        self._uc_contra = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._vc_contra = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_ut = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_vt = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_fx = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_fy = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_gx = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_gy = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_dw = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_wk = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._vorticity_agrid = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._vorticity_bgrid_damped = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
+        self._tmp_fx2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_fy2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         self._column_namelist = column_namelist
 
         self.delnflux_nosg_w = DelnFluxNoSG(
@@ -983,11 +982,14 @@ class DGridShallowWaterLagrangianDynamics:
         self._heat_diss_stencil = stencil_factory.from_dims_halo(
             func=heat_diss,
             compute_dims=[I_DIM, J_DIM, K_DIM],
+            externals={
+                "do_stochastic_ke_backscatter": config.do_skeb,
+            },
         )
         self._heat_source_from_vorticity_damping_stencil = (
             stencil_factory.from_dims_halo(
                 func=heat_source_from_vorticity_damping,
-                compute_dims=[I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM],
+                compute_dims=[I_DIM, J_DIM, K_DIM],
                 externals={
                     "do_stochastic_ke_backscatter": config.do_skeb,
                     "d_con": config.d_con,
@@ -1021,33 +1023,38 @@ class DGridShallowWaterLagrangianDynamics:
             da_min=damping_coefficients.da_min_c,
             nord=self._column_namelist["nord_w"],
         )
+        self._accumulate_delp = stencil_factory.from_dims_halo(
+            func=delp_increment_accumulation,
+            compute_dims=[I_DIM, J_DIM, K_DIM],
+        )
 
     def __call__(
         self,
-        delpc,
-        delp,
-        pt,
-        u,
-        v,
-        w,
-        uc,
-        vc,
-        ua,
-        va,
-        divgd,
-        mfx,
-        mfy,
-        cx,
-        cy,
-        crx,
-        cry,
-        xfx,
-        yfx,
-        q_con,
-        zh,
-        heat_source,
-        diss_est,
-        dt,
+        delpc: FloatField,
+        delp: FloatField,
+        pt: FloatField,
+        u: FloatField,
+        v: FloatField,
+        w: FloatField,
+        uc: FloatField,
+        vc: FloatField,
+        ua: FloatField,
+        va: FloatField,
+        divgd: FloatField,
+        mfx: FloatField64,
+        mfy: FloatField64,
+        cx: FloatField64,
+        cy: FloatField64,
+        dpx: FloatField64,
+        crx: FloatField,
+        cry: FloatField,
+        xfx: FloatField,
+        yfx: FloatField,
+        q_con: FloatField,
+        zh: FloatField,
+        heat_source: FloatField,
+        diss_est: FloatField,
+        dt: Float,
     ):
         """
         D-Grid shallow water routine, peforms a full-timestep advance
@@ -1075,6 +1082,7 @@ class DGridShallowWaterLagrangianDynamics:
             mfy (inout): accumulated y mass flux
             cx (inout): accumulated Courant number in the x direction
             cy (inout): accumulated Courant number in the y direction
+            dpx (inout): accumulated delp export for Dry Mass Roundoff Control
             crx (out): local courant number in the x direction
             cry (out): local courant number in the y direction
             xfx (out): flux of area in x-direction, in units of m^2
@@ -1212,6 +1220,13 @@ class DGridShallowWaterLagrangianDynamics:
 
         self._adjust_w_and_qcon_stencil(
             w, delp, self._tmp_dw, q_con, self._column_namelist["damp_w"]
+        )
+
+        self._accumulate_delp(
+            dpx=dpx,
+            fx=self._tmp_fx,
+            fy=self._tmp_fy,
+            rarea=self.grid_data.rarea,
         )
         # at this point, pt, delp, w and q_con have been stepped forward in time
         # the rest of this function updates the winds

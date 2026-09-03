@@ -1,5 +1,4 @@
-import ndsl.constants as constants
-from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import (
     I_DIM,
     I_INTERFACE_DIM,
@@ -15,8 +14,6 @@ from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.grid import DampingCoefficients, GridData
 from pyfv3.stencils.delnflux import DelnFluxNoSG
 from pyfv3.stencils.fvtp2d import FiniteVolumeTransport
-
-DZ_MIN = constants.DZ_MIN
 
 
 @gtfunction
@@ -72,6 +69,7 @@ def apply_height_fluxes(
     surface_height: FloatFieldIJ,
     ws: FloatFieldIJ,
     dt: Float,
+    dz_min: Float,
 ):
     """
     Apply all computed fluxes to height profile.
@@ -95,6 +93,7 @@ def apply_height_fluxes(
         surface_height (in): surface height
         ws (out): vertical velocity of the lowest level (to keep it at the surface)
         dt (in): acoustic timestep (seconds)
+        dz_min(in): controls minimum thickness in NH solver
     Grid variable inputs:
         area
     """
@@ -110,10 +109,11 @@ def apply_height_fluxes(
 
     with computation(BACKWARD):
         with interval(-1, None):
-            ws = (surface_height - height) / dt
+            rdt = 1.0 / dt
+            ws = (surface_height - height) * rdt
         with interval(0, -1):
             # ensure layer thickness exceeds minimum
-            other = height[0, 0, 1] + DZ_MIN
+            other = height[0, 0, 1] + dz_min
             height = height if height > other else other
 
 
@@ -199,7 +199,7 @@ def cubic_spline_interpolation_from_layer_center_to_interfaces(
         q_interface -= gamma * q_interface[0, 0, 1]
 
 
-class UpdateHeightOnDGrid:
+class UpdateHeightOnDGrid(NDSLRuntime):
     """
     Fortran name is updatedzd.
     """
@@ -212,12 +212,22 @@ class UpdateHeightOnDGrid:
         grid_data: GridData,
         grid_type: int,
         hord_tm: int,
+        dz_min: Float,
         column_namelist,
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        """
+        Args:
+            stencil_factory
+            quantity_factory
+            damping_coefficients
+            grid_data
+            grid_type
+            hord_tm
+            dz_min (in): controls minimum thickness in NH solver
+            column_namelist
+        """
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         self.grid_indexing = grid_indexing
         self._area = grid_data.area
@@ -226,8 +236,9 @@ class UpdateHeightOnDGrid:
             raise NotImplementedError(
                 "damp <= 1e-5 in column_namelist is not implemented"
             )
+        self._dz_min = dz_min
         self._dp_ref = grid_data.dp_ref
-        self._allocate_temporary_storages(quantity_factory)
+        self._make_locals(quantity_factory)
         self._gk, self._beta, self._gamma = cubic_spline_interpolation_constants(
             dp0=grid_data.dp_ref, quantity_factory=quantity_factory
         )
@@ -258,51 +269,37 @@ class UpdateHeightOnDGrid:
             domain=grid_indexing.domain_compute(add=(0, 0, 1)),
         )
 
-    def _allocate_temporary_storages(self, quantity_factory: QuantityFactory):
-        self._crx_interface = quantity_factory.zeros(
+    def _make_locals(self, quantity_factory: QuantityFactory):
+        """Allocate all Locals on `self`"""
+
+        self._crx_interface = self.make_local(
+            quantity_factory, [I_INTERFACE_DIM, J_DIM, K_INTERFACE_DIM]
+        )
+        self._cry_interface = self.make_local(
+            quantity_factory, [I_DIM, J_INTERFACE_DIM, K_INTERFACE_DIM]
+        )
+        self._x_area_flux_interface = self.make_local(
+            quantity_factory,
             [I_INTERFACE_DIM, J_DIM, K_INTERFACE_DIM],
-            "",
-            dtype=Float,
+            units="m^2",
         )
-        self._cry_interface = quantity_factory.zeros(
+        self._y_area_flux_interface = self.make_local(
+            quantity_factory,
             [I_DIM, J_INTERFACE_DIM, K_INTERFACE_DIM],
-            "",
-            dtype=Float,
+            units="m^2",
         )
-        self._x_area_flux_interface = quantity_factory.zeros(
-            [I_INTERFACE_DIM, J_DIM, K_INTERFACE_DIM],
-            "m^2",
-            dtype=Float,
+        self._wk = self.make_local(quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM])
+        self._height_x_diffusive_flux = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM]
         )
-        self._y_area_flux_interface = quantity_factory.zeros(
-            [I_DIM, J_INTERFACE_DIM, K_INTERFACE_DIM],
-            "m^2",
-            dtype=Float,
+        self._height_y_diffusive_flux = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM]
         )
-        self._wk = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            "unknown",
-            dtype=Float,
+        self._fx = self.make_local(
+            quantity_factory, [I_INTERFACE_DIM, J_DIM, K_INTERFACE_DIM]
         )
-        self._height_x_diffusive_flux = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            "unknown",
-            dtype=Float,
-        )
-        self._height_y_diffusive_flux = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            "unknown",
-            dtype=Float,
-        )
-        self._fx = quantity_factory.zeros(
-            [I_INTERFACE_DIM, J_DIM, K_INTERFACE_DIM],
-            "unknown",
-            dtype=Float,
-        )
-        self._fy = quantity_factory.zeros(
-            [I_DIM, J_INTERFACE_DIM, K_INTERFACE_DIM],
-            "unknown",
-            dtype=Float,
+        self._fy = self.make_local(
+            quantity_factory, [I_DIM, J_INTERFACE_DIM, K_INTERFACE_DIM]
         )
 
     def __call__(
@@ -378,4 +375,5 @@ class UpdateHeightOnDGrid:
             surface_height,
             ws,
             dt,
+            self._dz_min,
         )

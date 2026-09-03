@@ -6,7 +6,7 @@ from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import pad_field_in_j
 from pyfv3.stencils import fillz
 from pyfv3.testing import TranslateDycoreFortranData2Py
-from pyfv3.tracers import FVTracersAxisName, default_ai2_tracers
+from pyfv3.tracers import FVTracersAxisName, setup_fvtracers, GEOS_tracers_mapping
 
 
 class TranslateFillz(TranslateDycoreFortranData2Py):
@@ -41,7 +41,7 @@ class TranslateFillz(TranslateDycoreFortranData2Py):
         inputs,
         storage_vars=None,
     ) -> None:
-        default_ai2_tracers(self.quantity_factory)
+        setup_fvtracers(self.quantity_factory, inputs["nq"], GEOS_tracers_mapping)
         if storage_vars is None:
             storage_vars = self.storage_vars()
         info = storage_vars["dp2"]
@@ -61,13 +61,6 @@ class TranslateFillz(TranslateDycoreFortranData2Py):
 
     def compute(self, inputs):
         self.make_storage_data_input_vars(inputs)
-        for name, value in tuple(inputs.items()):
-            if hasattr(value, "shape") and len(value.shape) > 1 and value.shape[1] == 1:
-                inputs[name] = self.make_storage_data(
-                    pad_field_in_j(
-                        value, self.grid.njd, backend=self.stencil_factory.backend
-                    )
-                )
         quantity_tracers = self.grid.quantity_factory.empty(
             [I_DIM, J_DIM, K_DIM, FVTracersAxisName], "n/a"
         )
@@ -79,6 +72,16 @@ class TranslateFillz(TranslateDycoreFortranData2Py):
                     )
                 )
         inputs["tracers"] = quantity_tracers
+
+        dp2 = self.grid.quantity_factory.empty(
+            [I_DIM, J_DIM, K_DIM], "n/a"
+        )
+        dp2[:, :, :] = self.make_storage_data(
+            pad_field_in_j(
+                inputs["dp2"], self.grid.njd, backend=self.stencil_factory.backend
+            )
+        )
+        inputs["dp2"] = dp2
 
         run_fillz = fillz.FillNegativeTracerValues(
             self.stencil_factory,

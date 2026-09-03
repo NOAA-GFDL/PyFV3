@@ -1,7 +1,7 @@
 import typing
 
 import ndsl.constants as constants
-from ndsl import QuantityFactory, StencilFactory
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval, log
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
@@ -57,7 +57,7 @@ def precompute(
         dz = gz[0, 0, 1] - gz
     with computation(PARALLEL), interval(...):
         gm = 1.0 / (1.0 - cappa)
-        dm /= constants.GRAV
+        dm *= constants.RGRAV
     with computation(PARALLEL), interval(0, -1):
         # (1) From \partial p*/\partial z = -\rho g, we can separate and integrate
         # over a layer to get
@@ -114,7 +114,7 @@ def finalize(
             gz = gz[0, 0, 1] - dz * constants.GRAV
 
 
-class NonhydrostaticVerticalSolverCGrid:
+class NonhydrostaticVerticalSolverCGrid(NDSLRuntime):
     """
     Fortran subroutine Riem_Solver_C
 
@@ -132,45 +132,23 @@ class NonhydrostaticVerticalSolverCGrid:
         quantity_factory: QuantityFactory,
         p_fac: Float,
     ):
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         origin = grid_indexing.origin_compute(add=(-1, -1, 0))
         domain = grid_indexing.domain_compute(add=(2, 2, 1))
 
-        self._dm = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="kg",
-            dtype=Float,
+        self._dm = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM], units="kg")
+        self._w = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM], units="m/s")
+        self._pem = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM], units="Pa"
         )
-        self._w = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="m/s",
-            dtype=Float,
+        self._pe = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM], units="Pa"
         )
-        self._pem = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-        self._pe = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            units="Pa",
-            dtype=Float,
-        )
-        self._gm = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="",
-            dtype=Float,
-        )
-        self._dz = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="m",
-            dtype=Float,
-        )
-        self._pm = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="Pa",
-            dtype=Float,
-        )
+        self._gm = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM], units="")
+        self._dz = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM], units="m")
+        self._pm = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM], units="Pa")
 
         self._precompute_stencil = stencil_factory.from_origin_domain(
             precompute,
@@ -179,7 +157,7 @@ class NonhydrostaticVerticalSolverCGrid:
         )
         self._sim1_solve = Sim1Solver(
             stencil_factory,
-            p_fac,
+            Float(p_fac),
             n_halo=1,
         )
         self._finalize_stencil = stencil_factory.from_origin_domain(

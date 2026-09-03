@@ -1,7 +1,7 @@
 import typing
 
 import ndsl.constants as constants
-from ndsl import StencilFactory
+from ndsl import NDSLRuntime, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_INTERFACE_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, exp, interval, log
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
@@ -132,7 +132,7 @@ def sim1_solver(
     # }
 
 
-class Sim1Solver:
+class Sim1Solver(NDSLRuntime):
     """
     Fortran name is sim1_solver
 
@@ -146,6 +146,8 @@ class Sim1Solver:
         p_fac: Float,
         n_halo: int,
     ):
+        super().__init__(stencil_factory)
+
         self._pfac = p_fac
         self._compute_sim1_solve = stencil_factory.from_dims_halo(
             func=sim1_solver,
@@ -190,8 +192,8 @@ class Sim1Solver:
 
         # TODO: email Lucas about any remaining variable naming here
 
-        t1g = 2.0 * dt * dt
-        rdt = 1.0 / dt
+        t1g = Float(2.0) * dt * dt
+        rdt = Float(1.0) / dt
         self._compute_sim1_solve(
             w,
             delta_mass,

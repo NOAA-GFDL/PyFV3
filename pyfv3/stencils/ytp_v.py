@@ -85,7 +85,7 @@ def advect_v_along_y(
 
     bl, br = get_bl_br(v, dy, dya)
     b0 = bl + br
-    cfl = vb_contra * dt * rdy[0, -1] if vb_contra > 0 else vb_contra * dt * rdy
+    cfl = vb_contra * rdy[0, -1] if vb_contra > 0 else vb_contra * rdy
     fx0 = yppm.fx1_fn(cfl, br, b0, bl)
 
     if __INLINED(jord < 8):

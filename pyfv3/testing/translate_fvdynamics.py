@@ -2,6 +2,7 @@ from dataclasses import fields
 from datetime import timedelta
 from typing import Any
 
+import numpy as np
 import pytest
 from f90nml import Namelist
 
@@ -22,7 +23,7 @@ from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import fv_dynamics
-from pyfv3.tracers import default_ai2_tracers
+from pyfv3.tracers import FVTracersAxisName, GEOS_tracers_mapping, setup_fvtracers
 
 
 class TranslateFVDynamics(ParallelTranslateBaseSlicing):
@@ -82,25 +83,25 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
             "dims": [I_DIM, K_INTERFACE_DIM, J_DIM],
             "n_halo": 0,
         },
-        "mfxd": {
+        "mfxd_FV": {
             "name": "accumulated_x_mass_flux",
             "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "unknown",
             "n_halo": 0,
         },
-        "mfyd": {
+        "mfyd_FV": {
             "name": "accumulated_y_mass_flux",
             "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "unknown",
             "n_halo": 0,
         },
-        "cxd": {
+        "cxd_FV": {
             "name": "accumulated_x_courant_number",
             "dims": [I_INTERFACE_DIM, J_DIM, K_DIM],
             "units": "",
             "n_halo": (0, 3),
         },
-        "cyd": {
+        "cyd_FV": {
             "name": "accumulated_y_courant_number",
             "dims": [I_DIM, J_INTERFACE_DIM, K_DIM],
             "units": "",
@@ -156,51 +157,6 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
             "units": "m^2 s^-2",
             "dims": [I_DIM, J_DIM],
         },
-        "qvapor": {
-            "name": "specific_humidity",
-            "dims": [I_DIM, J_DIM, K_DIM],
-            "units": "kg/kg",
-        },
-        "qliquid": {
-            "name": "cloud_water_mixing_ratio",
-            "dims": [I_DIM, J_DIM, K_DIM],
-            "units": "kg/kg",
-        },
-        "qice": {
-            "name": "cloud_ice_mixing_ratio",
-            "dims": [I_DIM, J_DIM, K_DIM],
-            "units": "kg/kg",
-        },
-        "qrain": {
-            "name": "rain_mixing_ratio",
-            "dims": [I_DIM, J_DIM, K_DIM],
-            "units": "kg/kg",
-        },
-        "qsnow": {
-            "name": "snow_mixing_ratio",
-            "dims": [I_DIM, J_DIM, K_DIM],
-            "units": "kg/kg",
-        },
-        "qgraupel": {
-            "name": "graupel_mixing_ratio",
-            "dims": [I_DIM, J_DIM, K_DIM],
-            "units": "kg/kg",
-        },
-        "qo3mr": {
-            "name": "ozone_mixing_ratio",
-            "dims": [I_DIM, J_DIM, K_DIM],
-            "units": "kg/kg",
-        },
-        "qsgs_tke": {
-            "name": "turbulent_kinetic_energy",
-            "dims": [I_DIM, J_DIM, K_DIM],
-            "units": "m**2/s**2",
-        },
-        "qcld": {
-            "name": "cloud_fraction",
-            "dims": [I_DIM, J_DIM, K_DIM],
-            "units": "",
-        },
         "omga": {
             "name": "vertical_pressure_velocity",
             "dims": [I_DIM, J_DIM, K_DIM],
@@ -208,6 +164,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         },
         "bdt": {"dims": []},
         "ptop": {"dims": []},
+        "tracers": {"dims": [I_DIM, J_DIM, K_DIM, FVTracersAxisName], "units": "kg/g"},
     }
 
     outputs = inputs.copy()
@@ -229,15 +186,6 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
             "v": grid.x3d_domain_dict(),
             "w": {},
             "delz": {},
-            "qvapor": grid.compute_dict(),
-            "qliquid": grid.compute_dict(),
-            "qice": grid.compute_dict(),
-            "qrain": grid.compute_dict(),
-            "qsnow": grid.compute_dict(),
-            "qgraupel": grid.compute_dict(),
-            "qo3mr": grid.compute_dict(),
-            "qsgs_tke": grid.compute_dict(),
-            "qcld": {},
             "ps": {},
             "pe": {
                 "istart": grid.is_ - 1,
@@ -266,10 +214,10 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
             "va": {},
             "uc": grid.x3d_domain_dict(),
             "vc": grid.y3d_domain_dict(),
-            "mfxd": grid.x3d_compute_dict(),
-            "mfyd": grid.y3d_compute_dict(),
-            "cxd": grid.x3d_compute_domain_y_dict(),
-            "cyd": grid.y3d_compute_domain_x_dict(),
+            "mfxd_FV": grid.x3d_compute_dict(),
+            "mfyd_FV": grid.y3d_compute_dict(),
+            "cxd_FV": grid.x3d_compute_domain_y_dict(),
+            "cyd_FV": grid.y3d_compute_domain_x_dict(),
             "diss_estd": {},
         }
         self._base.in_vars["data_vars"].update(fv_dynamics_vars)
@@ -277,18 +225,23 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         self._base.out_vars.update(fv_dynamics_vars)
         self._base.out_vars["ps"] = {"kstart": grid.npz - 1, "kend": grid.npz - 1}
         self._base.out_vars["phis"] = {"kstart": grid.npz - 1, "kend": grid.npz - 1}
+        self._base.out_vars["tracers"] = {}
         self._base.out_vars.pop("ua")
 
         self.max_error = 1e-5
 
-        self.ignore_near_zero_errors = {}
-        self.ignore_near_zero_errors["q_con"] = True
+        self.ignore_near_zero_errors: dict[str, float | bool] = {}
         self.dycore: fv_dynamics.DynamicalCore | None = None
         self.stencil_factory = stencil_factory
-        self.config = DynamicalCoreConfig.from_f90nml(namelist)
+        self.config: DynamicalCoreConfig = DynamicalCoreConfig.from_f90nml(namelist)
 
-    def state_from_inputs(self, inputs: dict) -> DycoreState:
+    def state_from_inputs(self, inputs: dict[str, np.ndarray]) -> DycoreState:
         input_storages = super().state_from_inputs(inputs)
+        # Move fluxes and courant numbers
+        input_storages["mfxd"] = input_storages.pop("mfxd_FV")
+        input_storages["mfyd"] = input_storages.pop("mfyd_FV")
+        input_storages["cxd"] = input_storages.pop("cxd_FV")
+        input_storages["cyd"] = input_storages.pop("cyd_FV")
         # making sure we init DycoreState with the exact set of variables
         accepted_keys = [_field.name for _field in fields(DycoreState)]
         to_delete = []
@@ -297,10 +250,11 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
                 to_delete.append(name)
         for name in to_delete:
             del input_storages[name]
-
-        return DycoreState.init_from_storages(
-            input_storages, sizer=self.grid.sizer, backend=self.stencil_factory.backend
+        state = DycoreState.init_from_storages(
+            storages=input_storages,
+            quantity_factory=self.grid.quantity_factory,
         )
+        return state
 
     def prepare_data(self, inputs: dict) -> tuple[DycoreState, GridData]:
         for name in ("ak", "bk"):
@@ -321,7 +275,9 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         return state, grid_data
 
     def compute_parallel(self, inputs: dict, communicator: Communicator) -> dict:
-        default_ai2_tracers(self.grid.quantity_factory)
+        setup_fvtracers(
+            self.grid.quantity_factory, inputs["tracers"].shape[3], GEOS_tracers_mapping
+        )
         state, grid_data = self.prepare_data(inputs)
         self.dycore = fv_dynamics.DynamicalCore(
             comm=communicator,
@@ -332,7 +288,7 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
             config=self.config,
             phis=state.phis,
             state=state,
-            timestep=timedelta(seconds=inputs["bdt"]),
+            timestep=timedelta(seconds=float(inputs["bdt"])),
         )
         self.dycore.step_dynamics(state, NullTimer())
         outputs = self.outputs_from_state(state)
@@ -345,8 +301,10 @@ class TranslateFVDynamics(ParallelTranslateBaseSlicing):
         outputs = {}
         storages = {}
         for name, _properties in self.outputs.items():
-            if isinstance(state[name], Quantity):
-                storages[name] = state[name][:]
+            if name in ["mfxd_FV", "mfyd_FV", "cxd_FV", "cyd_FV"]:
+                storages[name] = state[name[:-3]]._data
+            elif isinstance(state[name], Quantity):
+                storages[name] = state[name]._data
             elif len(self.outputs[name]["dims"]) > 0:
                 storages[name] = state[name]  # assume it's a storage
             else:

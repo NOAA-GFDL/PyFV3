@@ -51,7 +51,7 @@ class TranslateUpdateDzD(TranslateDycoreFortranData2Py):
         self._subset = get_subset_func(
             self.grid.grid_indexing,
             dims=[I_DIM, J_DIM, K_DIM],
-            n_halo=((0, 0), (0, 0)),
+            n_halo=((3, 3), (3, 3)),
         )
         self.ignore_near_zero_errors = {"zh": True, "wsd": True}
         self.near_zero = 1e-30
@@ -65,8 +65,10 @@ class TranslateUpdateDzD(TranslateDycoreFortranData2Py):
             self.grid.grid_data,
             self.grid.grid_type,
             self.config.hord_tm,
+            dz_min=self.config.acoustic_dynamics.dz_min,
             column_namelist=d_sw.get_column_namelist(
-                self.config, quantity_factory=self.grid.quantity_factory
+                self.config.d_grid_shallow_water,
+                quantity_factory=self.grid.quantity_factory,
             ),
         )
         self.updatedzd(**inputs)

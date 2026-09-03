@@ -2,7 +2,7 @@
 import collections
 
 import ndsl.dsl.gt4py_utils as utils
-from ndsl import Quantity, QuantityFactory, StencilFactory
+from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import (
     C_ICE,
     C_LIQ,
@@ -198,7 +198,7 @@ def compute_mass_flux(ri, ri_ref, delp, ratio):
             * delp[0, 0, -1]
             * delp
             / (delp[0, 0, -1] + delp)
-            * (1.0 - max_ri_ratio) ** 2.0
+            * (1.0 - max_ri_ratio) ** 2
         )
     return mc
 
@@ -730,7 +730,7 @@ ArgSpec = collections.namedtuple(
 )
 
 
-class DryConvectiveAdjustment:
+class DryConvectiveAdjustment(NDSLRuntime):
     """
     Corresponds to fv_subgrid_z in Fortran's fv_sg module.
 
@@ -779,6 +779,8 @@ class DryConvectiveAdjustment:
         n_sponge: int,
         hydrostatic: bool,
     ):
+        super().__init__(stencil_factory)
+
         if hydrostatic:
             raise NotImplementedError(
                 "DryConvectiveAdjustment (fv_subgridz): Hydrostatic is not implemented"

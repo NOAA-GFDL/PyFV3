@@ -123,8 +123,8 @@ class TranslateRemapping(TranslateDycoreFortranData2Py):
             quantity_factory=self.quantity_factory,
             config=self.config.remapping,
             area_64=self.grid.area_64,
-            nq=inputs.pop("nq"),
             pfull=pfull,
+            nwat=self.config.nwat,
         )
 
         lagrangian_to_eulerian(**inputs)

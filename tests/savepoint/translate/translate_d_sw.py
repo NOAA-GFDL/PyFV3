@@ -3,7 +3,7 @@ from f90nml import Namelist
 import pyfv3.stencils.d_sw as d_sw
 from ndsl import StencilFactory
 from ndsl.dsl.gt4py import PARALLEL, computation, interval
-from ndsl.dsl.typing import FloatField, FloatFieldIJ
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.stencils.testing.grid import Grid
 from pyfv3.testing import TranslateDycoreFortranData2Py
 
@@ -44,10 +44,11 @@ class TranslateD_SW(TranslateDycoreFortranData2Py):
             "crx": grid.x3d_compute_domain_y_dict(),
             "yfx": grid.y3d_compute_domain_x_dict(),
             "cry": grid.y3d_compute_domain_x_dict(),
-            "mfx": grid.x3d_compute_dict(),
-            "mfy": grid.y3d_compute_dict(),
-            "cx": grid.x3d_compute_domain_y_dict(),
-            "cy": grid.y3d_compute_domain_x_dict(),
+            "mfx": grid.x3d_compute_dict() | {"serialname": "mfxd_R8"},
+            "mfy": grid.y3d_compute_dict() | {"serialname": "mfyd_R8"},
+            "cx": grid.x3d_compute_domain_y_dict() | {"serialname": "cxd_R8"},
+            "cy": grid.y3d_compute_domain_x_dict() | {"serialname": "cyd_R8"},
+            "dpx": grid.compute_dict(),
             "heat_source": {},
             "diss_est": {},
             "q_con": {},
@@ -58,7 +59,8 @@ class TranslateD_SW(TranslateDycoreFortranData2Py):
             "divgd": grid.default_dict_buffer_2d(),
         }
         for name, info in self.in_vars["data_vars"].items():
-            info["serialname"] = name + "d"
+            if name not in ["mfx", "mfy", "cx", "cy", "dpx"]:
+                info["serialname"] = name + "d"
         self.in_vars["parameters"] = ["dt"]
         self.out_vars = self.in_vars["data_vars"].copy()
         del self.out_vars["zh"]
@@ -71,13 +73,13 @@ def ubke(
     rsina: FloatFieldIJ,
     ut: FloatField,
     ub: FloatField,
-    dt4: float,
-    dt5: float,
+    dt4: Float,
+    dt5: Float,
 ):
     with computation(PARALLEL), interval(...):
-        dt = 2.0 * dt5
-        ub, _ = d_sw.interpolate_uc_vc_to_cell_corners(uc, vc, cosa, rsina, ut, ut)
-        ub = ub * dt
+        ub, _ = d_sw.interpolate_uc_vc_to_cell_corners(
+            uc, vc, cosa, rsina, ut, ut, dt4, dt5
+        )
 
 
 class TranslateUbKE(TranslateDycoreFortranData2Py):
@@ -118,13 +120,13 @@ def vbke(
     rsina: FloatFieldIJ,
     vt: FloatField,
     vb: FloatField,
-    dt4: float,
-    dt5: float,
+    dt4: Float,
+    dt5: Float,
 ):
     with computation(PARALLEL), interval(...):
-        dt = 2.0 * dt5
-        _, vb = d_sw.interpolate_uc_vc_to_cell_corners(uc, vc, cosa, rsina, vt, vt)
-        vb = vb * dt
+        _, vb = d_sw.interpolate_uc_vc_to_cell_corners(
+            uc, vc, cosa, rsina, vt, vt, dt4, dt5
+        )
 
 
 class TranslateVbKE(TranslateDycoreFortranData2Py):
@@ -212,17 +214,23 @@ class TranslateHeatDiss(TranslateDycoreFortranData2Py):
 
     def compute_from_storage(self, inputs):
         column_namelist = d_sw.get_column_namelist(
-            config=self.config, quantity_factory=self.grid.quantity_factory
+            config=self.config.d_grid_shallow_water,
+            quantity_factory=self.grid.quantity_factory,
         )
         # TODO add these to the serialized data or remove the test
         inputs["damp_w"] = column_namelist["damp_w"]
         inputs["ke_bg"] = column_namelist["ke_bg"]
-        inputs["dt"] = self.config.dt_atmos / self.config.k_split / self.config.n_split
+        inputs["dt"] = Float(
+            self.config.dt_atmos / self.config.k_split / self.config.n_split
+        )
         inputs["rarea"] = self.grid.rarea
         heat_diss_stencil = self.stencil_factory.from_origin_domain(
             d_sw.heat_diss,
             origin=self.grid.compute_origin(),
             domain=self.grid.domain_shape_compute(),
+            externals={
+                "do_stochastic_ke_backscatter": self.config.do_skeb,
+            },
         )
         heat_diss_stencil(**inputs)
         return inputs

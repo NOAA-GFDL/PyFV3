@@ -135,6 +135,7 @@ def test_dycore_runs_one_step() -> None:
         config=config,
         phis=state.phis,
         state=state,
+        exclude_tracers=[],
         timestep=timedelta(seconds=255),
     )
 

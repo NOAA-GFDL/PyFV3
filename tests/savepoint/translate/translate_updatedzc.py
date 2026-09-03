@@ -17,15 +17,17 @@ class TranslateUpdateDzC(TranslateDycoreFortranData2Py):
     ):
         super().__init__(grid, namelist, stencil_factory)
         self.stencil_factory = stencil_factory
-        update_gz_on_c_grid = UpdateGeopotentialHeightOnCGrid(
-            self.stencil_factory,
-            quantity_factory=self.grid.quantity_factory,
-            area=grid.grid_data.area,
-            dp_ref=grid.grid_data.dp_ref,
-            grid_type=self.config.grid_type,
-        )
 
         def compute(**kwargs):
+            update_gz_on_c_grid = UpdateGeopotentialHeightOnCGrid(
+                self.stencil_factory,
+                quantity_factory=self.grid.quantity_factory,
+                area=grid.grid_data.area,
+                dp_ref=grid.grid_data.dp_ref,
+                grid_type=self.config.grid_type,
+                dz_min=kwargs.pop("dz_min"),
+            )
+
             kwargs["dt"] = kwargs.pop("dt2")
             update_gz_on_c_grid(**kwargs)
 
@@ -37,7 +39,7 @@ class TranslateUpdateDzC(TranslateDycoreFortranData2Py):
             "gz": {},
             "ws": {},
         }
-        self.in_vars["parameters"] = ["dt2"]
+        self.in_vars["parameters"] = ["dt2", "dz_min"]
         self.out_vars = {
             "gz": grid.default_buffer_k_dict(),
             "ws": {"kstart": -1, "kend": None},
@@ -45,12 +47,12 @@ class TranslateUpdateDzC(TranslateDycoreFortranData2Py):
         self._subset = get_subset_func(
             self.grid.grid_indexing,
             dims=[I_DIM, J_DIM, K_DIM],
-            n_halo=((0, 0), (0, 0)),
+            n_halo=((3, 3), (3, 3)),
         )
         self._subset_2d = get_subset_func(
             self.grid.grid_indexing,
             dims=[I_DIM, J_DIM],
-            n_halo=((0, 0), (0, 0)),
+            n_halo=((3, 3), (3, 3)),
         )
 
     def compute(self, inputs):

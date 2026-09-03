@@ -1,53 +1,8 @@
-import ndsl.constants as constants
-from ndsl import Quantity, QuantityFactory, StencilFactory
+from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
-from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
-from ndsl.dsl.gt4py import function as gtfunction
-from ndsl.dsl.gt4py import interval
+from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldK
 from ndsl.stencils import corners
-
-DZ_MIN = constants.DZ_MIN
-
-
-@gtfunction
-def p_weighted_average_top(vel, dp0):
-    # TODO: ratio is a constant, where should this be placed?
-    ratio = dp0 / (dp0 + dp0[1])
-    return vel + (vel - vel[0, 0, 1]) * ratio
-
-
-@gtfunction
-def p_weighted_average_bottom(vel, dp0):
-    ratio = dp0[-1] / (dp0[-2] + dp0[-1])
-    return vel[0, 0, -1] + (vel[0, 0, -1] - vel[0, 0, -2]) * ratio
-
-
-@gtfunction
-def p_weighted_average_domain(vel, dp0):
-    int_ratio = 1.0 / (dp0[-1] + dp0)
-    return (dp0 * vel[0, 0, -1] + dp0[-1] * vel) * int_ratio
-
-
-@gtfunction
-def xy_flux(gz_x, gz_y, xfx, yfx):
-    """
-    Compute first-order upwind fluxes of gz in x and y directions.
-
-    Args:
-        gz_x: gz with corners copied to perform derivatives in x-direction
-        gz_y: gz with corners copied to perform derivatives in y-direction
-        xfx (out): contravariant c-grid u-wind interpolated to layer interfaces,
-            including metric terms to make it a "volume flux"
-        yfx (out): contravariant c-grid v-wind interpolated to layer interfaces
-
-    Returns:
-        fx: first-order upwind x-flux of gz
-        fy: first-order upwind y-flux of gz
-    """
-    fx = xfx * (gz_x[-1, 0, 0] if xfx > 0.0 else gz_x)
-    fy = yfx * (gz_y[0, -1, 0] if yfx > 0.0 else gz_y)
-    return fx, fy
 
 
 def double_copy(q_in: FloatField, copy_1: FloatField, copy_2: FloatField):
@@ -56,77 +11,138 @@ def double_copy(q_in: FloatField, copy_1: FloatField, copy_2: FloatField):
         copy_2 = q_in
 
 
-def update_dz_c(
+def copy(q_in: FloatField, q_copy: FloatField):
+    with computation(PARALLEL), interval(...):
+        q_copy = q_in
+
+
+def compute_weighted_average(
     dp_ref: FloatFieldK,
-    zs: FloatFieldIJ,
-    area: FloatFieldIJ,
-    ut: FloatField,
-    vt: FloatField,
-    gz: FloatField,
-    gz_x: FloatField,
-    gz_y: FloatField,
-    ws: FloatFieldIJ,
-    *,
-    dt: Float,
+    vel: FloatField,
+    avg: FloatField,
 ):
     """
-    Step dz forward on c-grid
-    Ensures gz is monotonically increasing in z at the end
-    Args:
-        dp_ref:
-        zs:
-        area:
-        ut:
-        vt:
-        gz:
-        gz_x: gz with corners copied to perform derivatives in x-direction
-        gz_y: gz with corners copied to perform derivatives in y-direction
-        ws: lagrangian (parcel-following) surface vertical wind implied by
-            lowest-level gz change note that a parcel moving horizontally
-            across terrain will be moving in the vertical (eqn 5.5 in documentation)
-        dt:
-    """
+    Perform a cubic spline interpolation of wind velocity from grid center to grid edge
 
+    Args:
+        dp_ref(in): layer thickness in Pa
+        vel(in): grid center wind speed
+        avg(out: interpolated (grid edge) wind speed
+    """
     # there's some complexity due to gz being defined on interfaces
     # have to interpolate winds to layer interfaces first, using higher-order
-    # cubic spline interpolation
     with computation(PARALLEL):
         with interval(0, 1):
-            # TODO: inline some or all of these functions
-            xfx = p_weighted_average_top(ut, dp_ref)
-            yfx = p_weighted_average_top(vt, dp_ref)
+            top_ratio = dp_ref / (dp_ref + dp_ref[1])
+            avg = vel + (vel - vel[0, 0, 1]) * top_ratio
         with interval(1, -1):
-            xfx = p_weighted_average_domain(ut, dp_ref)
-            yfx = p_weighted_average_domain(vt, dp_ref)
+            int_ratio = 1.0 / (dp_ref[-1] + dp_ref)
+            avg = (dp_ref * vel[0, 0, -1] + dp_ref[-1] * vel) * int_ratio
         with interval(-1, None):
-            xfx = p_weighted_average_bottom(ut, dp_ref)
-            yfx = p_weighted_average_bottom(vt, dp_ref)
-    # xfx/yfx are now ut/vt interpolated to layer interfaces
+            bot_ratio = dp_ref[-1] / (dp_ref[-2] + dp_ref[-1])
+            avg = vel[0, 0, -1] + (vel[0, 0, -1] - vel[0, 0, -2]) * bot_ratio
+
+
+def compute_fx_fy(
+    gz_x: FloatField,
+    gz_y: FloatField,
+    xfx: FloatField,
+    yfx: FloatField,
+    fx: FloatField,
+    fy: FloatField,
+):
+    """
+    Compute first-order upwind fluxes of gz in x and y directions.
+
+    Args:
+        gz_x(in): gz with corners copied to perform derivatives in x-direction
+        gz_y(in): gz with corners copied to perform derivatives in y-direction
+        xfx(in): contravariant c-grid u-wind interpolated to layer interfaces,
+            including metric terms to make it a "volume flux"
+        yfx(in): contravariant c-grid v-wind interpolated to layer interfaces
+        fx(out): first-order upwind x-flux of gz
+        fy(out): first-order upwind y-flux of gz
+    """
+
     with computation(PARALLEL), interval(...):
-        fx, fy = xy_flux(gz_x, gz_y, xfx, yfx)
-        gz = (gz * area + (fx - fx[1, 0, 0]) + (fy - fy[0, 1, 0])) / (
+        if xfx > 0.0:
+            fx = gz_x[-1, 0, 0]
+        else:
+            fx = gz_x
+        fx = xfx * fx
+
+        if yfx > 0.0:
+            fy = gz_y[0, -1, 0]
+        else:
+            fy = gz_y
+        fy = yfx * fy
+
+
+def compute_gz_ws(
+    gz_y: FloatField,
+    area: FloatFieldIJ,
+    fx: FloatField,
+    fy: FloatField,
+    xfx: FloatField,
+    yfx: FloatField,
+    dz_min: Float,
+    dt: Float,
+    zs: FloatFieldIJ,
+    ws: FloatFieldIJ,
+    gz: FloatField,
+):
+    """
+        Compute gz and wd, eusures gz is monotonically increasing in z at the end
+
+    Args
+        gz_y(in): gz with corners copied to perform derivatives in y-direction
+        area(in):
+        fx(in): first-order upwind x-flux of gz
+        fy(in): first-order upwind y-flux of gz
+        xfx(in): contravariant c-grid u-wind interpolated to layer interfaces,
+            including metric terms to make it a "volume flux"
+        yfx(in): contravariant c-grid v-wind interpolated to layer interfaces
+        dz_min(in): Controls minimum thickness in NH solver
+        dt(in): timestep over which to evolve the geopotential height, in seconds
+        zs(in): surface height in m
+        ws(out): lagrangian (parcel-following) surface vertical wind implied by
+            lowest-level gz change note that a parcel moving horizontally
+            across terrain will be moving in the vertical (eqn 5.5 in documentation)
+        gz(out): geopotential height on model interfaces
+    """
+
+    with computation(PARALLEL), interval(...):
+        gz = (gz_y * area + (fx - fx[1, 0, 0]) + (fy - fy[0, 1, 0])) / (
             area + (xfx - xfx[1, 0, 0]) + (yfx - yfx[0, 1, 0])
         )
-    with computation(FORWARD), interval(-1, None):
+    with computation(FORWARD), interval(...):
         rdt = 1.0 / dt
         ws = (zs - gz) * rdt
     with computation(BACKWARD), interval(0, -1):
-        gz_kp1 = gz[0, 0, 1] + DZ_MIN
+        gz_kp1 = gz[0, 0, 1] + dz_min
         gz = gz if gz > gz_kp1 else gz_kp1
 
 
-class UpdateGeopotentialHeightOnCGrid:
+class UpdateGeopotentialHeightOnCGrid(NDSLRuntime):
     def __init__(
         self,
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
         area: Quantity,
         dp_ref: Quantity,
-        grid_type,
+        grid_type: int,
+        dz_min: Float,
     ):
+        """
+        Args:
+            dz_min: controls minimum thickness in NH solver
+        """
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         self._area = area
         self._grid_type = grid_type
+        self._dz_min = dz_min
         # TODO: this is needed because GridData.dp_ref does not have access
         # to a QuantityFactory, we should add a way to perform operations on
         # Quantity and persist the QuantityFactory choices
@@ -138,21 +154,35 @@ class UpdateGeopotentialHeightOnCGrid:
             units=dp_ref.units,
             dtype=Float,
         )
-        self._dp_ref.view[:] = dp_ref.view[:]
-        self._gz_x = quantity_factory.zeros(
+        self._dp_ref.field[:] = dp_ref.field[:]
+        self._gz_x = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="m**2/s**2",
-            dtype=Float,
         )
-        self._gz_y = quantity_factory.zeros(
+        self._gz_y = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="m**2/s**2",
-            dtype=Float,
         )
+        self._gz_filled = self.make_local(
+            quantity_factory,
+            [I_DIM, J_DIM, K_DIM],
+            units="m**2/s**2",
+        )
+        self._xfx = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._yfx = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._fx = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._fy = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
         full_origin = grid_indexing.origin_full()
         full_domain = grid_indexing.domain_full(add=(0, 0, 1))
         self._double_copy_stencil = stencil_factory.from_origin_domain(
             double_copy,
+            origin=full_origin,
+            domain=full_domain,
+        )
+        self._copy_stencil = stencil_factory.from_origin_domain(
+            copy,
             origin=full_origin,
             domain=full_domain,
         )
@@ -173,8 +203,20 @@ class UpdateGeopotentialHeightOnCGrid:
                 domain=full_domain,
             )
 
-        self._update_dz_c = stencil_factory.from_origin_domain(
-            update_dz_c,
+        self._compute_weighted_average = stencil_factory.from_origin_domain(
+            compute_weighted_average,
+            origin=grid_indexing.origin_compute(add=(-1, -1, 0)),
+            domain=grid_indexing.domain_compute(add=(3, 3, 1)),
+        )
+
+        self._compute_flux = stencil_factory.from_origin_domain(
+            compute_fx_fy,
+            origin=grid_indexing.origin_compute(add=(-1, -1, 0)),
+            domain=grid_indexing.domain_compute(add=(3, 3, 1)),
+        )
+
+        self._compute_gz_ws = stencil_factory.from_origin_domain(
+            compute_gz_ws,
             origin=grid_indexing.origin_compute(add=(-1, -1, 0)),
             domain=grid_indexing.domain_compute(add=(2, 2, 1)),
         )
@@ -189,6 +231,8 @@ class UpdateGeopotentialHeightOnCGrid:
         dt: Float,
     ):
         """
+        Step dz forward on c-grid
+
         Args:
             dp_ref: layer thickness in Pa
             zs: surface height in m
@@ -204,20 +248,32 @@ class UpdateGeopotentialHeightOnCGrid:
 
         self._double_copy_stencil(gz, self._gz_x, self._gz_y)
 
-        # TODO(eddied): We pass the same fields 2x to avoid GTC validation errors
         if self._grid_type < 3:
             self._fill_corners_x_stencil(self._gz_x, self._gz_x)
             self._fill_corners_y_stencil(self._gz_y, self._gz_y)
 
-        self._update_dz_c(
-            self._dp_ref,
-            zs,
-            self._area,
-            ut,
-            vt,
-            gz,
-            self._gz_x,
-            self._gz_y,
-            ws,
+        self._compute_weighted_average(dp_ref=self._dp_ref, vel=ut, avg=self._xfx)
+        self._compute_weighted_average(dp_ref=self._dp_ref, vel=vt, avg=self._yfx)
+
+        self._compute_flux(
+            gz_x=self._gz_x,
+            gz_y=self._gz_y,
+            xfx=self._xfx,
+            yfx=self._yfx,
+            fx=self._fx,
+            fy=self._fy,
+        )
+
+        self._compute_gz_ws(
+            gz_y=self._gz_y,
+            area=self._area,
+            fx=self._fx,
+            fy=self._fy,
+            xfx=self._xfx,
+            yfx=self._yfx,
+            dz_min=self._dz_min,
             dt=dt,
+            zs=zs,
+            ws=ws,
+            gz=gz,
         )

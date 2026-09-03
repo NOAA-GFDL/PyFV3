@@ -1,4 +1,4 @@
-from ndsl import StencilFactory, orchestrate
+from ndsl import NDSLRuntime, StencilFactory
 from ndsl.dsl.gt4py import (
     __INLINED,
     PARALLEL,
@@ -230,8 +230,8 @@ def uc_contra_corners(
     from __externals__ import i_end, i_start, j_end, j_start
 
     with computation(PARALLEL), interval(...):
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v[-1, 0])
         with horizontal(region[i_start + 1, j_start - 1], region[i_start + 1, j_end]):
+            damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v[-1, 0])
             # we can derive why there's a 0.25 and not 1/3rd factor below, based on the
             # system being solved as documented above
             # use Kramer's rule to solve the 2x2 matrix instead of Gaussian elimination
@@ -254,7 +254,6 @@ def uc_contra_corners(
                     )
                 )
             ) * damp
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v[-1, 1])
         with horizontal(region[i_start + 1, j_start], region[i_start + 1, j_end + 1]):
             damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v[-1, 1])
             uc_contra = (
@@ -275,8 +274,8 @@ def uc_contra_corners(
                     )
                 )
             ) * damp
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v)
         with horizontal(region[i_end, j_start - 1], region[i_end, j_end]):
+            damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v)
             uc_contra = (
                 uc
                 - 0.25
@@ -295,8 +294,8 @@ def uc_contra_corners(
                     )
                 )
             ) * damp
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v[0, 1])
         with horizontal(region[i_end, j_start], region[i_end, j_end + 1]):
+            damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v[0, 1])
             uc_contra = (
                 uc
                 - 0.25
@@ -339,8 +338,8 @@ def vc_contra_corners(
     from __externals__ import i_end, i_start, j_end, j_start
 
     with computation(PARALLEL), interval(...):
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u[0, -1] * cosa_v)
         with horizontal(region[i_start - 1, j_start + 1], region[i_end, j_start + 1]):
+            damp = 1.0 / (1.0 - 0.0625 * cosa_u[0, -1] * cosa_v)
             vc_contra = (
                 vc
                 - 0.25
@@ -359,8 +358,8 @@ def vc_contra_corners(
                     )
                 )
             ) * damp
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u[1, -1] * cosa_v)
         with horizontal(region[i_start, j_start + 1], region[i_end + 1, j_start + 1]):
+            damp = 1.0 / (1.0 - 0.0625 * cosa_u[1, -1] * cosa_v)
             vc_contra = (
                 vc
                 - 0.25
@@ -379,8 +378,8 @@ def vc_contra_corners(
                     )
                 )
             ) * damp
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u[1, 0] * cosa_v)
         with horizontal(region[i_end + 1, j_end], region[i_start, j_end]):
+            damp = 1.0 / (1.0 - 0.0625 * cosa_u[1, 0] * cosa_v)
             vc_contra = (
                 vc
                 - 0.25
@@ -399,8 +398,8 @@ def vc_contra_corners(
                     )
                 )
             ) * damp
-        damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v)
         with horizontal(region[i_end, j_end], region[i_start - 1, j_end]):
+            damp = 1.0 / (1.0 - 0.0625 * cosa_u * cosa_v)
             vc_contra = (
                 vc
                 - 0.25
@@ -483,27 +482,47 @@ def fxadv_fluxes_stencil(
         y_area_flux (out):
         uc_contra (in):
         vc_contra (in):
-    """
-    from __externals__ import local_ie, local_is, local_je, local_js
 
-    with computation(PARALLEL), interval(...):
-        with horizontal(region[local_is : local_ie + 2, :]):
-            if uc_contra > 0:
+    Porting Note
+    * The tmp introduced in the computation allows fxadv_fluxes_stencil to closely match the Fortran order
+      of computation, which allows the x_area_flux and y_area_flux match the
+      respective Fortran values.
+
+      Example of previous stencil looked as follows:
+        ==========================================================
+        if uc_contra > 0:
                 crx = dt * uc_contra * rdxa[-1, 0]
                 x_area_flux = dy * dt * uc_contra * sin_sg3[-1, 0]
             else:
                 crx = dt * uc_contra * rdxa
                 x_area_flux = dy * dt * uc_contra * sin_sg1
-        with horizontal(region[:, local_js : local_je + 2]):
-            if vc_contra > 0:
-                cry = dt * vc_contra * rdya[0, -1]
-                y_area_flux = dx * dt * vc_contra * sin_sg4[0, -1]
+        ==========================================================
+    """
+    from __externals__ import local_ie, local_is, local_je, local_js
+
+    with computation(PARALLEL), interval(...):
+        with horizontal(region[local_is : local_ie + 2, :]):
+            # Including the temporary (tmp) calculation enables x_area_flux and y_area_flux
+            # to more closely precision match the respective Fortran calculation
+            # since Fortran also performs this temporary calculation
+            tmp = dt * uc_contra
+            if uc_contra > 0:
+                crx = tmp * rdxa[-1, 0]
+                x_area_flux = dy * tmp * sin_sg3[-1, 0]
             else:
-                cry = dt * vc_contra * rdya
-                y_area_flux = dx * dt * vc_contra * sin_sg2
+                crx = tmp * rdxa
+                x_area_flux = dy * tmp * sin_sg1
+        with horizontal(region[:, local_js : local_je + 2]):
+            tmp = dt * vc_contra
+            if vc_contra > 0:
+                cry = tmp * rdya[0, -1]
+                y_area_flux = dx * tmp * sin_sg4[0, -1]
+            else:
+                cry = tmp * rdya
+                y_area_flux = dx * tmp * sin_sg2
 
 
-class FiniteVolumeFluxPrep:
+class FiniteVolumeFluxPrep(NDSLRuntime):
     """
     A large section of code near the beginning of Fortran's d_sw subroutine
     Known in this repo as FxAdv,
@@ -515,10 +534,8 @@ class FiniteVolumeFluxPrep:
         grid_data: GridData,
         grid_type: int,
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         self._grid_type = grid_type
         self._tile_interior = not (
@@ -594,11 +611,6 @@ class FiniteVolumeFluxPrep:
             origin=origin,
             domain=domain,
         )
-        # self._set_nans = get_set_nan_func(
-        #     grid_indexing,
-        #     dims=[I_DIM, J_DIM, K_DIM],
-        #     n_halo=((2, 2), (2, 2)),
-        # )
 
     def __call__(
         self,

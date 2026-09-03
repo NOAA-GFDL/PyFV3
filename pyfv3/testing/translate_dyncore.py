@@ -8,6 +8,7 @@ from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
 from pyfv3.stencils import dyn_core
+from pyfv3.tracers import default_GEOS_tracers
 
 
 class TranslateDynCore(ParallelTranslate2PyState):
@@ -104,6 +105,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
             "ak": {},
             "bk": {},
             "diss_estd": {},
+            "dpx": grid.compute_dict(),
         }
         self._base.in_vars["data_vars"]["wsd"]["kstart"] = grid.npz
         self._base.in_vars["data_vars"]["wsd"]["kend"] = None
@@ -127,6 +129,7 @@ class TranslateDynCore(ParallelTranslate2PyState):
         self.config = DynamicalCoreConfig.from_f90nml(namelist)
 
     def compute_parallel(self, inputs: dict, communicator: Communicator) -> dict:
+        default_GEOS_tracers(self.grid.quantity_factory)
         # ak, bk, and phis are numpy arrays at this point and
         #   must be converted into gt4py storages
         for name in ("ak", "bk", "phis"):
@@ -143,8 +146,16 @@ class TranslateDynCore(ParallelTranslate2PyState):
             grid_data.bk = inputs["bk"]
             grid_data.ptop = inputs["ptop"]
         self._base.make_storage_data_input_vars(inputs)
-        state = DycoreState.init_zeros(quantity_factory=self.grid.quantity_factory)
-        wsd: Quantity = self.grid.quantity_factory.zeros(
+        inputs_dtypes = {}
+        for k, v in inputs.items():
+            if hasattr(v, "dtype"):
+                inputs_dtypes[k] = v.dtype
+        state = DycoreState.init_zeros(
+            quantity_factory=self.grid.quantity_factory,
+            dtype_dict=inputs_dtypes,
+            allow_mismatch_float_precision=True,
+        )
+        wsd = self.grid.quantity_factory.zeros(
             dims=[I_DIM, J_DIM],
             units="unknown",
         )
@@ -156,11 +167,18 @@ class TranslateDynCore(ParallelTranslate2PyState):
                 state[name][selection] = value
             else:
                 setattr(state, name, value)
-        phis: Quantity = self.grid.quantity_factory.zeros(
+        phis = self.grid.quantity_factory.zeros(
             dims=[I_DIM, J_DIM],
             units="m",
         )
         phis[:] = phis.np.asarray(inputs["phis"])
+        dpx = self.grid.quantity_factory.zeros(
+            dims=[I_DIM, J_DIM, K_DIM],
+            units="unknown",
+            dtype=inputs_dtypes["dpx"],
+            allow_mismatch_float_precision=True,
+        )
+        dpx[:] = dpx.np.asarray(inputs["dpx"])
         acoustic_dynamics = dyn_core.AcousticDynamics(
             comm=communicator,
             stencil_factory=self.stencil_factory,
@@ -172,12 +190,21 @@ class TranslateDynCore(ParallelTranslate2PyState):
             stretched_grid=self.grid.stretched_grid,
             config=self.config.acoustic_dynamics,
             phis=phis,
-            wsd=wsd,
             state=state,
         )
         acoustic_dynamics.cappa[:] = inputs["cappa"][:]
 
-        acoustic_dynamics(state, timestep=inputs["mdt"], n_map=state.n_map)  # type: ignore[attr-defined]
+        acoustic_dynamics(
+            state,
+            mfxd=state.mfxd,
+            mfyd=state.mfyd,
+            cxd=state.cxd,
+            cyd=state.cyd,
+            dpx=dpx,
+            wsd=wsd,
+            timestep=inputs["mdt"],
+            n_map=inputs["n_map"],
+        )
         # the "inputs" dict is not used to return, we construct a new dict based
         # on variables attached to `state`
         storages_only = {}
@@ -188,4 +215,5 @@ class TranslateDynCore(ParallelTranslate2PyState):
                 storages_only[name] = value
         storages_only["wsd"] = wsd[:]
         storages_only["cappa"] = acoustic_dynamics.cappa[:]
+        storages_only["dpx"] = dpx[:]
         return self._base.slice_output(storages_only)

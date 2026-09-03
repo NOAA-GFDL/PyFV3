@@ -8,6 +8,7 @@ from ndsl.grid import GridData
 from ndsl.grid.gnomonic import great_circle_distance_lon_lat, lon_lat_midpoint
 from pyfv3.dycore_state import DycoreState
 from pyfv3.initialization import init_utils
+from pyfv3.tracers import FVTracers, setup_fvtracers
 
 # maximum windspeed amplitude - close to windspeed of zonal-mean time-mean
 # jet stream in troposphere
@@ -38,11 +39,11 @@ def apply_perturbation(u_component, up, lon, lat, is_steady: bool = False):
         :, :, None
     ]
     r3d = np.repeat(r, u_component.shape[2], axis=2)
-    near_perturbation = (r3d / R) ** 2.0 < 40.0
+    near_perturbation = (r3d / R) ** 2 < 40.0
     # Equation(10) in JRMS2006 perturbation applied to u_component
     # Equivalent to Equation (14) in DCMIP 2016, where Zp = 1.0
     u_component[near_perturbation] = u_component[near_perturbation] + up * np.exp(
-        -((r3d[near_perturbation] / R) ** 2.0)
+        -((r3d[near_perturbation] / R) ** 2)
     )
 
 
@@ -365,11 +366,23 @@ def init_baroclinic_state(
         moist_phys=moist_phys,
         make_nh=(not hydrostatic),
     )
+    tracers = {
+        "vapor": 0,
+        "liquid": 1,
+        "rain": 2,
+        "snow": 3,
+        "ice": 4,
+        "graupel": 5,
+        "cloud": 6,
+    }
+    setup_fvtracers(quantity_factory, len(tracers), tracers)
     state = DycoreState.init_from_numpy_arrays(
         numpy_state.__dict__,
-        sizer=quantity_factory.sizer,
-        backend=sample_quantity.metadata.backend,
+        quantity_factory,
     )
+    state.tracers[:, :, :, FVTracers.index("vapor")].field[:] = numpy_state.qvapor[
+        slice_3d
+    ]
 
     comm.halo_update(state.phis, n_points=NHALO)
 

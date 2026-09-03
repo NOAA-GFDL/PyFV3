@@ -39,7 +39,6 @@ class TranslateFvTp2d(TranslateDycoreFortranData2Py):
         }
         self.out_vars["q_x_flux"]["serialname"] = "fx"
         self.out_vars["q_y_flux"]["serialname"] = "fy"
-        self.stencil_factory = stencil_factory
 
     # use_sg -- 'dx', 'dy', 'rdxc', 'rdyc', 'sin_sg needed
     def compute_from_storage(self, inputs):

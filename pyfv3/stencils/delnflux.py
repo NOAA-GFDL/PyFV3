@@ -1,6 +1,7 @@
 from typing import Optional
 
 import dace
+import numpy as np
 
 from ndsl import NDSLRuntime, Quantity, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
@@ -18,7 +19,12 @@ def calc_damp(damp_c: Quantity, da_min: Float, nord: Quantity) -> Quantity:
         raise NotImplementedError(
             "Current implementation requires damp_c and nord to have identical data shape and dims."
         )
-    data = (damp_c[:] * da_min) ** (nord[:] + 1)
+    # `da_min` is a 64 bit float and we have to cast the array to deal
+    # with downcasting behavior of array * scalar in numpy
+    # We then reproduce the proper casting so `calc_damp` is a 32-bit float
+    data = np.power(
+        (damp_c[:].astype(np.float64) * da_min), (nord[:] + 1), dtype=np.float64
+    ).astype(Float)
     return Quantity(
         data=data,
         dims=damp_c.dims,
@@ -99,7 +105,7 @@ def fx_calculation(q: FloatField, del6_v: FloatField):
 
 @gtfunction
 def fx_calculation_neg(q: FloatField, del6_v: FloatField):
-    return -del6_v * (q[-1, 0, 0] - q)
+    return del6_v * (q - q[-1, 0, 0])
 
 
 @gtfunction
@@ -109,7 +115,7 @@ def fy_calculation(q: FloatField, del6_u: FloatField):
 
 @gtfunction
 def fy_calculation_neg(q: FloatField, del6_u: FloatField):
-    return -del6_u * (q[0, -1, 0] - q)
+    return del6_u * (q - q[0, -1, 0])
 
 
 def d2_highorder_stencil(
@@ -180,8 +186,8 @@ def diffusive_damp(
     damp: FloatFieldK,
 ):
     with computation(PARALLEL), interval(...):
-        fx = fx + 0.5 * damp * (mass[-1, 0, 0] + mass) * fx2
-        fy = fy + 0.5 * damp * (mass[0, -1, 0] + mass) * fy2
+        fx = fx + (0.5 * damp) * (mass[-1, 0, 0] + mass) * fx2
+        fy = fy + (0.5 * damp) * (mass[0, -1, 0] + mass) * fy2
 
 
 class DelnFlux(NDSLRuntime):
@@ -221,21 +227,9 @@ class DelnFlux(NDSLRuntime):
         nk = grid_indexing.domain[2]
         self._origin = grid_indexing.origin_full()
 
-        self._fx2 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="undefined",
-            dtype=Float,
-        )
-        self._fy2 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="undefined",
-            dtype=Float,
-        )
-        self._d2 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="undefined",
-            dtype=Float,
-        )
+        self._fx2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._fy2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._d2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
 
         self._add_diffusive_stencil = stencil_factory.from_dims_halo(
             func=add_diffusive_component,
@@ -250,7 +244,11 @@ class DelnFlux(NDSLRuntime):
         )
 
         self.delnflux_nosg = DelnFluxNoSG(
-            stencil_factory, damping_coefficients, rarea, nord_col, nk=nk
+            stencil_factory,
+            damping_coefficients,
+            rarea,
+            nord_col,
+            nk=nk,
         )
 
     def __call__(
@@ -264,38 +262,36 @@ class DelnFlux(NDSLRuntime):
         """
         Del-n damping for fluxes, where n = 2 * nord + 2
         Args:
-            q: Field for which to calculate damped fluxes (in)
-            fx: x-flux on A-grid (inout)
-            fy: y-flux on A-grid (inout)
-            d2: A damped copy of the q field (in)
-            mass: Mass to weight the diffusive flux by (in)
+            q (in): Field for which to calculate damped fluxes
+            fx (inout): x-flux on A-grid
+            fy (inout): y-flux on A-grid
+            d2 (in): A damped copy of the q field
+            mass (in): Mass to weight the diffusive flux by
         """
-        if self._no_compute:
-            return fx, fy
+        if not self._no_compute:
+            # [DaCe] Optional d2 gets reduced to subset 0 in DaCe parsing leading to a
+            # parsing error
+            # Original code:
+            # if d2 is None:
+            #     d2 = self._d2
+            # fx2 and fy2 are local variables containing the diffusive flux, which
+            # gets added to the base flux below
+            if d2 is None:
+                self.delnflux_nosg(q, self._fx2, self._fy2, self._damp, self._d2, mass)
+            else:
+                self.delnflux_nosg(q, self._fx2, self._fy2, self._damp, d2, mass)
 
-        # [DaCe] Optional d2 gets reduced to subset 0 in DaCe parsing leading to a
-        # parsing error
-        # Original code:
-        # if d2 is None:
-        #     d2 = self._d2
-        # fx2 and fy2 are local variables containing the diffusive flux, which
-        # gets added to the base flux below
-        if d2 is None:
-            self.delnflux_nosg(q, self._fx2, self._fy2, self._damp, self._d2, mass)
-        else:
-            self.delnflux_nosg(q, self._fx2, self._fy2, self._damp, d2, mass)
+            if mass is None:
+                self._add_diffusive_stencil(fx, self._fx2, fy, self._fy2)
+            else:
+                # TODO: To join these stencils you need to overcompute, making the edges
+                # 'wrong', but not actually used, separating now for comparison sanity.
 
-        if mass is None:
-            self._add_diffusive_stencil(fx, self._fx2, fy, self._fy2)
-        else:
-            # TODO: To join these stencils you need to overcompute, making the edges
-            # 'wrong', but not actually used, separating now for comparison sanity.
-
-            # diffusive_damp(fx, fx2, fy, fy2, mass, damp, origin=diffuse_origin,
-            # domain=(grid.nic + 1, grid.njc + 1, nk))
-            self._diffusive_damp_stencil(fx, self._fx2, fy, self._fy2, mass, self._damp)
-
-        return fx, fy
+                # diffusive_damp(fx, fx2, fy, fy2, mass, damp, origin=diffuse_origin,
+                # domain=(grid.nic + 1, grid.njc + 1, nk))
+                self._diffusive_damp_stencil(
+                    fx, self._fx2, fy, self._fy2, mass, self._damp
+                )
 
 
 class DelnFluxNoSG(NDSLRuntime):
@@ -441,17 +437,36 @@ class DelnFluxNoSG(NDSLRuntime):
         """
 
         if mass is None:
-            self._d2_damp(q=q, d2=d2, damp=damp_c, nord=self._nord)
+            self._d2_damp(
+                q=q,
+                d2=d2,
+                damp=damp_c,
+                nord=self._nord,
+            )
         else:
-            self._copy_stencil_interval(q_in=q, q_out=d2, nord=self._nord)
+            self._copy_stencil_interval(
+                q_in=q,
+                q_out=d2,
+                nord=self._nord,
+            )
 
         self.copy_corners_x.nord(d2, self._nord)
 
-        self._fx_calc_stencil(q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord)
+        self._fx_calc_stencil(
+            q=d2,
+            del6_v=self._del6_v,
+            fx=fx2,
+            nord=self._nord,
+        )
 
         self.copy_corners_y.nord(d2, self._nord)
 
-        self._fy_calc_stencil(q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord)
+        self._fy_calc_stencil(
+            q=d2,
+            del6_u=self._del6_u,
+            fy=fy2,
+            nord=self._nord,
+        )
 
         # Force unroll of the loop because list of object do not parse
         # when unrolled
@@ -469,11 +484,19 @@ class DelnFluxNoSG(NDSLRuntime):
             self.copy_corners_x.nord(d2, self._nord)
 
             self._column_conditional_fx_calculation[n](
-                q=d2, del6_v=self._del6_v, fx=fx2, nord=self._nord, current_nord=n
+                q=d2,
+                del6_v=self._del6_v,
+                fx=fx2,
+                nord=self._nord,
+                current_nord=n,
             )
 
             self.copy_corners_y.nord(d2, self._nord)
 
             self._column_conditional_fy_calculation[n](
-                q=d2, del6_u=self._del6_u, fy=fy2, nord=self._nord, current_nord=n
+                q=d2,
+                del6_u=self._del6_u,
+                fy=fy2,
+                nord=self._nord,
+                current_nord=n,
             )

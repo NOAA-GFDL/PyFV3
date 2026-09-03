@@ -270,6 +270,7 @@ def setup_dycore(
         config=dycore_config,
         phis=state.phis,
         state=state,
+        exclude_tracers=[],
         timestep=timedelta(seconds=dycore_config.dt_atmos),
     )
     return dycore, state, stencil_factory

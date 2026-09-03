@@ -2,7 +2,7 @@ from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.typing import FloatField
 from pyfv3.stencils.fillz import FillNegativeTracerValues
-from pyfv3.stencils.map_single import MapSingle
+from pyfv3.stencils.map_single import QMIN_DEFAULT, MapSingle
 from pyfv3.tracers import FVTracers
 
 
@@ -16,11 +16,10 @@ class MapNTracer(NDSLRuntime):
         stencil_factory: StencilFactory,
         quantity_factory: QuantityFactory,
         kord: int,
-        nq: int,
         fill: bool,
     ):
         super().__init__(stencil_factory)
-        self._nq = int(nq)
+        self._nq = FVTracers.size(0)
 
         self._map_single_parametrized_kord = MapSingle(
             stencil_factory,
@@ -44,7 +43,10 @@ class MapNTracer(NDSLRuntime):
         else:
             self._fill_negative_tracers = False
 
-        self._graupel = FVTracers.index("graupel")
+        if self._nq > 6:
+            self._index_cloud = FVTracers.index("cloud")
+        else:
+            self._index_cloud = self._nq + 1
 
     def __call__(
         self,
@@ -65,10 +67,14 @@ class MapNTracer(NDSLRuntime):
             tracers (inout): tracers to be remapped
         """
         for i_tracer in range(0, self._nq):
-            if i_tracer == self._graupel:
-                self._map_single_kord9(tracers[:, :, :, i_tracer], pe1, pe2)
+            if i_tracer == self._index_cloud:
+                self._map_single_kord9(
+                    tracers[:, :, :, i_tracer], pe1, pe2, QMIN_DEFAULT
+                )
             else:
-                self._map_single_parametrized_kord(tracers[:, :, :, i_tracer], pe1, pe2)
+                self._map_single_parametrized_kord(
+                    tracers[:, :, :, i_tracer], pe1, pe2, QMIN_DEFAULT
+                )
 
         if self._fill_negative_tracers:
             self._fillz(dp2, tracers)

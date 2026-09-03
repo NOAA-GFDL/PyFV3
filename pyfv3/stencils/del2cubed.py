@@ -1,6 +1,7 @@
 import dace
+import numpy as np
 
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation, horizontal, interval, region
 from ndsl.dsl.stencil import get_stencils_with_varied_bounds
@@ -69,13 +70,13 @@ def corner_fill(q_in: FloatField, q_out: FloatField):
 # Q update stencil
 # ------------------
 def update_q(
-    q: FloatField, rarea: FloatFieldIJ, fx: FloatField, fy: FloatField, cd: Float
+    q: FloatField, rarea: FloatFieldIJ, fx: FloatField, fy: FloatField, cd: np.float64
 ):
     with computation(PARALLEL), interval(...):
         q += cd * rarea * (fx - fx[1, 0, 0] + fy - fy[0, 1, 0])
 
 
-class HyperdiffusionDamping:
+class HyperdiffusionDamping(NDSLRuntime):
     """
     Fortran name is del2_cubed
     """
@@ -90,9 +91,10 @@ class HyperdiffusionDamping:
     ):
         """
         Args:
-            grid: pyFV3 grid object
+            grid: pyfv3 grid object
         """
-        orchestrate(obj=self, config=stencil_factory.config.dace_config)
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         self._del6_u = damping_coefficients.del6_u
         self._del6_v = damping_coefficients.del6_v
@@ -100,20 +102,11 @@ class HyperdiffusionDamping:
 
         # the units of these temporaries are relative to the input units,
         # so they are undefined
-        self._fx = quantity_factory.zeros(
-            dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
-            units="undefined",
-            dtype=Float,
-        )
-        self._fy = quantity_factory.zeros(
-            dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
-            units="undefined",
-            dtype=Float,
-        )
+        self._fx = self.make_local(quantity_factory, [I_INTERFACE_DIM, J_DIM, K_DIM])
+        self._fy = self.make_local(quantity_factory, [I_DIM, J_INTERFACE_DIM, K_DIM])
+        # self._q as a local causes a validation issue for pt
         self._q = quantity_factory.zeros(
-            dims=[I_DIM, J_DIM, K_DIM],
-            units="undefined",
-            dtype=Float,
+            [I_DIM, J_DIM, K_DIM], units="unknown", dtype=Float
         )
 
         self._corner_fill = stencil_factory.from_dims_halo(
@@ -121,8 +114,16 @@ class HyperdiffusionDamping:
             compute_dims=[I_DIM, J_DIM, K_DIM],
             compute_halos=(3, 3),
         )
+        self._copy_stencil = stencil_factory.from_dims_halo(
+            func=copy,
+            compute_dims=[I_DIM, J_DIM, K_DIM],
+            compute_halos=(3, 3),
+        )
 
         self._copy_corners_x = CopyCornersX(stencil_factory)
+        """Stencil responsible for doing corners updates in x-direction."""
+        self._copy_corners_y = CopyCornersY(stencil_factory)
+        """Stencil responsible for doing corners updates in y-direction."""
 
         self._ntimes = int(min(3, nmax))
         origins = []
@@ -145,28 +146,18 @@ class HyperdiffusionDamping:
             domains_y.append(cast_to_index3d(domain_y))
 
         self._compute_zonal_flux = get_stencils_with_varied_bounds(
-            compute_zonal_flux, origins, domains_x, stencil_factory=stencil_factory
+            compute_zonal_flux, origins, domains_x, stencil_factory
         )
-
-        self._copy_corners_y = CopyCornersY(stencil_factory)
-        """Stencil responsible for doing corners updates in y-direction."""
 
         self._compute_meridional_flux = get_stencils_with_varied_bounds(
-            compute_meridional_flux, origins, domains_y, stencil_factory=stencil_factory
-        )
-
-        """Stencil responsible for doing corners updates in x-direction."""
-        self._copy_stencil = stencil_factory.from_dims_halo(
-            func=copy,
-            compute_dims=[I_DIM, J_DIM, K_DIM],
-            compute_halos=(3, 3),
+            compute_meridional_flux, origins, domains_y, stencil_factory
         )
 
         self._update_q = get_stencils_with_varied_bounds(
-            update_q, origins, domains, stencil_factory=stencil_factory
+            update_q, origins, domains, stencil_factory
         )
 
-    def __call__(self, qdel: FloatField, cd: Float):
+    def __call__(self, qdel: FloatField, cd: np.float64):
         """
         Perform hyperdiffusion damping/filtering.
 

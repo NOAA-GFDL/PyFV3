@@ -1,10 +1,11 @@
 import ndsl.constants as constants
-from ndsl import QuantityFactory, StencilFactory
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM
 from ndsl.dsl.gt4py import BACKWARD, FORWARD, PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from pyfv3.tracers import FVTracers
 
 ZVIR = constants.RVGAS / constants.RDGAS - 1.0
 
@@ -133,18 +134,16 @@ def fix_neg_water(
         # no GFS_PHYS compiler flag -- additional saturation adjustment calculations!
 
 
-def fillq(q: FloatField, dp: FloatField, sum1: FloatFieldIJ, sum2: FloatFieldIJ):
+def fillq(q: FloatField, dp: FloatField):
     """
     Args:
-        q (inout):
+        q (inout): Tracers
         dp (in):
-        sum1 (out):
-        sum2 (out):
     """
-    with computation(FORWARD), interval(...):
+    with computation(FORWARD), interval(0, 1):
         # reset accumulating fields
-        sum1 = 0.0
-        sum2 = 0.0
+        sum1: FloatFieldIJ = 0.0
+        sum2: FloatFieldIJ = 0.0
     with computation(FORWARD), interval(...):
         if q > 0:
             sum1 = sum1 + q * dp
@@ -162,63 +161,74 @@ def fillq(q: FloatField, dp: FloatField, sum1: FloatFieldIJ, sum2: FloatFieldIJ)
 
 
 # Stencil version
-def fix_water_vapor_down(qvapor: FloatField, dp: FloatField):
+def fix_water_vapor_down(dp: FloatField, tracers: FVTracers):
     """
     Args:
-        qvapor (inout):
         dp (in):
+        tracers (inout): updates the "vapor" tracer
     """
+    from __externals__ import vapor
+
     with computation(PARALLEL), interval(...):
         upper_fix = 0.0  # type: FloatField
         lower_fix = 0.0  # type: FloatField
     with computation(BACKWARD):
         with interval(1, 2):
-            if qvapor[0, 0, -1] < 0:  # top level is negative
+            if tracers[0, 0, -1][vapor] < 0:  # top level is negative
                 # reduce level 1 by that amount to compensate:
-                qvapor = qvapor + qvapor[0, 0, -1] * dp[0, 0, -1] / dp
+                tracers[0, 0, 0][vapor] = (
+                    tracers[0, 0, 0][vapor]
+                    + tracers[0, 0, -1][vapor] * dp[0, 0, -1] / dp
+                )
         with interval(0, 1):
-            if qvapor < 0.0:
-                qvapor = 0.0  # top level is now 0
+            if tracers[0, 0, 0][vapor] < 0.0:
+                tracers[0, 0, 0][vapor] = 0.0  # top level is now 0
     with computation(FORWARD), interval(1, -1):
-        dq = qvapor[0, 0, -1] * dp[0, 0, -1]
+        dq = tracers[0, 0, -1][vapor] * dp[0, 0, -1]
         # if we borrowed from this level to fix the upper level, account for that here:
         if lower_fix[0, 0, -1] != 0:
-            qvapor += lower_fix[0, 0, -1] / dp
+            tracers[0, 0, 0][vapor] += lower_fix[0, 0, -1] / dp
         # if we're now negative and can borrow from above do so:
-        if (qvapor < 0) and (qvapor[0, 0, -1] > 0):
-            dq = dq if dq < -qvapor * dp else -qvapor * dp
+        if (tracers[0, 0, 0][vapor] < 0) and (tracers[0, 0, -1][vapor] > 0):
+            dq = (
+                dq
+                if dq < -tracers[0, 0, 0][vapor] * dp
+                else -tracers[0, 0, 0][vapor] * dp
+            )
             upper_fix = dq
-            qvapor += dq / dp
-        if qvapor < 0:  # If still negative borrow from below
-            lower_fix = qvapor * dp
-            qvapor = 0
+            tracers[0, 0, 0][vapor] += dq / dp
+        if tracers[0, 0, 0][vapor] < 0:  # If still negative borrow from below
+            lower_fix = tracers[0, 0, 0][vapor] * dp
+            tracers[0, 0, 0][vapor] = 0
     with computation(PARALLEL), interval(0, -2):
         # if we had to borrow from upper levels before account for that in this loop
         if upper_fix[0, 0, 1] != 0:
-            qvapor = qvapor - upper_fix[0, 0, 1] / dp
+            tracers[0, 0, 0][vapor] = tracers[0, 0, 0][vapor] - upper_fix[0, 0, 1] / dp
     with computation(PARALLEL), interval(-1, None):
         # if we borrowed from the bottom level account for that here:
         if lower_fix[0, 0, -1] > 0:
-            qvapor = qvapor + lower_fix / dp
+            tracers[0, 0, 0][vapor] = tracers[0, 0, 0][vapor] + lower_fix / dp
         # Here we're re-using upper_fix to represent the current version of
         # qvapor[k_bot] fixed from above. We could also re-use lower_fix instead of
         # dp_bot, but that's probably over-optimized for now
-        upper_fix = qvapor
+        upper_fix = tracers[0, 0, 0][vapor]
         # If we didn't have to worry about float valitation and negative column
         # mass we could set qvapor[k_bot] to 0 here...
         dp_bottom = dp
     with computation(BACKWARD), interval(0, -1):
         dp_bottom = dp_bottom[0, 0, 1]
-        dq = qvapor * dp
+        dq = tracers[0, 0, 0][vapor] * dp
         # (if qvapor[kbot] isn't negative we will just loop through and do nothing)
         # if the level below us is negative and we are positive:
-        if (upper_fix[0, 0, 1] < 0) and (qvapor > 0):
+        if (upper_fix[0, 0, 1] < 0) and (tracers[0, 0, 0][vapor] > 0):
             # AND if we have enough mass to fill the level below us:
             if dq >= -upper_fix[0, 0, 1] * dp_bottom:
                 # set dq to the amount needed to fill the level below us
                 dq = -upper_fix[0, 0, 1] * dp_bottom
                 # (otherwise dq is all of the vapor mass)
-            qvapor = qvapor - dq / dp  # subtract dq from current mass
+            tracers[0, 0, 0][vapor] = (
+                tracers[0, 0, 0][vapor] - dq / dp
+            )  # subtract dq from current mass
             upper_fix = upper_fix[0, 0, 1] + dq / dp_bottom  # add mass to qvapor[kbot]
         # if qvapor[kbot] is still negative move to the next level
         else:
@@ -229,7 +239,7 @@ def fix_water_vapor_down(qvapor: FloatField, dp: FloatField):
     with computation(FORWARD), interval(1, None):
         upper_fix = upper_fix[0, 0, -1]
     with computation(PARALLEL), interval(-1, None):
-        qvapor = upper_fix  # and finally set qvapor[kbot]
+        tracers[0, 0, 0][vapor] = upper_fix  # and finally set qvapor[kbot]
 
 
 def fix_neg_cloud(dp: FloatField, qcld: FloatField):
@@ -311,7 +321,7 @@ def fix_water_vapor_k_loop(i, j, kbot, qvapor, dp):
 """
 
 
-class AdjustNegativeTracerMixingRatio:
+class AdjustNegativeTracerMixingRatio(NDSLRuntime):
     """Adjust tracer mixing ratios to fix negative values
 
     Named neg_adj3 in fortran
@@ -337,17 +347,9 @@ class AdjustNegativeTracerMixingRatio:
         check_negative: bool,
         hydrostatic: bool,
     ):
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
-        self._sum1 = quantity_factory.zeros(
-            [I_DIM, J_DIM],
-            units="unknown",
-            dtype=Float,
-        )
-        self._sum2 = quantity_factory.zeros(
-            [I_DIM, J_DIM],
-            units="unknown",
-            dtype=Float,
-        )
         if check_negative:
             raise NotImplementedError(
                 "Unimplemented namelist value check_negative=True"
@@ -361,6 +363,16 @@ class AdjustNegativeTracerMixingRatio:
             self._d0_vap = constants.CV_VAP - constants.C_LIQ
         self._lv00 = constants.HLV - self._d0_vap * constants.TICE
 
+        self._sum1 = quantity_factory.zeros(
+            [I_DIM, J_DIM],
+            units="unknown",
+            dtype=Float,
+        )
+        self._sum2 = quantity_factory.zeros(
+            [I_DIM, J_DIM],
+            units="unknown",
+            dtype=Float,
+        )
         self._fix_neg_water = stencil_factory.from_origin_domain(
             func=fix_neg_water,
             origin=grid_indexing.origin_compute(),
@@ -375,6 +387,7 @@ class AdjustNegativeTracerMixingRatio:
             func=fix_water_vapor_down,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
+            externals={"vapor": FVTracers.index("vapor")},
         )
         self._fix_neg_cloud = stencil_factory.from_origin_domain(
             func=fix_neg_cloud,
@@ -384,13 +397,7 @@ class AdjustNegativeTracerMixingRatio:
 
     def __call__(
         self,
-        qvapor,
-        qliquid,
-        qrain,
-        qsnow,
-        qice,
-        qgraupel,
-        qcld,
+        tracers: FVTracers,  # ty: ignore[invalid-type-form]
         pt,
         delp,
     ):
@@ -409,12 +416,12 @@ class AdjustNegativeTracerMixingRatio:
         # TODO: remove delz and peln from args
         self._fix_neg_water(
             pt,
-            qvapor,
-            qliquid,
-            qrain,
-            qsnow,
-            qice,
-            qgraupel,
+            tracers[:, :, :, FVTracers.index("vapor")],
+            tracers[:, :, :, FVTracers.index("liquid")],
+            tracers[:, :, :, FVTracers.index("rain")],
+            tracers[:, :, :, FVTracers.index("snow")],
+            tracers[:, :, :, FVTracers.index("ice")],
+            tracers[:, :, :, FVTracers.index("graupel")],
             self._lv00,
             self._d0_vap,
         )
@@ -422,7 +429,20 @@ class AdjustNegativeTracerMixingRatio:
         # the physical meaning we could keep the structure as @gtstencil.function
         # TODO: when gt4py supports 2D temporaries, refactor sum1 and sum2 to internal
         # stencil temporaries
-        self._fillq(qgraupel, delp, self._sum1, self._sum2)
-        self._fillq(qrain, delp, self._sum1, self._sum2)
-        self._fix_water_vapor_down(qvapor, delp)
-        self._fix_neg_cloud(delp, qcld)
+        self._fillq(
+            tracers[:, :, :, FVTracers.index("graupel")],
+            delp,
+            self._sum1,
+            self._sum2,
+        )
+        self._fillq(
+            tracers[:, :, :, FVTracers.index("rain")],
+            delp,
+            self._sum1,
+            self._sum2,
+        )
+
+        # TODO: vapor cannot be passed directly due to an issue in schedule tree
+        # generation. We use 4D indirection
+        self._fix_water_vapor_down(delp, tracers)
+        self._fix_neg_cloud(delp, tracers[:, :, :, FVTracers.index("cloud")])

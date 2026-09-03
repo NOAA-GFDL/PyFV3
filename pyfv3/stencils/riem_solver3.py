@@ -1,8 +1,9 @@
-import math
 import typing
 
+import numpy as np
+
 import ndsl.constants as constants
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM
 from ndsl.dsl.gt4py import (
     __INLINED,
@@ -142,7 +143,7 @@ def finalize(
             zh = zh[0, 0, 1] - dz
 
 
-class NonhydrostaticVerticalSolver:
+class NonhydrostaticVerticalSolver(NDSLRuntime):
     """
     Fortran subroutine Riem_Solver3
 
@@ -158,52 +159,45 @@ class NonhydrostaticVerticalSolver:
         quantity_factory: QuantityFactory,
         config: RiemannConfig,
     ):
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
         self._sim1_solve = Sim1Solver(
             stencil_factory,
-            config.p_fac,
+            Float(config.p_fac),
             n_halo=0,
         )
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
-
         if config.a_imp <= 0.999:
             raise NotImplementedError("a_imp <= 0.999 is not implemented")
 
-        self._delta_mass = quantity_factory.zeros(
+        self._delta_mass = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="kg",
-            dtype=Float,
         )
-        self._tmp_pe_init = quantity_factory.zeros(
+        self._tmp_pe_init = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
-            dtype=Float,
         )
-        self._p_gas = quantity_factory.zeros(
+        self._p_gas = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_DIM],
             units="Pa",
-            dtype=Float,
         )
-        self._p_interface = quantity_factory.zeros(
+        self._p_interface = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="Pa",
-            dtype=Float,
         )
-        self._log_p_interface = quantity_factory.zeros(
+        self._log_p_interface = self.make_local(
+            quantity_factory,
             [I_DIM, J_DIM, K_INTERFACE_DIM],
             units="log(Pa)",
-            dtype=Float,
         )
 
         # gamma parameter is (cp/cv)
-        self._gamma = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM],
-            units="",
-            dtype=Float,
-        )
+        self._gamma = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
 
         riemorigin = grid_indexing.origin_compute()
         domain = grid_indexing.domain_compute(add=(0, 0, 1))
@@ -214,7 +208,7 @@ class NonhydrostaticVerticalSolver:
         )
         self._finalize_stencil = stencil_factory.from_origin_domain(
             finalize,
-            externals={"use_logp": config.use_logp, "beta": config.beta},
+            externals={"use_logp": config.use_logp, "beta": Float(config.beta)},
             origin=riemorigin,
             domain=domain,
         )
@@ -283,9 +277,9 @@ class NonhydrostaticVerticalSolver:
         # gm2 is gamma (cp/cv)
         # dz2 is delz
 
-        peln1 = math.log(ptop)
+        peln1 = np.log(ptop, dtype=Float)
         # ptk = ptop ** kappa
-        ptk = math.exp(constants.KAPPA * peln1)
+        ptk = np.exp(constants.KAPPA * peln1, dtype=Float)
 
         self._precompute_stencil(
             delp,

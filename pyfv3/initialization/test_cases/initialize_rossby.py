@@ -13,6 +13,7 @@ from ndsl.dsl.typing import Float
 from ndsl.grid import GridData
 from pyfv3.dycore_state import DycoreState
 from pyfv3.initialization import init_utils
+from pyfv3.tracers import default_GEOS_tracers
 
 NHALO = constants.N_HALO_DEFAULT
 OMG = Float(7.848e-6)
@@ -90,7 +91,7 @@ def _calc_rossby_delp(grid_data: GridData):
     ) * RK * RK * (np.cos(agd1) ** (R + R)) * (
         (R + 1) * (np.cos(agd1) ** 2)
         + (2 * R * R - R - 2)
-        - 2 * (R * R) * np.cos(agd1) ** (-2)
+        - 2 * (R * R) * np.cos(agd1) ** (-2.0)
     )
     b = (
         (2 * (constants.OMEGA + OMG) * RK / ((R + 1) * (R + 2)))
@@ -101,7 +102,7 @@ def _calc_rossby_delp(grid_data: GridData):
         Float(0.25)
         * RK
         * RK
-        * (np.cos(agd1) ** (2 * R))
+        * (np.cos(agd1) ** (2.0 * R))
         * ((R + 1) * (np.cos(agd1) ** 2) - (R + 2))
     )
     return GH0 + constants.RADIUS * constants.RADIUS * (
@@ -199,10 +200,10 @@ def init_rossby_state(
     _init_for_rossby(numpy_state, grid_data, shape)
     _postinit_for_all_sw(numpy_state)
 
+    default_GEOS_tracers(quantity_factory)
     state = DycoreState.init_from_numpy_arrays(
         numpy_state.__dict__,
-        sizer=quantity_factory.sizer,
-        backend=sample_quantity.metadata.backend,
+        quantity_factory,
     )
 
     comm.halo_update(state.phis, n_points=NHALO)

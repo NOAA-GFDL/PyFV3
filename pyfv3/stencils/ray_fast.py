@@ -1,7 +1,22 @@
-import ndsl.constants as constants
-from ndsl import StencilFactory, orchestrate
-from ndsl.constants import I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM
-from ndsl.dsl.gt4py import __INLINED, BACKWARD, FORWARD, PARALLEL, computation
+import dace
+import numpy as np
+
+from ndsl import (
+    NDSLRuntime,
+    QuantityFactory,
+    StencilFactory,
+    SubtileGridSizer,
+    constants,
+)
+from ndsl.constants import (
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    SECONDS_PER_DAY,
+)
+from ndsl.dsl.gt4py import __INLINED, BACKWARD, FORWARD, PARALLEL, computation, float64
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, log, region, sin
 from ndsl.dsl.typing import Float, FloatField, FloatFieldK
@@ -24,7 +39,7 @@ def compute_rf_vals(pfull, bdt, rf_cutoff, tau0, ptop):
 @gtfunction
 def compute_rff_vals(pfull, dt, rf_cutoff, tau0, ptop):
     rffvals = compute_rf_vals(pfull, dt, rf_cutoff, tau0, ptop)
-    rffvals = 1.0 / (1.0 + rffvals)
+    rffvals = float64(1.0) / (float64(1.0) + rffvals)
     return rffvals
 
 
@@ -33,14 +48,31 @@ def dm_layer(rf, dp, wind):
     return (1.0 - rf) * dp * wind
 
 
+def ray_fast_damping_increment(
+    pfull: FloatFieldK,
+    dt: Float,
+    ptop: Float,
+    rf: FloatField,
+):
+    """rf is rayleigh damping increment, fraction of vertical velocity
+    left after doing rayleigh damping (w -> w * rf)
+    """
+    from __externals__ import rf_cutoff, tau
+
+    with computation(PARALLEL), interval(...):
+        if pfull < rf_cutoff:
+            # rf is rayleigh damping increment, fraction of vertical velocity
+            # left after doing rayleigh damping (w -> w * rf)
+            rf = compute_rff_vals(pfull, dt, rf_cutoff, tau * SECONDS_PER_DAY, ptop)
+
+
 def ray_fast_wind_compute(
     u: FloatField,
     v: FloatField,
     w: FloatField,
     delta_p_ref: FloatFieldK,  # reference delta pressure
     pfull: FloatFieldK,  # input layer pressure reference?
-    dt: Float,
-    ptop: Float,
+    rf: FloatFieldK,
     rf_cutoff_nudge: Float,
 ):
     """
@@ -55,16 +87,9 @@ def ray_fast_wind_compute(
         rf_cutoff_nudge (in):
         ks (in):
     """
-    from __externals__ import hydrostatic, local_ie, local_je, rf_cutoff, tau
+    from __externals__ import hydrostatic, local_ie, local_je, rf_cutoff
 
     # dm_stencil
-    with computation(PARALLEL), interval(...):
-        # TODO -- in the fortran model rf is only computed once, repeating
-        # the computation every time ray_fast is run is inefficient
-        if pfull < rf_cutoff:
-            # rf is rayleigh damping increment, fraction of vertical velocity
-            # left after doing rayleigh damping (w -> w * rf)
-            rf = compute_rff_vals(pfull, dt, rf_cutoff, tau * SDAY, ptop)
     with computation(FORWARD):
         with interval(0, 1):
             if pfull < rf_cutoff_nudge:
@@ -129,7 +154,7 @@ def ray_fast_wind_compute(
                     w *= rf
 
 
-class RayleighDamping:
+class RayleighDamping(NDSLRuntime):
     """
     Apply Rayleigh damping (for tau > 0).
 
@@ -143,13 +168,26 @@ class RayleighDamping:
     Fortran name: ray_fast.
     """
 
-    def __init__(self, stencil_factory: StencilFactory, rf_cutoff, tau, hydrostatic):
-        orchestrate(obj=self, config=stencil_factory.config.dace_config)
+    def __init__(
+        self,
+        stencil_factory: StencilFactory,
+        quantity_factory: QuantityFactory,
+        rf_cutoff: Float,
+        tau: Float,
+        hydrostatic: bool,
+    ):
+        super().__init__(stencil_factory)
+
         grid_indexing = stencil_factory.grid_indexing
-        self._rf_cutoff = rf_cutoff
+        self._rf_cutoff = Float(rf_cutoff)
         origin, domain = grid_indexing.get_origin_domain(
             [I_INTERFACE_DIM, J_INTERFACE_DIM, K_DIM]
         )
+
+        if tau == 0:
+            raise NotImplementedError(
+                "Dynamical Core (fv_dynamics): RayleighDamping, with tau <= 0, is not implemented"
+            )
 
         ax_offsets = grid_indexing.axis_offsets(origin, domain)
         local_axis_offsets = {}
@@ -163,11 +201,41 @@ class RayleighDamping:
             domain=domain,
             externals={
                 "hydrostatic": hydrostatic,
-                "rf_cutoff": rf_cutoff,
+                "rf_cutoff": self._rf_cutoff,
                 "tau": tau,
                 **local_axis_offsets,
             },
         )
+
+        self._ray_fast_damping_increment = stencil_factory.from_origin_domain(
+            ray_fast_damping_increment,
+            origin=(0, 0, origin[2]),
+            domain=(1, 1, domain[2]),
+            externals={
+                "rf_cutoff": self._rf_cutoff,
+                "tau": tau,
+            },
+        )
+        sizer = SubtileGridSizer(
+            nx=1,
+            ny=1,
+            nz=domain[2],
+            n_halo=0,
+            data_dimensions={},
+            backend=stencil_factory.backend,
+        )
+
+        # Not a local - because of the separate factory trick
+        K_quantity_factory = QuantityFactory(sizer, backend=stencil_factory.backend)
+        self._tmp_damping_increment = K_quantity_factory.ones(
+            [I_DIM, J_DIM, K_DIM], "n/a"
+        )
+
+        # Not a local because it's a lazy initialization
+        self._damping_increment = quantity_factory.ones([K_DIM], "")
+
+        self._initialize_damping_increment = np.ones((1,), dtype=bool)
+        self._KM = domain[2]
 
     def __call__(
         self,
@@ -179,15 +247,36 @@ class RayleighDamping:
         dt: Float,
         ptop: Float,
     ):
-        rf_cutoff_nudge = self._rf_cutoff + min(100.0, 10.0 * ptop)
+        """
+        Args:
+            u (inout)
+            v (inout)
+            w (inout)
+            dp (in)
+            pfull (in)
+            dt (in)
+            ptop (in)
+        """
+        rf_cutoff_nudge = self._rf_cutoff + min(Float(100.0), Float(10.0) * ptop)
 
+        # TODO: this is a bad fix to go around an orchestration issue
+        #       on compile-time values. Do better.
+        if self._initialize_damping_increment[0]:
+            self._ray_fast_damping_increment(
+                pfull=pfull,
+                dt=dt,
+                ptop=ptop,
+                rf=self._tmp_damping_increment,
+            )
+            for _k in dace.map[0 : self._KM]:
+                self._damping_increment[_k] = self._tmp_damping_increment[0, 0, _k]
+            self._initialize_damping_increment[0] = False
         self._ray_fast_wind_compute(
-            u,
-            v,
-            w,
-            dp,
-            pfull,
-            dt,
-            ptop,
-            rf_cutoff_nudge,
+            u=u,
+            v=v,
+            w=w,
+            delta_p_ref=dp,
+            pfull=pfull,
+            rf=self._damping_increment,
+            rf_cutoff_nudge=rf_cutoff_nudge,
         )

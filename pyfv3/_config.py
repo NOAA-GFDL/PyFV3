@@ -8,11 +8,12 @@ import f90nml
 import yaml
 from dacite import Config, from_dict
 
+from ndsl.dsl.typing import Float, Int
 from ndsl.utils import f90nml_as_dict
 
-DEFAULT_INT = 0
+DEFAULT_INT = Int(0)
 DEFAULT_STR = ""
-DEFAULT_FLOAT = 0.0
+DEFAULT_FLOAT = Float(0.0)
 DEFAULT_BOOL = False
 DEFAULT_DYCORE_NML_GROUPS = (
     "main_nml",
@@ -28,34 +29,34 @@ class SatAdjustConfig:
     rad_rain: bool
     rad_graupel: bool
     tintqs: bool
-    sat_adj0: float
-    ql_gen: float
-    qs_mlt: float
-    ql0_max: float
-    t_sub: float
-    qi_gen: float
-    qi_lim: float
-    qi0_max: float
-    dw_ocean: float
-    dw_land: float
-    icloud_f: int
-    cld_min: float
-    tau_i2s: float
-    tau_v2l: float
-    tau_r2g: float
-    tau_l2r: float
-    tau_l2v: float
-    tau_imlt: float
-    tau_smlt: float
+    sat_adj0: Float
+    ql_gen: Float
+    qs_mlt: Float
+    ql0_max: Float
+    t_sub: Float
+    qi_gen: Float
+    qi_lim: Float
+    qi0_max: Float
+    dw_ocean: Float
+    dw_land: Float
+    icloud_f: Int
+    cld_min: Float
+    tau_i2s: Float
+    tau_v2l: Float
+    tau_r2g: Float
+    tau_l2r: Float
+    tau_l2v: Float
+    tau_imlt: Float
+    tau_smlt: Float
 
 
 @dataclasses.dataclass(frozen=True)
 class RemappingConfig:
     fill: bool
-    kord_tm: int
-    kord_tr: int
-    kord_wz: int
-    kord_mt: int
+    kord_tm: Int
+    kord_tr: Int
+    kord_wz: Int
+    kord_mt: Int
     do_sat_adj: bool
     sat_adjust: SatAdjustConfig
 
@@ -66,32 +67,32 @@ class RemappingConfig:
 
 @dataclasses.dataclass(frozen=True)
 class RiemannConfig:
-    p_fac: float
-    a_imp: float
+    p_fac: Float
+    a_imp: Float
     use_logp: bool
-    beta: float
+    beta: Float
 
 
 @dataclasses.dataclass(frozen=True)
 class DGridShallowWaterLagrangianDynamicsConfig:
-    dddmp: float
-    d2_bg: float
-    d2_bg_k1: float
-    d2_bg_k2: float
-    d4_bg: float
-    ke_bg: float
-    nord: int
-    n_sponge: int
-    grid_type: int
-    d_ext: float
-    hord_dp: int
-    hord_tm: int
-    hord_mt: int
-    hord_vt: int
+    dddmp: Float
+    d2_bg: Float
+    d2_bg_k1: Float
+    d2_bg_k2: Float
+    d4_bg: Float
+    ke_bg: Float
+    nord: Int
+    n_sponge: Int
+    grid_type: Int
+    d_ext: Float
+    hord_dp: Int
+    hord_tm: Int
+    hord_mt: Int
+    hord_vt: Int
     do_f3d: bool
     do_skeb: bool
-    d_con: float
-    vtdm4: float
+    d_con: Float
+    vtdm4: Float
     inline_q: bool
     convert_ke: bool
     do_vort_damp: bool
@@ -100,12 +101,12 @@ class DGridShallowWaterLagrangianDynamicsConfig:
 
 @dataclasses.dataclass(frozen=True)
 class AcousticDynamicsConfig:
-    tau: float
-    k_split: int
-    n_split: int
-    m_split: int
-    delt_max: float
-    rf_cutoff: float
+    tau: Float
+    k_split: Int
+    n_split: Int
+    m_split: Int
+    delt_max: Float
+    rf_cutoff: Float
     rf_fast: bool
     breed_vortex_inline: bool
     """
@@ -120,6 +121,8 @@ class AcousticDynamicsConfig:
     """
     riemann: RiemannConfig
     d_grid_shallow_water: DGridShallowWaterLagrangianDynamicsConfig
+    dz_min: float
+    """Controls minimum thickness in NH solver"""
 
     @property
     def nord(self) -> int:
@@ -160,50 +163,50 @@ class AcousticDynamicsConfig:
 
 @dataclasses.dataclass
 class DynamicalCoreConfig:
-    dt_atmos: int = DEFAULT_INT
-    n_steps: int = 1
-    a_imp: float = DEFAULT_FLOAT
-    beta: float = DEFAULT_FLOAT
-    consv_te: float = DEFAULT_FLOAT
-    d2_bg: float = DEFAULT_FLOAT
-    d2_bg_k1: float = DEFAULT_FLOAT
-    d2_bg_k2: float = DEFAULT_FLOAT
-    d4_bg: float = DEFAULT_FLOAT
-    d_con: float = DEFAULT_FLOAT
-    d_ext: float = DEFAULT_FLOAT
-    dddmp: float = DEFAULT_FLOAT
-    delt_max: float = DEFAULT_FLOAT
+    dt_atmos: Int = DEFAULT_INT
+    n_steps: Int = 1
+    a_imp: Float = DEFAULT_FLOAT
+    beta: Float = DEFAULT_FLOAT
+    consv_te: Float = DEFAULT_FLOAT
+    d2_bg: Float = DEFAULT_FLOAT
+    d2_bg_k1: Float = DEFAULT_FLOAT
+    d2_bg_k2: Float = DEFAULT_FLOAT
+    d4_bg: Float = DEFAULT_FLOAT
+    d_con: Float = DEFAULT_FLOAT
+    d_ext: Float = DEFAULT_FLOAT
+    dddmp: Float = DEFAULT_FLOAT
+    delt_max: Float = DEFAULT_FLOAT
     do_sat_adj: bool = DEFAULT_BOOL
     do_vort_damp: bool = DEFAULT_BOOL
     fill: bool = DEFAULT_BOOL
-    hord_dp: int = DEFAULT_INT
-    hord_mt: int = DEFAULT_INT
-    hord_tm: int = DEFAULT_INT
-    hord_tr: int = DEFAULT_INT
-    hord_vt: int = DEFAULT_INT
+    hord_dp: Int = DEFAULT_INT
+    hord_mt: Int = DEFAULT_INT
+    hord_tm: Int = DEFAULT_INT
+    hord_tr: Int = DEFAULT_INT
+    hord_vt: Int = DEFAULT_INT
     hydrostatic: bool = DEFAULT_BOOL
-    k_split: int = DEFAULT_INT
-    ke_bg: float = DEFAULT_FLOAT
-    kord_mt: int = DEFAULT_INT
-    kord_tm: int = DEFAULT_INT
-    kord_tr: int = DEFAULT_INT
-    kord_wz: int = DEFAULT_INT
-    n_split: int = DEFAULT_INT
-    nord: int = DEFAULT_INT
-    npx: int = DEFAULT_INT
-    npy: int = DEFAULT_INT
-    npz: int = DEFAULT_INT
-    ntiles: int = DEFAULT_INT
-    nwat: int = DEFAULT_INT
-    p_fac: float = DEFAULT_FLOAT
-    rf_cutoff: float = DEFAULT_FLOAT
-    tau: float = DEFAULT_FLOAT
-    vtdm4: float = DEFAULT_FLOAT
+    k_split: Int = DEFAULT_INT
+    ke_bg: Float = DEFAULT_FLOAT
+    kord_mt: Int = DEFAULT_INT
+    kord_tm: Int = DEFAULT_INT
+    kord_tr: Int = DEFAULT_INT
+    kord_wz: Int = DEFAULT_INT
+    n_split: Int = DEFAULT_INT
+    nord: Int = DEFAULT_INT
+    npx: Int = DEFAULT_INT
+    npy: Int = DEFAULT_INT
+    npz: Int = DEFAULT_INT
+    ntiles: Int = DEFAULT_INT
+    nwat: Int = DEFAULT_INT
+    p_fac: Float = DEFAULT_FLOAT
+    rf_cutoff: Float = DEFAULT_FLOAT
+    tau: Float = DEFAULT_FLOAT
+    vtdm4: Float = DEFAULT_FLOAT
     z_tracer: bool = DEFAULT_BOOL
     do_qa: bool = DEFAULT_BOOL
     layout: tuple[int, int] = (1, 1)
-    grid_type: int = 0
-    u_max: float = 350.0
+    grid_type: Int = Int(0)
+    u_max: Float = Float(350.0)
     """max windspeed for dp config"""
     do_f3d: bool = False
     inline_q: bool = False
@@ -213,40 +216,39 @@ class DynamicalCoreConfig:
     moist_phys: bool = True
     check_negative: bool = False
     # gfdl_cloud_microphys.F90
-    tau_r2g: float = 900.0
+    tau_r2g: Float = Float(900.0)
     """rain freezing during fast_sat"""
-    tau_smlt: float = 900.0
+    tau_smlt: Float = Float(900.0)
     """snow melting"""
-    tau_g2r: float = 600.0
+    tau_g2r: Float = Float(600.0)
     """graupel melting to rain"""
-    tau_imlt: float = 600.0
+    tau_imlt: Float = Float(600.0)
     """cloud ice melting"""
-    tau_i2s: float = 1000.0
+    tau_i2s: Float = Float(1000.0)
     """cloud ice to snow auto - conversion"""
-    tau_l2r: float = 900.0
+    tau_l2r: Float = Float(900.0)
     """cloud water to rain auto - conversion"""
-    tau_g2v: float = 1200.0
+    tau_g2v: Float = Float(1200.0)
     """graupel sublimation"""
-    tau_v2g: float = 21600.0
+    tau_v2g: Float = Float(21600.0)
     """graupel deposition -- make it a slow process"""
-    sat_adj0: float = 0.90
+    sat_adj0: Float = Float(0.90)
     """adjustment factor (0: no 1: full) during fast_sat_adj"""
-    ql_gen: float = (
-        1.0e-3  # max new cloud water during remapping step if fast_sat_adj = .t.
-    )
-    ql_mlt: float = 2.0e-3
+    ql_gen: Float = Float(1.0e-3)
+    """max new cloud water during remapping step if fast_sat_adj = .t."""
+    ql_mlt: Float = Float(2.0e-3)
     """max value of cloud water allowed from melted cloud ice"""
-    qs_mlt: float = 1.0e-6
+    qs_mlt: Float = Float(1.0e-6)
     """max cloud water due to snow melt"""
-    ql0_max: float = 2.0e-3
+    ql0_max: Float = Float(2.0e-3)
     """max cloud water value (auto converted to rain)"""
-    t_sub: float = 184.0
+    t_sub: Float = Float(184.0)
     """min temp for sublimation of cloud ice"""
-    qi_gen: float = 1.82e-6
+    qi_gen: Float = Float(1.82e-6)
     """max cloud ice generation during remapping step"""
-    qi_lim: float = 1.0
+    qi_lim: Float = Float(1.0)
     """cloud ice limiter to prevent large ice build up"""
-    qi0_max: float = 1.0e-4
+    qi0_max: Float = Float(1.0e-4)
     """max cloud ice value (by other sources)"""
     rad_snow: bool = True
     """consider snow in cloud fraction calculation"""
@@ -256,33 +258,34 @@ class DynamicalCoreConfig:
     """consider graupel in cloud fraction calculation"""
     tintqs: bool = False
     """use temperature in the saturation mixing in PDF"""
-    dw_ocean: float = 0.10
+    dw_ocean: Float = Float(0.10)
     """base value for ocean"""
-    dw_land: float = 0.15
+    dw_land: Float = Float(0.15)
     """base value for subgrid deviation / variability over land"""
     # cloud scheme 0 - ?
     # 1: old fvgfs gfdl) mp implementation
     # 2: binary cloud scheme (0 / 1)
-    icloud_f: int = 0
-    cld_min: float = 0.05
+    icloud_f: Int = Int(0)
+    cld_min: Float = Float(0.05)
     """!< minimum cloud fraction"""
-    tau_l2v: float = 300.0
+    tau_l2v: Float = Float(300.0)
     """cloud water to water vapor (evaporation)"""
-    tau_v2l: float = 90.0
+    tau_v2l: Float = Float(90.0)
     """water vapor to cloud water (condensation)"""
-    c2l_ord: int = 4
+    c2l_ord: Int = Int(4)
     regional: bool = False
-    m_split: int = 0
+    m_split: Int = Int(0)
     convert_ke: bool = False
     breed_vortex_inline: bool = False
     use_old_omega: bool = True
     rf_fast: bool = False
     adiabatic: bool = False
-    nf_omega: int = 1
-    fv_sg_adj: int = -1
-    n_sponge: int = 1
+    nf_omega: Int = Int(1)
+    fv_sg_adj: Int = Int(-1)
+    n_sponge: Int = Int(1)
     sw_dynamics: bool = False
     """shallow water conditions"""
+    dz_min: Float = Float(2.0)
     namelist_override: str | None = None
     target_nml_groups: tuple[str, ...] | None = DEFAULT_DYCORE_NML_GROUPS
 
@@ -341,6 +344,7 @@ class DynamicalCoreConfig:
                 tuple[int, int]: lambda x: tuple(x),
                 tuple[str, ...]: lambda x: tuple(x) if x is not None else None,
             },
+            cast=[Int, Float],
         )
         dycore_config = from_dict(
             data_class=DynamicalCoreConfig, data=data, config=dacite_config
@@ -449,6 +453,7 @@ class DynamicalCoreConfig:
             breed_vortex_inline=self.breed_vortex_inline,
             use_old_omega=self.use_old_omega,
             riemann=self.riemann,
+            dz_min=self.dz_min,
             d_grid_shallow_water=self.d_grid_shallow_water,
         )
 

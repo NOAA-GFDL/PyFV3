@@ -13,10 +13,19 @@ _EXPECTED_FV_TRACERS = [
     "snow",
     "graupel",
     "cloud",
-    "o3mr",
-    "sgs_tke",
 ]
 """Expected tracers for FV dynamics to be able to run in the current state."""
+
+GEOS_tracers_mapping = {
+    "vapor": 0,
+    "liquid": 1,
+    "ice": 2,
+    "rain": 3,
+    "snow": 4,
+    "graupel": 5,
+    "cloud": 6,
+}
+"""Default mapping for liquid tracers for GEOS"""
 
 
 def setup_fvtracers(
@@ -26,7 +35,9 @@ def setup_fvtracers(
 ) -> None:
     """Setup FV Tracers and sparse mapping to call tracer by name"""
 
-    if not all(tracer in name_mapping for tracer in _EXPECTED_FV_TRACERS):
+    if tracer_count > 6 and not all(
+        tracer in name_mapping for tracer in _EXPECTED_FV_TRACERS
+    ):
         raise ValueError(
             f"FV Tracers requires name mapping for all of the follwoing {_EXPECTED_FV_TRACERS}."
             f"Given {name_mapping}."
@@ -64,3 +75,10 @@ def default_ai2_tracers(quantity_factory: QuantityFactory) -> None:
         "cloud": 8,
     }
     setup_fvtracers(quantity_factory, len(ai2_tracers.keys()), ai2_tracers)
+
+
+def default_GEOS_tracers(quantity_factory: QuantityFactory) -> None:
+    """Default FV Tracers setup for the GEOS dataset & code"""
+    setup_fvtracers(
+        quantity_factory, len(GEOS_tracers_mapping.keys()), GEOS_tracers_mapping
+    )

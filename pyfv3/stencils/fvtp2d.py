@@ -1,9 +1,9 @@
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import horizontal, interval, region
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from ndsl.dsl.typing import FloatField, FloatFieldIJ
 from ndsl.grid import DampingCoefficients, GridData
 from pyfv3.stencils.copy_corners import CopyCornersX, CopyCornersY
 from pyfv3.stencils.delnflux import DelnFlux
@@ -115,7 +115,7 @@ def final_fluxes(
             )
 
 
-class FiniteVolumeTransport:
+class FiniteVolumeTransport(NDSLRuntime):
     """
     Equivalent of Fortran FV3 subroutine fv_tp_2d, done in 3 dimensions.
     Tested on serialized data with FvTp2d
@@ -133,28 +133,26 @@ class FiniteVolumeTransport:
         nord=None,
         damp_c=None,
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
 
         # use a shorter alias for grid_indexing here to avoid very verbose lines
         idx = stencil_factory.grid_indexing
         self._area = grid_data.area
 
-        def make_quantity():
-            return quantity_factory.zeros(
-                [I_DIM, J_DIM, K_DIM],
-                units="unknown",
-                dtype=Float,
-            )
-
-        self._q_advected_y = make_quantity()
-        self._q_advected_x = make_quantity()
-        self._q_x_advected_mean = make_quantity()
-        self._q_y_advected_mean = make_quantity()
-        self._q_advected_x_y_advected_mean = make_quantity()
-        self._q_advected_y_x_advected_mean = make_quantity()
+        self._q_advected_y = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._q_advected_x = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._q_x_advected_mean = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
+        self._q_y_advected_mean = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
+        self._q_advected_x_y_advected_mean = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
+        self._q_advected_y_x_advected_mean = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_DIM]
+        )
         self._nord = nord
         self._damp_c = damp_c
         ord_outer = hord
@@ -227,18 +225,6 @@ class FiniteVolumeTransport:
             domain=idx.domain_compute(add=(1, 1, 1)),
         )
 
-    def _transport_flux(self, x_unit_flux, y_unit_flux, q_x_flux, q_y_flux):
-        self.stencil_transport_flux(
-            self._q_advected_y_x_advected_mean,
-            self._q_x_advected_mean,
-            self._q_advected_x_y_advected_mean,
-            self._q_y_advected_mean,
-            x_unit_flux,
-            y_unit_flux,
-            q_x_flux,
-            q_y_flux,
-        )
-
     def __call__(
         self,
         q,
@@ -267,7 +253,7 @@ class FiniteVolumeTransport:
         by contrast are area weighted.
 
         Args:
-            q (in): scalar to be transported
+            q (inout): scalar to be transported (corners are copied in halo)
             crx (in): Courant number in x-direction
             cry (in): Courant number in y-direction
             x_area_flux (in): flux of area in x-direction, in units of m^2
@@ -344,16 +330,53 @@ class FiniteVolumeTransport:
 
         # TODO [DACE]: due to an aliasing issue (see above for original code)
         # we duplicate the code here
+
         if x_mass_flux is None:
             if y_mass_flux is None:
-                self._transport_flux(x_area_flux, y_area_flux, q_x_flux, q_y_flux)
+                self.stencil_transport_flux(
+                    self._q_advected_y_x_advected_mean,
+                    self._q_x_advected_mean,
+                    self._q_advected_x_y_advected_mean,
+                    self._q_y_advected_mean,
+                    x_area_flux,
+                    y_area_flux,
+                    q_x_flux,
+                    q_y_flux,
+                )
             else:
-                self._transport_flux(x_area_flux, y_mass_flux, q_x_flux, q_y_flux)
+                self.stencil_transport_flux(
+                    self._q_advected_y_x_advected_mean,
+                    self._q_x_advected_mean,
+                    self._q_advected_x_y_advected_mean,
+                    self._q_y_advected_mean,
+                    x_area_flux,
+                    y_mass_flux,
+                    q_x_flux,
+                    q_y_flux,
+                )
         else:
             if y_mass_flux is None:
-                self._transport_flux(x_mass_flux, y_area_flux, q_x_flux, q_y_flux)
+                self.stencil_transport_flux(
+                    self._q_advected_y_x_advected_mean,
+                    self._q_x_advected_mean,
+                    self._q_advected_x_y_advected_mean,
+                    self._q_y_advected_mean,
+                    x_mass_flux,
+                    y_area_flux,
+                    q_x_flux,
+                    q_y_flux,
+                )
             else:
-                self._transport_flux(x_mass_flux, y_mass_flux, q_x_flux, q_y_flux)
+                self.stencil_transport_flux(
+                    self._q_advected_y_x_advected_mean,
+                    self._q_x_advected_mean,
+                    self._q_advected_x_y_advected_mean,
+                    self._q_y_advected_mean,
+                    x_mass_flux,
+                    y_mass_flux,
+                    q_x_flux,
+                    q_y_flux,
+                )
 
         if self._do_delnflux:
             self.delnflux(q, q_x_flux, q_y_flux, mass=mass)

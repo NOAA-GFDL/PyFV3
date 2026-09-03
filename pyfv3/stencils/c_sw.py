@@ -1,4 +1,4 @@
-from ndsl import Quantity, QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, I_INTERFACE_DIM, J_DIM, J_INTERFACE_DIM, K_DIM
 from ndsl.dsl.gt4py import (
     __INLINED,
@@ -8,7 +8,7 @@ from ndsl.dsl.gt4py import (
     interval,
     region,
 )
-from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
+from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, I, J
 from ndsl.grid import GridData
 from ndsl.stencils import corners
 from pyfv3.stencils.d2a2c_vect import DGrid2AGrid2CGridVectors
@@ -158,7 +158,8 @@ def divergence_corner(
                 )
                 vf0 = v * dxc * 0.5 * (sin_sg3[-1, 0] + sin_sg1)
                 uf0 = u * dyc * 0.5 * (sin_sg4[0, -1] + sin_sg2)
-                divg_d = (-vf0 + uf1 - uf0) * rarea_c
+                divg_d = vf1 - vf0 + uf1 - uf0
+                divg_d = rarea_c * (divg_d - vf1)
 
             with horizontal(region[i_end + 1, j_end + 1], region[i_start, j_end + 1]):
                 vf1 = (
@@ -168,8 +169,8 @@ def divergence_corner(
                     u[-1, 0, 0] * dyc[-1, 0] * 0.5 * (sin_sg4[-1, -1] + sin_sg2[-1, 0])
                 )
                 uf0 = u * dyc * 0.5 * (sin_sg4[0, -1] + sin_sg2)
-                divg_d = (vf1 + uf1 - uf0) * rarea_c
-
+                divg_d = vf1 - vf0 + uf1 - uf0
+                divg_d = rarea_c * (divg_d + vf0)
             # ---------
 
 
@@ -377,7 +378,8 @@ def transportdelp_update_vorticity_and_kineticenergy(
             with horizontal(region[i_end + 1, :], region[i_start, :]):
                 ke = ke * sin_sg1 + v * cos_sg1 if ua > 0.0 else ke
 
-        ke = 0.5 * dt2 * (ua * ke + va * vort)
+        dt4 = 0.5 * dt2
+        ke = dt4 * (ua * ke + va * vort)
 
 
 def circulation_cgrid(
@@ -399,18 +401,18 @@ def circulation_cgrid(
     from __externals__ import i_end, i_start, j_end, j_start
 
     with computation(PARALLEL), interval(...):
-        fx = dxc * uc
-        fy = dyc * vc
-        # fx1 and fy1 are the shifted versions of fx and fy and are defined
-        # because temporaries are not allowed to be accessed with offsets in regions.
-        fx1 = dxc[0, -1] * uc[0, -1, 0]
-        fy1 = dyc[-1, 0] * vc[-1, 0, 0]
+        fx = uc * dxc
+        fy = vc * dyc
 
-        vort_c = fx1 - fx - fy1 + fy
+        vort_c = fx[J - 1] - fx - fy[I - 1] + fy
+
+        # Remove the extra term at the corners
+        # WEST
         with horizontal(region[i_start, j_start], region[i_start, j_end + 1]):
-            vort_c = fx1 - fx + fy
+            vort_c = vort_c + (vc[I - 1] * dyc[I - 1])
+        # EAST
         with horizontal(region[i_end + 1, j_start], region[i_end + 1, j_end + 1]):
-            vort_c = fx1 - fx - fy1
+            vort_c = vort_c - fy
 
 
 def absolute_vorticity(vort: FloatField, fC: FloatFieldIJ, rarea_c: FloatFieldIJ):
@@ -496,7 +498,7 @@ def update_y_velocity(
         velocity_c = velocity_c - tmp_flux * flux + rdyc * (ke[0, -1, 0] - ke)
 
 
-class CGridShallowWaterDynamics:
+class CGridShallowWaterDynamics(NDSLRuntime):
     """
     Fortran name is c_sw
     """
@@ -510,7 +512,8 @@ class CGridShallowWaterDynamics:
         grid_type: int,
         nord: int,
     ):
-        orchestrate(obj=self, config=stencil_factory.config.dace_config)
+        super().__init__(stencil_factory)
+
         self.grid_data = grid_data
         self._dord4 = True
         self._fC = self.grid_data.fC
@@ -549,20 +552,13 @@ class CGridShallowWaterDynamics:
             dord4=self._dord4,
         )
 
-        def make_quantity() -> Quantity:
-            return quantity_factory.zeros(
-                [I_DIM, J_DIM, K_DIM],
-                units="unknown",
-                dtype=Float,
-            )
-
         # TODO: double-check the dimensions on these, they may be incorrect
         # as they are only documentation and not used by the code
-        self._tmp_ke = make_quantity()
-        self._tmp_vort = make_quantity()
-        self._tmp_fx = make_quantity()
-        self._tmp_fx1 = make_quantity()
-        self._tmp_fx2 = make_quantity()
+        self._tmp_ke = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_vort = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_fx = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_fx1 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._tmp_fx2 = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
 
         if nord > 0:
             self._divergence_corner = stencil_factory.from_dims_halo(
@@ -800,4 +796,3 @@ class CGridShallowWaterDynamics:
             self.grid_data.rdxc,
             dt2,
         )
-        return self.delpc, self.ptc

@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from datetime import timedelta
 
 import pyfv3.stencils.moist_cv as moist_cv
@@ -9,30 +8,171 @@ from ndsl import (
     StencilFactory,
     WrappedHaloUpdater,
 )
-from ndsl.checkpointer import NullCheckpointer
-from ndsl.comm.mpi import MPI
-from ndsl.constants import I_DIM, J_DIM, K_DIM, K_INTERFACE_DIM, KAPPA, NQ, ZVIR
-from ndsl.dsl.dace.orchestration import dace_inhibitor, orchestrate
-from ndsl.dsl.gt4py import PARALLEL, computation, interval
-from ndsl.dsl.typing import Float, FloatField
+from ndsl.constants import (
+    I_DIM,
+    I_INTERFACE_DIM,
+    J_DIM,
+    J_INTERFACE_DIM,
+    K_DIM,
+    K_INTERFACE_DIM,
+    KAPPA,
+    NQ,
+    ZVIR,
+)
+from ndsl.dsl.dace.orchestration import orchestrate
+from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation, interval
+from ndsl.dsl.typing import (
+    NDSL_GLOBAL_PRECISION,
+    Float,
+    Float64,
+    FloatField,
+    FloatField64,
+    FloatFieldIJ64,
+)
 from ndsl.grid import DampingCoefficients, GridData
-from ndsl.logging import ndsl_log
 from ndsl.performance import Timer
 from ndsl.stencils import copy
 from ndsl.stencils.c2l_ord import CubedToLatLon
-from ndsl.typing import Checkpointer, Communicator
+from ndsl.typing import Communicator
 from pyfv3._config import DynamicalCoreConfig
 from pyfv3.dycore_state import DycoreState
+from pyfv3.optimization import get_optimization_config
 from pyfv3.stencils import fvtp2d, tracer_2d_1l
+from pyfv3.stencils.compute_total_energy import ComputeTotalEnergy
 from pyfv3.stencils.del2cubed import HyperdiffusionDamping
 from pyfv3.stencils.dyn_core import AcousticDynamics
 from pyfv3.stencils.neg_adj3 import AdjustNegativeTracerMixingRatio
 from pyfv3.stencils.remapping import LagrangianToEulerian
+from pyfv3.stencils.remapping_GEOS import LagrangianToEulerian_GEOS
 from pyfv3.tracers import FVTracers, FVTracersAxisName
+from pyfv3.version import IS_GEOS
+
+
+class DryMassRoundOff(NDSLRuntime):
+    def __init__(
+        self,
+        comm: Communicator,
+        quantity_factory: QuantityFactory,
+        stencil_factory: StencilFactory,
+        state: DycoreState,
+        hydrostatic: bool,
+    ) -> None:
+        super().__init__(stencil_factory)
+
+        self._psx_2d = self.make_local(
+            quantity_factory,
+            [I_DIM, J_DIM],
+            dtype=Float64,
+            allow_mismatch_float_precision=True,
+        )
+        # This is a quantity because it is used _outside_ of
+        # DryMassRoundOff. It should be an output
+        self.dpx = quantity_factory.zeros(
+            [I_DIM, J_DIM, K_DIM],
+            "unknown",
+            dtype=Float64,
+            allow_mismatch_float_precision=True,
+        )
+        self._dpx0_2d = self.make_local(
+            quantity_factory,
+            [I_DIM, J_DIM],
+            dtype=Float64,
+            allow_mismatch_float_precision=True,
+        )
+
+        self._reset = stencil_factory.from_origin_domain(
+            DryMassRoundOff._reset_stencil,
+            origin=stencil_factory.grid_indexing.origin_compute(),
+            domain=stencil_factory.grid_indexing.domain_compute(),
+        )
+        self._apply_psx_to_pe = stencil_factory.from_origin_domain(
+            DryMassRoundOff._apply_psx_to_pe_stencil,
+            origin=stencil_factory.grid_indexing.origin_compute(),
+            domain=stencil_factory.grid_indexing.domain_compute(),
+        )
+        self._apply_dpx_to_psx = stencil_factory.from_origin_domain(
+            DryMassRoundOff._apply_dpx_to_psx_stencil,
+            origin=stencil_factory.grid_indexing.origin_compute(),
+            domain=stencil_factory.grid_indexing.domain_compute(),
+        )
+
+        halo_spec = quantity_factory.get_quantity_halo_spec(
+            dims=[I_DIM, J_DIM, K_INTERFACE_DIM],
+            n_halo=stencil_factory.grid_indexing.n_halo,
+            dtype=Float,
+        )
+        self._pe_halo_updater = WrappedHaloUpdater(
+            comm.get_scalar_halo_updater([halo_spec]),
+            state,
+            ["pe"],
+        )
+
+        self._hydrostatic = hydrostatic
+
+    @staticmethod
+    def _reset_stencil(
+        dpx: FloatField64,
+        psx_2d: FloatFieldIJ64,
+        pe: FloatField,
+    ):
+        with computation(PARALLEL), interval(...):
+            dpx = 0.0
+        with computation(FORWARD), interval(-1, None):
+            psx_2d = pe[0, 0, 1]
+
+    @staticmethod
+    def _apply_dpx_to_psx_stencil(
+        dpx: FloatField64,
+        dpx0_2d: FloatFieldIJ64,
+        psx_2d: FloatFieldIJ64,
+    ):
+        with computation(FORWARD), interval(0, 1):
+            dpx0_2d = dpx
+
+        with computation(FORWARD), interval(1, None):
+            dpx0_2d += dpx
+
+        with computation(FORWARD), interval(0, 1):
+            psx_2d += psx_2d + dpx0_2d
+
+    @staticmethod
+    def _apply_psx_to_pe_stencil(
+        psx_2d: FloatFieldIJ64,
+        pe: FloatField,
+    ):
+        with computation(FORWARD), interval(-1, None):
+            pe[0, 0, 1] = psx_2d
+
+    def reset(self, pe: FloatField):
+        self._reset(dpx=self.dpx, psx_2d=self._psx_2d, pe=pe)
+
+    def apply(self, pe: FloatField):
+        self._apply_dpx_to_psx(self.dpx, self._dpx0_2d, self._psx_2d)
+        self._pe_halo_updater.update()
+        self._apply_psx_to_pe(self._psx_2d, pe)
+
+
+def _increment_stencil(
+    value: FloatField,
+    increment: FloatField,
+):
+    with computation(PARALLEL), interval(...):
+        value += increment
+
+
+def _copy_cast_defn(
+    q_in_64: FloatField64,
+    q_out: FloatField,
+):
+    with computation(PARALLEL), interval(...):
+        q_out = q_in_64
 
 
 def pt_to_potential_density_pt(
-    pkz: FloatField, dp_initial: FloatField, q_con: FloatField, pt: FloatField
+    pkz: FloatField,
+    dp_initial: FloatField,
+    q_con: FloatField,
+    pt: FloatField,
 ):
     """
     Args:
@@ -47,7 +187,12 @@ def pt_to_potential_density_pt(
         pt = pt * (1.0 + dp_initial) * (1.0 - q_con) / pkz
 
 
-def omega_from_w(delp: FloatField, delz: FloatField, w: FloatField, omega: FloatField):
+def omega_from_w(
+    delp: FloatField,
+    delz: FloatField,
+    w: FloatField,
+    omega: FloatField,
+):
     """
     Args:
         delp (in): vertical layer thickness in Pa
@@ -59,30 +204,9 @@ def omega_from_w(delp: FloatField, delz: FloatField, w: FloatField, omega: Float
         omega = delp / delz * w
 
 
-def fvdyn_temporaries(quantity_factory: QuantityFactory) -> Mapping[str, Quantity]:
-    tmps = {}
-    for name in ["te_2d", "te0_2d", "wsd"]:
-        quantity = quantity_factory.zeros(
-            dims=[I_DIM, J_DIM],
-            units="unknown",
-            dtype=Float,
-        )
-        tmps[name] = quantity
-    for name in ["dp1", "cvm"]:
-        quantity = quantity_factory.zeros(
-            dims=[I_DIM, J_DIM, K_DIM],
-            units="unknown",
-            dtype=Float,
-        )
-        tmps[name] = quantity
-    return tmps
-
-
-@dace_inhibitor
-def log_on_rank_0(message: str) -> None:
-    """Print when rank is 0 - outside of DaCe critical path"""
-    if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
-        ndsl_log.info(message)
+def _reset_to_zero(field: FloatField):
+    with computation(PARALLEL), interval(...):
+        field = 0
 
 
 class DynamicalCore(NDSLRuntime):
@@ -101,8 +225,7 @@ class DynamicalCore(NDSLRuntime):
         phis: Quantity,
         state: DycoreState,
         timestep: timedelta,
-        checkpointer: Checkpointer | None = None,
-    ) -> None:
+    ):
         """
         Args:
             comm: object for cubed sphere or tile inter-process communication
@@ -113,18 +236,20 @@ class DynamicalCore(NDSLRuntime):
                 the namelist in the Fortran model
             phis: surface geopotential height
             state: model state
+            exclude_tracer: List of named tracer to be excluded from the Advection,
+                and Remapping schemes
             timestep: model timestep
-            checkpointer: if given, used to perform operations on model data
-                at specific points in model execution, such as testing against
-                reference data
         """
-        super().__init__(stencil_factory)
+
+        oconfig = get_optimization_config(stencil_factory.backend)
+        super().__init__(stencil_factory, oconfig)
 
         orchestrate(
             obj=self,
             config=stencil_factory.config.dace_config,
             method_to_orchestrate="step_dynamics",
             dace_compiletime_args=["state", "timer"],
+            optimization_config=oconfig,
         )
 
         orchestrate(
@@ -132,6 +257,7 @@ class DynamicalCore(NDSLRuntime):
             config=stencil_factory.config.dace_config,
             method_to_orchestrate="compute_preamble",
             dace_compiletime_args=["state"],
+            optimization_config=oconfig,
         )
 
         orchestrate(
@@ -139,65 +265,15 @@ class DynamicalCore(NDSLRuntime):
             config=stencil_factory.config.dace_config,
             method_to_orchestrate="_compute",
             dace_compiletime_args=["state", "timer"],
+            optimization_config=oconfig,
         )
 
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            method_to_orchestrate="_state_into_tracers",
-            dace_compiletime_args=["state"],
-        )
-
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            method_to_orchestrate="_tracers_into_state",
-            dace_compiletime_args=["state"],
-        )
-
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            method_to_orchestrate="_checkpoint_fvdynamics",
-            dace_compiletime_args=["state", "tag"],
-        )
-
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            method_to_orchestrate="_checkpoint_remapping_in",
-            dace_compiletime_args=[
-                "state",
-            ],
-        )
-
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            method_to_orchestrate="_checkpoint_remapping_out",
-            dace_compiletime_args=["state"],
-        )
-
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            method_to_orchestrate="_checkpoint_tracer_advection_in",
-            dace_compiletime_args=["state"],
-        )
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-            method_to_orchestrate="_checkpoint_tracer_advection_out",
-            dace_compiletime_args=["state"],
-        )
         if timestep == timedelta(seconds=0):
             raise RuntimeError(
                 "Bad dynamical core configuration: the atmospheric timestep is 0 seconds!"
             )
         # nested and stretched_grid are options in the Fortran code which we
         # have not implemented, so they are hard-coded here.
-        self.call_checkpointer = checkpointer is not None
-        self.checkpointer = NullCheckpointer() if checkpointer is None else checkpointer
         nested = False
         stretched_grid = False
         grid_indexing = stencil_factory.grid_indexing
@@ -205,17 +281,49 @@ class DynamicalCore(NDSLRuntime):
             raise NotImplementedError(
                 "Dynamical core (fv_dynamics): fvsetup is only implemented for moist_phys=true."
             )
-        if config.nwat != 6:
+        if config.nwat not in [0, 6]:
             raise NotImplementedError(
                 "Dynamical core (fv_dynamics):"
                 f" nwat=={config.nwat} is not implemented."
-                " Only nwat=6 has been implemented."
+                " Only nwat=0 or 6 has been implemented."
             )
+
+        if config.nwat == 6:
+            # Implemented dynamics options require those tracers to be present at minima
+            # this is a more granular list than carried by the `nwat` single integer
+            # but cover the same topic
+            required_tracers = [
+                "vapor",
+                "liquid",
+                "rain",
+                "snow",
+                "ice",
+                "graupel",
+                "cloud",
+            ]
+            if not all(n in FVTracers.mapping.keys() for n in required_tracers):
+                raise NotImplementedError(
+                    "Dynamical core (fv_dynamics):"
+                    " missing required tracers. Dynamics requires:\n"
+                    f" {required_tracers}\n"
+                    "but only the following where given:\n"
+                    f" {FVTracers.mapping.keys()}"
+                )
+
+        self._comm = comm
         self.comm_rank = comm.rank
         self.grid_data = grid_data
         self.grid_indexing = grid_indexing
         self._da_min = damping_coefficients.da_min
         self.config = config
+
+        self.dry_mass_control = DryMassRoundOff(
+            comm=comm,
+            quantity_factory=quantity_factory,
+            stencil_factory=stencil_factory,
+            state=state,
+            hydrostatic=self.config.hydrostatic,
+        )
 
         tracer_transport = fvtp2d.FiniteVolumeTransport(
             stencil_factory=stencil_factory,
@@ -226,23 +334,18 @@ class DynamicalCore(NDSLRuntime):
             hord=config.hord_tr,
         )
 
-        # This will become a proper DycoreState member. In the meantime, we keep it
-        # as a fully fledge Quantity
         if FVTracersAxisName not in quantity_factory.sizer.data_dimensions:
             raise RuntimeError(
                 "FV Dynamics requires FVTracers to be registered - see `pyfv3.tracers`"
             )
 
-        self.tracers = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_DIM, FVTracersAxisName], ""
-        )
+        # Locals
+        self._wsd = self.make_local(quantity_factory, [I_DIM, J_DIM])
+        self._dp_initial = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
+        self._cvm = self.make_local(quantity_factory, [I_DIM, J_DIM, K_DIM])
 
-        temporaries = fvdyn_temporaries(quantity_factory)
-        self._te_2d = temporaries["te_2d"]
-        self._te0_2d = temporaries["te0_2d"]
-        self._wsd = temporaries["wsd"]
-        self._dp_initial = temporaries["dp1"]
-        self._cvm = temporaries["cvm"]
+        # TODO: this is a true Local, but defining at such breaks `pt` in orchestration
+        self._te0_2d = quantity_factory.zeros([I_DIM, J_DIM], "")
 
         # Build advection stencils
         self.tracer_advection = tracer_2d_1l.TracerAdvection(
@@ -251,8 +354,7 @@ class DynamicalCore(NDSLRuntime):
             tracer_transport,
             self.grid_data,
             comm,
-            self.tracers,
-            NQ,
+            state.tracers,
         )
         self._ak = grid_data.ak
         self._bk = grid_data.bk
@@ -264,6 +366,14 @@ class DynamicalCore(NDSLRuntime):
             externals={
                 "nwat": self.config.nwat,
                 "moist_phys": self.config.moist_phys,
+                "i_vapor": FVTracers.index("vapor"),
+                "i_liquid": FVTracers.index("liquid") if self.config.nwat == 6 else -1,
+                "i_rain": FVTracers.index("rain") if self.config.nwat == 6 else -1,
+                "i_ice": FVTracers.index("ice") if self.config.nwat == 6 else -1,
+                "i_snow": FVTracers.index("snow") if self.config.nwat == 6 else -1,
+                "i_graupel": (
+                    FVTracers.index("graupel") if self.config.nwat == 6 else -1
+                ),
             },
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
@@ -299,9 +409,7 @@ class DynamicalCore(NDSLRuntime):
             stretched_grid=stretched_grid,
             config=self.config.acoustic_dynamics,
             phis=self._phis,
-            wsd=self._wsd,
             state=state,
-            checkpointer=checkpointer,
         )
         self._hyperdiffusion = HyperdiffusionDamping(
             stencil_factory,
@@ -332,14 +440,34 @@ class DynamicalCore(NDSLRuntime):
             hydrostatic=self.config.hydrostatic,
         )
 
-        self._lagrangian_to_eulerian_obj = LagrangianToEulerian(
+        self._compute_total_energy = ComputeTotalEnergy(
+            config=config,
             stencil_factory=stencil_factory,
             quantity_factory=quantity_factory,
-            config=config.remapping,
-            area_64=grid_data.area_64,
-            nq=NQ,
-            pfull=self._pfull,
+            grid_data=grid_data,
         )
+
+        if IS_GEOS:
+            self._lagrangian_to_eulerian_GEOS = LagrangianToEulerian_GEOS(
+                stencil_factory=stencil_factory,
+                quantity_factory=quantity_factory,
+                config=config.remapping,
+                comm=comm,
+                grid_data=grid_data,
+                pfull=self._pfull,
+                adiabatic=config.adiabatic,
+                nwat=self.config.nwat,
+            )
+
+        else:
+            self._lagrangian_to_eulerian_obj = LagrangianToEulerian(
+                stencil_factory=stencil_factory,
+                quantity_factory=quantity_factory,
+                config=config.remapping,
+                area_64=grid_data.area_64,
+                pfull=self._pfull,
+                nwat=self.config.nwat,
+            )
 
         full_xyz_spec = quantity_factory.get_quantity_halo_spec(
             dims=[I_DIM, J_DIM, K_DIM],
@@ -354,97 +482,73 @@ class DynamicalCore(NDSLRuntime):
         self._conserve_total_energy = config.consv_te
         self._timestep = timestep.total_seconds()
 
-    # See divergence_damping.py, _get_da_min for explanation of this function
-    @dace_inhibitor
-    def _get_da_min(self) -> float:
-        return self._da_min
-
-    def _checkpoint_fvdynamics(self, state: DycoreState, tag: str) -> None:
-        if self.call_checkpointer:
-            self.checkpointer(
-                f"FVDynamics-{tag}",
-                u=state.u,
-                v=state.v,
-                w=state.w,
-                delz=state.delz,
-                ua=state.ua,
-                va=state.va,
-                uc=state.uc,
-                vc=state.vc,
-                qvapor=self.tracers[:, :, :, FVTracers.index("vapor")],
+        # At 32-bit precision we still need
+        self._f32_correction = NDSL_GLOBAL_PRECISION == 32
+        if self._f32_correction:
+            self._mfx_f64 = quantity_factory.zeros(
+                dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
+                units="unknown",
+                dtype=Float64,
+                allow_mismatch_float_precision=True,
             )
-
-    def _checkpoint_remapping_in(self, state: DycoreState) -> None:
-        if self.call_checkpointer:
-            self.checkpointer(
-                "Remapping-In",
-                pt=state.pt,
-                delp=state.delp,
-                delz=state.delz,
-                peln=state.peln.transpose(
-                    [I_DIM, K_INTERFACE_DIM, J_DIM]
-                ),  # [x, z, y] fortran data
-                u=state.u,
-                v=state.v,
-                w=state.w,
-                ua=state.ua,
-                va=state.va,
-                cappa=self._cappa,
-                pk=state.pk,
-                pe=state.pe.transpose(
-                    [I_DIM, K_INTERFACE_DIM, J_DIM]
-                ),  # [x, z, y] fortran data
-                phis=state.phis,
-                te_2d=self._te0_2d,
-                ps=state.ps,
-                wsd=self._wsd,
-                omga=state.omga,
-                dp1=self._dp_initial,
+            self._mfy_f64 = quantity_factory.zeros(
+                dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
+                units="unknown",
+                dtype=Float64,
+                allow_mismatch_float_precision=True,
             )
-
-    def _checkpoint_remapping_out(self, state: DycoreState) -> None:
-        if self.call_checkpointer:
-            self.checkpointer(
-                "Remapping-Out",
-                pt=state.pt,
-                delp=state.delp,
-                delz=state.delz,
-                peln=state.peln.transpose(
-                    [I_DIM, K_INTERFACE_DIM, J_DIM]
-                ),  # [x, z, y] fortran data
-                u=state.u,
-                v=state.v,
-                w=state.w,
-                cappa=self._cappa,
-                pkz=state.pkz,
-                pk=state.pk,
-                pe=state.pe.transpose(
-                    [I_DIM, K_INTERFACE_DIM, J_DIM]
-                ),  # [x, z, y] fortran data
-                dp1=self._dp_initial,
+            self._cx_f64 = quantity_factory.zeros(
+                dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
+                units="unknown",
+                dtype=Float64,
+                allow_mismatch_float_precision=True,
             )
-
-    def _checkpoint_tracer_advection_in(self, state: DycoreState) -> None:
-        if self.call_checkpointer:
-            self.checkpointer(
-                "Tracer2D1L-In",
-                dp1=self._dp_initial,
-                mfxd=state.mfxd,
-                mfyd=state.mfyd,
-                cxd=state.cxd,
-                cyd=state.cyd,
+            self._cy_f64 = quantity_factory.zeros(
+                dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
+                units="unknown",
+                dtype=Float64,
+                allow_mismatch_float_precision=True,
             )
-
-    def _checkpoint_tracer_advection_out(self, state: DycoreState) -> None:
-        if self.call_checkpointer:
-            self.checkpointer(
-                "Tracer2D1L-Out",
-                dp1=self._dp_initial,
-                mfxd=state.mfxd,
-                mfyd=state.mfyd,
-                cxd=state.cxd,
-                cyd=state.cyd,
-            )
+        self._mfx_local = quantity_factory.zeros(
+            dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
+            units="unknown",
+            dtype=Float,
+        )
+        self._mfy_local = quantity_factory.zeros(
+            dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
+            units="unknown",
+            dtype=Float,
+        )
+        self._cx_local = quantity_factory.zeros(
+            dims=[I_INTERFACE_DIM, J_DIM, K_DIM],
+            units="unknown",
+            dtype=Float,
+        )
+        self._cy_local = quantity_factory.zeros(
+            dims=[I_DIM, J_INTERFACE_DIM, K_DIM],
+            units="unknown",
+            dtype=Float,
+        )
+        self._reset_I_interface = stencil_factory.from_origin_domain(
+            func=_reset_to_zero,
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(add=(1, 0, 0)),
+        )
+        self._reset_J_interface = stencil_factory.from_origin_domain(
+            func=_reset_to_zero,
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(add=(0, 1, 0)),
+        )
+        self._increment = stencil_factory.from_origin_domain(
+            func=_increment_stencil,
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(add=(1, 1, 0)),
+        )
+        self._copy_cast = stencil_factory.from_origin_domain(
+            func=_copy_cast_defn,
+            origin=grid_indexing.origin_compute(),
+            domain=grid_indexing.domain_compute(add=(1, 1, 0)),
+        )
 
     def step_dynamics(self, state: DycoreState, timer: Timer) -> None:
         """
@@ -454,70 +558,20 @@ class DynamicalCore(NDSLRuntime):
             state: model prognostic state and inputs
             timer: keep time of model sections
         """
-        self._checkpoint_fvdynamics(state=state, tag="In")
         self._compute(state, timer)
-        self._checkpoint_fvdynamics(state=state, tag="Out")
-
-    def _state_into_tracers(self, state: DycoreState) -> None:
-        """Copy the input values of the DycoreState into a contiguous 4D tracers array
-
-        Dev NOTE: true solution is to modify the DycoreState to accept a 4D field.
-        """
-        self._copy_stencil(
-            state.qvapor, self.tracers[:, :, :, FVTracers.index("vapor")]
-        )
-        self._copy_stencil(
-            state.qliquid, self.tracers[:, :, :, FVTracers.index("liquid")]
-        )
-        self._copy_stencil(state.qice, self.tracers[:, :, :, FVTracers.index("ice")])
-        self._copy_stencil(state.qrain, self.tracers[:, :, :, FVTracers.index("rain")])
-        self._copy_stencil(state.qsnow, self.tracers[:, :, :, FVTracers.index("snow")])
-        self._copy_stencil(
-            state.qgraupel, self.tracers[:, :, :, FVTracers.index("graupel")]
-        )
-        self._copy_stencil(state.qo3mr, self.tracers[:, :, :, FVTracers.index("o3mr")])
-        self._copy_stencil(
-            state.qsgs_tke, self.tracers[:, :, :, FVTracers.index("sgs_tke")]
-        )
-        self._copy_stencil(state.qcld, self.tracers[:, :, :, FVTracers.index("cloud")])
-
-    def _tracers_into_state(self, state: DycoreState) -> None:
-        """Copy back the input values the tracers array into split 3D buffers held by the state
-
-        Dev NOTE: true solution is to modify the DycoreState to accept a 4D field.
-        """
-        self._copy_stencil(
-            self.tracers[:, :, :, FVTracers.index("vapor")], state.qvapor
-        )
-        self._copy_stencil(
-            self.tracers[:, :, :, FVTracers.index("liquid")], state.qliquid
-        )
-        self._copy_stencil(self.tracers[:, :, :, FVTracers.index("ice")], state.qice)
-        self._copy_stencil(self.tracers[:, :, :, FVTracers.index("rain")], state.qrain)
-        self._copy_stencil(self.tracers[:, :, :, FVTracers.index("snow")], state.qsnow)
-        self._copy_stencil(
-            self.tracers[:, :, :, FVTracers.index("graupel")], state.qgraupel
-        )
-        self._copy_stencil(self.tracers[:, :, :, FVTracers.index("o3mr")], state.qo3mr)
-        self._copy_stencil(
-            self.tracers[:, :, :, FVTracers.index("sgs_tke")], state.qsgs_tke
-        )
-        self._copy_stencil(self.tracers[:, :, :, FVTracers.index("cloud")], state.qcld)
 
     def compute_preamble(self, state: DycoreState) -> None:
         if self.config.hydrostatic:
             raise NotImplementedError("Hydrostatic is not implemented")
 
-        if __debug__:
-            log_on_rank_0("FV Setup")
+        # Reset fluxes
+        self._reset_I_interface(state.mfxd)
+        self._reset_I_interface(state.cxd)
+        self._reset_J_interface(state.mfyd)
+        self._reset_J_interface(state.cyd)
 
         self._fv_setup_stencil(
-            self.tracers[:, :, :, FVTracers.index("vapor")],
-            self.tracers[:, :, :, FVTracers.index("liquid")],
-            self.tracers[:, :, :, FVTracers.index("rain")],
-            self.tracers[:, :, :, FVTracers.index("snow")],
-            self.tracers[:, :, :, FVTracers.index("ice")],
-            self.tracers[:, :, :, FVTracers.index("graupel")],
+            state.tracers,
             state.q_con,
             self._cvm,
             state.pkz,
@@ -528,38 +582,55 @@ class DynamicalCore(NDSLRuntime):
             self._dp_initial,
         )
 
-        if self._conserve_total_energy > 0:
-            raise NotImplementedError(
-                "Dynamical Core (fv_dynamics): compute total energy is not implemented"
+        # Compute total energy
+        if self.config.consv_te > 0.0:
+            self._compute_total_energy(
+                hs=state.phis,
+                delp=state.delp,
+                delz=state.delz,
+                qc=self._dp_initial,
+                pt=state.pt,
+                u=state.u,
+                v=state.v,
+                w=state.w,
+                tracers=state.tracers,
+                te_2d=self._te0_2d,
             )
 
-        if (not self.config.rf_fast) and self.config.tau != 0:
+        # Rayleigh fast
+        if (
+            not self.config.hydrostatic
+            and not self.config.acoustic_dynamics.rf_fast
+            and self.config.acoustic_dynamics.tau > 0
+        ):
             raise NotImplementedError(
-                "Dynamical Core (fv_dynamics): Rayleigh_Super,"
-                " called when rf_fast=False and tau !=0, is not implemented"
+                "Dynamical Core (fv_dynamics): Rayleigh Friction is not implemented."
             )
 
-        if self.config.adiabatic and self.config.kord_tm > 0:
+        # Adjust pt
+        if self.config.adiabatic:
             raise NotImplementedError(
-                "Dynamical Core (fv_dynamics): Adiabatic with positive kord_tm is not implemented."
+                "Dynamical Core (fv_dynamics): Adiabatic pt adjust is not implemented."
             )
+        else:
+            if self.config.hydrostatic:
+                raise NotImplementedError(
+                    "Dynamical Core (fv_dynamics): Hydrostatic pt adjust is not implemented."
+                )
+            else:
+                self._pt_to_potential_density_pt(
+                    state.pkz,
+                    self._dp_initial,
+                    state.q_con,
+                    state.pt,
+                )
 
-        if __debug__:
-            log_on_rank_0("Adjust pt")
-
-        self._pt_to_potential_density_pt(
-            state.pkz,
-            self._dp_initial,
-            state.q_con,
-            state.pt,
-        )
+        self.dry_mass_control.reset(pe=state.pe)
 
     def __call__(self, *args, **kwargs) -> None:
         self.step_dynamics(*args, **kwargs)
 
     def _compute(self, state: DycoreState, timer: Timer) -> None:
-        self._state_into_tracers(state)
-
         self.compute_preamble(state)
 
         for k_split in range(self._k_split):
@@ -571,31 +642,35 @@ class DynamicalCore(NDSLRuntime):
                 self._dp_initial,
             )
 
-            if __debug__:
-                log_on_rank_0("DynCore")
-
             with timer.clock("DynCore"):
                 self.acoustic_dynamics(
-                    state,
+                    state=state,
+                    mfxd=self._mfx_f64 if self._f32_correction else self._mfx_local,
+                    mfyd=self._mfy_f64 if self._f32_correction else self._mfy_local,
+                    cxd=self._cx_f64 if self._f32_correction else self._cx_local,
+                    cyd=self._cy_f64 if self._f32_correction else self._cy_local,
+                    dpx=self.dry_mass_control.dpx,
+                    wsd=self._wsd,
                     timestep=self._timestep / self._k_split,
                     n_map=n_map,
                 )
-
+                if self._f32_correction:
+                    self._copy_cast(self._mfx_f64, self._mfx_local)
+                    self._copy_cast(self._mfy_f64, self._mfy_local)
+                    self._copy_cast(self._cx_f64, self._cx_local)
+                    self._copy_cast(self._cy_f64, self._cy_local)
+                if last_step and self.config.hydrostatic:
+                    self.dry_mass_control.apply(state.pe)
             if self.config.z_tracer:
-                if __debug__:
-                    log_on_rank_0("TracerAdvection")
-
                 with timer.clock("TracerAdvection"):
-                    self._checkpoint_tracer_advection_in(state)
                     self.tracer_advection(
-                        self.tracers,
+                        state.tracers,
                         self._dp_initial,
-                        state.mfxd,
-                        state.mfyd,
-                        state.cxd,
-                        state.cyd,
+                        x_mass_flux=self._mfx_local,
+                        y_mass_flux=self._mfy_local,
+                        x_courant=self._cx_local,
+                        y_courant=self._cy_local,
                     )
-                    self._checkpoint_tracer_advection_out(state)
             else:
                 raise NotImplementedError("z_tracer=False is not implemented")
 
@@ -614,47 +689,84 @@ class DynamicalCore(NDSLRuntime):
                 # TODO: Determine a better way to do this, polymorphic fields perhaps?
                 # issue is that set_val in map_single expects a 3D field for the
                 # "surface" array
-                if __debug__:
-                    log_on_rank_0("Remapping")
-
                 with timer.clock("Remapping"):
-                    self._checkpoint_remapping_in(state)
-
-                    self._lagrangian_to_eulerian_obj(
-                        self.tracers,
-                        state.pt,
-                        state.delp,
-                        state.delz,
-                        state.peln,
-                        state.u,
-                        state.v,
-                        state.w,
-                        self._cappa,
-                        state.q_con,
-                        state.pkz,
-                        state.pk,
-                        state.pe,
-                        state.phis,
-                        state.ps,
-                        self._wsd,
-                        self._ak,
-                        self._bk,
-                        self._dp_initial,
-                        self._ptop,
-                        KAPPA,
-                        ZVIR,
-                        last_step,
-                        self._conserve_total_energy,
-                        self._timestep / self._k_split,
-                    )
-                    self._checkpoint_remapping_out(state)
+                    if IS_GEOS:
+                        self._lagrangian_to_eulerian_GEOS(
+                            tracers=state.tracers,
+                            pt=state.pt,
+                            delp=state.delp,
+                            delz=state.delz,
+                            peln=state.peln,
+                            u=state.u,
+                            v=state.v,
+                            w=state.w,
+                            mfx=self._mfx_local,
+                            mfy=self._mfy_local,
+                            cx=self._cx_local,
+                            cy=self._cy_local,
+                            cappa=self._cappa,
+                            q_con=state.q_con,
+                            pkz=state.pkz,
+                            pk=state.pk,
+                            pe=state.pe,
+                            hs=state.phis,
+                            te0_2d=self._te0_2d,
+                            ps=state.ps,
+                            wsd=self._wsd,
+                            ak=self._ak,
+                            bk=self._bk,
+                            dp1=self._dp_initial,
+                            ptop=self._ptop,
+                            akap=KAPPA,
+                            zvir=ZVIR,
+                            last_step=last_step,
+                            consv_te=self._conserve_total_energy,
+                            mdt=self._timestep / self._k_split,
+                        )
+                    else:
+                        # TODO: When NQ=9, we shouldn't need to pass qcld explicitly
+                        #       since it's in self.tracers. It should not be an issue
+                        #       since we don't have self.tracers & qcld computation
+                        #       at the same time
+                        #       When NQ=8, we do need qcld passed explicitely
+                        self._lagrangian_to_eulerian_obj(
+                            state.tracers,
+                            state.pt,
+                            state.delp,
+                            state.delz,
+                            state.peln,
+                            state.u,
+                            state.v,
+                            state.w,
+                            self._cappa,
+                            state.q_con,
+                            state.pkz,
+                            state.pk,
+                            state.pe,
+                            state.phis,
+                            state.ps,
+                            self._wsd,
+                            self._ak,
+                            self._bk,
+                            self._dp_initial,
+                            self._ptop,
+                            KAPPA,
+                            ZVIR,
+                            last_step,
+                            self._conserve_total_energy,
+                            self._timestep / self._k_split,
+                        )
                 # TODO: can we pull this block out of the loop intead of
                 # using an if-statement?
+
+                # Update state fluxes and courant number
+                self._increment(state.mfxd, self._mfx_local)
+                self._increment(state.mfyd, self._mfy_local)
+                self._increment(state.cxd, self._cx_local)
+                self._increment(state.cyd, self._cy_local)
+
                 if last_step:
-                    da_min: Float = self._get_da_min()
                     if not self.config.hydrostatic:
-                        if __debug__:
-                            log_on_rank_0("Omega")
                         # TODO: GFDL should implement the "vulcan omega" update,
                         # use hydrostatic omega instead of this conversion
                         self._omega_from_w(
@@ -664,27 +776,16 @@ class DynamicalCore(NDSLRuntime):
                             state.omga,
                         )
                     if self.config.nf_omega > 0:
-                        if __debug__:
-                            log_on_rank_0("Del2Cubed")
                         self._omega_halo_updater.update()
-                        self._hyperdiffusion(state.omga, 0.18 * da_min)
+                        self._hyperdiffusion(state.omga, Float(0.18) * self._da_min)
 
-        if __debug__:
-            log_on_rank_0("Neg Adj 3")
-        self._adjust_tracer_mixing_ratio(
-            self.tracers[:, :, :, FVTracers.index("vapor")],
-            self.tracers[:, :, :, FVTracers.index("liquid")],
-            self.tracers[:, :, :, FVTracers.index("rain")],
-            self.tracers[:, :, :, FVTracers.index("snow")],
-            self.tracers[:, :, :, FVTracers.index("ice")],
-            self.tracers[:, :, :, FVTracers.index("graupel")],
-            self.tracers[:, :, :, FVTracers.index("cloud")],
-            state.pt,
-            state.delp,
-        )
+        if self.config.nwat >= 6:
+            self._adjust_tracer_mixing_ratio(
+                state.tracers,
+                state.pt,
+                state.delp,
+            )
 
-        if __debug__:
-            log_on_rank_0("CubedToLatLon")
         # convert d-grid x-wind and y-wind to
         # cell-centered zonal and meridional winds
         # TODO: make separate variables for the internal-temporary
@@ -697,8 +798,3 @@ class DynamicalCore(NDSLRuntime):
             state.ua,
             state.va,
         )
-        ndsl_log.debug(
-            f"ua min: {state.ua.field[:].min()} ua max: {state.ua.field[:].max()}"
-        )
-
-        self._tracers_into_state(state)

@@ -1,11 +1,15 @@
 import numpy as np
 
-from ndsl import QuantityFactory, StencilFactory, orchestrate
+from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_INTERFACE_DIM
+from ndsl.dsl.dace.orchestration import dace_inhibitor
 from ndsl.dsl.gt4py import PARALLEL, computation, interval
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ
 from ndsl.grid import GridData
-from pyfv3.stencils.a2b_ord4 import AGrid2BGridFourthOrder
+from pyfv3.stencils.a2b_ord4 import (
+    AGrid2BGridFourthOrder,
+    AGrid2BGridFourthOrderInPlace,
+)
 
 
 def set_k0_and_calc_wk(
@@ -112,7 +116,7 @@ def calc_v(
         ) * rdy
 
 
-class NonHydrostaticPressureGradient:
+class NonHydrostaticPressureGradient(NDSLRuntime):
     """
     Apply nonhydrostatic pressure gradient force in the horizontal.
 
@@ -131,10 +135,7 @@ class NonHydrostaticPressureGradient:
         grid_type: int,
         use_logp: bool,
     ):
-        orchestrate(
-            obj=self,
-            config=stencil_factory.config.dace_config,
-        )
+        super().__init__(stencil_factory)
 
         grid_indexing = stencil_factory.grid_indexing
         self.orig = grid_indexing.origin_compute()
@@ -152,39 +153,32 @@ class NonHydrostaticPressureGradient:
                 "Non Hydrostatic Pressure Gradient (nh_p_grad) with `use_logp` is not implemented."
             )
 
-        self._tmp_wk = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            units="unknown",
-            dtype=Float,
+        self._tmp_wk = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM]
         )
-        self._tmp_wk1 = quantity_factory.zeros(
-            [I_DIM, J_DIM, K_INTERFACE_DIM],
-            units="unknown",
-            dtype=Float,
+        self._tmp_delp_to_b_grid = self.make_local(
+            quantity_factory, [I_DIM, J_DIM, K_INTERFACE_DIM]
         )
 
-        self.a2b_k1 = AGrid2BGridFourthOrder(
+        self.a2b_k1 = AGrid2BGridFourthOrderInPlace(
             stencil_factory.restrict_vertical(k_start=1),
             quantity_factory=quantity_factory,
             grid_data=grid_data,
             grid_type=grid_type,
             z_dim=K_INTERFACE_DIM,
-            replace=True,
         )
-        self.a2b_kbuffer = AGrid2BGridFourthOrder(
+        self.a2b_kinterface = AGrid2BGridFourthOrderInPlace(
             stencil_factory,
             quantity_factory=quantity_factory,
             grid_data=grid_data,
             grid_type=grid_type,
             z_dim=K_INTERFACE_DIM,
-            replace=True,
         )
         self.a2b_kstandard = AGrid2BGridFourthOrder(
             stencil_factory,
             quantity_factory=quantity_factory,
             grid_data=grid_data,
             grid_type=grid_type,
-            replace=False,
         )
 
         self._set_k0_and_calc_wk_stencil = stencil_factory.from_origin_domain(
@@ -204,6 +198,10 @@ class NonHydrostaticPressureGradient:
             origin=self.orig,
             domain=v_domain,
         )
+
+    @dace_inhibitor
+    def _block_merge(self):
+        pass
 
     def __call__(
         self,
@@ -238,21 +236,30 @@ class NonHydrostaticPressureGradient:
         ptk = np.power(ptop, akap, dtype=Float)
         top_value = ptk  # = peln1 if spec.namelist.use_logp else ptk
 
-        # TODO: make it clearer that each of these a2b outputs is updated
-        # instead of the output being put in tmp_wk1, possibly by removing
-        # the second argument and using a temporary instead?
-        self.a2b_k1(pp, self._tmp_wk1)
-        self.a2b_k1(pk3, self._tmp_wk1)
+        self.a2b_k1(pp)
 
-        self.a2b_kbuffer(gz, self._tmp_wk1)
-        self.a2b_kstandard(delp, self._tmp_wk1)
+        # TODO: remove and fix schedule tree
+        self._block_merge()
+
+        self.a2b_k1(pk3)
+
+        # TODO: remove and fix schedule tree
+        self._block_merge()
+
+        self.a2b_kinterface(gz)
+
+        # TODO: remove and fix schedule tree
+        self._block_merge()
+
+        # Unlike the other - delp is NOT update to the B grid
+        self.a2b_kstandard(delp, self._tmp_delp_to_b_grid)
 
         self._set_k0_and_calc_wk_stencil(pp, pk3, self._tmp_wk, top_value)
 
         self._calc_u_stencil(
             u,
             self._tmp_wk,
-            self._tmp_wk1,
+            self._tmp_delp_to_b_grid,
             gz,
             pk3,
             pp,
@@ -263,7 +270,7 @@ class NonHydrostaticPressureGradient:
         self._calc_v_stencil(
             v,
             self._tmp_wk,
-            self._tmp_wk1,
+            self._tmp_delp_to_b_grid,
             gz,
             pk3,
             pp,

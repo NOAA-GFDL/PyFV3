@@ -1,7 +1,6 @@
 import math
 
-import ndsl.constants as constants
-from ndsl import StencilFactory
+from ndsl import NDSLRuntime, StencilFactory, constants
 from ndsl.dsl.gt4py import __INLINED, PARALLEL, computation, exp, floor
 from ndsl.dsl.gt4py import function as gtfunction
 from ndsl.dsl.gt4py import interval, log
@@ -351,7 +350,7 @@ def sublimation(
                 * 349138.78
                 * expsubl
                 / (
-                    iqs2 * den * constants.LAT2 / (0.0243 * constants.RVGAS * pt1**2.0)
+                    iqs2 * den * constants.LAT2 / (0.0243 * constants.RVGAS * pt1**2)
                     + 4.42478e4
                 )
             )
@@ -930,10 +929,22 @@ def satadjust(
             pkz = compute_pkz_func(dp, delz, pt, cappa)
 
 
-class SatAdjust3d:
+class SatAdjust3d(NDSLRuntime):
     def __init__(
-        self, stencil_factory: StencilFactory, config: SatAdjustConfig, area_64, kmp
+        self,
+        stencil_factory: StencilFactory,
+        config: SatAdjustConfig,
+        area_64,
+        kmp,
+        nwat: int,
     ):
+        super().__init__(stencil_factory)
+
+        if nwat != 6:
+            raise NotImplementedError(
+                "Saturation adjustement is only implemented for 6 water species"
+            )
+
         grid_indexing = stencil_factory.grid_indexing
         self._config = config
         self._area_64 = area_64

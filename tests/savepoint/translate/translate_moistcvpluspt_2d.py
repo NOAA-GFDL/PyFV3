@@ -1,6 +1,7 @@
 from ndsl import StencilFactory
+from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import PARALLEL, computation, interval
-from ndsl.dsl.typing import FloatField
+from ndsl.dsl.typing import Float, FloatField
 from ndsl.stencils.testing import pad_field_in_j
 from pyfv3.stencils import moist_cv
 from pyfv3.testing import TranslateDycoreFortranData2Py
@@ -18,10 +19,10 @@ def moist_pt(
     cappa: FloatField,
     delp: FloatField,
     delz: FloatField,
-    r_vir: float,
+    r_vir: Float,
 ):
     with computation(PARALLEL), interval(...):
-        cvm, gz, q_con, cappa, pt = moist_cv.moist_pt_func(
+        cvm, gz, q_con, cappa, pt = moist_cv.moist_pt_func_nwat6(
             qvapor,
             qliquid,
             qrain,
@@ -53,6 +54,12 @@ class MoistPT:
             domain=(grid.nic, 1, grid.npz),
         )
 
+        self._q_con = grid.quantity_factory.zeros(
+            [I_DIM, J_DIM, K_DIM],
+            units="unknown",
+            dtype=Float,
+        )
+
     def __call__(
         self,
         qvapor: FloatField,
@@ -61,7 +68,7 @@ class MoistPT:
         qsnow: FloatField,
         qice: FloatField,
         qgraupel: FloatField,
-        q_con: FloatField,
+        # q_con: FloatField,
         pt: FloatField,
         cappa: FloatField,
         delp: FloatField,
@@ -75,7 +82,8 @@ class MoistPT:
             qsnow,
             qice,
             qgraupel,
-            q_con,
+            # q_con,
+            self._q_con,
             pt,
             cappa,
             delp,
@@ -98,7 +106,7 @@ class TranslateMoistCVPlusPt_2d(TranslateDycoreFortranData2Py):
             "qgraupel": {"serialname": "qgraupel_js"},
             "delp": {},
             "delz": {},
-            "q_con": {},
+            # "q_con": {},
             "pt": {},
             "cappa": {},
         }
@@ -111,7 +119,7 @@ class TranslateMoistCVPlusPt_2d(TranslateDycoreFortranData2Py):
         self.out_vars = {
             "pt": {},
             "cappa": {},
-            "q_con": {},
+            # "q_con": {},
         }
 
     def compute_from_storage(self, inputs):
