@@ -14,7 +14,7 @@ from ndsl.constants import (
 )
 from ndsl.dsl.typing import Float, FloatField, FloatFieldIJ, FloatFieldIJ64, FloatFieldK
 from ndsl.grid import GridData
-from ndsl.stencils.basic_operations import adjust_divide_stencil
+from ndsl.stencils import divide_self
 from pyfv3._config import RemappingConfig
 from pyfv3.mpi.sum import GlobalSum
 from pyfv3.stencils import moist_cv
@@ -269,7 +269,7 @@ class LagrangianToEulerian_GEOS(NDSLRuntime):
         )
 
         self._adjust_divide = stencil_factory.from_origin_domain(
-            adjust_divide_stencil,
+            divide_self,
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(),
         )
