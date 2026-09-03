@@ -6,7 +6,7 @@ from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.stencils.testing import pad_field_in_j
 from pyfv3.stencils import fillz
 from pyfv3.testing import TranslateDycoreFortranData2Py
-from pyfv3.tracers import FVTracersAxisName, default_GEOS_tracers
+from pyfv3.tracers import FVTracersAxisName, setup_fvtracers, GEOS_tracers_mapping
 
 
 class TranslateFillz(TranslateDycoreFortranData2Py):
@@ -41,7 +41,7 @@ class TranslateFillz(TranslateDycoreFortranData2Py):
         inputs,
         storage_vars=None,
     ) -> None:
-        default_GEOS_tracers(self.quantity_factory)
+        setup_fvtracers(self.quantity_factory, inputs["nq"], GEOS_tracers_mapping)
         if storage_vars is None:
             storage_vars = self.storage_vars()
         info = storage_vars["dp2"]

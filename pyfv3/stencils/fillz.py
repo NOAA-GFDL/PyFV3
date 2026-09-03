@@ -1,4 +1,4 @@
-from typing_extensions import no_type_check
+import typing
 
 from ndsl import NDSLRuntime, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
@@ -7,13 +7,10 @@ from ndsl.dsl.typing import FloatField, FloatFieldIJ, IntFieldIJ
 from pyfv3.tracers import FVTracers
 
 
-@no_type_check
+@typing.no_type_check
 def fix_tracer(
     q: FloatField,
     dp: FloatField,
-    zfix: IntFieldIJ,
-    sum0: FloatFieldIJ,
-    sum1: FloatFieldIJ,
 ) -> None:
     """
     Args:
