@@ -18,7 +18,7 @@ from ndsl.dsl.typing import (
     FloatFieldIJ64,
 )
 from ndsl.grid import GridData
-from ndsl.stencils.basic_operations import copy
+from ndsl.stencils import copy
 
 # comact 4-pt cubic interpolation
 c1 = Float(2.0) / Float(3.0)

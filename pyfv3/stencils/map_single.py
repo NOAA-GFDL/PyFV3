@@ -3,9 +3,7 @@ from typing import Optional, Sequence
 from ndsl import NDSLRuntime, QuantityFactory, StencilFactory
 from ndsl.constants import I_DIM, J_DIM, K_DIM
 from ndsl.dsl.gt4py import FORWARD, PARALLEL, computation, interval
-from ndsl.dsl.typing import (  # noqa: F401
-    Bool,
-    BoolField,
+from ndsl.dsl.typing import (
     BoolFieldIJ,
     Float,
     FloatField,
@@ -14,7 +12,7 @@ from ndsl.dsl.typing import (  # noqa: F401
     IntField,
     IntFieldIJ,
 )
-from ndsl.stencils.basic_operations import copy
+from ndsl.stencils import copy
 from pyfv3.stencils.remap_profile import RemapProfile
 
 QMIN_DEFAULT = Float(0.0)
